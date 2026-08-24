@@ -15,8 +15,9 @@ build: ## Build for production
 docs: ## Regenerate docs indexes
 	python3 scripts/docs_index.py
 
-docs-check: ## Check docs indexes are up to date and run doc tests
+docs-check: ## Check docs indexes, provenance files, and run doc tests
 	python3 scripts/docs_index.py --check
+	node scripts/provenance.mjs --check
 	PYTHONPATH=scripts uvx pytest tests -q
 
 lint: ## Lint the codebase

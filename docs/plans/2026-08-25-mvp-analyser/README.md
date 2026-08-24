@@ -21,8 +21,8 @@ three.js, Rust, multiplayer, accounts, backend.
 
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
-| 00 | Repo hygiene + tooling | 🟡 In progress | 2026-08-25 |
-| 01 | Contracts + data | 🔵 Not started | none |
+| 00 | Repo hygiene + tooling | 🟢 Completed | 2026-08-25 |
+| 01 | Contracts + data | 🟡 In progress | 2026-08-25 |
 | 02 | Solver + calibration + validation | 🔵 Not started | none |
 | 03 | Design system + app shell | 🔵 Not started | none |
 | 04 | Race mode | 🔵 Not started | none |

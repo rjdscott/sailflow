@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "id": "north-j70",
+    "title": "J/70 Tuning Guide",
+    "url": "https://j70tr.org/wp-content/uploads/2025/12/north-j70-tuningguide-EUR.pdf",
+    "retrieved": "2026-08-25",
+    "revision": "Rev. 1015",
+    "copyright": "North Sails"
+  },
+  "base": {
+    "description": "Base rig setup with mast centered laterally (upper shroud lengths adjusted until jib-halyard-to-sheer measurements match port/starboard). Upper shroud tension set to 22 and lower shroud tension set to 12 on a Loos PT-2 gauge. Headstay pulled taut down the front face of the mast; measured from a mark level with the top of the white band near the gooseneck down to the center of the bottom headstay pin (including toggles): 54 1/2 in. Guide covers three separate tension charts (Southern Spars mast w/ M2 or J2 mainsail, Selden mast, and SD-1 mainsail on any mast); the Southern Spars M2/J2 chart is transcribed below as the primary table.",
+    "uppers": "22 (PT-2)",
+    "lowers": "12 (PT-2)",
+    "rakeMm": null,
+    "forestayMm": null,
+    "gaugeType": "Loos PT-2",
+    "notes": "Headstay length measured taut: 54 1/2 in (guide's own unit is inches, not converted). Pre-bend (aft bend, measured from back of mast track to front of main halyard at the spreaders) should be 1 1/2 - 2 1/2 in; SD-1 main favors closer to 1 1/2 in, M2 main favors closer to 2 1/2 in. Selden-mast and SD-1-sail tension charts in the source give different base numbers (e.g. Selden uppers/lowers turns-from-base and a 1385 mm forestay reading at the base 8-10kt band; SD-1 base is 18/8 on PT-2) and are not transcribed into these bands."
+  },
+  "bands": [
+    {
+      "label": "<6 kt",
+      "twsMinKt": 0,
+      "twsMaxKt": 6,
+      "uppersTurns": -3,
+      "lowersTurns": -2,
+      "uppersGauge": 19,
+      "lowersGauge": "Loose",
+      "rakeMm": null,
+      "forestayMm": null,
+      "race": {
+        "backstay": null,
+        "mainsheet": null,
+        "traveller": "14 in - Max (Above Center)",
+        "cunningham": null,
+        "outhaul": "Loose",
+        "vang": "0%",
+        "jibLead": "4-5 holes showing in front of car",
+        "jibSheet": null,
+        "inhauler": "1-3 in from cabin house",
+        "jibHalyard": null
+      },
+      "targets": { "bsKt": null, "heelDeg": null, "leechTelltale": null },
+      "notes": "Southern Spars mast, M2/J2 sail designs table."
+    },
+    {
+      "label": "6-8 kt",
+      "twsMinKt": 6,
+      "twsMaxKt": 8,
+      "uppersTurns": -2,
+      "lowersTurns": -1,
+      "uppersGauge": 20,
+      "lowersGauge": 7,
+      "rakeMm": null,
+      "forestayMm": null,
+      "race": {
+        "backstay": null,
+        "mainsheet": null,
+        "traveller": "12-14 in (Above Center)",
+        "cunningham": null,
+        "outhaul": "Firm",
+        "vang": "Snug",
+        "jibLead": "5-6 holes showing in front of car",
+        "jibSheet": null,
+        "inhauler": "1-2 in from cabin house",
+        "jibHalyard": null
+      },
+      "targets": { "bsKt": null, "heelDeg": null, "leechTelltale": null },
+      "notes": "Southern Spars mast, M2/J2 sail designs table."
+    },
+    {
+      "label": "8-10 kt",
+      "twsMinKt": 8,
+      "twsMaxKt": 10,
+      "uppersTurns": 0,
+      "lowersTurns": 0,
+      "uppersGauge": 22,
+      "lowersGauge": 12,
+      "rakeMm": null,
+      "forestayMm": null,
+      "race": {
+        "backstay": null,
+        "mainsheet": null,
+        "traveller": "10-12 in (Above Center)",
+        "cunningham": null,
+        "outhaul": "75%",
+        "vang": "Snug-75%",
+        "jibLead": "5-6 holes showing in front of car",
+        "jibSheet": null,
+        "inhauler": "1-2 in from cabin house",
+        "jibHalyard": null
+      },
+      "targets": { "bsKt": null, "heelDeg": null, "leechTelltale": null },
+      "notes": "This is the BASE band (0 turns from base by definition). Southern Spars mast, M2/J2 sail designs table."
+    },
+    {
+      "label": "10-12 kt",
+      "twsMinKt": 10,
+      "twsMaxKt": 12,
+      "uppersTurns": 2,
+      "lowersTurns": 1,
+      "uppersGauge": 24,
+      "lowersGauge": 16,
+      "rakeMm": null,
+      "forestayMm": null,
+      "race": {
+        "backstay": null,
+        "mainsheet": null,
+        "traveller": "6-8 in (Above Center)",
+        "cunningham": null,
+        "outhaul": "95%",
+        "vang": "95%",
+        "jibLead": "5-6 holes showing in front of car",
+        "jibSheet": null,
+        "inhauler": "1.5-3 in from cabin house",
+        "jibHalyard": null
+      },
+      "targets": { "bsKt": null, "heelDeg": null, "leechTelltale": null },
+      "notes": "Southern Spars mast, M2/J2 sail designs table."
+    },
+    {
+      "label": "12-16 kt",
+      "twsMinKt": 12,
+      "twsMaxKt": 16,
+      "uppersTurns": 4,
+      "lowersTurns": 2,
+      "uppersGauge": 26,
+      "lowersGauge": 20,
+      "rakeMm": null,
+      "forestayMm": null,
+      "race": {
+        "backstay": null,
+        "mainsheet": null,
+        "traveller": "Center",
+        "cunningham": null,
+        "outhaul": "100%",
+        "vang": "100%",
+        "jibLead": "5-6 holes showing in front of car",
+        "jibSheet": null,
+        "inhauler": "2-3 in from cabin house",
+        "jibHalyard": null
+      },
+      "targets": { "bsKt": null, "heelDeg": null, "leechTelltale": null },
+      "notes": "Southern Spars mast, M2/J2 sail designs table."
+    },
+    {
+      "label": "16-20 kt",
+      "twsMinKt": 16,
+      "twsMaxKt": 20,
+      "uppersTurns": 6,
+      "lowersTurns": 3,
+      "uppersGauge": 28,
+      "lowersGauge": 24,
+      "rakeMm": null,
+      "forestayMm": null,
+      "race": {
+        "backstay": null,
+        "mainsheet": null,
+        "traveller": "4-6 in (Below Center)",
+        "cunningham": null,
+        "outhaul": "100%",
+        "vang": "100%",
+        "jibLead": "4-5 holes showing in front of car",
+        "jibSheet": null,
+        "inhauler": "2-4 in from cabin house",
+        "jibHalyard": null
+      },
+      "targets": { "bsKt": null, "heelDeg": null, "leechTelltale": null },
+      "notes": "Southern Spars mast, M2/J2 sail designs table."
+    },
+    {
+      "label": "20+ kt",
+      "twsMinKt": 20,
+      "twsMaxKt": null,
+      "uppersTurns": 6,
+      "lowersTurns": 5,
+      "uppersGauge": 28,
+      "lowersGauge": 28,
+      "rakeMm": null,
+      "forestayMm": null,
+      "race": {
+        "backstay": null,
+        "mainsheet": null,
+        "traveller": "4-6 in (Below Center)",
+        "cunningham": null,
+        "outhaul": "100%",
+        "vang": "100%",
+        "jibLead": "4-5 holes showing in front of car",
+        "jibSheet": null,
+        "inhauler": "No in-haul",
+        "jibHalyard": null
+      },
+      "targets": { "bsKt": null, "heelDeg": null, "leechTelltale": null },
+      "notes": "Southern Spars mast, M2/J2 sail designs table."
+    }
+  ],
+  "downwind": {
+    "notes": "Spinnaker set out the main hatch, between shrouds and mast, to keep clear of the water while hoisting. Tack pulled tight to end of fully extended bowsprit; before planning/deeper sailing the tack can be eased 4-6 in to help the sail rotate to windward. Inside gybe (spinnaker passed between its own luff and the headstay) is the standard technique. Three douse types used depending on approach: windward douse (port-tack approach to a port mark or starboard-tack approach to a starboard mark), leeward douse (starboard-tack approach to a starboard mark), and gybe/\"Mexican\" douse (starboard-tack approach to a port mark without room to complete the gybe first).",
+    "controls": {}
+  },
+  "crew": { "recommendedKg": null, "notes": null },
+  "verbatimNotes": [
+    "At max upwind trim, mainsail leech telltales at the top of the main should be stalling 25-30% of the time; in light wind or when building speed they should be flowing 80-100% of the time.",
+    "Jib leech telltales (upper leech) should be flowing when the jib is trimmed properly for upwind; in 10+ kt flat water the jib leech can sheet to the inside 18 in spreader mark while the telltale still flows, while light/lumpy conditions favor the outside 22 in spreader mark.",
+    "Jib halyard: more tension = flatter sail, less tension = deeper sail. In light air, small wrinkles ~4-8 in aft of the luff are the target; as wind builds, tighten just to the point the wrinkles disappear.",
+    "Jib lead car forward = tighter leech/rounder foot; aft = open leech/flatter foot. In-hauler: more = tighter leech/rounder foot; less = open leech/flatter foot.",
+    "Mainsail lowest batten should hook slightly to windward of the boom when the mainsheet is trimmed properly (indicator of correct outhaul tension)."
+  ]
+}

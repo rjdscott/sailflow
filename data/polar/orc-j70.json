@@ -1,0 +1,1661 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "id": "orc-speed-guide-j70",
+    "title": "ORC Speed Guide - J/70 Class",
+    "url": "https://www.carpediemsailingteam.com/app/download/16137868/Speed_Guide_J70_Class.pdf",
+    "retrieved": "2026-08-25",
+    "vppVersion": "VPP 2011 1.02",
+    "issued": "2012-04-30"
+  },
+  "twsKt": [
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    20
+  ],
+  "rows": [
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "vmgUp",
+      "twaDeg": 44.1,
+      "bsKt": 4.15,
+      "vmgKt": 2.98,
+      "heelDeg": 3.0
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 52,
+      "bsKt": 4.58,
+      "vmgKt": 2.82,
+      "heelDeg": 3.1
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 4.83,
+      "vmgKt": 2.41,
+      "heelDeg": 3.0
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 4.98,
+      "vmgKt": 1.7,
+      "heelDeg": 2.8
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 5.02,
+      "vmgKt": 1.3,
+      "heelDeg": 2.6
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 5.02,
+      "vmgKt": 0.87,
+      "heelDeg": 2.5
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 4.93,
+      "vmgKt": 0.0,
+      "heelDeg": 2.1
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 4.34,
+      "vmgKt": 1.48,
+      "heelDeg": 1.3
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 3.83,
+      "vmgKt": 1.92,
+      "heelDeg": 0.9
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 3.22,
+      "vmgKt": 2.28,
+      "heelDeg": 0.6
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 2.9,
+      "vmgKt": 2.51,
+      "heelDeg": 0.4
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 2.72,
+      "vmgKt": 2.63,
+      "heelDeg": 0.3
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 2.65,
+      "vmgKt": 2.65,
+      "heelDeg": 0.1
+    },
+    {
+      "twsKt": 6,
+      "sail": "jib",
+      "kind": "vmgDn",
+      "twaDeg": 177.1,
+      "bsKt": 2.66,
+      "vmgKt": 2.65,
+      "heelDeg": 0.1
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "vmgUp",
+      "twaDeg": 40.7,
+      "bsKt": 4.8,
+      "vmgKt": 3.64,
+      "heelDeg": 4.5
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 52,
+      "bsKt": 5.45,
+      "vmgKt": 3.35,
+      "heelDeg": 4.5
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 5.72,
+      "vmgKt": 2.86,
+      "heelDeg": 4.3
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 5.88,
+      "vmgKt": 2.01,
+      "heelDeg": 3.9
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 5.91,
+      "vmgKt": 1.53,
+      "heelDeg": 3.6
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 5.91,
+      "vmgKt": 1.03,
+      "heelDeg": 3.4
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 5.82,
+      "vmgKt": 0.0,
+      "heelDeg": 2.8
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 5.2,
+      "vmgKt": 1.78,
+      "heelDeg": 1.7
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 4.8,
+      "vmgKt": 2.4,
+      "heelDeg": 1.3
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 4.18,
+      "vmgKt": 2.96,
+      "heelDeg": 0.9
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 3.8,
+      "vmgKt": 3.29,
+      "heelDeg": 0.7
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 3.59,
+      "vmgKt": 3.47,
+      "heelDeg": 0.5
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 3.51,
+      "vmgKt": 3.51,
+      "heelDeg": 0.1
+    },
+    {
+      "twsKt": 8,
+      "sail": "jib",
+      "kind": "vmgDn",
+      "twaDeg": 178.0,
+      "bsKt": 3.51,
+      "vmgKt": 3.51,
+      "heelDeg": 0.2
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "vmgUp",
+      "twaDeg": 41.2,
+      "bsKt": 5.51,
+      "vmgKt": 4.15,
+      "heelDeg": 11.8
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 52,
+      "bsKt": 6.1,
+      "vmgKt": 3.75,
+      "heelDeg": 11.2
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 6.3,
+      "vmgKt": 3.15,
+      "heelDeg": 9.0
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 6.43,
+      "vmgKt": 2.2,
+      "heelDeg": 5.6
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 6.45,
+      "vmgKt": 1.67,
+      "heelDeg": 4.9
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 6.45,
+      "vmgKt": 1.12,
+      "heelDeg": 4.4
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 6.37,
+      "vmgKt": 0.0,
+      "heelDeg": 3.5
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 5.91,
+      "vmgKt": 2.02,
+      "heelDeg": 2.2
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 5.52,
+      "vmgKt": 2.76,
+      "heelDeg": 1.7
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 4.96,
+      "vmgKt": 3.51,
+      "heelDeg": 1.2
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 4.63,
+      "vmgKt": 4.01,
+      "heelDeg": 1.0
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 4.42,
+      "vmgKt": 4.27,
+      "heelDeg": 0.6
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 4.33,
+      "vmgKt": 4.33,
+      "heelDeg": 0.2
+    },
+    {
+      "twsKt": 10,
+      "sail": "jib",
+      "kind": "vmgDn",
+      "twaDeg": 178.3,
+      "bsKt": 4.33,
+      "vmgKt": 4.33,
+      "heelDeg": 0.3
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "vmgUp",
+      "twaDeg": 39.4,
+      "bsKt": 5.79,
+      "vmgKt": 4.47,
+      "heelDeg": 19.7
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 52,
+      "bsKt": 6.47,
+      "vmgKt": 3.98,
+      "heelDeg": 21.9
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 6.75,
+      "vmgKt": 3.37,
+      "heelDeg": 20.8
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 6.91,
+      "vmgKt": 2.36,
+      "heelDeg": 13.9
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 6.93,
+      "vmgKt": 1.79,
+      "heelDeg": 10.5
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 6.92,
+      "vmgKt": 1.2,
+      "heelDeg": 7.3
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 6.82,
+      "vmgKt": 0.0,
+      "heelDeg": 4.4
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 6.38,
+      "vmgKt": 2.18,
+      "heelDeg": 2.6
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 6.1,
+      "vmgKt": 3.05,
+      "heelDeg": 2.1
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 5.65,
+      "vmgKt": 3.99,
+      "heelDeg": 1.6
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 5.31,
+      "vmgKt": 4.6,
+      "heelDeg": 1.3
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 5.1,
+      "vmgKt": 4.93,
+      "heelDeg": 0.9
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 5.02,
+      "vmgKt": 5.02,
+      "heelDeg": 0.3
+    },
+    {
+      "twsKt": 12,
+      "sail": "jib",
+      "kind": "vmgDn",
+      "twaDeg": 178.9,
+      "bsKt": 5.02,
+      "vmgKt": 5.02,
+      "heelDeg": 0.3
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "vmgUp",
+      "twaDeg": 38.0,
+      "bsKt": 5.89,
+      "vmgKt": 4.64,
+      "heelDeg": 20.8
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 52,
+      "bsKt": 6.63,
+      "vmgKt": 4.08,
+      "heelDeg": 22.7
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 6.93,
+      "vmgKt": 3.46,
+      "heelDeg": 23.1
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 7.27,
+      "vmgKt": 2.49,
+      "heelDeg": 23.3
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 7.43,
+      "vmgKt": 1.92,
+      "heelDeg": 21.8
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 7.46,
+      "vmgKt": 1.3,
+      "heelDeg": 15.9
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 7.29,
+      "vmgKt": 0.0,
+      "heelDeg": 6.5
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 6.78,
+      "vmgKt": 2.32,
+      "heelDeg": 3.2
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 6.52,
+      "vmgKt": 3.26,
+      "heelDeg": 2.5
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 6.17,
+      "vmgKt": 4.36,
+      "heelDeg": 2.0
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 5.92,
+      "vmgKt": 5.13,
+      "heelDeg": 1.6
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 5.74,
+      "vmgKt": 5.54,
+      "heelDeg": 1.1
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 5.65,
+      "vmgKt": 5.65,
+      "heelDeg": 0.4
+    },
+    {
+      "twsKt": 14,
+      "sail": "jib",
+      "kind": "vmgDn",
+      "twaDeg": 179.0,
+      "bsKt": 5.65,
+      "vmgKt": 5.65,
+      "heelDeg": 0.4
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "vmgUp",
+      "twaDeg": 37.1,
+      "bsKt": 5.95,
+      "vmgKt": 4.75,
+      "heelDeg": 21.5
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 52,
+      "bsKt": 6.74,
+      "vmgKt": 4.15,
+      "heelDeg": 23.2
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 7.05,
+      "vmgKt": 3.52,
+      "heelDeg": 23.5
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 7.43,
+      "vmgKt": 2.54,
+      "heelDeg": 23.6
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 7.63,
+      "vmgKt": 1.98,
+      "heelDeg": 23.6
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 7.83,
+      "vmgKt": 1.36,
+      "heelDeg": 23.7
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 7.91,
+      "vmgKt": 0.0,
+      "heelDeg": 14.0
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 7.21,
+      "vmgKt": 2.47,
+      "heelDeg": 3.8
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 6.92,
+      "vmgKt": 3.46,
+      "heelDeg": 3.0
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 6.59,
+      "vmgKt": 4.66,
+      "heelDeg": 2.4
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 6.38,
+      "vmgKt": 5.53,
+      "heelDeg": 1.9
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 6.24,
+      "vmgKt": 6.02,
+      "heelDeg": 1.4
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 6.17,
+      "vmgKt": 6.17,
+      "heelDeg": 0.5
+    },
+    {
+      "twsKt": 16,
+      "sail": "jib",
+      "kind": "vmgDn",
+      "twaDeg": 179.4,
+      "bsKt": 6.17,
+      "vmgKt": 6.17,
+      "heelDeg": 0.5
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "vmgUp",
+      "twaDeg": 38.3,
+      "bsKt": 5.94,
+      "vmgKt": 4.66,
+      "heelDeg": 24.2
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 52,
+      "bsKt": 6.74,
+      "vmgKt": 4.15,
+      "heelDeg": 24.9
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 7.13,
+      "vmgKt": 3.56,
+      "heelDeg": 24.9
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 7.61,
+      "vmgKt": 2.6,
+      "heelDeg": 24.2
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 7.85,
+      "vmgKt": 2.03,
+      "heelDeg": 24.2
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 8.1,
+      "vmgKt": 1.41,
+      "heelDeg": 24.2
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 8.66,
+      "vmgKt": 0.0,
+      "heelDeg": 24.1
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 8.36,
+      "vmgKt": 2.86,
+      "heelDeg": 7.0
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 7.88,
+      "vmgKt": 3.94,
+      "heelDeg": 4.3
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 7.45,
+      "vmgKt": 5.27,
+      "heelDeg": 3.4
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 7.21,
+      "vmgKt": 6.25,
+      "heelDeg": 2.7
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 7.06,
+      "vmgKt": 6.82,
+      "heelDeg": 1.9
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 6.99,
+      "vmgKt": 6.99,
+      "heelDeg": 0.8
+    },
+    {
+      "twsKt": 20,
+      "sail": "jib",
+      "kind": "vmgDn",
+      "twaDeg": 179.3,
+      "bsKt": 7.0,
+      "vmgKt": 6.99,
+      "heelDeg": 0.8
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 4.01,
+      "vmgKt": 2.0,
+      "heelDeg": 14.4
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 4.78,
+      "vmgKt": 1.64,
+      "heelDeg": 15.2
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 5.05,
+      "vmgKt": 1.31,
+      "heelDeg": 15.5
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 5.26,
+      "vmgKt": 0.91,
+      "heelDeg": 15.6
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 5.5,
+      "vmgKt": 0.0,
+      "heelDeg": 15.5
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 5.4,
+      "vmgKt": 1.85,
+      "heelDeg": 14.1
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 5.28,
+      "vmgKt": 2.64,
+      "heelDeg": 12.9
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 4.69,
+      "vmgKt": 3.32,
+      "heelDeg": 12.1
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 3.78,
+      "vmgKt": 3.28,
+      "heelDeg": 11.7
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 3.18,
+      "vmgKt": 3.07,
+      "heelDeg": 11.5
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 2.97,
+      "vmgKt": 2.97,
+      "heelDeg": 11.5
+    },
+    {
+      "twsKt": 6,
+      "sail": "asym",
+      "kind": "vmgDn",
+      "twaDeg": 141.9,
+      "bsKt": 4.32,
+      "vmgKt": 3.4,
+      "heelDeg": 11.8
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 5.07,
+      "vmgKt": 2.53,
+      "heelDeg": 16.4
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 5.87,
+      "vmgKt": 2.01,
+      "heelDeg": 18.9
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 6.08,
+      "vmgKt": 1.57,
+      "heelDeg": 21.8
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 6.24,
+      "vmgKt": 1.08,
+      "heelDeg": 22.2
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 6.4,
+      "vmgKt": 0.0,
+      "heelDeg": 17.5
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 6.41,
+      "vmgKt": 2.19,
+      "heelDeg": 15.9
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 6.31,
+      "vmgKt": 3.15,
+      "heelDeg": 14.6
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 5.74,
+      "vmgKt": 4.06,
+      "heelDeg": 12.5
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 4.87,
+      "vmgKt": 4.21,
+      "heelDeg": 11.8
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 4.19,
+      "vmgKt": 4.05,
+      "heelDeg": 11.6
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 3.93,
+      "vmgKt": 3.93,
+      "heelDeg": 11.5
+    },
+    {
+      "twsKt": 8,
+      "sail": "asym",
+      "kind": "vmgDn",
+      "twaDeg": 144.8,
+      "bsKt": 5.19,
+      "vmgKt": 4.24,
+      "heelDeg": 12.0
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 5.68,
+      "vmgKt": 2.84,
+      "heelDeg": 22.2
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 6.21,
+      "vmgKt": 2.13,
+      "heelDeg": 23.0
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 6.4,
+      "vmgKt": 1.66,
+      "heelDeg": 23.3
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 6.54,
+      "vmgKt": 1.14,
+      "heelDeg": 23.3
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 6.74,
+      "vmgKt": 0.0,
+      "heelDeg": 23.4
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 7.23,
+      "vmgKt": 2.47,
+      "heelDeg": 17.3
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 6.99,
+      "vmgKt": 3.49,
+      "heelDeg": 15.7
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 6.48,
+      "vmgKt": 4.58,
+      "heelDeg": 13.0
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 5.75,
+      "vmgKt": 4.98,
+      "heelDeg": 12.0
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 5.07,
+      "vmgKt": 4.9,
+      "heelDeg": 11.7
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 4.82,
+      "vmgKt": 4.82,
+      "heelDeg": 11.5
+    },
+    {
+      "twsKt": 10,
+      "sail": "asym",
+      "kind": "vmgDn",
+      "twaDeg": 150.7,
+      "bsKt": 5.72,
+      "vmgKt": 4.98,
+      "heelDeg": 12.0
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 5.92,
+      "vmgKt": 2.96,
+      "heelDeg": 22.4
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 6.42,
+      "vmgKt": 2.19,
+      "heelDeg": 23.1
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 6.59,
+      "vmgKt": 1.7,
+      "heelDeg": 23.3
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 6.72,
+      "vmgKt": 1.17,
+      "heelDeg": 23.3
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 6.96,
+      "vmgKt": 0.0,
+      "heelDeg": 23.3
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 7.85,
+      "vmgKt": 2.69,
+      "heelDeg": 24.1
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 7.76,
+      "vmgKt": 3.88,
+      "heelDeg": 16.8
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 7.09,
+      "vmgKt": 5.01,
+      "heelDeg": 14.0
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 6.38,
+      "vmgKt": 5.53,
+      "heelDeg": 12.2
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 5.84,
+      "vmgKt": 5.64,
+      "heelDeg": 11.7
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 5.57,
+      "vmgKt": 5.57,
+      "heelDeg": 11.5
+    },
+    {
+      "twsKt": 12,
+      "sail": "asym",
+      "kind": "vmgDn",
+      "twaDeg": 162.5,
+      "bsKt": 5.92,
+      "vmgKt": 5.64,
+      "heelDeg": 11.8
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 6.07,
+      "vmgKt": 3.04,
+      "heelDeg": 22.5
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 6.55,
+      "vmgKt": 2.24,
+      "heelDeg": 23.1
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 6.71,
+      "vmgKt": 1.74,
+      "heelDeg": 23.3
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 6.84,
+      "vmgKt": 1.19,
+      "heelDeg": 23.3
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 7.21,
+      "vmgKt": 0.0,
+      "heelDeg": 23.2
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 8.24,
+      "vmgKt": 2.82,
+      "heelDeg": 23.8
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 8.55,
+      "vmgKt": 4.27,
+      "heelDeg": 23.8
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 7.8,
+      "vmgKt": 5.52,
+      "heelDeg": 15.2
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 6.91,
+      "vmgKt": 5.98,
+      "heelDeg": 12.5
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 6.41,
+      "vmgKt": 6.19,
+      "heelDeg": 11.8
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 6.19,
+      "vmgKt": 6.19,
+      "heelDeg": 11.6
+    },
+    {
+      "twsKt": 14,
+      "sail": "asym",
+      "kind": "vmgDn",
+      "twaDeg": 172.0,
+      "bsKt": 6.26,
+      "vmgKt": 6.2,
+      "heelDeg": 11.7
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 6.18,
+      "vmgKt": 3.09,
+      "heelDeg": 22.5
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 6.65,
+      "vmgKt": 2.27,
+      "heelDeg": 23.1
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 6.8,
+      "vmgKt": 1.76,
+      "heelDeg": 23.2
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 6.96,
+      "vmgKt": 1.21,
+      "heelDeg": 23.1
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 7.49,
+      "vmgKt": 0.0,
+      "heelDeg": 23.2
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 8.59,
+      "vmgKt": 2.94,
+      "heelDeg": 23.8
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 9.08,
+      "vmgKt": 4.54,
+      "heelDeg": 23.8
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 8.75,
+      "vmgKt": 6.18,
+      "heelDeg": 15.9
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 7.49,
+      "vmgKt": 6.48,
+      "heelDeg": 12.8
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 6.91,
+      "vmgKt": 6.67,
+      "heelDeg": 12.0
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 6.69,
+      "vmgKt": 6.69,
+      "heelDeg": 11.6
+    },
+    {
+      "twsKt": 16,
+      "sail": "asym",
+      "kind": "vmgDn",
+      "twaDeg": 174.0,
+      "bsKt": 6.73,
+      "vmgKt": 6.7,
+      "heelDeg": 11.7
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 60,
+      "bsKt": 6.29,
+      "vmgKt": 3.14,
+      "heelDeg": 22.4
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 70,
+      "bsKt": 6.74,
+      "vmgKt": 2.31,
+      "heelDeg": 22.9
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 75,
+      "bsKt": 6.93,
+      "vmgKt": 1.79,
+      "heelDeg": 22.9
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 80,
+      "bsKt": 7.19,
+      "vmgKt": 1.25,
+      "heelDeg": 22.8
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 90,
+      "bsKt": 8.01,
+      "vmgKt": 0.0,
+      "heelDeg": 23.3
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 110,
+      "bsKt": 9.38,
+      "vmgKt": 3.21,
+      "heelDeg": 23.8
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 120,
+      "bsKt": 10.19,
+      "vmgKt": 5.09,
+      "heelDeg": 23.8
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 135,
+      "bsKt": 11.51,
+      "vmgKt": 8.14,
+      "heelDeg": 23.8
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 150,
+      "bsKt": 9.14,
+      "vmgKt": 7.91,
+      "heelDeg": 14.4
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 165,
+      "bsKt": 8.07,
+      "vmgKt": 7.8,
+      "heelDeg": 12.3
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "angle",
+      "twaDeg": 180,
+      "bsKt": 7.75,
+      "vmgKt": 7.75,
+      "heelDeg": 11.7
+    },
+    {
+      "twsKt": 20,
+      "sail": "asym",
+      "kind": "vmgDn",
+      "twaDeg": 137.1,
+      "bsKt": 11.53,
+      "vmgKt": 8.45,
+      "heelDeg": 19.0
+    }
+  ],
+  "notes": "Transcribed via pdftotext -layout from the ORC Speed Guide PDF (J/70 ONE DESIGN, Sail No USA 1, Issued 4/30/2012, VPP 2011 1.02, (c) Offshore Racing Congress 2011). The guide prints three polar tables per TWS: 'Best Performance' (combined optimum of jib and asymmetric spinnaker), 'Jib', and 'Asymmetric Spinnaker on Centerline'. Only the two sail-specific tables (Jib, Asymmetric Spinnaker on CL) are included here; the 'Best Performance' table is the per-angle max of these two and was omitted as redundant. Column mapping: guide's BTV -> bsKt, VMG -> vmgKt, Heel -> heelDeg. Rows marked '(b)' in the guide (optimal upwind VMG angle) are kind=vmgUp; rows marked '(r)' (optimal downwind VMG angle) are kind=vmgDn; all other printed TWA rows are kind=angle. The Jib table's '(r)' row is the VMG-optimal angle for jib-only sailing (close to 180 deg, not a true reaching/running sail choice) as printed by the guide. AWS, AWA, Reef, and Flat columns from the guide were not carried into this file."
+}
