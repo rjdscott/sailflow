@@ -1,0 +1,14 @@
+dist
+node_modules
+pnpm-lock.yaml
+docs
+validation/report.md
+
+# owned by other agents / template surfaces, not part of this app scaffold
+.github
+.claude
+.idea
+scripts
+tests
+CLAUDE.md
+README.md
