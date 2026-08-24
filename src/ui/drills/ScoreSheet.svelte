@@ -27,7 +27,7 @@
   }
 </script>
 
-<section class="sheet">
+<section class="card sheet">
   <div class="head">
     <span class="glyph" aria-hidden="true">{MEDAL[score.medal].glyph}</span>
     <div>
@@ -67,9 +67,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    padding: var(--space-3);
-    background: var(--surface);
-    border-radius: var(--radius);
   }
 
   .head {
@@ -104,11 +101,14 @@
     color: var(--ink);
   }
 
+  /* Same quiet warn strip as the drill view's C-tier banner. */
   .note {
+    padding: var(--space-2) var(--space-3);
+    border-inline-start: 3px solid var(--warn);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
     font-size: var(--text-xs);
     color: var(--ink-2);
-    border-left: 2px dashed var(--ink-2);
-    padding-left: var(--space-2);
   }
 
   .deltas {

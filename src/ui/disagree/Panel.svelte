@@ -118,9 +118,9 @@
   };
 </script>
 
-<section class="panel" aria-busy={busy}>
+<section class="panel card" aria-busy={busy}>
   <header>
-    <h2>Model vs guides</h2>
+    <h2 class="section-title">Model vs guides</h2>
     {#if calibrated}
       <span class="chip" title="The model was fitted to North's base settings in this band."
         >calibrated here</span
@@ -290,7 +290,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    padding: var(--space-4);
   }
 
   header {
@@ -300,10 +299,8 @@
     flex-wrap: wrap;
   }
 
-  h2 {
+  .section-title {
     margin: 0;
-    font-size: var(--text-lg);
-    color: var(--ink);
   }
 
   .chip {
@@ -324,7 +321,7 @@
   .grid {
     display: flex;
     flex-direction: column;
-    background: var(--surface);
+    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
     border-radius: var(--radius);
     overflow: hidden;
   }
@@ -338,7 +335,7 @@
   }
 
   .row + .row {
-    border-top: 1px solid var(--bg);
+    border-top: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
   }
 
   .head {
@@ -385,7 +382,7 @@
   }
 
   .notes {
-    background: var(--surface);
+    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
     border-radius: var(--radius);
     padding: var(--space-2) var(--space-3);
     font-size: var(--text-sm);

@@ -78,7 +78,7 @@ wrapped numerals. Desktop is a real layout, not a stretched phone column.
 
 - [x] Tokens + shell: `--line`, `--muted`, breakpoints, left rail on `lg`, `.screen`/`.card` primitives, focus rings [O]
 - [x] Race screen rebuilt to spec incl. SailSections/RigElevation/PlanView redraw [O]
-- [ ] Dock, Log, Drills, More desktop layouts to spec [O]
+- [x] Dock, Log, Drills, More desktop layouts to spec [O]
 - [ ] Browser verification at 390 and 1440, light and dark, all five screens; defects logged here
 - [ ] `make check` green; deploy; live check
 
@@ -95,6 +95,17 @@ pnpm build && pnpm preview   # 390×844 and 1440×900, both themes, every screen
 
 ## Progress log
 
+- 2026-08-25 — Dock, Log, Drills and More rebuilt on `.screen`/`.card`/
+  `.section-title`/`.hero-number`. Dock: regret hero + suggest + per-TWS table
+  in primary, forecast/rig/commit in secondary, commit sticky on `sm`. Log:
+  entry cards, inline editor from 1024 px (Sheet below it). Drills: 1/2/3
+  column card grid, drill view on `.screen`, C tier as a quiet warn strip.
+  More: Appearance/Data/About cards. Screens carry a temporary
+  `src/ui/_layout-fallback.css` with those five classes until the shell PR
+  defines them in `app.css`; delete it then. New pure helpers
+  `sparklineTicks` (dock/logic) and `windLine`/`SEA_LABELS` (ui/format), with
+  tests. Desktop widths not yet browser-verified from this worktree: `app.css`
+  still caps `#app` at 480 px until the shell lands.
 - 2026-08-25 — Phase added after owner review of the live Race screen (clipped sections, colliding labels, dead whitespace) and the requirement that desktop study sessions are first-class. Spec above written by Fable; executed by two Opus agents in worktrees (shell + Race; other screens).
 - 2026-08-25 — Shell + Race shipped. Tokens gained `--line`, `--muted`,
   `--font-mono`, `--rail-w`, `--content-max`, `--gutter`; `src/app.css` now

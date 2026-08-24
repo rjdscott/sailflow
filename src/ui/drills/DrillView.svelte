@@ -4,7 +4,7 @@
   import ScoreSheet from './ScoreSheet.svelte';
   import { RACE_KEYS, type Drill } from '../../lib/drills';
   import { drills } from './store.svelte';
-  import { fmt } from '../format';
+  import { fmt, SEA_LABELS } from '../format';
   import type { ControlSpec, DownControls, RaceControls } from '../../core/types';
   import j70 from '../../../data/boats/j70.json';
 
@@ -12,9 +12,16 @@
 
   const SPECS = j70.controls as Record<string, ControlSpec>;
 
-  const SEA = ['flat', 'ripple', 'chop', 'short steep chop', 'waves'];
-
   const lockedKeys = $derived(RACE_KEYS.filter((k) => !drill.free.includes(k)));
+
+  const condition = $derived(
+    [
+      `${drill.condition.twsKt} kt`,
+      SEA_LABELS[drill.condition.seaState],
+      `TWA ${drill.condition.twaDeg}°`,
+      drill.condition.sailset === 'asym' ? 'gennaker' : 'jib',
+    ].join(' · '),
+  );
 
   // Live solve: any control move re-requests `trimmed`, debounced in the store.
   $effect(() => {
@@ -36,124 +43,137 @@
   }
 </script>
 
-<section class="view">
+<header class="head">
   <button type="button" class="back" onclick={onback}>← All drills</button>
+  <h2>{drill.title}</h2>
+  <p class="cond tabular-nums">{condition}</p>
+</header>
 
-  <header>
-    <h2>{drill.title}</h2>
-    <p class="cond">
-      {drill.condition.twsKt} kt · {SEA[drill.condition.seaState]} · TWA {drill.condition.twaDeg}° ·
-      {drill.condition.sailset === 'asym' ? 'gennaker' : 'jib'}
-    </p>
-    <p class="brief">{drill.brief}</p>
+<div class="screen">
+  <div class="col-primary">
     {#if drill.cTier}
-      <p class="banner">
+      <p class="c-strip">
         Tier C: for this drill the model gives the direction of the effect only, not a number worth
         quoting. Use it to rank two setups, not to measure one.
       </p>
     {/if}
-  </header>
 
-  {#if drills.result}
-    <div class="readouts">
-      <Readout
-        label="Boat speed"
-        value={drills.result.bsKt.value}
-        tier={drills.result.bsKt.tier}
-        unit="kt"
-        size="lg"
-      />
-      <Readout
-        label="VMG"
-        value={drills.result.vmgKt.value}
-        tier={drills.result.vmgKt.tier}
-        unit="kt"
-        size="lg"
-      />
-      <Readout
-        label="Heel"
-        value={drills.result.heelDeg.value}
-        tier={drills.result.heelDeg.tier}
-        unit="°"
-        decimals={0}
-      />
-    </div>
-  {/if}
+    <section class="card">
+      <h3 class="section-title">Live</h3>
+      {#if drills.result}
+        <div class="readouts">
+          <Readout
+            label="Boat speed"
+            value={drills.result.bsKt.value}
+            tier={drills.result.bsKt.tier}
+            unit="kt"
+            size="lg"
+            decimals={2}
+          />
+          <Readout
+            label="VMG"
+            value={drills.result.vmgKt.value}
+            tier={drills.result.vmgKt.tier}
+            unit="kt"
+            size="lg"
+            decimals={2}
+          />
+          <Readout
+            label="Heel"
+            value={drills.result.heelDeg.value}
+            tier={drills.result.heelDeg.tier}
+            unit="°"
+            decimals={0}
+          />
+        </div>
+      {:else}
+        <p class="quiet">Solving…</p>
+      {/if}
+    </section>
 
-  <div class="controls">
-    {#each drill.free as key (key)}
-      <Slider
-        label={spec(key).label}
-        bind:value={() => raceValue(key), (v: number) => (drills.controls[key] = v)}
-        min={spec(key).min}
-        max={spec(key).max}
-        step={spec(key).step}
-        unit={spec(key).unit}
-        decimals={spec(key).step < 1 ? 1 : 0}
+    <section class="card">
+      <h3 class="section-title">Coach</h3>
+      <p class="brief">{drill.brief}</p>
+      <p class="quiet">{drill.hint}</p>
+    </section>
+
+    {#if drills.score}
+      <ScoreSheet
+        score={drills.score}
+        cTier={drill.cTier}
+        ontryagain={() => drills.reset()}
+        onnext={() => drills.next()}
       />
-    {/each}
-    {#each drill.freeDown ?? [] as key (key)}
-      <Slider
-        label={spec(key).label}
-        bind:value={
-          () => downValue(key),
-          (v: number) => {
-            if (drills.down) drills.down[key] = v;
-          }
-        }
-        min={spec(key).min}
-        max={spec(key).max}
-        step={spec(key).step}
-        unit={spec(key).unit}
-        decimals={0}
-      />
-    {/each}
+    {/if}
   </div>
 
-  <details class="locked">
-    <summary>Locked for this drill ({lockedKeys.length})</summary>
-    <ul>
-      {#each lockedKeys as key (key)}
-        <li>
-          <span>{spec(key).label}</span>
-          <span class="tabular-nums"
-            >{fmt(raceValue(key), spec(key).step < 1 ? 1 : 0, spec(key).unit)}</span
-          >
-        </li>
+  <div class="col-secondary">
+    <section class="card">
+      <h3 class="section-title">Controls</h3>
+
+      {#each drill.free as key (key)}
+        <Slider
+          label={spec(key).label}
+          bind:value={() => raceValue(key), (v: number) => (drills.controls[key] = v)}
+          min={spec(key).min}
+          max={spec(key).max}
+          step={spec(key).step}
+          unit={spec(key).unit}
+          decimals={spec(key).step < 1 ? 1 : 0}
+        />
       {/each}
-    </ul>
-  </details>
+      {#each drill.freeDown ?? [] as key (key)}
+        <Slider
+          label={spec(key).label}
+          bind:value={
+            () => downValue(key),
+            (v: number) => {
+              if (drills.down) drills.down[key] = v;
+            }
+          }
+          min={spec(key).min}
+          max={spec(key).max}
+          step={spec(key).step}
+          unit={spec(key).unit}
+          decimals={0}
+        />
+      {/each}
 
-  <p class="hint">{drill.hint}</p>
+      <details class="locked">
+        <summary>Locked for this drill ({lockedKeys.length})</summary>
+        <ul>
+          {#each lockedKeys as key (key)}
+            <li>
+              <span>{spec(key).label}</span>
+              <span class="tabular-nums"
+                >{fmt(raceValue(key), spec(key).step < 1 ? 1 : 0, spec(key).unit)}</span
+              >
+            </li>
+          {/each}
+        </ul>
+      </details>
 
-  {#if drills.score}
-    <ScoreSheet
-      score={drills.score}
-      cTier={drill.cTier}
-      ontryagain={() => drills.reset()}
-      onnext={() => drills.next()}
-    />
-  {:else}
-    <button
-      type="button"
-      class="check"
-      disabled={!drills.result || drills.checking}
-      onclick={() => drills.check()}
-    >
-      Check
-    </button>
-  {/if}
-</section>
+      {#if !drills.score}
+        <button
+          type="button"
+          class="check"
+          disabled={!drills.result || drills.checking}
+          onclick={() => drills.check()}
+        >
+          Check
+        </button>
+      {/if}
+    </section>
+  </div>
+</div>
 
 <style>
-  .view {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
+  .head {
+    margin-block-end: var(--space-4);
   }
 
   .back {
-    align-self: flex-start;
+    display: block;
     background: none;
     border: none;
     color: var(--accent);
@@ -165,38 +185,43 @@
 
   h2 {
     margin: 0;
-    font-size: var(--text-xl);
-  }
-
-  .cond,
-  .brief,
-  .hint,
-  .banner {
-    margin: var(--space-1) 0 0;
+    font-size: var(--text-lg);
   }
 
   .cond {
+    margin: var(--space-1) 0 0;
     font-size: var(--text-xs);
     color: var(--ink-2);
   }
 
-  .brief {
-    font-size: var(--text-sm);
-    color: var(--ink);
-  }
-
-  .banner {
+  /* Quiet warn strip, not an alert: a C tier is a caveat on the number, not a
+     failure. */
+  .c-strip {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border-inline-start: 3px solid var(--warn);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: color-mix(in srgb, var(--warn) 12%, transparent);
     font-size: var(--text-xs);
     color: var(--ink-2);
-    border: 1px dashed var(--ink-2);
-    border-radius: var(--radius);
-    padding: var(--space-2);
   }
 
   .readouts {
     display: flex;
     gap: var(--space-6);
     flex-wrap: wrap;
+  }
+
+  .brief {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--ink);
+  }
+
+  .quiet {
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
   }
 
   .locked {
@@ -225,18 +250,16 @@
     padding-block: var(--space-1);
   }
 
-  .hint {
-    font-size: var(--text-xs);
-    color: var(--ink-2);
-  }
-
   .check {
+    width: 100%;
     min-height: var(--hit-min);
+    margin-block-start: var(--space-2);
     border-radius: var(--radius);
     background: var(--accent);
     color: var(--on-accent);
     border: 1px solid var(--accent);
     font-size: var(--text-md);
+    font-weight: 600;
     cursor: pointer;
   }
 

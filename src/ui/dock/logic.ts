@@ -143,6 +143,33 @@ export function sparklinePath(points: DockRegret[], w = 88, h = 24): string {
     .join(' ');
 }
 
+export interface SparkTick {
+  /** x in the same user units as `sparklinePath`'s `w`. */
+  x: number;
+  /** Wind speed, whole knots, no unit — the axis carries the unit once. */
+  label: string;
+  /** So the first and last labels sit inside the box instead of overhanging. */
+  anchor: 'start' | 'middle' | 'end';
+}
+
+/**
+ * x-axis ticks for the sparkline: first, middle and last wind speed. Three is
+ * the most that fits under an 88–240 px track at 12 px without colliding.
+ */
+export function sparklineTicks(points: DockRegret[], w = 88): SparkTick[] {
+  const pts = points.filter((p) => Number.isFinite(p.regretSPerMile));
+  if (pts.length === 0) return [];
+  if (pts.length === 1) return [{ x: 0, label: fmt(pts[0].twsKt, 0), anchor: 'start' }];
+  const last = pts.length - 1;
+  const dx = w / last;
+  const idx = pts.length >= 3 ? [0, last >> 1, last] : [0, last];
+  return idx.map((i, n) => ({
+    x: round(i * dx, 2),
+    label: fmt(pts[i].twsKt, 0),
+    anchor: n === 0 ? 'start' : n === idx.length - 1 ? 'end' : 'middle',
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // Tuning guide bands -> slider guide ticks
 // ---------------------------------------------------------------------------

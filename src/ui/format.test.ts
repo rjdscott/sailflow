@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { fmt, round, snap } from './format';
+import { fmt, round, snap, windLine } from './format';
+import type { LogEntry } from '../lib/logStore';
 
 describe('round', () => {
   it('avoids float artefacts', () => {
@@ -40,5 +41,42 @@ describe('snap', () => {
 
   it('handles a fractional step without float artefacts', () => {
     expect(snap(0.3, 0, 1, 0.1)).toBe(0.3);
+  });
+});
+
+describe('windLine', () => {
+  const entry = (over: Partial<LogEntry> = {}): LogEntry => ({
+    id: 'a',
+    v: 1,
+    date: '2026-08-25',
+    venue: 'Sydney',
+    forecast: { minKt: 6, likelyKt: 9, maxKt: 14 },
+    actual: { minKt: 8, maxKt: 12 },
+    seaState: 2,
+    crewKg: 300,
+    dock: { upperTurns: 2, lowerTurns: 1, forestayMm: 15 },
+    notes: '',
+    fast: '',
+    createdAt: '2026-08-25T00:00:00.000Z',
+    ...over,
+  });
+
+  it('summarises the wind actually sailed', () => {
+    expect(windLine(entry())).toBe('8–12 kt · chop · 300 kg');
+  });
+
+  it('falls back to the forecast when no actual wind was recorded', () => {
+    expect(windLine(entry({ actual: { minKt: 0, maxKt: 0 } }))).toBe('6–14 kt · chop · 300 kg');
+  });
+
+  it('keeps a half-recorded actual rather than mixing the two sources', () => {
+    expect(windLine(entry({ actual: { minKt: 0, maxKt: 11 } }))).toBe('0–11 kt · chop · 300 kg');
+  });
+
+  it('names every sea state', () => {
+    const states = ([0, 1, 2, 3, 4] as const).map(
+      (seaState) => windLine(entry({ seaState })).split(' · ')[1],
+    );
+    expect(states).toEqual(['flat', 'ripple', 'chop', 'steep', 'waves']);
   });
 });
