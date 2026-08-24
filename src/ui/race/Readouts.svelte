@@ -102,7 +102,7 @@
   }
 
   .quiet {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
     padding-top: var(--space-3);
     border-top: 1px solid var(--line);
   }
