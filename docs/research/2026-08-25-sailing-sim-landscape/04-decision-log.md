@@ -28,3 +28,15 @@ polar alongside the tuning guides (assumed yes, same policy as #9)?
 Standing instruction from owner (mid-session): capture every decision,
 research note and finding; update docs as-you-go so another session can resume
 with minimal disruption.
+
+## Decisions made during execution (2026-08-25)
+
+| # | Decision | Where |
+|---|---|---|
+| 16 | Hold-out split by wind speed, not angle (first fit could not constrain the reaching regime) | ADR 0012 |
+| 17 | Polar gate runs locally (`pnpm validate`), report committed; CI runs invariants + golden. Gate currently FAILs on 2 of 10 held-out rows and says so | phase-02 log, `validation/report.md` |
+| 18 | Crew hike in proportion to heel (`hydro.hikeRampDeg`) so light air has an equilibrium | `src/core/solve/equilibrium.ts` |
+| 19 | Race trim in VPP mode optimised through ORC `flat` only (backstay mapped from flat); full 11-control search is Epic 2 | `src/core/solve/optimal.ts` |
+| 20 | `dockScore` protocol gained optional `candidates`; lap times memoised per boat | `src/worker/protocol.ts`, `src/core/solve/dock.ts` |
+| 21 | Worker client JSON-round-trips every request (reactive proxies otherwise fail structured clone) | `src/worker/client.ts` |
+| 22 | Third-party data policy applied to the ORC polar as well as the tuning guides (assumption flagged to owner) | ADR 0008 |

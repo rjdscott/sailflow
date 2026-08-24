@@ -5,7 +5,7 @@ import svelteConfig from './svelte.config.js';
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'node_modules', '.idea', 'docs', 'scripts', 'tests'],
+    ignores: ['dist', 'node_modules', '.idea', '.claude', 'docs', 'scripts', 'tests'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

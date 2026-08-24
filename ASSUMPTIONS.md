@@ -44,4 +44,25 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
 ## Calibrated free parameters
 
-_None yet. Populated by `calibration/fit.ts` in phase 02._
+| Knob | Value | Stage | Fit loss |
+|---|---|---|---|
+| `hydro.formFactor` | 0.0296571 | 1 hydro-jib | 0.1388 |
+| `hydro.rrMul.fn20` | 0.364214 | 1 hydro-jib | 0.1388 |
+| `hydro.rrMul.fn30` | 0.812076 | 1 hydro-jib | 0.1388 |
+| `hydro.rrMul.fn40` | 0.974563 | 1 hydro-jib | 0.1388 |
+| `hydro.rrMul.fn50` | 1.63226 | 1 hydro-jib | 0.1388 |
+| `hydro.rrMul.fn60` | 1.69371 | 1 hydro-jib | 0.1388 |
+| `hydro.planingRelief` | 0.153826 | 1 hydro-jib | 0.1388 |
+| `hydro.keelLiftSlope` | 0.751711 | 1 hydro-jib | 0.1388 |
+| `hydro.heelDragK` | 1.09438 | 1 hydro-jib | 0.1388 |
+| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.1388 |
+| `aero.asymClMul` | 1.01107 | 2 asym | 0.4739 |
+| `hydro.crewArmMul` | 0.768062 | 3 righting | 0.01014 |
+| `rig.EI` | 685000 | 4 rig-shape | 15.99 |
+| `rig.turnsToN` | 100 | 4 rig-shape | 15.99 |
+| `rig.sagK` | 25 | 4 rig-shape | 15.99 |
+| `shape.bendToDraft` | 0.36 | 4 rig-shape | 15.99 |
+| `shape.sagToDraft` | 0.0003 | 4 rig-shape | 15.99 |
+| `shape.sheetToTwist` | 0.15 | 4 rig-shape | 15.99 |
+
+Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out split), 0007 (tolerances)). Per-point residuals: `calibration/residuals.json`.
