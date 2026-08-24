@@ -196,9 +196,14 @@ function requestPersistentStorage(): void {
   }
 }
 
+/** Which engine `chooseLogStore` picks here. Shown on the settings screen. */
+export function logStoreEngine(): 'IndexedDB' | 'localStorage' {
+  return typeof indexedDB === 'undefined' ? 'localStorage' : 'IndexedDB';
+}
+
 /** IndexedDB when the runtime supports it, else localStorage. */
 export function chooseLogStore(): LogStore {
-  if (typeof indexedDB === 'undefined') return localStorageLogStore();
+  if (logStoreEngine() === 'localStorage') return localStorageLogStore();
   requestPersistentStorage();
   return indexedDbLogStore();
 }

@@ -1,0 +1,68 @@
+/* ponytail: delete when app.css defines these (phase 09 shell PR) */
+
+/* The five shell classes the Dock/Log/Drills/More screens depend on. Imported
+   only from those four screens so the real definitions in app.css win once the
+   shell lands. Nothing else is styled here. */
+
+.screen {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.col-primary,
+.col-secondary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 16px;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .screen {
+    grid-template-columns: 7fr 5fr;
+    grid-template-areas: 'primary secondary';
+  }
+
+  .col-primary {
+    grid-area: primary;
+  }
+
+  .col-secondary {
+    grid-area: secondary;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.section-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.hero-number {
+  font-size: 40px;
+  line-height: 44px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.hero-number .unit {
+  margin-inline-start: 6px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink-2);
+}
