@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { SailShape, SectionShape } from '../../core/types';
-  import { sectionPath, tickEnd, twistRelativeDeg } from './geometry';
+  import { SECTION_LAYOUT as L, sectionPath, twistRelativeDeg } from './geometry';
 
   let {
     main,
@@ -12,18 +12,10 @@
 
   // The path `d` of a Bezier cannot be CSS-transitioned, so a control change
   // simply re-renders the sections. Nothing here animates.
-  const CHORD = 100;
-  const TICK = 16;
-  // Row spacing (54) leaves ~11 units of clearance between one row's typical
-  // camber peak and the next row's label at realistic draft (~12%); the old
-  // 62-unit spacing plus a generous bottom margin made the viewBox taller
-  // than it needed to be (aspect ratio 1.28), which is what pushed the ¼ and
-  // ½ rows out of the ~40vh picture pane on a 380px viewport. Height below
-  // is trimmed to match, bringing the aspect ratio to ~1:1.
-  const ROWS: { key: keyof SailShape; label: string; y: number }[] = [
-    { key: 'threeQuarter', label: '¾', y: 10 },
-    { key: 'half', label: '½', y: 64 },
-    { key: 'quarter', label: '¼', y: 118 },
+  const ROWS: { key: keyof SailShape; label: string }[] = [
+    { key: 'threeQuarter', label: '¾' },
+    { key: 'half', label: '½' },
+    { key: 'quarter', label: '¼' },
   ];
 
   const sails = $derived(
@@ -33,101 +25,112 @@
     ].filter((s): s is { name: string; shape: SailShape } => s.shape !== undefined),
   );
 
-  function entry(s: SectionShape) {
-    return tickEnd({ x: 0, y: 0 }, s.entryDeg, TICK, -1);
+  /** SVG rotates clockwise, so the negative sign twists the leech open (up). */
+  function twist(s: SectionShape, ref: SectionShape): number {
+    return -twistRelativeDeg(s, ref);
   }
 
-  function exit(s: SectionShape) {
-    return tickEnd({ x: CHORD, y: 0 }, s.exitDeg, TICK, 1);
+  function pct(v: number, dp = 0): string {
+    return `${(v * 100).toFixed(dp)}%`;
   }
 </script>
 
-<figure>
-  <figcaption>
-    Flying shape at ¼, ½, ¾ height. Sections are rotated by their twist relative to the ¼ section;
-    ticks are entry and exit angle.
-  </figcaption>
+{#if sails.length === 0}
+  <p class="empty">No flying shape in this solve yet.</p>
+{:else}
+  <figure>
+    <svg viewBox="0 0 {L.w} {L.h}" role="img" aria-label="Flying shape at three heights">
+      {#each sails as sail, si (sail.name)}
+        {@const x = L.luffX[si]}
+        <!-- One luff line per sail: every section starts on it, so twist reads
+             as rotation about the luff rather than as three loose curves. -->
+        <line class="luff" x1={x} y1={L.luffTop} x2={x} y2={L.rowY[2]} />
 
-  {#if sails.length === 0}
-    <p class="empty">No flying shape in this solve yet.</p>
-  {:else}
-    <div class="pair">
-      {#each sails as sail (sail.name)}
-        <div class="sail">
-          <h3>{sail.name}</h3>
-          <svg viewBox="-26 -14 152 158" role="img" aria-label="{sail.name} sections">
-            {#each ROWS as row (row.key)}
-              {@const s = sail.shape[row.key]}
-              <g
-                transform="translate(0 {row.y}) rotate({twistRelativeDeg(
-                  s,
-                  sail.shape.quarter,
-                )} 0 0)"
-              >
-                <line class="chord" x1="0" y1="0" x2={CHORD} y2="0" />
-                <path class="camber" d={sectionPath(s, CHORD)} />
-                <line class="tick" x1="0" y1="0" x2={entry(s).x} y2={entry(s).y} />
-                <line class="tick" x1={CHORD} y1="0" x2={exit(s).x} y2={exit(s).y} />
-              </g>
-              <text class="row-label" x="-24" y={row.y + 4}>{row.label}</text>
-              <text class="row-value" x={CHORD} y={row.y + 16}>
-                {(s.draft * 100).toFixed(1)}% @ {(s.draftPos * 100).toFixed(0)}% · twist {s.twistDeg.toFixed(
-                  0,
-                )}°
-              </text>
-            {/each}
-          </svg>
-        </div>
+        {#each ROWS as row, ri (row.key)}
+          {@const s = sail.shape[row.key]}
+          <g transform="translate({x} {L.rowY[ri]})">
+            <!-- Reference: this sail's ¼ section, unrotated, behind every row. -->
+            <path class="ref" d={sectionPath(sail.shape.quarter, L.chord)} />
+            <g transform="rotate({twist(s, sail.shape.quarter)} 0 0)">
+              <line class="chord" x1="0" y1="0" x2={L.chord} y2="0" />
+              <path class="camber" d={sectionPath(s, L.chord)} />
+            </g>
+          </g>
+        {/each}
+
+        <text class="sail-label" x={x + L.chord / 2} y={L.labelY}>{sail.name}</text>
       {/each}
-    </div>
-  {/if}
-</figure>
+    </svg>
+
+    <figcaption>
+      Live shape in accent, this sail's ¼ section repeated behind it as a reference. Sections are
+      rotated by their twist relative to ¼.
+    </figcaption>
+  </figure>
+
+  <table class="mono">
+    <thead>
+      <tr>
+        <th scope="col">Sail</th>
+        <th scope="col">At</th>
+        <th scope="col">Draft</th>
+        <th scope="col">Pos</th>
+        <th scope="col">Twist</th>
+      </tr>
+    </thead>
+    <tbody>
+      {#each sails as sail (sail.name)}
+        {#each ROWS as row, ri (row.key)}
+          {@const s = sail.shape[row.key]}
+          <tr class:group={ri === 0}>
+            <th scope="row">{ri === 0 ? sail.name : ''}</th>
+            <td>{row.label}</td>
+            <td>{pct(s.draft, 1)}</td>
+            <td>{pct(s.draftPos)}</td>
+            <td>{s.twistDeg.toFixed(0)}°</td>
+          </tr>
+        {/each}
+      {/each}
+    </tbody>
+  </table>
+{/if}
 
 <style>
   figure {
     margin: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  }
+
+  /* viewBox + width:100% + height:auto: the drawing is resolution-independent
+     and its box is exactly its own aspect, so it can never clip or letterbox. */
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 340px;
+    margin-inline: auto;
   }
 
   figcaption {
+    margin-top: var(--space-2);
     font-size: var(--text-xs);
     color: var(--ink-2);
-    padding-bottom: var(--space-1);
   }
 
-  .pair {
-    display: flex;
-    gap: var(--space-3);
-    flex: 1;
-    min-height: 0;
-  }
-
-  .sail {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  h3 {
-    margin: 0;
-    font-size: var(--text-xs);
-    color: var(--ink-2);
-    font-weight: 600;
-  }
-
-  svg {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
+  .luff {
+    stroke: var(--ink-2);
+    stroke-width: 1.5;
   }
 
   .chord {
-    stroke: var(--ink-2);
+    stroke: var(--muted);
     stroke-width: 1;
     stroke-dasharray: 4 3;
+  }
+
+  .ref {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 2.5;
   }
 
   .camber {
@@ -137,24 +140,54 @@
     stroke-linecap: round;
   }
 
-  .tick {
-    stroke: var(--ink-2);
-    stroke-width: 2;
-  }
-
-  .row-label {
-    fill: var(--ink);
-    font-size: 14px;
-  }
-
-  .row-value {
+  .sail-label {
     fill: var(--ink-2);
-    font-size: 10px;
-    text-anchor: end;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-anchor: middle;
+    text-transform: uppercase;
+  }
+
+  /* Numbers live here, never on the curve. */
+  table {
+    width: 100%;
+    margin-top: var(--space-3);
+    border-collapse: collapse;
+    text-align: right;
+  }
+
+  th,
+  td {
+    padding: 3px 0 3px var(--space-2);
+    white-space: nowrap;
+  }
+
+  thead th {
+    font-weight: 500;
+    color: var(--ink-2);
+    border-bottom: 1px solid var(--line);
+  }
+
+  tbody th {
+    text-align: left;
+    padding-left: 0;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+
+  tbody td {
+    color: var(--ink);
+  }
+
+  tr.group th,
+  tr.group td {
+    padding-top: var(--space-2);
   }
 
   .empty {
-    margin: auto;
+    margin: 0;
     font-size: var(--text-sm);
     color: var(--ink-2);
   }

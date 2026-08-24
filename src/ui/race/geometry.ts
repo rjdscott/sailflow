@@ -119,3 +119,73 @@ export function telltaleState(awaDeg: number, entryDeg: number, band = 3): Tellt
 /** Indicative top-down hull outline, bow at (0, 0), stern at (0, 100). */
 export const HULL_PATH =
   'M 0 0 C 9 18 14 34 15 52 C 15.5 68 14 84 12 100 L -12 100 C -14 84 -15.5 68 -15 52 C -14 34 -9 18 0 0 Z';
+
+// ---------------------------------------------------------------------------
+// Sail-section layout
+//
+// One place holds the numbers the SailSections drawing and its fit test both
+// use, so "does anything clip?" is a unit test rather than a browser check.
+// ---------------------------------------------------------------------------
+
+/** Section-drawing layout, in the viewBox user units the component draws in. */
+export const SECTION_LAYOUT = {
+  /** viewBox is `0 0 w h`. */
+  w: 272,
+  h: 216,
+  chord: 100,
+  /** Luff x for the main and the jib panel. */
+  luffX: [16, 152],
+  /**
+   * Row baselines, ¾ on top down to ¼. Spacing is set by the worst leech rise
+   * a fully twisted, maximum-draft section can produce (~57.5 at chord 100);
+   * geometry.test.ts fails if any clamped section escapes the viewBox.
+   */
+  rowY: [66, 128, 190],
+  luffTop: 8,
+  labelY: 206,
+} as const;
+
+/** Rotate `p` about `about`. Positive degrees is clockwise, as in SVG. */
+export function rotate(p: Pt, deg: number, about: Pt = { x: 0, y: 0 }): Pt {
+  const r = (deg * Math.PI) / 180;
+  const c = Math.cos(r);
+  const s = Math.sin(r);
+  const dx = p.x - about.x;
+  const dy = p.y - about.y;
+  return { x: about.x + dx * c - dy * s, y: about.y + dx * s + dy * c };
+}
+
+export interface Box {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+/**
+ * Bounds of one section drawn from `luff` along +x, rotated `deg` about the
+ * luff point. `deg` is the SVG rotation the component applies, so this is
+ * exactly the ink that lands on the canvas.
+ */
+export function sectionBox(s: SectionShape, chord: number, luff: Pt, deg: number, n = 32): Box {
+  const pts = sectionPoints(s, chord, n).map((p) =>
+    rotate({ x: luff.x + p.x, y: luff.y + p.y }, deg, luff),
+  );
+  const xs = pts.map((p) => p.x);
+  const ys = pts.map((p) => p.y);
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
+  };
+}
+
+export function unionBox(a: Box, b: Box): Box {
+  return {
+    minX: Math.min(a.minX, b.minX),
+    maxX: Math.max(a.maxX, b.maxX),
+    minY: Math.min(a.minY, b.minY),
+    maxY: Math.max(a.maxY, b.maxY),
+  };
+}

@@ -12,18 +12,17 @@
   const seaLabel = $derived(SEA_STATES[conditions.seaState].label);
 </script>
 
-<button type="button" class="strip" onclick={() => (open = true)}>
-  <span class="tabular-nums">{conditions.twsKt.toFixed(0)} kt</span>
-  <span aria-hidden="true">·</span>
-  <span class="tabular-nums">{conditions.twaDeg.toFixed(0)}° TWA</span>
-  <span aria-hidden="true">·</span>
-  <span>{seaLabel}</span>
-  <span aria-hidden="true">·</span>
-  <span class="tabular-nums">{conditions.crewKg.toFixed(0)} kg</span>
-  <span class="edit">Edit</span>
-</button>
+<div class="chip-row" aria-label="Conditions">
+  <span class="chip">{conditions.twsKt.toFixed(0)} kt</span>
+  <span class="chip">{conditions.twaDeg.toFixed(0)}° TWA</span>
+  <span class="chip">{seaLabel}</span>
+  <span class="chip">{conditions.crewKg.toFixed(0)} kg</span>
+  <span class="chip">{conditions.sailset === 'asym' ? 'Gennaker' : 'Jib'}</span>
+  <button type="button" class="chip hit-44" onclick={() => (open = true)}>Edit</button>
+</div>
 
 <Sheet bind:open title="Conditions">
+  <p class="section-title">Presets</p>
   <div class="presets">
     {#each PRESETS as p (p.id)}
       <button type="button" onclick={() => race.applyPreset(p)}>{p.label}</button>
@@ -84,29 +83,10 @@
 </Sheet>
 
 <style>
-  .strip {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    width: 100%;
-    min-height: var(--hit-min);
-    padding: 0 var(--space-2);
-    border: none;
-    border-radius: var(--radius);
-    background: var(--surface);
-    color: var(--ink);
-    font-size: var(--text-sm);
-    cursor: pointer;
-  }
-
-  .edit {
-    margin-left: auto;
-    color: var(--accent);
-  }
-
   .presets {
     display: flex;
     gap: var(--space-2);
+    margin-top: var(--space-2);
   }
 
   .presets button {
@@ -121,7 +101,7 @@
   }
 
   .note {
-    margin: var(--space-2) 0 0;
+    margin: var(--space-2) 0 var(--space-4);
     font-size: var(--text-xs);
     color: var(--ink-2);
   }

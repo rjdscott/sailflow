@@ -13,7 +13,7 @@
   } = $props();
 </script>
 
-<header class="top-bar">
+<header class="screen-head">
   <div class="left">
     <h1>{title}</h1>
     {#if lock}{@render lock()}{/if}
@@ -25,24 +25,10 @@
 </header>
 
 <style>
-  .top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    min-height: var(--hit-min);
-    padding-block: var(--space-2);
-  }
-
   .left,
   .right {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-  }
-
-  h1 {
-    margin: 0;
-    font-size: var(--text-lg);
   }
 </style>
