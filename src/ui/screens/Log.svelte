@@ -1,5 +1,4 @@
 <script lang="ts">
-  import '../_layout-fallback.css';
   import { onMount } from 'svelte';
   import TopBar from '../components/TopBar.svelte';
   import Segmented from '../components/Segmented.svelte';
