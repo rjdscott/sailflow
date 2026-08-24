@@ -1,0 +1,30 @@
+# 04. Decision log (owner Q&A, 2026-08-25)
+
+Each row: question, options offered (recommended marked ★), owner's answer,
+and where the decision now lives. Verbatim owner notes in quotes.
+
+| # | Question | Answer | Lives in |
+|---|---|---|---|
+| 1 | Analyser vs simulator | ★ Both, staged: Epic 1 analyser, Epic 2 quasi-static time-domain, Epic 3 Rust engine | ADR 0004, plan README |
+| 2 | Beginners | "Both from MVP" → confirmed as progressive disclosure + presets + coach line + ~10 static drills; spaced repetition and progression in Epic 2 | plan phases 04, 07 |
+| 3 | Honesty claim | ★ Confidence tiers A/B/C rendered in UI | ADR 0006 |
+| 4 | Hosting/runtime | ★ Pages + TS, ADR closed, "but massive backdoor for rust as my end goal is to make this the best simulator on the market… should we go all in now?" Recommendation given: incremental with backdoor built in (pure core, worker protocol, golden corpus); Rust engine written fresh at Epic 3 because the only real triggers are an authoritative multiplayer server and higher-fidelity aero. Owner accepted ★ incremental | ADR 0004 |
+| 5 | Endgame | Yes multiplayer, may monetise. Open-core physics MIT, private server repo later. Repo stays public until a backend exists | ADR 0004, Epic 3 outline |
+| 6 | Beginner MVP scope | ★ Minimal drills in MVP | plan phase 07 |
+| 7 | Visuals | ★ 2D SVG/Canvas polished; three.js Epic 2 | ADR 0011 |
+| 8 | Validation | ★ Hold-out gate: fit TWS 6/10/12/16/20, hold out 8/14 + TWA 60/90/120 | ADR 0007 |
+| 9 | North guide | **Commit numbers anyway** (not recommended for a public repo; risk accepted by owner). Mitigation: one JSON per source, provenance inline, removable in one commit | ADR 0008 |
+| 10 | Waves + crew | ★ Both in MVP | plan phase 02 |
+| 11 | Timeline | ★ No hard deadline; clean template remnants first | plan phase 00 |
+| 12 | UI stack | ★ Svelte 5 + Vite + TS | ADR 0005 |
+| 13 | Second class | Yes, plan for it → one BoatDefinition JSON per boat, no plugin abstraction | plan architecture |
+| 14 | Success metric | ★ Owner uses it before every J/70 regatta day | plan README |
+| 15 | Execution | ★ Fable orchestrates and verifies; Opus/Sonnet build in parallel; one PR per logical change | CLAUDE.md |
+
+Open items carried into Phase 00 PR review: delete
+`docs/runbooks/start-a-new-project.md` (template's own runbook)? Commit the ORC
+polar alongside the tuning guides (assumed yes, same policy as #9)?
+
+Standing instruction from owner (mid-session): capture every decision,
+research note and finding; update docs as-you-go so another session can resume
+with minimal disruption.
