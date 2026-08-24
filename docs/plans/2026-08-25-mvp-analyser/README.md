@@ -64,3 +64,19 @@ validation = held-out TWS 8/14 + TWA 60/90/120. Dock score = expected regret
 
 - Research: [2026-08-25-sailing-sim-landscape](../../research/2026-08-25-sailing-sim-landscape/)
 - ADRs: 0003 core/UI boundary, 0004 TS now / Rust at Epic 3, 0005 Svelte, 0006 aero split + tiers, 0007 calibration/validation, 0008 third-party data committed, 0009 dock scoring, 0010 persistence, 0011 2D only (written in the phase that first needs each)
+
+## State at end of the first autonomous run (2026-08-25)
+
+PRs #1–#11 merged; https://rjdscott.github.io/sailflow/ is live and installable.
+Phases 00, 01, 03–07 🟢. Phase 02 🟡: the polar hold-out gate fails on 2 of
+10 held-out rows (`validation/report.md`), recorded honestly rather than
+loosened. Phase 08 🟡: needs the on-device acceptance walk and one visual fix.
+
+**Owner decisions still open:** delete `docs/runbooks/start-a-new-project.md`
+(template's own runbook)? Keep the ORC polar committed (assumed yes under
+ADR 0008)? Accept the model as tier-B upwind at 14 kt or fund the Fn-table
+work (ASSUMPTIONS.md "honestly weak")?
+
+**Next epic candidates (from this run):** optimise real race controls in
+VPP mode so dock setups have a wind-dependent channel; finer Fn resistance
+table; asymmetric angle model; downwind heel; sail-section layout.
