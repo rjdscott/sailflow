@@ -30,6 +30,7 @@ three.js, Rust, multiplayer, accounts, backend.
 | 06 | Disagreement panel + tuning log | 🟢 Completed | 2026-08-25 |
 | 07 | Drills | 🟢 Completed | 2026-08-25 |
 | 08 | PWA, polish, docs close-out | 🟡 In progress | 2026-08-25 |
+| 09 | Desktop layout + visual excellence | 🟡 In progress | 2026-08-25 |
 
 Order: 00 → 01 → 02 ∥ 03 → 04 ∥ 05 → 06 → 07 → 08. Phase 03 builds against a
 stub worker so it does not wait on 02. **No phase ≥ 04 starts until 02 is 🟢.**
