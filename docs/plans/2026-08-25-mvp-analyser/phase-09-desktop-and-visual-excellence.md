@@ -58,6 +58,17 @@ wrapped numerals. Desktop is a real layout, not a stretched phone column.
   = label, value, track with tick at guide/base, ? button 36 px inside a
   44 px hit area. Simple mode shows five; Advanced all.
 
+### Race screen on desktop (owner refinement, 2026-08-25)
+- Primary column: one large boat visualisation as the hero (plan view with
+  sails, wind/apparent arrows, telltales; card fills the column, min 480 px
+  tall), with Sail sections and Rig elevation as two smaller cards beneath.
+  The boat responds visibly to every slider move.
+- Secondary column: a sticky metrics strip (BSP · VMG · height · heel ·
+  leeway · AWA · flat, tabular, tier badges, brief highlight on change,
+  1 px progress line while solving) above the scrolling control cards.
+- The point: you tweak the rig on the right and watch the boat and the
+  numbers change in real time on the left.
+
 ### Dock screen
 - `lg`: forecast card + rig sliders in the secondary column; regret hero
   card (big number, "at 8 kt / at 16 kt" pair, sparkline with axis labels)
@@ -124,3 +135,4 @@ pnpm build && pnpm preview   # 390×844 and 1440×900, both themes, every screen
   clamped section escapes the viewBox — that test caught real clipping at the
   first row spacing. Browser verification (task 4) still outstanding: this was
   executed without a browser.
+- 2026-08-25 — PRs #14 (screens) and #15 (shell + Race) merged and deployed. Live desktop check at 1048 px: nav rail, boat hero, sticky metrics strip, side controls all render; no console errors. Found: the service worker kept serving the previous precache until unregistered — `autoUpdate` needs a reload cycle; owner should hard-refresh once (documented in `release-and-pwa-cache-bust.md`). The plan-view boat is structurally right but visually weak (blob hull, line sails, floating telltales) — illustration pass launched (`src/ui/race/boat.ts` + PlanView).
