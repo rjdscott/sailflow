@@ -1,6 +1,20 @@
 <script lang="ts">
   import type { AeroState, SailShape } from '../../core/types';
-  import { HULL_PATH, telltaleState, type TelltaleState } from './geometry';
+  import {
+    boomAngle,
+    clewAt,
+    deck,
+    DIMS,
+    jibSheetAngle,
+    openBy,
+    sailPath,
+    sailPoints,
+    tackSide,
+    windArrow,
+    type Ring,
+  } from './boat';
+  import { telltaleState, type Pt, type TelltaleState } from './geometry';
+  import { race } from './store.svelte';
 
   let {
     aero,
@@ -14,155 +28,205 @@
     jib?: SailShape;
   } = $props();
 
-  // Top-down, bow up, boat on starboard tack, in a 272×204 viewBox. Sheeting
-  // angles are indicative: they follow apparent wind angle, they are not
-  // solved from the sheet loads. Every label sits clear of the drawing — the
-  // numbers themselves live in the row underneath.
-  const VIEW = { w: 272, h: 204 };
-  const HULL = { x: 95, y: 25, scale: 1.5 };
-  const MAST = { x: 95, y: 76 };
-  const TACK = { x: 95, y: 29 };
-  const BOOM = 62;
-  const JIB_FOOT = 45;
-  /** Wind hub and the two radii the arrows and their tags are laid out on. */
-  const HUB = { x: 175, y: 100 };
-  const R_TWA = 58;
-  const R_AWA = 46;
+  // A J/70 seen from above, bow up, at class proportions (LOA:beam straight
+  // off the boat JSON). Starboard tack on positive TWA, mirrored on negative.
+  // Sheeting angles are read off the sheet controls, not solved from sheet
+  // loads — the picture answers a slider the way the boat does, and the
+  // caption says so. Everything lives in one viewBox, so the card sets the
+  // size and nothing ever clips.
+  const VIEW = { w: 320, h: 264 };
+  /** px per metre. Fixed: the ring radii below are sized against it. */
+  const SCALE = 21;
+  const D = deck(SCALE);
+  /** Wind hub: the middle of the boat's whole length, bowsprit tip to transom. */
+  const HUB = { x: VIEW.w / 2, y: 132 };
+  /** Stem, in viewBox coordinates: everything on the deck hangs off this. */
+  const ORIGIN = { x: HUB.x, y: HUB.y - (D.sternY + D.spritTip.y) / 2 };
+  const MAST = { x: ORIGIN.x, y: ORIGIN.y + D.mast.y };
+  const TACK = { x: ORIGIN.x, y: ORIGIN.y };
+  /** Inner shadow: the deck outline shrunk just inside itself. */
+  const SHADE = `translate(0 ${(D.sternY * 0.55).toFixed(2)}) scale(0.94 0.98) translate(0 ${(-D.sternY * 0.55).toFixed(2)})`;
 
-  const boomDeg = $derived(Math.min(aero.awaDeg * 0.45, 85));
-  const jibDeg = $derived(Math.min(aero.awaDeg * 0.7, 95));
+  // One ring for both arrows, centred on the boat, wide enough to clear the
+  // bowsprit and the transom at every angle. The two tags sit on opposite
+  // sides of their arrows, which is what keeps them apart when TWA and AWA
+  // are only a few degrees apart. boat.test.ts holds both clearances.
+  const RING = { rx: 110, ry: 100, len: 18 };
+  const TWA_RING: Ring = { ...RING, tagOff: 28 };
+  const AWA_RING: Ring = { ...RING, tagOff: -28 };
 
-  /** Aft-and-to-leeward from a pivot: port side, on starboard tack. */
-  function leeward(from: { x: number; y: number }, deg: number, len: number) {
-    const r = (deg * Math.PI) / 180;
-    return { x: from.x - len * Math.sin(r), y: from.y + len * Math.cos(r) };
+  const side = $derived(tackSide(twaDeg));
+  /** Bottom corner to windward: the one place the wind arrows never sweep. */
+  const heelX = $derived(side === 1 ? 50 : VIEW.w - 50);
+  const ctl = $derived(race.controls.race);
+  const main = $derived(race.result?.shape.main);
+
+  const boomDeg = $derived(boomAngle(ctl.mainsheet, ctl.traveller));
+  const jibDeg = $derived(jibSheetAngle(ctl.jibLead, ctl.jibSheet));
+
+  const boomTip = $derived(clewAt(MAST, boomDeg, D.boomPx, side));
+  const jibClew = $derived(clewAt(TACK, jibDeg, D.jibFootPx, side));
+
+  const mainSail = $derived(main ? sailPath(MAST, boomTip, main.half, side) : '');
+  const jibSail = $derived(jib ? sailPath(TACK, jibClew, jib.half, side) : '');
+
+  /** The ¾-height section, shorter in chord and twisted open: twist, in plan. */
+  function ghost(tack: Pt, deg: number, len: number, s: SailShape): string {
+    const head = clewAt(tack, deg, len, side);
+    return sailPath(tack, openBy(tack, head, s.threeQuarter.twistDeg, side), s.threeQuarter, side);
   }
+  const mainGhost = $derived(
+    main ? ghost(MAST, boomDeg, D.boomPx * DIMS.headChord.main, main) : '',
+  );
+  const jibGhost = $derived(jib ? ghost(TACK, jibDeg, D.jibFootPx * DIMS.headChord.jib, jib) : '');
 
-  /** Point at `deg` off the bow, `len` out from the wind hub. */
-  function windward(deg: number, len: number) {
-    const r = (deg * Math.PI) / 180;
-    return { x: HUB.x + len * Math.sin(r), y: HUB.y - len * Math.cos(r) };
-  }
-
-  const boomTip = $derived(leeward(MAST, boomDeg, BOOM));
-  const clew = $derived(leeward(TACK, jibDeg, JIB_FOOT));
-
-  const twaTail = $derived(windward(twaDeg, R_TWA));
-  const awaTail = $derived(windward(aero.awaDeg, R_AWA));
+  const twa = $derived(windArrow(twaDeg, HUB, TWA_RING));
+  const awa = $derived(windArrow(side * aero.awaDeg, HUB, AWA_RING));
 
   const entryDeg = $derived(jib?.half.entryDeg ?? aero.awaDeg);
-  // One entry angle for the whole luff, so the three differ only by the band
-  // they are read against: lower telltales stall first.
-  const luffTelltales: { at: number; state: TelltaleState }[] = $derived(
-    [0.12, 0.22, 0.32].map((at) => ({
-      at,
-      state: telltaleState(aero.awaDeg, entryDeg + (at - 0.22) * 12),
-    })),
+  /** Ribbons stream along the chord; the group's own rotation is the flow. */
+  const streamDeg = $derived((Math.atan2(jibClew.y - TACK.y, jibClew.x - TACK.x) * 180) / Math.PI);
+  // One entry angle for the whole luff, so the four differ only by the band
+  // they are read against: the low telltales stall first, the leech last.
+  const telltales: { at: number; p: Pt; state: TelltaleState }[] = $derived(
+    jib
+      ? sailPoints(TACK, jibClew, jib.half, side, 4)
+          .slice(1)
+          .map((p, i) => {
+            const at = (i + 1) / 4;
+            return { at, p, state: telltaleState(aero.awaDeg, entryDeg + (at - 0.5) * 8) };
+          })
+      : [],
   );
-  const leechState = $derived(telltaleState(aero.awaDeg, entryDeg + 4));
 
-  const leechPt = $derived(along(0.94));
-
-  function along(t: number) {
-    return { x: TACK.x + t * (clew.x - TACK.x), y: TACK.y + t * (clew.y - TACK.y) };
-  }
+  const fmt = (v: number) => Math.abs(v).toFixed(0);
 </script>
 
 <figure>
-  <svg viewBox="0 0 {VIEW.w} {VIEW.h}" role="img" aria-label="Plan view, starboard tack">
+  <svg
+    viewBox="0 0 {VIEW.w} {VIEW.h}"
+    role="img"
+    aria-label="Plan view of the boat, bow up, on {side === 1 ? 'starboard' : 'port'} tack"
+  >
     <defs>
       <marker
-        id="plan-arrow-twa"
+        id="plan-cap-twa"
         viewBox="0 0 8 8"
         refX="7"
         refY="4"
-        markerWidth="5"
-        markerHeight="5"
+        markerWidth="4.5"
+        markerHeight="4.5"
         orient="auto"
       >
-        <path class="head-twa" d="M 0 0 L 8 4 L 0 8 z" />
+        <path class="cap-twa" d="M 0 0.6 L 8 4 L 0 7.4 z" />
       </marker>
       <marker
-        id="plan-arrow-awa"
+        id="plan-cap-awa"
         viewBox="0 0 8 8"
         refX="7"
         refY="4"
-        markerWidth="5"
-        markerHeight="5"
+        markerWidth="4.5"
+        markerHeight="4.5"
         orient="auto"
       >
-        <path class="head-awa" d="M 0 0 L 8 4 L 0 8 z" />
+        <path class="cap-awa" d="M 0 0.6 L 8 4 L 0 7.4 z" />
       </marker>
     </defs>
 
-    <!-- wind, blowing from the tail toward the boat -->
+    <!-- Wind first, so the boat sits on top of it. -->
     <g class="wind">
       <line
-        x1={twaTail.x}
-        y1={twaTail.y}
-        x2={HUB.x}
-        y2={HUB.y}
-        marker-end="url(#plan-arrow-twa)"
         class="twa"
+        x1={twa.tail.x.toFixed(2)}
+        y1={twa.tail.y.toFixed(2)}
+        x2={twa.head.x.toFixed(2)}
+        y2={twa.head.y.toFixed(2)}
+        marker-end="url(#plan-cap-twa)"
       />
       <line
-        x1={awaTail.x}
-        y1={awaTail.y}
-        x2={HUB.x}
-        y2={HUB.y}
-        marker-end="url(#plan-arrow-awa)"
         class="awa"
+        x1={awa.tail.x.toFixed(2)}
+        y1={awa.tail.y.toFixed(2)}
+        x2={awa.head.x.toFixed(2)}
+        y2={awa.head.y.toFixed(2)}
+        marker-end="url(#plan-cap-awa)"
       />
-      <text class="tag" x={twaTail.x + 8} y={twaTail.y + 4} text-anchor="start">TWA</text>
-      <text class="tag awa-tag" x={awaTail.x - 8} y={awaTail.y + 4} text-anchor="end">AWA</text>
+      <text class="tag" x={twa.tag.x.toFixed(2)} y={twa.tag.y.toFixed(2)}>TWA {fmt(twaDeg)}°</text>
+      <text class="tag accent" x={awa.tag.x.toFixed(2)} y={awa.tag.y.toFixed(2)}>
+        AWA {fmt(aero.awaDeg)}°
+      </text>
     </g>
 
-    <path class="hull" d={HULL_PATH} transform="translate({HULL.x} {HULL.y}) scale({HULL.scale})" />
+    <!-- Deck plan. Drawn in the hull frame: stem at the origin, +y aft. -->
+    <g transform="translate({ORIGIN.x} {ORIGIN.y.toFixed(2)})">
+      <path class="hull" d={D.hull} />
+      <path class="hull-shade" d={D.hull} transform={SHADE} />
+      <path class="centreline" d={D.centreline} />
+      <path class="well" d={D.cabin} />
+      <path class="well" d={D.cockpit} />
+      <path class="sprit" d={D.sprit} />
+      {#each D.chainplates as c, i (i)}
+        <circle class="chainplate" cx={c.x.toFixed(2)} cy={c.y.toFixed(2)} r="1.7" />
+      {/each}
+      <circle class="mast-step" cx="0" cy={D.mast.y.toFixed(2)} r="3" />
+    </g>
 
-    <line class="spar" x1={MAST.x} y1={MAST.y} x2={boomTip.x} y2={boomTip.y} />
-    <line class="sail" x1={TACK.x} y1={TACK.y} x2={clew.x} y2={clew.y} />
+    <!-- Sails. Ghost of the twisted ¾ section behind the half-height shape. -->
+    <g class="sails">
+      <path class="ghost" d={mainGhost} />
+      <path class="ghost" d={jibGhost} />
+      <path class="sail" d={mainSail} />
+      <path class="sail" d={jibSail} />
+      <line
+        class="boom"
+        x1={MAST.x}
+        y1={MAST.y}
+        x2={boomTip.x.toFixed(2)}
+        y2={boomTip.y.toFixed(2)}
+      />
+    </g>
 
-    {#each luffTelltales as t (t.at)}
-      {@const p = along(t.at)}
-      <g transform="translate({p.x.toFixed(2)} {p.y.toFixed(2)})">
-        <circle class="tt-dot" r="1.6" />
-        <rect class="ribbon {t.state}" x="2" y="-1.2" width="9" height="2.4" rx="1.2" />
+    {#each telltales as t (t.at)}
+      <g
+        transform="translate({t.p.x.toFixed(2)} {t.p.y.toFixed(2)}) rotate({streamDeg.toFixed(
+          2,
+        )}) scale(1 {side})"
+      >
+        <circle class="tt-dot" r="1.8" />
+        <rect class="ribbon {t.state}" x="3.5" y="-1.3" width="13" height="2.6" rx="1.3" />
       </g>
     {/each}
-    <g transform="translate({leechPt.x.toFixed(2)} {leechPt.y.toFixed(2)})">
-      <circle class="tt-dot" r="1.6" />
-      <rect class="ribbon {leechState}" x="-11" y="-1.2" width="9" height="2.4" rx="1.2" />
-    </g>
 
-    <!-- heel, stern view, to scale, parked clear of the plan -->
-    <g class="heel">
-      <line class="water" x1="6" y1="174" x2="68" y2="174" />
-      <g transform="translate(37 174) rotate({heelDeg})">
-        <path class="hull" d="M -15 -6 L 15 -6 L 9 5 L -9 5 Z" />
-        <line class="spar" x1="0" y1="-6" x2="0" y2="-34" />
+    <!-- Heel, seen from astern, parked clear of the plan. -->
+    <g class="heel" transform="translate({heelX} 226)">
+      <line class="water" x1="-30" y1="0" x2="30" y2="0" />
+      <g transform="rotate({(-side * heelDeg).toFixed(2)})">
+        <path class="keel" d="M -2 5 L -1.4 20 L 1.4 20 L 2 5 Z" />
+        <path class="hull" d="M -22 -8 C -21 0 -15 6 0 6 C 15 6 21 0 22 -8 Z" />
+        <line class="mast" x1="0" y1="-8" x2="0" y2="-40" />
       </g>
-      <text class="tag" x="37" y="196" text-anchor="middle">HEEL</text>
+      <text class="tag" x="0" y="32">Heel {fmt(heelDeg)}°</text>
     </g>
   </svg>
 
   <figcaption>
-    Plan view, bow up, starboard tack. Sheeting angles and telltale state are indicative, not
-    solved.
+    Bow up, {side === 1 ? 'starboard' : 'port'} tack. Camber, twist, heel and the wind angles are solved;
+    boom and jib sheeting angles are read off the sheet controls, not from sheet loads.
   </figcaption>
 </figure>
 
 <dl class="mono">
   <div>
-    <dt>TWA</dt>
-    <dd>{twaDeg.toFixed(0)}°</dd>
+    <dt>Main draft</dt>
+    <dd>{((main?.half.draft ?? 0) * 100).toFixed(1)}%</dd>
   </div>
   <div>
-    <dt>AWA</dt>
-    <dd>{aero.awaDeg.toFixed(0)}°</dd>
+    <dt>Jib draft</dt>
+    <dd>{((jib?.half.draft ?? 0) * 100).toFixed(1)}%</dd>
   </div>
   <div>
-    <dt>Heel</dt>
-    <dd>{heelDeg.toFixed(0)}°</dd>
+    <dt>Twist</dt>
+    <dd>{(main?.threeQuarter.twistDeg ?? 0).toFixed(0)}°</dd>
   </div>
   <div>
     <dt>Flat</dt>
@@ -189,29 +253,82 @@
     color: var(--ink-2);
   }
 
+  /* Deck ------------------------------------------------------------------ */
+
   .hull {
-    fill: var(--muted);
-    stroke: var(--ink-2);
+    fill: var(--hull);
+    stroke: var(--ink);
+    stroke-width: 1.25;
+    stroke-linejoin: round;
+  }
+
+  /* The only shading in the drawing: one hairline just inside the sheer. */
+  .hull-shade {
+    fill: none;
+    stroke: var(--ink);
+    stroke-opacity: 0.06;
+    stroke-width: 4;
+  }
+
+  .well {
+    fill: var(--surface);
+    stroke: var(--ink);
+    stroke-width: 1.25;
+    stroke-linejoin: round;
+  }
+
+  .centreline {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+  }
+
+  .sprit {
+    fill: var(--ink);
+  }
+
+  .chainplate {
+    fill: var(--ink-2);
+  }
+
+  .mast-step {
+    fill: var(--ink);
+  }
+
+  /* Sails ----------------------------------------------------------------- */
+
+  .sail {
+    fill: var(--accent);
+    fill-opacity: 0.18;
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
+
+  .ghost {
+    fill: var(--accent);
+    fill-opacity: 0.07;
+    stroke: var(--accent);
+    stroke-opacity: 0.4;
     stroke-width: 1;
   }
 
-  .spar,
-  .sail {
+  .boom {
     stroke: var(--ink);
-    stroke-width: 2.5;
+    stroke-width: 2;
     stroke-linecap: round;
   }
 
-  .sail {
-    stroke: var(--accent);
-  }
+  /* Wind ------------------------------------------------------------------ */
 
   .wind line {
-    stroke: var(--ink-2);
     stroke-width: 1.5;
+    stroke-linecap: round;
   }
 
   .wind .twa {
+    stroke: var(--ink-2);
     stroke-dasharray: 5 3;
   }
 
@@ -219,31 +336,38 @@
     stroke: var(--accent);
   }
 
+  .cap-twa {
+    fill: var(--ink-2);
+  }
+
+  .cap-awa {
+    fill: var(--accent);
+  }
+
   .tag {
     fill: var(--ink-2);
     font-family: var(--font-sans);
     font-size: var(--tag-size, 11px);
     font-weight: 600;
-    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.03em;
+    text-anchor: middle;
   }
 
-  .awa-tag {
+  .tag.accent {
     fill: var(--accent);
   }
 
-  .head-twa {
-    fill: var(--ink-2);
-  }
-
-  .head-awa {
-    fill: var(--accent);
-  }
+  /* Telltales ------------------------------------------------------------- */
 
   .tt-dot {
     fill: var(--ink-2);
   }
 
+  /* fill-box, or `left center` resolves against the viewBox and the ribbon
+     is flung across the drawing instead of pivoting on its own root. */
   .ribbon {
+    transform-box: fill-box;
     transform-origin: left center;
   }
 
@@ -259,10 +383,25 @@
     fill: var(--bad);
   }
 
-  .water {
+  /* Heel ------------------------------------------------------------------ */
+
+  .heel .water {
     stroke: var(--accent);
-    stroke-width: 1.5;
+    stroke-width: 1.25;
+    stroke-opacity: 0.6;
   }
+
+  .heel .mast {
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+
+  .heel .keel {
+    fill: var(--muted);
+  }
+
+  /* Motion ---------------------------------------------------------------- */
 
   @media (prefers-reduced-motion: no-preference) {
     .ribbon.streaming {
@@ -291,10 +430,10 @@
   @keyframes lift {
     0%,
     100% {
-      transform: rotate(-30deg);
+      transform: rotate(-25deg);
     }
     50% {
-      transform: rotate(-55deg);
+      transform: rotate(-45deg);
     }
   }
 
@@ -307,6 +446,8 @@
       transform: rotate(70deg);
     }
   }
+
+  /* Readouts -------------------------------------------------------------- */
 
   dl {
     display: flex;
