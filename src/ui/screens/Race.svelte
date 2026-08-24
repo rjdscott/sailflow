@@ -1,56 +1,157 @@
 <script lang="ts">
-  import Slider from '../components/Slider.svelte';
-  import Readout from '../components/Readout.svelte';
   import TopBar from '../components/TopBar.svelte';
-  import { stubClient } from '../../worker/client';
-  import type { TrimmedRequest } from '../../worker/protocol';
-  import type { SolveResult } from '../../core/types';
+  import ConditionsStrip from '../race/ConditionsStrip.svelte';
+  import ControlPanel from '../race/ControlPanel.svelte';
+  import PlanView from '../race/PlanView.svelte';
+  import Readouts from '../race/Readouts.svelte';
+  import RigElevation from '../race/RigElevation.svelte';
+  import SailSections from '../race/SailSections.svelte';
+  import { race } from '../race/store.svelte';
+  import { conditions } from '../stores/conditions.svelte';
 
-  const client = stubClient();
-
-  let mainsheet = $state(45);
-  let traveller = $state(0);
-  let result = $state<SolveResult | undefined>(undefined);
+  const PANES = ['Sections', 'Rig', 'Plan'];
+  let carousel: HTMLDivElement | undefined = $state();
+  let pane = $state(0);
 
   $effect(() => {
-    // Re-run the stub "solve" whenever a race control changes.
-    void mainsheet;
-    void traveller;
-    client
-      .request<TrimmedRequest>({ type: 'trimmed', controls: undefined!, condition: undefined! })
-      .then((r) => (result = r));
+    // Reading the snapshots tracks every control and condition field.
+    race.request($state.snapshot(race.controls), conditions.value);
   });
+
+  function onScroll(): void {
+    if (!carousel) return;
+    pane = Math.round(carousel.scrollLeft / carousel.clientWidth);
+  }
+
+  function goto(i: number): void {
+    carousel?.scrollTo({ left: i * carousel.clientWidth, behavior: 'smooth' });
+  }
 </script>
 
 <TopBar title="Race" />
 
-<section>
-  <Slider label="Mainsheet" bind:value={mainsheet} min={0} max={100} step={1} unit="%" />
-  <Slider label="Traveller" bind:value={traveller} min={-20} max={20} step={1} unit="mm" tick={0} />
-</section>
+<ConditionsStrip />
 
-{#if result}
-  <section class="readouts">
-    <Readout label="Boat speed" value={result.bsKt.value} tier={result.bsKt.tier} unit="kt" />
-    <Readout label="VMG" value={result.vmgKt.value} tier={result.vmgKt.tier} unit="kt" />
-    <Readout
-      label="Heel"
-      value={result.heelDeg.value}
-      tier={result.heelDeg.tier}
-      unit="°"
-      decimals={0}
-    />
-  </section>
+<div class="pictures" bind:this={carousel} onscroll={onScroll}>
+  <div class="pane">
+    <SailSections main={race.result?.shape.main} jib={race.result?.shape.jib} />
+  </div>
+  <div class="pane">
+    {#if race.result}<RigElevation rig={race.result.rig} />{/if}
+  </div>
+  <div class="pane">
+    {#if race.result}
+      <PlanView
+        aero={race.result.aero}
+        heelDeg={race.result.heelDeg.value}
+        twaDeg={conditions.twaDeg}
+        jib={race.result.shape.jib}
+      />
+    {/if}
+  </div>
+</div>
+
+<div class="dots">
+  {#each PANES as name, i (name)}
+    <button
+      type="button"
+      class:active={pane === i}
+      aria-label="Show {name}"
+      aria-current={pane === i}
+      onclick={() => goto(i)}
+    ></button>
+  {/each}
+</div>
+
+{#if race.result}
+  <Readouts result={race.result} twaDeg={conditions.twaDeg} />
 {/if}
 
+<p class="coach" class:busy={race.busy}>
+  {#if race.error}
+    Solver error: {race.error}
+  {:else if race.coach}
+    {race.coach.text}
+  {:else if race.result}
+    Nothing on the four big gears beats the noise floor — this trim is settled.
+  {:else}
+    Solving…
+  {/if}
+</p>
+
+<ControlPanel />
+
 <style>
-  section {
-    padding-block: var(--space-3);
+  .pictures {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+    height: 40vh;
+    min-height: 240px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    margin-top: var(--space-3);
+    scrollbar-width: none;
   }
 
-  .readouts {
+  .pictures::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pane {
+    scroll-snap-align: start;
+    min-width: 0;
+    padding-inline: var(--space-1);
+  }
+
+  .dots {
     display: flex;
-    gap: var(--space-6);
-    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+  }
+
+  .dots button {
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    border: 1px solid var(--ink-2);
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .dots button.active {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .coach {
+    margin: 0;
+    padding: var(--space-3);
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: var(--text-md);
+    color: var(--ink);
+  }
+
+  .coach.busy {
+    opacity: 0.6;
+  }
+
+  /* Wide enough for all three pictures at once: one rule, same components. */
+  @media (min-width: 900px) {
+    .pictures {
+      grid-auto-columns: 1fr;
+      overflow-x: hidden;
+      height: 34vh;
+      gap: var(--space-4);
+    }
+
+    .dots {
+      display: none;
+    }
   }
 </style>
