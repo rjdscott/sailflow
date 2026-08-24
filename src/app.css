@@ -4,11 +4,11 @@
 
    Breakpoints, as plain media queries (no PostCSS custom-media step):
      sm  < 720px    phone: one column, bottom tab bar, 16 px gutters
-     md  720–1023   tablet: one column, wider measure, bottom tab bar
+     md  720–1023   tablet: two columns (7/5), bottom tab bar
      lg  >= 1024    desktop: 72 px left nav rail, 1280 content, 24 px gutters
 
    The class contract other screens build on:
-     .screen         page grid; on lg two columns 7fr / 5fr
+     .screen         page grid; two columns 7fr / 5fr from md
      .col-primary    left column on lg (pictures, hero, the thing you look at)
      .col-secondary  right column on lg (controls, forms, the thing you touch)
      .screen-head    full-width title row, sits above .screen
@@ -206,15 +206,12 @@ button.chip {
 
 /* -------------------------------------------------------------- responsive */
 
-@media (min-width: 1024px) {
-  :root {
-    --gutter: 24px;
-  }
-
+@media (min-width: 720px) {
+  /* md and up: two columns. The thing you look at left, the thing you touch right. */
   .screen {
     grid-template-columns: 7fr 5fr;
     grid-template-areas: 'primary secondary';
-    gap: var(--space-6);
+    gap: var(--space-5);
   }
 
   .col-primary {
@@ -223,6 +220,16 @@ button.chip {
 
   .col-secondary {
     grid-area: secondary;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --gutter: 24px;
+  }
+
+  .screen {
+    gap: var(--space-6);
   }
 
   .card {
