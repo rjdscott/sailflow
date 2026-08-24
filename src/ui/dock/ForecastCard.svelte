@@ -30,9 +30,11 @@
 </script>
 
 <section class="card">
-  <h2>Forecast</h2>
+  <h2 class="section-title">Forecast</h2>
   <p class="range tabular-nums">
-    {fmt(forecast.minKt, 0)}–{fmt(forecast.maxKt, 0)} kt, likely {fmt(forecast.likelyKt, 0)} kt
+    {fmt(forecast.minKt, 0)}–{fmt(forecast.maxKt, 0)} kt<span class="likely"
+      >likely {fmt(forecast.likelyKt, 0)} kt</span
+    >
   </p>
 
   <Slider
@@ -96,24 +98,17 @@
 </section>
 
 <style>
-  .card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: var(--space-3);
-    margin-block-end: var(--space-4);
-  }
-
-  h2 {
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--ink-2);
-    font-weight: 600;
-  }
-
   .range {
-    margin: var(--space-1) 0 var(--space-2);
+    margin: 0 0 var(--space-2);
     font-size: var(--text-lg);
     color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .likely {
+    margin-inline-start: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
   }
 
   .row {

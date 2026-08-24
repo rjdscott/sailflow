@@ -26,14 +26,25 @@
     snap(band.lowersTurns, specs.lowerTurns.min, specs.lowerTurns.max, specs.lowerTurns.step),
   );
 
-  /** "optimum -1.0 at 8 kt · +4.0 at 16 kt" — both ends of the forecast. */
-  function optimum(key: keyof DockControls, decimals: number, unit: string): string | undefined {
-    if (!score || !showOptimum) return undefined;
-    const at = (v: number, tws: number): string =>
-      `${decimals === 0 ? fmt(v, 0, unit) : signed(v, decimals)} at ${fmt(tws, 0, 'kt')}`;
-    return `optimum ${at(score.atMin.optimum[key], score.atMin.twsKt)} · ${at(score.atMax.optimum[key], score.atMax.twsKt)}`;
+  /** "+4.0" for turns from base, "15 mm" for an absolute measurement. */
+  function value(v: number, decimals: number, unit: string): string {
+    return decimals === 0 ? fmt(v, 0, unit) : signed(v, decimals);
   }
 </script>
+
+{#snippet optimumChips(key: keyof DockControls, decimals: number, unit: string)}
+  {#if score && showOptimum}
+    <p class="chips">
+      <span class="chip-label">optimum</span>
+      <span class="chip tabular-nums">
+        {value(score.atMin.optimum[key], decimals, unit)} at {fmt(score.atMin.twsKt, 0, 'kt')}
+      </span>
+      <span class="chip tabular-nums">
+        {value(score.atMax.optimum[key], decimals, unit)} at {fmt(score.atMax.twsKt, 0, 'kt')}
+      </span>
+    </p>
+  {/if}
+{/snippet}
 
 <Slider
   label={specs.upperTurns.label}
@@ -44,12 +55,9 @@
   unit={specs.upperTurns.unit}
   tick={upperTick}
   {locked}
-  hint={optimum('upperTurns', 1, 'turns') ??
-    `${guideSource}: ${signed(band.uppersTurns)} in ${band.label}`}
+  hint="{guideSource}: {signed(band.uppersTurns)} in {band.label}"
 />
-{#if showOptimum && score}
-  <p class="guide">{guideSource}: {signed(band.uppersTurns)} turns in {band.label}</p>
-{/if}
+{@render optimumChips('upperTurns', 1, 'turns')}
 
 <Slider
   label={specs.lowerTurns.label}
@@ -60,12 +68,9 @@
   unit={specs.lowerTurns.unit}
   tick={lowerTick}
   {locked}
-  hint={optimum('lowerTurns', 1, 'turns') ??
-    `${guideSource}: ${signed(band.lowersTurns)} in ${band.label}`}
+  hint="{guideSource}: {signed(band.lowersTurns)} in {band.label}"
 />
-{#if showOptimum && score}
-  <p class="guide">{guideSource}: {signed(band.lowersTurns)} turns in {band.label}</p>
-{/if}
+{@render optimumChips('lowerTurns', 1, 'turns')}
 
 <Slider
   label={specs.forestayMm.label}
@@ -76,13 +81,30 @@
   unit={specs.forestayMm.unit}
   decimals={0}
   {locked}
-  hint={optimum('forestayMm', 0, 'mm')}
+  hint="No published band for the forestay: the guides give rake in words."
 />
+{@render optimumChips('forestayMm', 0, 'mm')}
 
 <style>
-  .guide {
-    margin: calc(-1 * var(--space-1)) 0 0;
+  .chips {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+    margin: 0 0 var(--space-2);
+  }
+
+  .chip-label {
     font-size: var(--text-xs);
     color: var(--ink-2);
+  }
+
+  .chip {
+    padding: 2px var(--space-2);
+    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    border-radius: 999px;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+    white-space: nowrap;
   }
 </style>

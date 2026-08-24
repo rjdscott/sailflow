@@ -12,6 +12,7 @@ import {
   seq,
   signed,
   sparklinePath,
+  sparklineTicks,
   specs,
 } from './logic';
 
@@ -170,6 +171,51 @@ describe('sparklinePath', () => {
   it('returns an empty path when there is nothing to draw', () => {
     expect(sparklinePath([])).toBe('');
     expect(sparklinePath(pts([Number.NaN]))).toBe('');
+  });
+});
+
+describe('sparklineTicks', () => {
+  const pts = (twsKts: number[]): DockRegret[] =>
+    twsKts.map((twsKt) => ({
+      twsKt,
+      regretSPerMile: 1,
+      optimum: { upperTurns: 0, lowerTurns: 0, forestayMm: 0 },
+    }));
+
+  it('labels the first, middle and last wind speed across the width', () => {
+    expect(sparklineTicks(pts([6, 8, 10, 12, 14]), 240)).toEqual([
+      { x: 0, label: '6', anchor: 'start' },
+      { x: 120, label: '10', anchor: 'middle' },
+      { x: 240, label: '14', anchor: 'end' },
+    ]);
+  });
+
+  it('anchors the ends inward so labels stay inside the box', () => {
+    const ticks = sparklineTicks(pts([6, 8, 10]), 100);
+    expect(ticks[0].anchor).toBe('start');
+    expect(ticks[ticks.length - 1].anchor).toBe('end');
+  });
+
+  it('drops the middle tick when there are only two samples', () => {
+    expect(sparklineTicks(pts([6, 20]), 100)).toEqual([
+      { x: 0, label: '6', anchor: 'start' },
+      { x: 100, label: '20', anchor: 'end' },
+    ]);
+  });
+
+  it('shares its x scale with sparklinePath', () => {
+    const p = pts([6, 8, 10, 12, 14]);
+    const last = sparklineTicks(p, 240).at(-1);
+    expect(sparklinePath(p, 240, 24)).toContain(`L${last?.x}`);
+  });
+
+  it('returns nothing to draw for no finite samples', () => {
+    expect(sparklineTicks([], 240)).toEqual([]);
+    expect(sparklineTicks([{ ...pts([6])[0], regretSPerMile: Number.NaN }], 240)).toEqual([]);
+  });
+
+  it('handles a single sample without dividing by zero', () => {
+    expect(sparklineTicks(pts([9]), 240)).toEqual([{ x: 0, label: '9', anchor: 'start' }]);
   });
 });
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import '../_layout-fallback.css';
   import { onMount } from 'svelte';
   import TopBar from '../components/TopBar.svelte';
   import Segmented from '../components/Segmented.svelte';
@@ -8,19 +9,12 @@
   import { logStoreUi } from '../log/store.svelte';
   import { nextId, type LogEntry } from '../../lib/logStore';
   import type { RaceControls, SeaState } from '../../core/types';
-  import { fmt } from '../format';
-
-  const SEA_STATE_LABELS: Record<SeaState, string> = {
-    0: 'flat',
-    1: 'ripple',
-    2: 'chop',
-    3: 'steep',
-    4: 'waves',
-  };
+  import { SEA_LABELS, windLine } from '../format';
+  import { describeSetup } from '../dock/logic';
 
   const SEA_STATE_OPTIONS = ([0, 1, 2, 3, 4] as SeaState[]).map((v) => ({
     value: String(v),
-    label: SEA_STATE_LABELS[v],
+    label: SEA_LABELS[v],
   }));
 
   const RACE_FIELDS: { key: keyof RaceControls; label: string }[] = [
@@ -71,7 +65,7 @@
     };
   }
 
-  let sheetOpen = $state(false);
+  let editorOpen = $state(false);
   let editingId: string | null = $state(null);
   let form: LogEntry = $state(emptyEntry());
   let includeRace = $state(false);
@@ -80,6 +74,20 @@
   let fileInputEl: HTMLInputElement | undefined = $state();
   let toastMessage = $state('');
   let toastOpen = $state(false);
+
+  // ponytail: a media query decides this, not a resize handler — the editor is
+  // a modal <dialog> below lg and an inline card above it, and no CSS makes a
+  // modal dialog inline.
+  let wide = $state(false);
+  $effect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const sync = (): void => {
+      wide = mq.matches;
+    };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  });
 
   onMount(() => {
     void logStoreUi.load();
@@ -96,7 +104,7 @@
     includeRace = !!form.race;
     raceForm = form.race ? { ...form.race } : emptyRace();
     deleteArmed = false;
-    sheetOpen = true;
+    editorOpen = true;
   }
 
   function openEdit(entry: LogEntry): void {
@@ -105,11 +113,12 @@
     includeRace = !!entry.race;
     raceForm = entry.race ? { ...entry.race } : emptyRace();
     deleteArmed = false;
-    sheetOpen = true;
+    editorOpen = true;
   }
 
-  function closeSheet(): void {
-    sheetOpen = false;
+  function closeEditor(): void {
+    editorOpen = false;
+    editingId = null;
     logStoreUi.clearDraft();
   }
 
@@ -128,7 +137,7 @@
       await logStoreUi.add(entry);
       notify('Entry saved');
     }
-    closeSheet();
+    closeEditor();
   }
 
   async function handleDeleteTap(): Promise<void> {
@@ -139,7 +148,7 @@
     }
     await logStoreUi.remove(editingId);
     notify('Entry deleted');
-    closeSheet();
+    closeEditor();
   }
 
   function triggerImport(): void {
@@ -158,43 +167,7 @@
   }
 </script>
 
-<TopBar title="Log" />
-
-<div class="toolbar">
-  <button type="button" onclick={() => logStoreUi.exportJson()}>Export JSON</button>
-  <button type="button" onclick={() => logStoreUi.exportCsv()}>Export CSV</button>
-  <button type="button" onclick={triggerImport}>Import</button>
-  <input
-    bind:this={fileInputEl}
-    type="file"
-    accept=".json"
-    class="visually-hidden"
-    onchange={handleImportFile}
-  />
-</div>
-
-{#if logStoreUi.entries.length === 0}
-  <p class="empty">No entries yet. Tap "+ entry" after your next sail to start the log.</p>
-{:else}
-  <ul class="entries">
-    {#each logStoreUi.entries as entry (entry.id)}
-      <li>
-        <button type="button" class="entry-row" onclick={() => openEdit(entry)}>
-          <span class="venue">{entry.venue || 'Unnamed venue'}</span>
-          <span class="meta">{entry.date}</span>
-          <span class="meta">
-            {fmt(entry.actual.minKt, 0)}&ndash;{fmt(entry.actual.maxKt, 0)} kt
-          </span>
-          <span class="chip">{SEA_STATE_LABELS[entry.seaState]}</span>
-        </button>
-      </li>
-    {/each}
-  </ul>
-{/if}
-
-<button type="button" class="fab" onclick={openNew} aria-label="Add log entry">+ entry</button>
-
-<Sheet bind:open={sheetOpen} title={editingId ? 'Edit entry' : 'New entry'}>
+{#snippet editor()}
   <form
     onsubmit={(e) => {
       e.preventDefault();
@@ -211,20 +184,20 @@
       <input type="text" bind:value={form.venue} required />
     </label>
 
-    <h3>Forecast</h3>
+    <h3 class="section-title">Forecast</h3>
     <div class="row">
       <NumberField label="Min" bind:value={form.forecast.minKt} unit="kt" />
       <NumberField label="Likely" bind:value={form.forecast.likelyKt} unit="kt" />
       <NumberField label="Max" bind:value={form.forecast.maxKt} unit="kt" />
     </div>
 
-    <h3>Actual</h3>
+    <h3 class="section-title">Actual</h3>
     <div class="row">
       <NumberField label="Min" bind:value={form.actual.minKt} unit="kt" />
       <NumberField label="Max" bind:value={form.actual.maxKt} unit="kt" />
     </div>
 
-    <h3>Sea state</h3>
+    <h3 class="section-title">Sea state</h3>
     <Segmented
       ariaLabel="Sea state"
       options={SEA_STATE_OPTIONS}
@@ -236,7 +209,7 @@
       <NumberField label="Crew weight" bind:value={form.crewKg} unit="kg" step={1} />
     </div>
 
-    <h3>Dock setup</h3>
+    <h3 class="section-title">Dock setup</h3>
     <div class="row">
       <NumberField label="Upper" bind:value={form.dock.upperTurns} unit="turns" step={0.5} />
       <NumberField label="Lower" bind:value={form.dock.lowerTurns} unit="turns" step={0.5} />
@@ -270,6 +243,7 @@
 
     <div class="actions">
       <button type="submit" class="primary">Save</button>
+      <button type="button" class="quiet" onclick={closeEditor}>Cancel</button>
       {#if editingId}
         <button type="button" class="danger" onclick={handleDeleteTap}>
           {deleteArmed ? 'Tap again to delete' : 'Delete'}
@@ -277,27 +251,110 @@
       {/if}
     </div>
   </form>
-</Sheet>
+{/snippet}
+
+<TopBar title="Log" />
+
+<div class="screen">
+  <div class="col-primary">
+    <div class="toolbar">
+      <button type="button" class="new" onclick={openNew}>New entry</button>
+      <span class="spacer"></span>
+      <button type="button" class="quiet" onclick={() => logStoreUi.exportJson()}
+        >Export JSON</button
+      >
+      <button type="button" class="quiet" onclick={() => logStoreUi.exportCsv()}>Export CSV</button>
+      <button type="button" class="quiet" onclick={triggerImport}>Import</button>
+      <input
+        bind:this={fileInputEl}
+        type="file"
+        accept=".json"
+        class="visually-hidden"
+        onchange={handleImportFile}
+      />
+    </div>
+
+    {#if logStoreUi.entries.length === 0}
+      <section class="card empty">
+        <h2 class="section-title">No entries yet</h2>
+        <p>Record the wind, the rig you sailed and what was fast, while you still remember it.</p>
+      </section>
+    {:else}
+      <ul class="entries">
+        {#each logStoreUi.entries as entry (entry.id)}
+          <li>
+            <button
+              type="button"
+              class="card entry"
+              class:selected={editingId === entry.id}
+              onclick={() => openEdit(entry)}
+            >
+              <span class="entry-title">
+                {entry.date} · {entry.venue || 'Unnamed venue'}
+              </span>
+              <span class="entry-line tabular-nums">{windLine(entry)}</span>
+              <span class="entry-line tabular-nums">{describeSetup(entry.dock)}</span>
+              {#if entry.notes}<span class="entry-notes">{entry.notes}</span>{/if}
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </div>
+
+  {#if wide}
+    <div class="col-secondary">
+      <section class="card">
+        <h2 class="section-title">{editingId ? 'Edit entry' : 'New entry'}</h2>
+        {#if editorOpen}
+          {@render editor()}
+        {:else}
+          <p class="prompt">Pick an entry to edit it, or start a new one.</p>
+        {/if}
+      </section>
+    </div>
+  {/if}
+</div>
+
+{#if !wide}
+  <Sheet bind:open={editorOpen} title={editingId ? 'Edit entry' : 'New entry'}>
+    {@render editor()}
+  </Sheet>
+{/if}
 
 <Toast bind:open={toastOpen} message={toastMessage} />
 
 <style>
   .toolbar {
     display: flex;
+    align-items: center;
     gap: var(--space-2);
     flex-wrap: wrap;
-    padding-block: var(--space-2);
+  }
+
+  .spacer {
+    flex: 1;
   }
 
   .toolbar button {
     min-height: var(--hit-min);
     padding: 0 var(--space-3);
-    border: 1px solid var(--surface);
     border-radius: var(--radius);
-    background: var(--bg);
-    color: var(--ink);
     font-size: var(--text-sm);
     cursor: pointer;
+  }
+
+  .new {
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+  }
+
+  .quiet {
+    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    background: transparent;
+    color: var(--ink-2);
   }
 
   .visually-hidden {
@@ -305,71 +362,61 @@
     width: 1px;
     height: 1px;
     overflow: hidden;
-    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
     white-space: nowrap;
   }
 
-  .empty {
-    padding-block: var(--space-6);
-    color: var(--ink-2);
+  .empty p {
+    margin: 0;
     font-size: var(--text-sm);
+    color: var(--ink-2);
   }
 
   .entries {
     list-style: none;
+    display: grid;
+    gap: var(--space-2);
     margin: 0;
     padding: 0;
   }
 
-  .entry-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
+  .entry {
+    display: grid;
+    /* minmax(0,…) so the one-line ellipsis works instead of stretching the card */
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
     width: 100%;
-    min-height: var(--hit-min);
-    padding: var(--space-2) 0;
-    border: none;
-    border-bottom: 1px solid var(--surface);
-    background: none;
+    text-align: start;
     color: var(--ink);
-    font-size: var(--text-sm);
-    text-align: left;
     cursor: pointer;
   }
 
-  .venue {
-    flex: 1;
+  .entry.selected {
+    border-color: var(--accent);
+  }
+
+  .entry-title {
+    font-size: var(--text-md);
     font-weight: 600;
   }
 
-  .meta {
-    color: var(--ink-2);
-  }
-
-  .chip {
-    padding: 2px var(--space-2);
-    border-radius: var(--radius);
-    background: var(--surface);
-    color: var(--ink-2);
+  .entry-line,
+  .entry-notes {
     font-size: var(--text-xs);
+    color: var(--ink-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .fab {
-    position: fixed;
-    right: var(--space-4);
-    bottom: calc(56px + var(--space-4) + env(safe-area-inset-bottom));
-    min-width: var(--hit-min);
-    min-height: var(--hit-min);
-    padding: 0 var(--space-4);
-    border: none;
-    border-radius: 999px;
-    background: var(--accent);
-    color: var(--on-accent);
+  .entry-notes {
+    font-style: italic;
+  }
+
+  .prompt {
+    margin: 0;
     font-size: var(--text-sm);
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
-    cursor: pointer;
-    z-index: 5;
+    color: var(--ink-2);
   }
 
   form {
@@ -380,8 +427,6 @@
 
   h3 {
     margin: var(--space-2) 0 0;
-    font-size: var(--text-sm);
-    color: var(--ink-2);
   }
 
   .field {
@@ -398,64 +443,64 @@
     min-height: var(--hit-min);
   }
 
-  input[type='date'],
-  input[type='text'],
-  textarea {
+  .field input,
+  .field textarea {
     min-height: var(--hit-min);
     padding: var(--space-2);
-    border: 1px solid var(--surface);
+    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
     border-radius: var(--radius);
     background: var(--bg);
     color: var(--ink);
     font-size: var(--text-md);
-    font-family: inherit;
+  }
+
+  .field.checkbox input {
+    min-height: 0;
   }
 
   .row {
     display: flex;
-    gap: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .row.wrap {
     flex-wrap: wrap;
   }
 
-  .row > :global(*) {
-    flex: 1;
-    min-width: 100px;
-  }
-
-  details {
-    border: 1px solid var(--surface);
-    border-radius: var(--radius);
-    padding: var(--space-2) var(--space-3);
-  }
-
   summary {
-    cursor: pointer;
+    min-height: var(--hit-min);
+    display: flex;
+    align-items: center;
     font-size: var(--text-sm);
     color: var(--ink-2);
+    cursor: pointer;
   }
 
   .actions {
     display: flex;
-    gap: var(--space-3);
-    padding-top: var(--space-2);
+    gap: var(--space-2);
+    flex-wrap: wrap;
   }
 
   .actions button {
     flex: 1;
     min-height: var(--hit-min);
+    padding: 0 var(--space-3);
     border-radius: var(--radius);
-    border: none;
-    font-size: var(--text-md);
+    font-size: var(--text-sm);
     cursor: pointer;
   }
 
   .primary {
+    border: 1px solid var(--accent);
     background: var(--accent);
     color: var(--on-accent);
+    font-weight: 600;
   }
 
   .danger {
-    background: var(--bad);
-    color: var(--on-accent);
+    border: 1px solid var(--bad);
+    background: transparent;
+    color: var(--bad);
   }
 </style>
