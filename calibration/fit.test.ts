@@ -9,8 +9,8 @@ import {
   fromX,
   northBand,
   pointResidual,
-  polarPoint,
   polarRow,
+  rowPoint,
   softOptimum,
   structuralFloor,
   toX,
@@ -114,8 +114,8 @@ describe('polar row lookup', () => {
     expect(() => polarRow('asym', 'vmgUp', 10)).toThrow(/no polar row/);
   });
 
-  it('polarPoint carries magnitudes, ready for the loss', () => {
-    expect(polarPoint('jib', 'vmgUp', 20)).toEqual({
+  it('rowPoint carries magnitudes, ready for the loss', () => {
+    expect(rowPoint(polarRow('jib', 'vmgUp', 20))).toEqual({
       twsKt: 20,
       bsKt: 5.94,
       twaDeg: 38.3,

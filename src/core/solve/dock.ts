@@ -44,8 +44,32 @@ export function forecastPmf(f: Forecast): { twsKt: number; p: number }[] {
   return raw.map((r) => ({ twsKt: r.twsKt, p: r.p / sum }));
 }
 
-/** Hours per mile of windward-leeward for a setup at one wind speed. */
+/**
+ * Lap-time memo per boat. The solver is pure and deterministic, so a lap
+ * time depends only on (setup, wind, sea state, crew). Without this every
+ * slider move recomputes T*(w) over the whole candidate grid.
+ */
+const lapCache = new WeakMap<BoatDefinition, Map<string, number>>();
+
 export function lapTimeHours(
+  boat: BoatDefinition,
+  setup: DockControls,
+  f: Forecast,
+  twsKt: number,
+  geom: Record<SailId, AeroGeometry>,
+): number {
+  let m = lapCache.get(boat);
+  if (!m) lapCache.set(boat, (m = new Map()));
+  const key = `${setup.upperTurns}|${setup.lowerTurns}|${setup.forestayMm}|${twsKt}|${f.seaState}|${f.crewKg}`;
+  const hit = m.get(key);
+  if (hit !== undefined) return hit;
+  const t = lapTimeHoursUncached(boat, setup, f, twsKt, geom);
+  m.set(key, t);
+  return t;
+}
+
+/** Hours per mile of windward-leeward for a setup at one wind speed. */
+export function lapTimeHoursUncached(
   boat: BoatDefinition,
   setup: DockControls,
   f: Forecast,

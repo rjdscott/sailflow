@@ -1,5 +1,5 @@
 /**
- * Staged calibration of the J/70 free parameters (ADR 0007).
+ * Staged calibration of the J/70 free parameters (ADR 0007, split per ADR 0012).
  *
  * Run: `pnpm calibrate`. Writes the fitted values into the `calibration` block
  * of `data/boats/j70.json` and the full audit trail into
@@ -7,45 +7,70 @@
  * ever reads.
  *
  * Four stages, each a Nelder-Mead search on log-normalised parameters with a
- * FIXED starting simplex (all-zero x0, uniform step) and a FIXED iteration
- * budget, so two runs on the same inputs give bit-identical output. Values are
- * carried between stages by freezing them into `boat.calibration` in memory,
- * which is the same object `knob()` reads, so a frozen stage is simply part of
- * the model for every later stage.
+ * FIXED starting simplex (all-zero x0, uniform step), a FIXED restart count and
+ * a FIXED iteration budget, so two runs on the same inputs give bit-identical
+ * output. Values are carried between stages by freezing them into
+ * `boat.calibration` in memory, which is the same object `knob()` reads, so a
+ * frozen stage is simply part of the model for every later stage.
  *
- *   1. hydro upwind   rrMul.fn20/30/40, keelLiftSlope, heelDragK, aero.hbiM
- *   2. hydro downwind rrMul.fn50/60, planingRelief
+ *   1. hydro, jib     formFactor, rrMul.fn20..fn60, planingRelief,
+ *                     keelLiftSlope, heelDragK, aero.hbiM — against the jib
+ *                     VMG row AND the 60/90/120 rows, which is what puts the
+ *                     Fn 0.5-0.7 reaching regime in front of fn50/fn60
+ *                     (ADR 0012; the first fit left them to the asym alone and
+ *                     the reaching rows came out 7-15 % wrong)
+ *   2. asym           aero.asymClMul — the one non-ORC aero knob, against the
+ *                     asymmetric VMG rows
  *   3. righting       crewArmMul, refit on the high-wind heel rows only
  *   4. rig + shape    rig.EI/turnsToN/sagK, shape.bendToDraft/sagToDraft/
  *                     sheetToTwist, against the North guide's base settings
  *
- * Fit set (ADR 0007): TWS 6, 10, 12, 16, 20. TWS 8 and 14 are held out and
- * never enter a loss here. Stage 4 sees only the North 8-10 and 12-16 bands;
- * the other bands and the whole Quantum guide are held out.
+ * Fit set (ADR 0012): every printed row at TWS 6, 10, 12, 16, 20. Every row at
+ * TWS 8 and 14 is held out and never enters a loss here. Stage 4 sees only the
+ * North 8-10 and 12-16 bands; the other bands and the whole Quantum guide are
+ * held out.
+ *
+ * The rows, the sea state and the crew weight all come from
+ * `validation/compare.ts`, and the model is evaluated through its `compareRow`,
+ * so the fit and the gate cannot drift apart. That import is one-way:
+ * `compare.ts` reads the boat and never writes it.
  *
  * Loss (stages 1-3), summed over the fit rows:
  *
  *   ((bs - bs_p)/bs_p)^2 + w_twa*((twa - twa_p)/10)^2 + w_heel*((heel - heel_p)/10)^2
  *
- * Weights: boat speed is the quantity the ADR gates on (3 %), so it carries
+ * Weights: boat speed is what the ADR gates hardest on (3 %), so it carries
  * weight 1 as a *relative* error. The angle and heel terms are scaled by 10 deg
  * so a 10-degree miss costs the same as a 100 % speed miss before weighting.
- * w_twa = 0.05 makes a 2 deg angle miss worth about a 4.5 % speed miss;
- * w_heel = 0.02 makes a 5 deg heel miss worth about a 7 % speed miss. Heel is
- * deliberately the weakest term in stages 1-2: the polar's heel column is the
- * output of a stability model we cannot reproduce (ADR 0007 notes the 2011 vs
- * 2023 gap) and letting it drive the resistance fit would trade a gated
- * quantity for an ungated one. Stage 3 exists precisely to give heel its own
- * pass, and there w_heel = 1.0.
+ * w_twa = 0.15 makes a 2 deg angle miss (the VMG-row tolerance) worth about an
+ * 8 % speed miss, which is roughly how the two tolerances rank in practice; on
+ * fixed-angle rows the term is identically zero because the angle is an input.
+ * w_heel = 0.02 keeps heel the weakest term in stages 1-2: the polar's heel
+ * column is the output of a stability model we cannot reproduce (ADR 0007 notes
+ * the 2011-vs-2023 gap) and letting it drive the resistance fit would trade a
+ * gated quantity for an ungated one. Stage 3 exists to give heel its own pass,
+ * and there w_heel = 1.0.
  */
 import { writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { format, resolveConfig } from 'prettier';
-import j70 from '../data/boats/j70.json';
-import polarData from '../data/polar/orc-j70.json';
 import northData from '../data/tuning/north-j70.json';
-import type { BoatDefinition, Condition, DockControls, SailSet } from '../src/core/types';
+import type { Comparison, Polar, PolarRow } from '../validation/compare';
+import {
+  angleRows,
+  boat,
+  compareRow,
+  HELD_OUT_TWS,
+  loadPolar,
+  POLAR_CREW_KG,
+  POLAR_SEA_STATE,
+  vmgRows,
+} from '../validation/compare';
+import type { Condition, DockControls } from '../src/core/types';
 import { nelderMead } from '../src/core/math/nelderMead';
+import { baseRace } from '../src/core/shape/base';
+import { rigState } from '../src/core/rig/state';
+import { flyingShape } from '../src/core/shape/flying';
 import { geometryFor } from '../src/core/solve/equilibrium';
 import { optimal } from '../src/core/solve/optimal';
 
@@ -88,6 +113,7 @@ export interface LossWeights {
 }
 
 export interface PointResidual extends FitPoint {
+  label: string;
   target: FitPoint;
   dBsPct: number;
   dTwaDeg: number;
@@ -95,12 +121,18 @@ export interface PointResidual extends FitPoint {
   loss: number;
 }
 
-export function pointResidual(model: FitPoint, target: FitPoint, w: LossWeights): PointResidual {
+export function pointResidual(
+  model: FitPoint,
+  target: FitPoint,
+  w: LossWeights,
+  label = '',
+): PointResidual {
   const dBs = (model.bsKt - target.bsKt) / target.bsKt;
   const dTwa = model.twaDeg - target.twaDeg;
   const dHeel = model.heelDeg - target.heelDeg;
   return {
     ...model,
+    label,
     target,
     dBsPct: dBs * 100,
     dTwaDeg: dTwa,
@@ -116,31 +148,35 @@ export function vmgLoss(models: FitPoint[], targets: FitPoint[], w: LossWeights)
 }
 
 // ---------------------------------------------------------------------------
-// Reference data lookups
+// Reference data
 // ---------------------------------------------------------------------------
 
-export interface PolarRow {
-  twsKt: number;
-  sail: string;
-  kind: string;
-  twaDeg: number;
-  bsKt: number;
-  vmgKt: number;
-  heelDeg: number;
-}
+const loaded = loadPolar();
+if (!loaded) throw new Error('data/polar/orc-j70.json is missing; nothing to fit against');
+const polar: Polar = loaded;
 
-const POLAR_ROWS = polarData.rows as PolarRow[];
+/** ADR 0012: fit every printed row at the wind speeds that are not held out. */
+export const FIT_TWS = polar.twsKt.filter((t) => !HELD_OUT_TWS.includes(t));
 
 /** The one polar row for a (sail, kind, TWS) triple. Throws if it is not printed. */
-export function polarRow(sail: SailSet, kind: string, twsKt: number): PolarRow {
-  const r = POLAR_ROWS.find((x) => x.sail === sail && x.kind === kind && x.twsKt === twsKt);
+export function polarRow(sail: string, kind: string, twsKt: number): PolarRow {
+  const r = polar.rows.find((x) => x.sail === sail && x.kind === kind && x.twsKt === twsKt);
   if (!r) throw new Error(`no polar row for ${sail}/${kind} at TWS ${twsKt}`);
   return r;
 }
 
-export function polarPoint(sail: SailSet, kind: string, twsKt: number): FitPoint {
-  const r = polarRow(sail, kind, twsKt);
-  return { twsKt, bsKt: r.bsKt, twaDeg: Math.abs(r.twaDeg), heelDeg: Math.abs(r.heelDeg) };
+export function rowPoint(r: PolarRow): FitPoint {
+  return {
+    twsKt: r.twsKt,
+    bsKt: r.bsKt,
+    twaDeg: Math.abs(r.twaDeg),
+    heelDeg: Math.abs(r.heelDeg),
+  };
+}
+
+/** The model's answer for one printed row, in the loss's shape. */
+function modelPoint(c: Comparison): FitPoint {
+  return { twsKt: c.twsKt, bsKt: c.model.bsKt, twaDeg: c.model.twaDeg, heelDeg: c.model.heelDeg };
 }
 
 export interface TuningBand {
@@ -171,16 +207,6 @@ export function northBand(twsKt: number): TuningBand {
 // Fit configuration
 // ---------------------------------------------------------------------------
 
-/** ADR 0007 fit set. TWS 8 and 14 are held out. */
-const FIT_TWS = [6, 10, 12, 16, 20];
-/**
- * The 20 kt asymmetric row is dropped from stage 2: the guide prints
- * 137.1 deg at 11.53 kt (Fn 0.73, planing) directly above a 16 kt row of
- * 174.0 deg at 6.73 kt (Fn 0.43). No monotone resistance curve passes through
- * both, so including it would corrupt fn50/fn60 to chase one unreachable row.
- * Recorded in the residuals file as a skipped target.
- */
-const FIT_TWS_DN = FIT_TWS.filter((t) => t !== 20);
 /** Stage 3 refits righting on the rows where heel is actually large. */
 const FIT_TWS_HEEL = [16, 20];
 /** Stage 4 samples the middle of the two North bands the ADR allows us to fit. */
@@ -190,36 +216,34 @@ const WEIGHTS: LossWeights = { twa: 0.15, heel: 0.02 };
 /** Stage 3 is the heel pass: heel dominates, speed still restrains it. */
 const WEIGHTS_HEEL: LossWeights = { twa: 0.0, heel: 1.0 };
 
-/**
- * Flat water and a mid-range crew. The ORC Speed Guide is a flat-water VPP
- * polar, so sea state 0; crew 300 kg is the midpoint of the class range
- * (255-340 kg) since the guide does not print the crew weight it used.
- * prov: assumed.
- */
-const SEA_STATE = 0;
-const CREW_KG = 300;
-
 /** Fixed simplex step in log space: a factor of e^0.35 ~ 1.42 per parameter. */
 const SIMPLEX_STEP = 0.35;
 
-const boat = j70 as unknown as BoatDefinition;
 const geom = geometryFor(boat);
 const BASE_DOCK: DockControls = { upperTurns: 0, lowerTurns: 0, forestayMm: 0 };
 
-function condition(twsKt: number, twaDeg: number, sailset: SailSet): Condition {
-  return { twsKt, twaDeg, seaState: SEA_STATE, crewKg: CREW_KG, sailset };
+// ---------------------------------------------------------------------------
+// Row sets
+// ---------------------------------------------------------------------------
+
+/** Jib rows in the fit: the upwind VMG row plus the printed 60/90/120 rows. */
+const JIB_ROWS: PolarRow[] = FIT_TWS.flatMap((t) => [
+  polarRow('jib', 'vmgUp', t),
+  ...angleRows(polar, t),
+]);
+/** Asymmetric rows in the fit: the running VMG row at each fitted wind speed. */
+const ASYM_ROWS: PolarRow[] = FIT_TWS.map((t) => polarRow('asym', 'vmgDn', t));
+const HEEL_ROWS: PolarRow[] = FIT_TWS_HEEL.map((t) => polarRow('jib', 'vmgUp', t));
+
+function residualsFor(rows: PolarRow[], w: LossWeights): PointResidual[] {
+  return rows.map((r) => {
+    const c = compareRow(r);
+    return pointResidual(modelPoint(c), rowPoint(r), w, c.label);
+  });
 }
 
-/** One VMG-optimal model point at this wind speed. */
-function modelVmg(twsKt: number, sailset: SailSet, dock = BASE_DOCK): FitPoint {
-  const seed = sailset === 'jib' ? 45 : 150;
-  const r = optimal(boat, dock, condition(twsKt, seed, sailset), { optimiseTwa: true }, geom);
-  return {
-    twsKt,
-    bsKt: r.bsKt.value,
-    twaDeg: Math.abs(r.twaDeg),
-    heelDeg: Math.abs(r.heelDeg.value),
-  };
+function lossFor(rows: PolarRow[], w: LossWeights): number {
+  return residualsFor(rows, w).reduce((a, r) => a + r.loss, 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -232,10 +256,11 @@ export interface StageReport {
   target: string;
   weights: LossWeights;
   maxIter: number;
+  restarts: number;
   evals: number;
   lossStart: number;
   lossEnd: number;
-  knobs: { name: string; start: number; end: number; bounds: [number, number] }[];
+  knobs: { name: string; start: number; end: number; bounds: [number, number]; atBound: boolean }[];
   residuals: PointResidual[] | TurnsResidual[];
   notes?: string;
 }
@@ -258,6 +283,12 @@ interface StageSpec {
   weights: LossWeights;
   knobs: KnobSpec[];
   maxIter: number;
+  /**
+   * Nelder-Mead restarts. A simplex that has collapsed on a ridge cannot get
+   * off it; restarting from the best point with a fresh full-size simplex can.
+   * Fixed, so the search stays deterministic.
+   */
+  restarts?: number;
   /** Loss at the current calibration block. */
   loss: () => number;
   /** Per-point residuals at the current calibration block, for the report. */
@@ -269,6 +300,7 @@ function runStage(spec: StageSpec): StageReport {
   // Wall time is printed, never written: residuals.json has to be a pure
   // function of the code and the reference data or a re-run churns the diff.
   const t0 = Date.now();
+  const restarts = spec.restarts ?? 1;
   let evals = 0;
   const apply = (x: number[]) => {
     spec.knobs.forEach((k, i) => {
@@ -288,10 +320,12 @@ function runStage(spec: StageSpec): StageReport {
     return l;
   };
 
-  const x0 = spec.knobs.map(() => 0);
-  const lossStart = f(x0);
-  const res = nelderMead(f, x0, { step: SIMPLEX_STEP, maxIter: spec.maxIter, tol: 1e-9 });
-  apply(res.x); // nelderMead leaves the last probe applied, not the best point
+  let x = spec.knobs.map(() => 0);
+  const lossStart = f(x);
+  for (let r = 0; r < restarts; r++) {
+    x = nelderMead(f, x, { step: SIMPLEX_STEP, maxIter: spec.maxIter, tol: 1e-9 }).x;
+  }
+  apply(x); // nelderMead leaves the last probe applied, not the best point
   const lossEnd = spec.loss();
 
   const report: StageReport = {
@@ -300,15 +334,20 @@ function runStage(spec: StageSpec): StageReport {
     target: spec.target,
     weights: spec.weights,
     maxIter: spec.maxIter,
+    restarts,
     evals,
     lossStart,
     lossEnd,
-    knobs: spec.knobs.map((k, i) => ({
-      name: k.name,
-      start: k.start,
-      end: fromX(k, res.x[i]),
-      bounds: [k.min, k.max] as [number, number],
-    })),
+    knobs: spec.knobs.map((k, i) => {
+      const end = fromX(k, x[i]);
+      return {
+        name: k.name,
+        start: k.start,
+        end,
+        bounds: [k.min, k.max] as [number, number],
+        atBound: end <= k.min * (1 + 1e-9) || end >= k.max * (1 - 1e-9),
+      };
+    }),
     residuals: spec.residuals(),
     notes: spec.notes,
   };
@@ -316,7 +355,10 @@ function runStage(spec: StageSpec): StageReport {
     `stage ${spec.stage} ${spec.name}: loss ${lossStart.toExponential(4)} -> ` +
       `${lossEnd.toExponential(4)} in ${evals} evals, ${((Date.now() - t0) / 1000).toFixed(1)} s`,
   );
-  for (const k of report.knobs) console.log(`    ${k.name}: ${k.start} -> ${k.end.toPrecision(6)}`);
+  for (const k of report.knobs)
+    console.log(
+      `    ${k.name}: ${k.start} -> ${k.end.toPrecision(6)}${k.atBound ? '  [bound]' : ''}`,
+    );
   return report;
 }
 
@@ -334,6 +376,10 @@ const RIG_GRID_LOWERS = [-2, 0, 2, 3];
 const LAP_TWA_UP = 42;
 const LAP_TWA_DN = 150;
 
+function condition(twsKt: number, twaDeg: number, sailset: 'jib' | 'asym'): Condition {
+  return { twsKt, twaDeg, seaState: POLAR_SEA_STATE, crewKg: POLAR_CREW_KG, sailset };
+}
+
 function lapTimeHours(twsKt: number, dock: DockControls): number {
   const up = optimal(boat, dock, condition(twsKt, LAP_TWA_UP, 'jib'), { optimiseTwa: false }, geom);
   const dn = optimal(
@@ -343,7 +389,9 @@ function lapTimeHours(twsKt: number, dock: DockControls): number {
     { optimiseTwa: false },
     geom,
   );
-  return 1 / Math.max(0.1, up.vmgKt.value) + 1 / Math.max(0.1, -dn.vmgKt.value);
+  const vmgUp = up.bsKt.value * Math.cos((LAP_TWA_UP * Math.PI) / 180);
+  const vmgDn = -dn.bsKt.value * Math.cos((LAP_TWA_DN * Math.PI) / 180);
+  return 1 / Math.max(0.1, vmgUp) + 1 / Math.max(0.1, vmgDn);
 }
 
 export interface SoftOptimum {
@@ -419,6 +467,41 @@ export function structuralFloor(points: TurnsResidual[]): number {
 }
 
 // ---------------------------------------------------------------------------
+// Shape-clamp guard
+// ---------------------------------------------------------------------------
+
+export interface ShapeHeadroom {
+  minDraft: number;
+  maxDraft: number;
+  minTwist: number;
+  maxTwist: number;
+}
+
+/**
+ * Main half-section draft and twist over the full backstay range at the base
+ * dock and base race trim. If any of these touches a clamp the mainsail stops
+ * responding to trim at that end of the range, and every downstream sign
+ * invariant with it — which is a far worse model than one that misses half a
+ * turn against the tuning guide. The stage-4 bounds exist to keep this strictly
+ * inside (0.06, 0.20) in draft and (1, 29) degrees in twist.
+ */
+export function shapeHeadroom(): ShapeHeadroom {
+  let minDraft = Infinity;
+  let maxDraft = -Infinity;
+  let minTwist = Infinity;
+  let maxTwist = -Infinity;
+  for (let backstay = 0; backstay <= 100; backstay += 5) {
+    const race = { ...baseRace(), backstay };
+    const s = flyingShape(boat, rigState(boat, BASE_DOCK, backstay), race, 'main').half;
+    minDraft = Math.min(minDraft, s.draft);
+    maxDraft = Math.max(maxDraft, s.draft);
+    minTwist = Math.min(minTwist, s.twistDeg);
+    maxTwist = Math.max(maxTwist, s.twistDeg);
+  }
+  return { minDraft, maxDraft, minTwist, maxTwist };
+}
+
+// ---------------------------------------------------------------------------
 // Output
 // ---------------------------------------------------------------------------
 
@@ -447,74 +530,79 @@ export async function main(): Promise<void> {
   // Every knob's `start` below is the same fallback the source code uses, so
   // an empty block is the documented zero state.
   for (const k of Object.keys(boat.calibration)) delete boat.calibration[k];
+  console.log(
+    `fit TWS ${FIT_TWS.join('/')}, held out ${HELD_OUT_TWS.join('/')}; ` +
+      `sea state ${POLAR_SEA_STATE}, crew ${POLAR_CREW_KG} kg`,
+  );
 
-  // --- stage 1: upwind hydro ------------------------------------------------
-  // Fn upwind spans 0.26 (6 kt) to 0.38 (20 kt), so fn20/fn30/fn40 are the bins
-  // that carry it. keelLiftSlope trades leeway against induced drag, heelDragK
-  // pays for heel, and aero.hbiM is the single aero heeling-arm knob: raising
-  // the base of I lifts the whole sailplan CE and with it the heeling moment.
-  const upTargets = FIT_TWS.map((t) => polarPoint('jib', 'vmgUp', t));
-  const upModels = () => FIT_TWS.map((t) => modelVmg(t, 'jib'));
+  // --- stage 1: hydro against every jib row --------------------------------
+  // The jib rows span Fn 0.26 (6 kt beating) to Fn 0.70 (20 kt at 90 deg), so
+  // all five residuary bins plus the planing relief are constrained here, and
+  // the form factor gives the light-air end something to move. keelLiftSlope
+  // trades leeway against induced drag, heelDragK pays for heel, and aero.hbiM
+  // is the single aero heeling-arm knob.
   stages.push(
     runStage({
       stage: 1,
-      name: 'hydro-upwind',
-      target: `jib vmgUp at TWS ${FIT_TWS.join('/')}`,
+      name: 'hydro-jib',
+      target: `jib vmgUp + 60/90/120 rows at TWS ${FIT_TWS.join('/')} (${JIB_ROWS.length} rows)`,
       weights: WEIGHTS,
-      maxIter: 220,
+      maxIter: 320,
+      restarts: 3,
       knobs: [
+        { name: 'hydro.formFactor', start: 0.1, min: 0.02, max: 0.6 },
         { name: 'hydro.rrMul.fn20', start: 1, min: 0.3, max: 3 },
         { name: 'hydro.rrMul.fn30', start: 1, min: 0.3, max: 3 },
         { name: 'hydro.rrMul.fn40', start: 1, min: 0.3, max: 3 },
+        { name: 'hydro.rrMul.fn50', start: 1, min: 0.3, max: 3 },
+        { name: 'hydro.rrMul.fn60', start: 1, min: 0.3, max: 3 },
+        // The code fallback is 0 (no relief), which has no logarithm; the fit
+        // starts from a token 0.05 instead.
+        { name: 'hydro.planingRelief', start: 0.05, min: 0.001, max: 0.9 },
         { name: 'hydro.keelLiftSlope', start: 1, min: 0.4, max: 2 },
-        // Deliberately wider than the module's own guess. `hydro/resistance.ts`
-        // sizes this at ~6 % of Rv at 20 deg and `hydro.test.ts` asserts under
-        // 10 %; capped there, nothing in the model can hold the boat to the
-        // polar's upwind speed plateau above 12 kt and the 16/20 kt rows come
-        // out 9-15 % fast. Heel drag is the one lever in this stage that grows
-        // with heel, so the fit uses it, and it lands well outside that
-        // assumption. Read the resulting value as the model saying the heeled
-        // penalty on this hull is several times what was guessed, and treat
-        // that 10 % assertion as the thing to revisit.
+        // Deliberately wider than the module's own guess.
+        // `hydro/resistance.ts` sizes this at ~6 % of Rv at 20 deg; capped
+        // there, nothing in the model can hold the boat to the polar's upwind
+        // speed plateau above 12 kt. Heel drag is the one lever in this stage
+        // that grows with heel, so the fit uses it. Read the resulting value as
+        // the model saying the heeled penalty on this hull is several times
+        // what was guessed.
         { name: 'hydro.heelDragK', start: 0.5, min: 0.05, max: 4 },
         // Base of I above the water. Freeboard is 0.62 m and the ORC CE-height
         // tests treat 1.5 m as a high value, so this is the honest envelope for
         // the one aero heeling-arm knob.
         { name: 'aero.hbiM', start: 0.75, min: 0.5, max: 1.4 },
       ],
-      loss: () => vmgLoss(upModels(), upTargets, WEIGHTS),
-      residuals: () => upModels().map((m, i) => pointResidual(m, upTargets[i], WEIGHTS)),
+      loss: () => lossFor(JIB_ROWS, WEIGHTS),
+      residuals: () => residualsFor(JIB_ROWS, WEIGHTS),
     }),
   );
 
-  // --- stage 2: downwind hydro ---------------------------------------------
-  const dnTargets = FIT_TWS_DN.map((t) => polarPoint('asym', 'vmgDn', t));
-  const dnModels = () => FIT_TWS_DN.map((t) => modelVmg(t, 'asym'));
+  // --- stage 2: the asymmetric ---------------------------------------------
+  // One knob, and it is not ORC. With the hydro frozen, the running rows are
+  // still reached far too fast and far too high; the only remaining degree of
+  // freedom that changes the asym without disturbing the jib fit is the sail's
+  // own lift.
   stages.push(
     runStage({
       stage: 2,
-      name: 'hydro-downwind',
-      target: `asym vmgDn at TWS ${FIT_TWS_DN.join('/')}`,
+      name: 'asym',
+      target: `asym vmgDn at TWS ${FIT_TWS.join('/')}`,
       weights: WEIGHTS,
-      maxIter: 150,
-      knobs: [
-        { name: 'hydro.rrMul.fn50', start: 1, min: 0.3, max: 6 },
-        { name: 'hydro.rrMul.fn60', start: 1, min: 0.3, max: 6 },
-        // The code fallback is 0 (no relief), which has no logarithm; the fit
-        // starts from a token 0.05 instead.
-        { name: 'hydro.planingRelief', start: 0.05, min: 0.001, max: 0.95 },
-      ],
-      loss: () => vmgLoss(dnModels(), dnTargets, WEIGHTS),
-      residuals: () => dnModels().map((m, i) => pointResidual(m, dnTargets[i], WEIGHTS)),
+      maxIter: 80,
+      restarts: 2,
+      knobs: [{ name: 'aero.asymClMul', start: 1, min: 0.3, max: 2 }],
+      loss: () => lossFor(ASYM_ROWS, WEIGHTS),
+      residuals: () => residualsFor(ASYM_ROWS, WEIGHTS),
       notes:
-        'TWS 20 asym (137.1 deg at 11.53 kt, Fn 0.73) is excluded: it sits above a ' +
-        '16 kt row of 6.73 kt (Fn 0.43) and no monotone residuary curve reaches both.',
+        'The 20 kt asym row (137.1 deg at 11.53 kt, Fn 0.73) and the 16 kt row ' +
+        '(174.0 deg at 6.73 kt, Fn 0.43) pull this knob in opposite directions: ' +
+        'one wants far more power, the other far less. A single multiplier ' +
+        'cannot serve both and the residuals show the split.',
     }),
   );
 
   // --- stage 3: righting ----------------------------------------------------
-  const heelTargets = FIT_TWS_HEEL.map((t) => polarPoint('jib', 'vmgUp', t));
-  const heelModels = () => FIT_TWS_HEEL.map((t) => modelVmg(t, 'jib'));
   stages.push(
     runStage({
       stage: 3,
@@ -523,8 +611,8 @@ export async function main(): Promise<void> {
       weights: WEIGHTS_HEEL,
       maxIter: 60,
       knobs: [{ name: 'hydro.crewArmMul', start: 1, min: 0.2, max: 1.05 }],
-      loss: () => vmgLoss(heelModels(), heelTargets, WEIGHTS_HEEL),
-      residuals: () => heelModels().map((m, i) => pointResidual(m, heelTargets[i], WEIGHTS_HEEL)),
+      loss: () => lossFor(HEEL_ROWS, WEIGHTS_HEEL),
+      residuals: () => residualsFor(HEEL_ROWS, WEIGHTS_HEEL),
       notes:
         'crewArmM is capped at beam/2 by the class hiking rule, so values above ' +
         '~1.05 have no effect; the knob can only soften the rig, never stiffen it.',
@@ -538,20 +626,18 @@ export async function main(): Promise<void> {
     target: `North base turns at TWS ${FIT_TWS_RIG.join('/')} (8-10 and 12-16 bands)`,
     weights: { twa: 0, heel: 0 },
     maxIter: 120,
-    // Bounds are the model's tested-valid region, not just numerics. Every
-    // one of these knobs can, pushed far enough, saturate a clamp in
-    // shape/flying.ts and kill the trim response the whole app is built on,
-    // which is exactly what the src/core invariant tests assert against. A
-    // calibration that wins 0.5 turns and costs the mainsheet its effect is
-    // not a better model.
+    // Bounds are the model's tested-valid region, not just numerics. Every one
+    // of these knobs can, pushed far enough, saturate a clamp in
+    // shape/flying.ts and kill the trim response the whole app is built on.
+    // `shapeHeadroom()` below is the assertion that they did not.
     knobs: [
       // EI is pinned within ~13 % by beam.test.ts: the mast bends 35-45 mm at
       // the full backstay load, and that target defines the value.
       { name: 'rig.EI', start: 6.0e5, min: 5.4e5, max: 6.85e5 },
       { name: 'rig.turnsToN', start: 220, min: 100, max: 600 },
       { name: 'rig.sagK', start: 45, min: 25, max: 90 },
-      // Above ~0.36 (measured over the corners of the race-control box, at the
-      // stiffest and softest EI in range) the mainsail draft reaches its 0.05
+      // Above ~0.36, measured over the corners of the race-control box at the
+      // stiffest and softest EI in range, the mainsail draft reaches its 0.05
       // floor and every main shape response goes flat.
       { name: 'shape.bendToDraft', start: 0.45, min: 0.25, max: 0.36 },
       { name: 'shape.sagToDraft', start: 0.0006, min: 3e-4, max: 1.2e-3 },
@@ -565,36 +651,56 @@ export async function main(): Promise<void> {
   const rigPoints = rigReport.residuals as TurnsResidual[];
   const floor = structuralFloor(rigPoints);
   rigReport.notes =
-    `${rigReport.notes}. The dock-setup ranking this model produces is the same at ` +
-    `both wind speeds (model ${rigPoints
+    `${rigReport.notes}. The dock-setup ranking this model produces barely moves ` +
+    `with wind speed (model ${rigPoints
       .map((p) => `TWS ${p.twsKt} ${p.uppersModel.toFixed(2)}/${p.lowersModel.toFixed(2)}`)
       .join(', ')} against guide ${rigPoints
       .map((p) => `${p.uppersGuide}/${p.lowersGuide}`)
-      .join(', ')}), so the best a wind-independent optimum can do is the midpoint ` +
-    `of the two bands, loss ${floor.toFixed(2)}. None of these six knobs opens a ` +
-    `wind-dependent channel; see the report.`;
+      .join(', ')}), so the best a wind-independent optimum can do is the ` +
+    `midpoint of the two bands, loss ${floor.toFixed(2)}. None of these six ` +
+    `knobs opens a wind-dependent channel.`;
   stages.push(rigReport);
 
+  // --- guard: the shape layer must still respond ---------------------------
+  const headroom = shapeHeadroom();
+  const clampOk =
+    headroom.minDraft > 0.06 &&
+    headroom.maxDraft < 0.2 &&
+    headroom.minTwist > 1 &&
+    headroom.maxTwist < 29;
+  console.log(
+    `\nmain half section over backstay 0..100: draft ` +
+      `${headroom.minDraft.toFixed(4)}..${headroom.maxDraft.toFixed(4)}, twist ` +
+      `${headroom.minTwist.toFixed(2)}..${headroom.maxTwist.toFixed(2)} deg — ` +
+      `${clampOk ? 'clear of every clamp' : 'CLAMPED, shrink a stage-4 bound'}`,
+  );
+  if (!clampOk) throw new Error('stage 4 saturated a shape clamp; shrink the bound, not the clamp');
+
   // --- report ---------------------------------------------------------------
-  const heldOut = [8, 14].flatMap((twsKt) => [
-    pointResidual(modelVmg(twsKt, 'jib'), polarPoint('jib', 'vmgUp', twsKt), WEIGHTS),
-    pointResidual(modelVmg(twsKt, 'asym'), polarPoint('asym', 'vmgDn', twsKt), WEIGHTS),
-  ]);
-  console.log('\nheld-out TWS 8 / 14 (never fitted):');
+  const heldOut = HELD_OUT_TWS.flatMap((tws) =>
+    [...vmgRows(polar, tws), ...angleRows(polar, tws)].map((r) => {
+      const c = compareRow(r);
+      return pointResidual(modelPoint(c), rowPoint(r), WEIGHTS, c.label);
+    }),
+  );
+  console.log(`\nheld-out TWS ${HELD_OUT_TWS.join(' / ')} (never fitted):`);
   for (const r of heldOut)
     console.log(
-      `  TWS ${r.twsKt}: bs ${r.bsKt.toFixed(2)} vs ${r.target.bsKt} (${r.dBsPct.toFixed(1)} %), ` +
-        `twa ${r.twaDeg.toFixed(1)} vs ${r.target.twaDeg} (${r.dTwaDeg.toFixed(1)} deg), ` +
-        `heel ${r.heelDeg.toFixed(1)} vs ${r.target.heelDeg} (${r.dHeelDeg.toFixed(1)} deg)`,
+      `  ${r.label.padEnd(22)} bs ${r.bsKt.toFixed(2)} vs ${r.target.bsKt.toFixed(2)} ` +
+        `(${r.dBsPct >= 0 ? '+' : ''}${r.dBsPct.toFixed(1)} %), twa ${r.twaDeg.toFixed(1)} vs ` +
+        `${r.target.twaDeg.toFixed(1)} (${r.dTwaDeg >= 0 ? '+' : ''}${r.dTwaDeg.toFixed(1)} deg), ` +
+        `heel ${r.heelDeg.toFixed(1)} vs ${r.target.heelDeg.toFixed(1)}`,
     );
 
   await writeJson('data/boats/j70.json', boat);
   await writeJson('calibration/residuals.json', {
     schemaVersion: 1,
+    adr: '0012 (fit/hold-out split), 0007 (tolerances)',
     fitTws: FIT_TWS,
-    heldOutTws: [8, 14],
-    condition: { seaState: SEA_STATE, crewKg: CREW_KG },
+    heldOutTws: HELD_OUT_TWS,
+    condition: { seaState: POLAR_SEA_STATE, crewKg: POLAR_CREW_KG },
     simplexStep: SIMPLEX_STEP,
+    shapeHeadroom: headroom,
     stages,
     heldOut,
   });

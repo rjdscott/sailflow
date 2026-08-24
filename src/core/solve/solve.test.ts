@@ -143,3 +143,18 @@ describe('optimal at a fixed angle', () => {
     expect(r.bsKt.value).toBeGreaterThanOrEqual(base.bsKt.value - 0.05);
   });
 });
+
+describe('dock lap-time memo', () => {
+  it('returns identical results on a second call and is much faster', () => {
+    const f = { minKt: 9, likelyKt: 10, maxKt: 11, seaState: 1 as const, crewKg: 300 };
+    const setups = [baseDock()];
+    const cands = [baseDock(), { upperTurns: 2, lowerTurns: 1, forestayMm: 0 }];
+    const t0 = performance.now();
+    const a = scoreDockSetups(boat, setups, f, cands);
+    const t1 = performance.now();
+    const b = scoreDockSetups(boat, setups, f, cands);
+    const t2 = performance.now();
+    expect(b).toEqual(a);
+    expect(t2 - t1).toBeLessThan((t1 - t0) / 5);
+  });
+});

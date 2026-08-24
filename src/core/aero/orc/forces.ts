@@ -183,6 +183,8 @@ function aggregate(
   sets: Record<string, CoeffSet>,
   fcoef: number,
   fj: number,
+  /** Per-sail multiplier on CLmax; 1 leaves the ORC table untouched. */
+  clMul: Record<string, number>,
 ): Aggregate {
   let arefM2 = 0;
   let sumCl = 0;
@@ -196,7 +198,8 @@ function aggregate(
   for (const id of ids) {
     const a = geo[id].areaM2 * areaScale[id];
     if (a <= 0) continue;
-    const c = sailCoeffs(tableOf(id), awaDeg, sets[id], fcoef);
+    const table = sailCoeffs(tableOf(id), awaDeg, sets[id], fcoef);
+    const c = { ...table, clMax: table.clMax * (clMul[id] ?? 1) };
     const bk = blanketing(id, Math.abs(awaDeg), fj);
     arefM2 += a;
     sumCl += c.clMax * bk * a;
@@ -262,6 +265,15 @@ export function aeroForces(
   const twistCeGain = knob(boat, 'aero.twistCeGain', 0.004);
 
   const sets: Record<string, CoeffSet> = { main: mainSet, jib: jibSet, asym: 0 };
+  // prov: assumed. CALIBRATION KNOB, not ORC. Table 5.6 is a generic
+  // asymmetric on a centreline tack; the J/70's sail on a fixed sprit is a
+  // different animal and the class polar's running rows cannot be reached
+  // with the table as printed. Fallback 1 = use ORC unmodified.
+  const clMul: Record<string, number> = {
+    main: 1,
+    jib: 1,
+    asym: knob(boat, 'aero.asymClMul', 1),
+  };
 
   // ---- geometry ----------------------------------------------------------
   const geo: Record<string, AeroGeometry> = {};
@@ -308,10 +320,10 @@ export function aeroForces(
   }
   let zRef = areaSum > 0 ? areaW / areaSum : hbiM;
   let aw = apparentWind(windAt(vtRefMs, zRef), input.twaDeg, vsMs, input.heelDeg);
-  let agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj);
+  let agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj, clMul);
   zRef = agg.zceWaterM > 0 ? agg.zceWaterM : zRef;
   aw = apparentWind(windAt(vtRefMs, zRef), input.twaDeg, vsMs, input.heelDeg);
-  agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj);
+  agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj, clMul);
 
   const awaAbs = aw.awaDeg;
 
