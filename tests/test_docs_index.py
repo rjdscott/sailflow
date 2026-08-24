@@ -130,3 +130,15 @@ def test_dead_links_are_caught_but_placeholders_are_not(tmp_path):
     )
 
     assert docs_index.dead_links(tmp_path) == ["README.md: dead link to docs/gone.md"]
+
+
+def test_tomorrow_counts_as_activity_for_timezone_slack(tmp_path):
+    """An entry dated one day ahead (author ahead of a UTC runner) is activity."""
+    tomorrow = dt.date.today() + dt.timedelta(days=1)
+    write(
+        tmp_path / "plans" / "2020-01-01-migrate" / "README.md",
+        f"# Migrate\n\n- **Status:** 🟡 In progress\n\n{tomorrow.isoformat()} started.\n",
+    )
+    _, problems = docs_index.render("plans", tmp_path)
+
+    assert problems == []

@@ -77,7 +77,9 @@ def latest_date(directory: Path) -> str | None:
     itself as fresh, which is precisely the case the staleness check exists
     to catch.
     """
-    today = dt.date.today().isoformat()
+    # One day of slack: a CI runner on UTC must not treat an author's local
+    # "today" as a future date and drop it.
+    today = (dt.date.today() + dt.timedelta(days=1)).isoformat()
     dates = [
         d
         for f in sorted(directory.rglob("*.md"))
