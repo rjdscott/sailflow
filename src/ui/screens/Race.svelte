@@ -244,7 +244,7 @@
 
   .hero-boat :global(svg) {
     max-height: none;
-    max-width: 560px;
+    max-width: 720px;
   }
 
   /* Between 1024 and 1280 the primary column is too narrow to read two
