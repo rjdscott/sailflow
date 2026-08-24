@@ -41,5 +41,8 @@ line. Don't hand-edit.
 |---|-------|--------|
 | [0001](0001-tiered-docs-scaffold-with-machine-enforcement.md) | Tiered docs scaffold with machine enforcement | Accepted |
 | [0002](0002-branch-rules-stay-honour-code.md) | Branch rules stay honour code | Accepted |
+| [0003](0003-ui-talks-to-physics-only-through-a-typed-worker-protocol.md) | The UI talks to the physics core only through a typed worker protocol | Accepted |
+| [0004](0004-typescript-solver-now-rust-engine-at-multiplayer.md) | TypeScript solver now; a Rust engine only when multiplayer or heavier aero demands it | Accepted |
 | [0005](0005-svelte-5-vite-no-router-no-state-library.md) | Svelte 5 + Vite for the UI, with hash routing and no router or state library | Accepted |
+| [0008](0008-third-party-reference-data-committed-with-provenance.md) | Third-party reference data is committed to the repo with inline provenance | Accepted |
 <!-- index:end -->
