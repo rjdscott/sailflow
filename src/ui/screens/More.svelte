@@ -1,5 +1,4 @@
 <script lang="ts">
-  import '../_layout-fallback.css';
   import TopBar from '../components/TopBar.svelte';
   import Segmented from '../components/Segmented.svelte';
   import { settings, type Theme } from '../stores/settings.svelte';

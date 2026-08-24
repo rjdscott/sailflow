@@ -1,5 +1,4 @@
 <script lang="ts">
-  import '../_layout-fallback.css';
   import TopBar from '../components/TopBar.svelte';
   import DrillCard from '../drills/DrillCard.svelte';
   import DrillView from '../drills/DrillView.svelte';

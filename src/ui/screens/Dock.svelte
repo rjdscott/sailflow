@@ -1,5 +1,4 @@
 <script lang="ts">
-  import '../_layout-fallback.css';
   import TopBar from '../components/TopBar.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';

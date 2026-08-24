@@ -4,7 +4,6 @@
   import Slider from '../components/Slider.svelte';
   import { EXPLAIN } from '../explain';
   import { settings } from '../stores/settings.svelte';
-  import { PRESETS } from '../stores/conditions.svelte';
   import { CONTROLS, race } from './store.svelte';
 
   // Plain aliases onto the store's reactive proxies: the sliders bind through
@@ -18,6 +17,9 @@
     { name: 'Rig', ids: ['backstay', 'vang', 'cunningham', 'outhaul'] },
     { name: 'Halyards', ids: ['mainHalyard', 'jibHalyard'] },
   ];
+
+  const DOWN_IDS = ['kiteHalyard', 'tackLine', 'kiteSheet', 'sprit'];
+  const DOCK_IDS = ['upperTurns', 'lowerTurns', 'forestayMm'];
 
   /** Simple mode: the five gears you actually move on a beat. */
   const SIMPLE = ['mainsheet', 'traveller', 'backstay', 'jibSheet', 'jibLead'];
@@ -40,140 +42,103 @@
   }
 </script>
 
-{#snippet head(id: string, chevron = false)}
-  <div class="side">
-    {#if chevron && race.chevrons[id]}
-      <span
-        class="chev"
-        class:up={race.chevrons[id] > 0}
-        aria-label="gain from moving this control"
+{#snippet row(
+  id: string,
+  values: Record<string, number>,
+  opts: { locked?: boolean; tier?: 'C'; chevron?: boolean } = {},
+)}
+  {@const spec = CONTROLS[id]}
+  <div class="row">
+    <div class="grow">
+      <Slider
+        label={spec.label}
+        bind:value={values[id]}
+        min={spec.min}
+        max={spec.max}
+        step={spec.step}
+        unit={spec.unit}
+        decimals={decimals(spec.step)}
+        locked={opts.locked}
+        tier={opts.tier}
+      />
+    </div>
+    <div class="side">
+      {#if opts.chevron && race.chevrons[id]}
+        <span
+          class="chev"
+          class:up={race.chevrons[id] > 0}
+          aria-label="gain from moving this control"
+        >
+          {race.chevrons[id] > 0 ? '▲' : '▼'}
+        </span>
+      {/if}
+      <button
+        type="button"
+        class="info hit-44"
+        onclick={() => explain(id)}
+        aria-label="What {spec.label} does"
       >
-        {race.chevrons[id] > 0 ? '▲' : '▼'}
-      </span>
-    {/if}
-    <button
-      type="button"
-      class="info"
-      onclick={() => explain(id)}
-      aria-label="What {CONTROLS[id].label} does"
-    >
-      ?
-    </button>
+        ?
+      </button>
+    </div>
   </div>
 {/snippet}
 
-<section class="panel">
-  {#if !advanced}
-    <div class="presets">
-      {#each PRESETS as p (p.id)}
-        <button type="button" onclick={() => race.applyPreset(p)}>{p.label}</button>
-      {/each}
-    </div>
-  {/if}
-
+<div class="stack">
   {#each GROUPS as group (group.name)}
     {@const ids = visible(group.ids)}
     {#if ids.length}
-      <h3>{group.name}</h3>
-      {#each ids as id (id)}
-        {@const spec = CONTROLS[id]}
-        <div class="row">
-          <div class="grow">
-            <Slider
-              label={spec.label}
-              bind:value={raceValues[id]}
-              min={spec.min}
-              max={spec.max}
-              step={spec.step}
-              unit={spec.unit}
-              decimals={decimals(spec.step)}
-            />
-          </div>
-          {@render head(id, advanced)}
-        </div>
-      {/each}
+      <section class="card">
+        <h2 class="section-title">{group.name}</h2>
+        {#each ids as id (id)}
+          {@render row(id, raceValues, { chevron: advanced })}
+        {/each}
+      </section>
     {/if}
   {/each}
 
   {#if advanced}
-    <h3>
-      Downwind
-      <label class="dw">
-        <input type="checkbox" bind:checked={race.downwind} />
-        show kite controls
-      </label>
-    </h3>
-    {#if race.downwind}
-      <p class="banner"><ConfidenceBadge tier="C" /> downwind: direction only</p>
-      {#each ['kiteHalyard', 'tackLine', 'kiteSheet', 'sprit'] as id (id)}
-        {@const spec = CONTROLS[id]}
-        <div class="row">
-          <div class="grow">
-            <Slider
-              label={spec.label}
-              bind:value={downValues[id]}
-              min={spec.min}
-              max={spec.max}
-              step={spec.step}
-              unit={spec.unit}
-              decimals={decimals(spec.step)}
-              tier="C"
-            />
-          </div>
-          {@render head(id)}
-        </div>
-      {/each}
-    {/if}
+    <section class="card">
+      <h2 class="section-title">
+        Downwind
+        <label class="dw">
+          <input type="checkbox" bind:checked={race.downwind} />
+          show kite controls
+        </label>
+      </h2>
+      {#if race.downwind}
+        <p class="banner"><ConfidenceBadge tier="C" /> Downwind is direction only.</p>
+        {#each DOWN_IDS as id (id)}
+          {@render row(id, downValues, { tier: 'C' })}
+        {/each}
+      {/if}
+    </section>
   {/if}
 
-  <h3>Dock setup <span class="locked-note">🔒 committed for the day</span></h3>
-  {#each ['upperTurns', 'lowerTurns', 'forestayMm'] as id (id)}
-    {@const spec = CONTROLS[id]}
-    <div class="row">
-      <div class="grow">
-        <Slider
-          label={spec.label}
-          value={dockValues[id]}
-          min={spec.min}
-          max={spec.max}
-          step={spec.step}
-          unit={spec.unit}
-          decimals={decimals(spec.step)}
-          locked
-        />
-      </div>
-      {@render head(id)}
-    </div>
-  {/each}
-</section>
+  <section class="card">
+    <h2 class="section-title">
+      Dock setup
+      <span class="locked-note">🔒 committed for the day</span>
+    </h2>
+    {#each DOCK_IDS as id (id)}
+      {@render row(id, dockValues, { locked: true })}
+    {/each}
+  </section>
+</div>
 
 <Sheet bind:open={sheetOpen} title={explaining ? CONTROLS[explaining].label : ''}>
   <p class="explainer">{explaining ? EXPLAIN[explaining] : ''}</p>
 </Sheet>
 
 <style>
-  .panel {
-    display: flex;
-    flex-direction: column;
-    padding-bottom: var(--space-8);
-  }
-
-  h3 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
-    margin: var(--space-4) 0 0;
-    font-size: var(--text-sm);
-    color: var(--ink-2);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
   .row {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
+  }
+
+  .row + .row {
+    border-top: 1px solid var(--line);
   }
 
   .grow {
@@ -184,53 +149,40 @@
   .side {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-2);
   }
 
+  /* 36 px glyph, 44 px target: the ? never crowds the slider it belongs to. */
   .info {
-    min-width: var(--hit-min);
-    min-height: var(--hit-min);
-    border: 1px solid var(--ink-2);
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--line);
     border-radius: 50%;
-    width: var(--hit-min);
-    background: transparent;
+    background: var(--bg);
     color: var(--ink-2);
-    font-size: var(--text-md);
+    font-size: var(--text-sm);
+    line-height: 1;
     cursor: pointer;
   }
 
   .chev {
     color: var(--bad);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
   }
 
   .chev.up {
     color: var(--good);
   }
 
-  .presets {
-    display: flex;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-    padding-block: var(--space-2);
-  }
-
-  .presets button {
-    flex: 1;
-    min-height: var(--hit-min);
-    border: 1px solid var(--accent);
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--accent);
-    font-size: var(--text-sm);
-    cursor: pointer;
-  }
-
   .banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     margin: var(--space-2) 0 0;
-    padding: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: var(--surface);
     color: var(--ink-2);
     font-size: var(--text-xs);
   }
@@ -240,11 +192,13 @@
     align-items: center;
     gap: var(--space-2);
     min-height: var(--hit-min);
+    margin-left: auto;
     text-transform: none;
     letter-spacing: normal;
   }
 
   .locked-note {
+    margin-left: auto;
     font-size: var(--text-xs);
     text-transform: none;
     letter-spacing: normal;
@@ -252,8 +206,8 @@
 
   .explainer {
     margin: 0;
-    font-size: var(--text-sm);
-    line-height: 1.5;
+    font-size: var(--text-md);
+    line-height: 1.55;
     color: var(--ink);
   }
 </style>

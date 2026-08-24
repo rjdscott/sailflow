@@ -34,7 +34,9 @@
   let showLockNote = $state(false);
   let pressTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const tickPct = $derived(tick === undefined ? undefined : ((tick - min) / (max - min)) * 100);
+  const pct = (v: number): number => ((v - min) / (max - min)) * 100;
+  const tickPct = $derived(tick === undefined ? undefined : pct(tick));
+  const fillPct = $derived(pct(value));
 
   function onInput(e: Event): void {
     if (locked) return;
@@ -73,7 +75,7 @@
     </span>
     {#if editing}
       <input
-        class="readout-input"
+        class="readout-input tabular-nums"
         type="text"
         inputmode="decimal"
         bind:value={editValue}
@@ -94,7 +96,7 @@
     {/if}
   </div>
 
-  <div class="track-wrap" class:locked>
+  <div class="track-wrap" class:locked style="--fill: {fillPct}%">
     <input
       class="range"
       type="range"
@@ -135,58 +137,64 @@
   .slider-row {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
-    padding-block: var(--space-2);
+    padding-block: var(--space-1);
   }
 
   .top {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
-    min-height: var(--hit-min);
+    gap: var(--space-3);
   }
 
   .label {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    min-width: 0;
     color: var(--ink);
     font-size: var(--text-sm);
   }
 
+  /* The value is the thing you read while dragging: tabular, right-aligned,
+     and wide enough that digits never shift the label. */
   .readout {
-    font-size: var(--text-lg);
+    flex: none;
+    min-width: 5.5ch;
+    padding: 0;
     background: none;
     border: none;
     color: var(--ink);
-    padding: var(--space-2);
-    min-height: var(--hit-min);
-    min-width: var(--hit-min);
+    font-size: var(--text-md);
+    font-weight: 600;
+    text-align: right;
     cursor: pointer;
   }
 
   .readout-input {
-    font-size: var(--text-lg);
-    width: 5em;
-    min-height: var(--hit-min);
+    width: 6em;
+    min-height: 32px;
     border: 1px solid var(--accent);
     border-radius: var(--radius);
     background: var(--bg);
     color: var(--ink);
     padding: var(--space-1) var(--space-2);
+    font-size: var(--text-md);
     text-align: right;
   }
 
+  /* 44 px hit area around a 4 px track. */
   .track-wrap {
     position: relative;
     display: flex;
     align-items: center;
-    min-height: var(--hit-min);
+    height: var(--hit-min);
+    --track: linear-gradient(to right, var(--accent) 0 var(--fill), var(--muted) var(--fill) 100%);
   }
 
   .range {
     width: 100%;
-    height: 44px;
+    height: var(--hit-min);
     margin: 0;
     -webkit-appearance: none;
     appearance: none;
@@ -195,39 +203,37 @@
 
   .range::-webkit-slider-runnable-track {
     height: 4px;
-    border-radius: var(--radius);
-    /* Explicit ink-derived colour, not --surface: Dock puts this slider on a
-       --surface card, where a --surface track disappears (both themes). */
-    background: color-mix(in srgb, var(--ink-2) 45%, transparent);
+    border-radius: 2px;
+    background: var(--track);
+  }
+
+  .range::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--track);
   }
 
   .range::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 28px;
-    height: 28px;
-    margin-top: -11px;
+    width: 24px;
+    height: 24px;
+    margin-top: -10px;
     border-radius: 50%;
     background: var(--accent);
-    border: none;
-  }
-
-  .range::-moz-range-track {
-    height: 4px;
-    border-radius: var(--radius);
-    background: color-mix(in srgb, var(--ink-2) 45%, transparent);
+    border: 2px solid var(--bg);
   }
 
   .range::-moz-range-thumb {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     background: var(--accent);
-    border: none;
+    border: 2px solid var(--bg);
   }
 
   .range:disabled {
-    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   .tick {
@@ -240,14 +246,18 @@
     pointer-events: none;
   }
 
-  .track-wrap.locked .range::-webkit-slider-runnable-track {
-    background: repeating-linear-gradient(
-      45deg,
-      var(--surface),
-      var(--surface) 4px,
-      var(--ink-2) 4px,
-      var(--ink-2) 5px
-    );
+  /* Locked: hatched trough, no accent fill — it reads as "not yours to move"
+     before you try to move it. */
+  .track-wrap.locked {
+    --track: repeating-linear-gradient(45deg, var(--muted) 0 3px, var(--line) 3px 6px);
+  }
+
+  .track-wrap.locked .range::-webkit-slider-thumb {
+    background: var(--ink-2);
+  }
+
+  .track-wrap.locked .range::-moz-range-thumb {
+    background: var(--ink-2);
   }
 
   .lock-overlay {
@@ -263,14 +273,8 @@
 
   .lock-note,
   .hint {
-    margin: 0;
+    margin: var(--space-1) 0 0;
     font-size: var(--text-xs);
     color: var(--ink-2);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .range::-webkit-slider-thumb {
-      transition: background-color 0.15s;
-    }
   }
 </style>

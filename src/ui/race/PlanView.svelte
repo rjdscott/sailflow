@@ -14,131 +14,191 @@
     jib?: SailShape;
   } = $props();
 
-  // Top-down, bow up, boat on starboard tack. Sheeting angles here are
-  // indicative: they follow apparent wind angle, they are not solved from the
-  // sheet loads.
-  const BOOM = 46;
-  const JIB_FOOT = 34;
-  const boomDeg = $derived(aero.awaDeg * 0.45);
-  const jibDeg = $derived(aero.awaDeg * 0.7);
+  // Top-down, bow up, boat on starboard tack, in a 272×204 viewBox. Sheeting
+  // angles are indicative: they follow apparent wind angle, they are not
+  // solved from the sheet loads. Every label sits clear of the drawing — the
+  // numbers themselves live in the row underneath.
+  const VIEW = { w: 272, h: 204 };
+  const HULL = { x: 95, y: 25, scale: 1.5 };
+  const MAST = { x: 95, y: 76 };
+  const TACK = { x: 95, y: 29 };
+  const BOOM = 62;
+  const JIB_FOOT = 45;
+  /** Wind hub and the two radii the arrows and their tags are laid out on. */
+  const HUB = { x: 175, y: 100 };
+  const R_TWA = 58;
+  const R_AWA = 46;
+
+  const boomDeg = $derived(Math.min(aero.awaDeg * 0.45, 85));
+  const jibDeg = $derived(Math.min(aero.awaDeg * 0.7, 95));
+
+  /** Aft-and-to-leeward from a pivot: port side, on starboard tack. */
+  function leeward(from: { x: number; y: number }, deg: number, len: number) {
+    const r = (deg * Math.PI) / 180;
+    return { x: from.x - len * Math.sin(r), y: from.y + len * Math.cos(r) };
+  }
+
+  /** Point at `deg` off the bow, `len` out from the wind hub. */
+  function windward(deg: number, len: number) {
+    const r = (deg * Math.PI) / 180;
+    return { x: HUB.x + len * Math.sin(r), y: HUB.y - len * Math.cos(r) };
+  }
+
+  const boomTip = $derived(leeward(MAST, boomDeg, BOOM));
+  const clew = $derived(leeward(TACK, jibDeg, JIB_FOOT));
+
+  const twaTail = $derived(windward(twaDeg, R_TWA));
+  const awaTail = $derived(windward(aero.awaDeg, R_AWA));
 
   const entryDeg = $derived(jib?.half.entryDeg ?? aero.awaDeg);
+  // One entry angle for the whole luff, so the three differ only by the band
+  // they are read against: lower telltales stall first.
   const luffTelltales: { at: number; state: TelltaleState }[] = $derived(
-    [0.25, 0.5, 0.75].map((at) => ({
+    [0.12, 0.22, 0.32].map((at) => ({
       at,
-      // One entry angle for the whole luff, so the three differ only by the
-      // band they are read against: lower telltales stall first.
-      state: telltaleState(aero.awaDeg, entryDeg + (at - 0.5) * 4),
+      state: telltaleState(aero.awaDeg, entryDeg + (at - 0.22) * 12),
     })),
   );
   const leechState = $derived(telltaleState(aero.awaDeg, entryDeg + 4));
 
-  function ray(deg: number, len: number): { x: number; y: number } {
-    const r = (deg * Math.PI) / 180;
-    return { x: Math.sin(r) * len, y: -Math.cos(r) * len };
+  const leechPt = $derived(along(0.94));
+
+  function along(t: number) {
+    return { x: TACK.x + t * (clew.x - TACK.x), y: TACK.y + t * (clew.y - TACK.y) };
   }
 </script>
 
 <figure>
-  <figcaption>
-    Plan view, starboard tack. Sheeting angles and telltale state are indicative, not solved.
-  </figcaption>
-
-  <svg viewBox="-70 -60 140 190" role="img" aria-label="Plan view">
-    <!-- true and apparent wind, blowing toward the boat -->
-    <g class="wind">
-      <line x1={ray(180 - twaDeg, 54).x} y1={ray(180 - twaDeg, 54).y - 10} x2="0" y2="-10" />
-      <text x={ray(180 - twaDeg, 60).x} y={ray(180 - twaDeg, 60).y - 10}
-        >TWA {twaDeg.toFixed(0)}°</text
+  <svg viewBox="0 0 {VIEW.w} {VIEW.h}" role="img" aria-label="Plan view, starboard tack">
+    <defs>
+      <marker
+        id="plan-arrow-twa"
+        viewBox="0 0 8 8"
+        refX="7"
+        refY="4"
+        markerWidth="5"
+        markerHeight="5"
+        orient="auto"
       >
-    </g>
-    <g class="wind awa">
+        <path class="head-twa" d="M 0 0 L 8 4 L 0 8 z" />
+      </marker>
+      <marker
+        id="plan-arrow-awa"
+        viewBox="0 0 8 8"
+        refX="7"
+        refY="4"
+        markerWidth="5"
+        markerHeight="5"
+        orient="auto"
+      >
+        <path class="head-awa" d="M 0 0 L 8 4 L 0 8 z" />
+      </marker>
+    </defs>
+
+    <!-- wind, blowing from the tail toward the boat -->
+    <g class="wind">
       <line
-        x1={ray(180 - aero.awaDeg, 44).x}
-        y1={ray(180 - aero.awaDeg, 44).y - 10}
-        x2="0"
-        y2="-10"
+        x1={twaTail.x}
+        y1={twaTail.y}
+        x2={HUB.x}
+        y2={HUB.y}
+        marker-end="url(#plan-arrow-twa)"
+        class="twa"
       />
-      <text x={ray(180 - aero.awaDeg, 50).x} y={ray(180 - aero.awaDeg, 50).y - 20}>
-        AWA {aero.awaDeg.toFixed(0)}°
-      </text>
+      <line
+        x1={awaTail.x}
+        y1={awaTail.y}
+        x2={HUB.x}
+        y2={HUB.y}
+        marker-end="url(#plan-arrow-awa)"
+        class="awa"
+      />
+      <text class="tag" x={twaTail.x + 8} y={twaTail.y + 4} text-anchor="start">TWA</text>
+      <text class="tag awa-tag" x={awaTail.x - 8} y={awaTail.y + 4} text-anchor="end">AWA</text>
     </g>
 
-    <path class="hull" d={HULL_PATH} transform="translate(0 -10)" />
+    <path class="hull" d={HULL_PATH} transform="translate({HULL.x} {HULL.y}) scale({HULL.scale})" />
 
-    <!-- main boom and jib foot, to leeward (port side on starboard tack) -->
-    <line
-      class="spar"
-      x1="0"
-      y1="34"
-      x2={-ray(180 - boomDeg, BOOM).x}
-      y2={34 - ray(180 - boomDeg, BOOM).y}
-    />
-    <line
-      class="sail"
-      x1="-2"
-      y1="12"
-      x2={-ray(180 - jibDeg, JIB_FOOT).x}
-      y2={12 - ray(180 - jibDeg, JIB_FOOT).y}
-    />
+    <line class="spar" x1={MAST.x} y1={MAST.y} x2={boomTip.x} y2={boomTip.y} />
+    <line class="sail" x1={TACK.x} y1={TACK.y} x2={clew.x} y2={clew.y} />
 
-    <!-- jib luff telltales -->
     {#each luffTelltales as t (t.at)}
-      <g transform="translate(-3 {2 + t.at * 14})">
-        <circle class="tt-dot" r="1.5" />
-        <rect class="ribbon {t.state}" x="-9" y="-1" width="8" height="2" rx="1" />
+      {@const p = along(t.at)}
+      <g transform="translate({p.x.toFixed(2)} {p.y.toFixed(2)})">
+        <circle class="tt-dot" r="1.6" />
+        <rect class="ribbon {t.state}" x="2" y="-1.2" width="9" height="2.4" rx="1.2" />
       </g>
     {/each}
-    <g transform="translate(2 30)">
-      <circle class="tt-dot" r="1.5" />
-      <rect class="ribbon {leechState}" x="1" y="-1" width="8" height="2" rx="1" />
-      <text class="tt-label" x="12" y="3">leech</text>
+    <g transform="translate({leechPt.x.toFixed(2)} {leechPt.y.toFixed(2)})">
+      <circle class="tt-dot" r="1.6" />
+      <rect class="ribbon {leechState}" x="-11" y="-1.2" width="9" height="2.4" rx="1.2" />
+    </g>
+
+    <!-- heel, stern view, to scale, parked clear of the plan -->
+    <g class="heel">
+      <line class="water" x1="6" y1="174" x2="68" y2="174" />
+      <g transform="translate(37 174) rotate({heelDeg})">
+        <path class="hull" d="M -15 -6 L 15 -6 L 9 5 L -9 5 Z" />
+        <line class="spar" x1="0" y1="-6" x2="0" y2="-34" />
+      </g>
+      <text class="tag" x="37" y="196" text-anchor="middle">HEEL</text>
     </g>
   </svg>
 
-  <!-- stern view, heel to scale -->
-  <div class="heel">
-    <svg viewBox="-26 -22 52 34" role="img" aria-label="Heel, stern view">
-      <line class="water" x1="-24" y1="6" x2="24" y2="6" />
-      <g transform="rotate({heelDeg} 0 6)">
-        <path class="hull" d="M -16 -6 L 16 -6 L 10 6 L -10 6 Z" />
-        <line class="spar" x1="0" y1="-6" x2="0" y2="-20" />
-      </g>
-    </svg>
-    <span class="tabular-nums">{heelDeg.toFixed(0)}°</span>
-  </div>
+  <figcaption>
+    Plan view, bow up, starboard tack. Sheeting angles and telltale state are indicative, not
+    solved.
+  </figcaption>
 </figure>
+
+<dl class="mono">
+  <div>
+    <dt>TWA</dt>
+    <dd>{twaDeg.toFixed(0)}°</dd>
+  </div>
+  <div>
+    <dt>AWA</dt>
+    <dd>{aero.awaDeg.toFixed(0)}°</dd>
+  </div>
+  <div>
+    <dt>Heel</dt>
+    <dd>{heelDeg.toFixed(0)}°</dd>
+  </div>
+  <div>
+    <dt>Flat</dt>
+    <dd>{aero.flat.toFixed(2)}</dd>
+  </div>
+</dl>
 
 <style>
   figure {
     margin: 0;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 340px;
+    margin-inline: auto;
   }
 
   figcaption {
+    margin-top: var(--space-2);
     font-size: var(--text-xs);
     color: var(--ink-2);
   }
 
-  svg {
-    flex: 1;
-    width: 100%;
-    min-height: 0;
-  }
-
   .hull {
-    fill: var(--surface);
+    fill: var(--muted);
     stroke: var(--ink-2);
-    stroke-width: 1.5;
+    stroke-width: 1;
   }
 
   .spar,
   .sail {
     stroke: var(--ink);
-    stroke-width: 2;
+    stroke-width: 2.5;
     stroke-linecap: round;
   }
 
@@ -149,31 +209,42 @@
   .wind line {
     stroke: var(--ink-2);
     stroke-width: 1.5;
+  }
+
+  .wind .twa {
     stroke-dasharray: 5 3;
   }
 
-  .wind.awa line {
+  .wind .awa {
     stroke: var(--accent);
-    stroke-dasharray: none;
   }
 
-  .wind text {
+  .tag {
     fill: var(--ink-2);
-    font-size: 8px;
-    text-anchor: middle;
+    font-family: var(--font-sans);
+    font-size: var(--tag-size, 11px);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+
+  .awa-tag {
+    fill: var(--accent);
+  }
+
+  .head-twa {
+    fill: var(--ink-2);
+  }
+
+  .head-awa {
+    fill: var(--accent);
   }
 
   .tt-dot {
     fill: var(--ink-2);
   }
 
-  .tt-label {
-    fill: var(--ink-2);
-    font-size: 7px;
-  }
-
   .ribbon {
-    transform-origin: right center;
+    transform-origin: left center;
   }
 
   .ribbon.streaming {
@@ -186,6 +257,11 @@
 
   .ribbon.stalled {
     fill: var(--bad);
+  }
+
+  .water {
+    stroke: var(--accent);
+    stroke-width: 1.5;
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -232,25 +308,26 @@
     }
   }
 
-  .heel {
-    position: absolute;
-    right: 0;
-    bottom: 0;
+  dl {
     display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    font-size: var(--text-xs);
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin: var(--space-3) 0 0;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--line);
+  }
+
+  dl div {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  dt {
     color: var(--ink-2);
   }
 
-  .heel svg {
-    width: 60px;
-    height: 40px;
-    flex: none;
-  }
-
-  .water {
-    stroke: var(--accent);
-    stroke-width: 1;
+  dd {
+    margin: 0;
+    color: var(--ink);
   }
 </style>

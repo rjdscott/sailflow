@@ -3,7 +3,7 @@
   import { NAV_ITEMS } from './navItems';
 </script>
 
-<nav class="bottom-nav" aria-label="Primary">
+<nav class="nav-rail" aria-label="Primary">
   {#each NAV_ITEMS as tab (tab.route)}
     <button
       type="button"
@@ -30,27 +30,48 @@
 </nav>
 
 <style>
-  .bottom-nav {
+  .nav-rail {
+    position: fixed;
+    inset-block: 0;
+    left: 0;
+    z-index: 5;
     display: flex;
-    height: 56px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+    width: var(--rail-w);
+    padding-block: var(--space-4);
     background: var(--surface);
-    border-top: 1px solid var(--line);
-    padding-bottom: env(safe-area-inset-bottom);
+    border-right: 1px solid var(--line);
   }
 
   button {
-    flex: 1;
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    min-height: var(--hit-min);
+    gap: 3px;
+    min-height: 60px;
+    padding: var(--space-1);
     background: none;
     border: none;
     color: var(--ink-2);
     font-size: var(--text-xs);
     cursor: pointer;
+  }
+
+  /* Active state bar on the rail edge, so the current screen is legible from
+     the corner of your eye without relying on colour alone. */
+  button.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--accent);
   }
 
   button.active {

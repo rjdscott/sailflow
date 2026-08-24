@@ -76,8 +76,8 @@ wrapped numerals. Desktop is a real layout, not a stretched phone column.
 
 ## Tasks
 
-- [ ] Tokens + shell: `--line`, `--muted`, breakpoints, left rail on `lg`, `.screen`/`.card` primitives, focus rings [O]
-- [ ] Race screen rebuilt to spec incl. SailSections/RigElevation/PlanView redraw [O]
+- [x] Tokens + shell: `--line`, `--muted`, breakpoints, left rail on `lg`, `.screen`/`.card` primitives, focus rings [O]
+- [x] Race screen rebuilt to spec incl. SailSections/RigElevation/PlanView redraw [O]
 - [x] Dock, Log, Drills, More desktop layouts to spec [O]
 - [ ] Browser verification at 390 and 1440, light and dark, all five screens; defects logged here
 - [ ] `make check` green; deploy; live check
@@ -107,3 +107,20 @@ pnpm build && pnpm preview   # 390×844 and 1440×900, both themes, every screen
   tests. Desktop widths not yet browser-verified from this worktree: `app.css`
   still caps `#app` at 480 px until the shell lands.
 - 2026-08-25 — Phase added after owner review of the live Race screen (clipped sections, colliding labels, dead whitespace) and the requirement that desktop study sessions are first-class. Spec above written by Fable; executed by two Opus agents in worktrees (shell + Race; other screens).
+- 2026-08-25 — Shell + Race shipped. Tokens gained `--line`, `--muted`,
+  `--font-mono`, `--rail-w`, `--content-max`, `--gutter`; `src/app.css` now
+  carries the shared class contract (`.screen`, `.col-primary`,
+  `.col-secondary`, `.screen-head`, `.stack`, `.card`, `.section-title`,
+  `.hero-number`/`.hero-unit`, `.chip-row`/`.chip`, `.hit-44`, `.mono`,
+  `.lg-only`/`.lg-hide`). `NavRail.svelte` and `BottomNav.svelte` share
+  `components/navItems.ts`; both render always and CSS picks one at 1024, so
+  there is no JS breakpoint state. Race rebuilt: conditions chip row (presets
+  moved into the sheet), tabbed pictures on phone, hero plan-view card plus a
+  sections/rig pair on desktop, sticky metrics strip in the secondary column,
+  insight card with a "why" disclosure. Drawings redrawn resolution-independent
+  (`viewBox` + `width:100%; height:auto`), every number moved off the curves
+  into tables underneath. `SECTION_LAYOUT` in `race/geometry.ts` is the single
+  source of the section-drawing numbers and `geometry.test.ts` proves no
+  clamped section escapes the viewBox — that test caught real clipping at the
+  first row spacing. Browser verification (task 4) still outstanding: this was
+  executed without a browser.

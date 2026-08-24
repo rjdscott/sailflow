@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { RigState, SectionShape } from '../../core/types';
 import {
+  type Box,
   mastPoints,
+  rotate,
+  SECTION_LAYOUT,
+  sectionBox,
   sectionPath,
   sectionPoints,
   telltaleState,
   twistRelativeDeg,
+  unionBox,
 } from './geometry';
 
 const section = (over: Partial<SectionShape> = {}): SectionShape => ({
@@ -112,5 +117,96 @@ describe('mastPoints', () => {
     const x1 = mastPoints(rig({ rakeMm: 0 }), 200, 42.5, 1)[5].x;
     const x5 = mastPoints(rig({ rakeMm: 0 }), 200, 42.5, 5)[5].x;
     expect(x5).toBeCloseTo(x1 * 5);
+  });
+});
+
+describe('rotate', () => {
+  it('is the identity at zero and turns clockwise for positive degrees', () => {
+    expect(rotate({ x: 3, y: 4 }, 0)).toEqual({ x: 3, y: 4 });
+    const q = rotate({ x: 10, y: 0 }, 90);
+    expect(q.x).toBeCloseTo(0);
+    expect(q.y).toBeCloseTo(10); // +y is down in screen space
+  });
+
+  it('rotates about an arbitrary point', () => {
+    const p = rotate({ x: 15, y: 5 }, 180, { x: 5, y: 5 });
+    expect(p.x).toBeCloseTo(-5);
+    expect(p.y).toBeCloseTo(5);
+  });
+});
+
+describe('sectionBox', () => {
+  it('spans the chord when the section is flat and unrotated', () => {
+    const b = sectionBox(section({ draft: 0, twistDeg: 0 }), 100, { x: 10, y: 50 }, 0);
+    expect(b.minX).toBeCloseTo(10);
+    expect(b.maxX).toBeCloseTo(110);
+    expect(b.minY).toBeCloseTo(50);
+    expect(b.maxY).toBeCloseTo(50);
+  });
+
+  it('lifts the leech when the section is twisted open', () => {
+    const flat = sectionBox(section(), 100, { x: 0, y: 100 }, 0);
+    const open = sectionBox(section(), 100, { x: 0, y: 100 }, -20);
+    expect(open.minY).toBeLessThan(flat.minY);
+    expect(open.maxX).toBeLessThan(flat.maxX); // foreshortened by the rotation
+  });
+});
+
+describe('SECTION_LAYOUT', () => {
+  // src/core/shape/flying.ts clamps every section to these ranges, so the
+  // extremes below are the worst the drawing will ever be asked to hold.
+  // This is the "does it clip?" check that a browser would otherwise be for.
+  const DRAFT = [0.05, 0.25];
+  const POS = [0.3, 0.6];
+  // Twist grows with height (flying.test.ts), so twist relative to the quarter
+  // section is never negative and the component only ever rotates the leech up.
+  const ROT = [-30, 0];
+
+  /** Union of every section the component can draw, over the clamped extremes. */
+  function worstCase(): Box {
+    let box: Box | null = null;
+    for (const sail of [0, 1]) {
+      for (const [ri, y] of SECTION_LAYOUT.rowY.entries()) {
+        // The quarter row is the twist reference, so it is never rotated.
+        const twists = ri === 2 ? [0] : ROT;
+        for (const draft of DRAFT) {
+          for (const draftPos of POS) {
+            for (const deg of twists) {
+              const b = sectionBox(
+                section({ draft, draftPos }),
+                SECTION_LAYOUT.chord,
+                { x: SECTION_LAYOUT.luffX[sail], y },
+                deg,
+              );
+              box = box ? unionBox(box, b) : b;
+            }
+          }
+        }
+      }
+    }
+    return box as Box;
+  }
+
+  it('holds every extreme section inside the viewBox', () => {
+    const b = worstCase();
+    expect(b.minX).toBeGreaterThanOrEqual(0);
+    expect(b.maxX).toBeLessThanOrEqual(SECTION_LAYOUT.w);
+    expect(b.minY).toBeGreaterThanOrEqual(SECTION_LAYOUT.luffTop);
+    // The sail name sits on its own baseline below the lowest row.
+    expect(b.maxY).toBeLessThanOrEqual(SECTION_LAYOUT.labelY - 10);
+  });
+
+  it('leaves the rows clear of each other at maximum twist', () => {
+    const [top, mid, bot] = SECTION_LAYOUT.rowY;
+    const at = (y: number, deg: number) =>
+      sectionBox(section({ draft: 0.25, draftPos: 0.6 }), SECTION_LAYOUT.chord, { x: 0, y }, deg);
+    // Worst case: an untwisted row above a fully twisted one.
+    expect(at(top, 0).maxY).toBeLessThanOrEqual(at(mid, -30).minY);
+    expect(at(mid, 0).maxY).toBeLessThanOrEqual(at(bot, 0).minY);
+  });
+
+  it('keeps the two sail panels from overlapping', () => {
+    const [mainX, jibX] = SECTION_LAYOUT.luffX;
+    expect(jibX).toBeGreaterThan(mainX + SECTION_LAYOUT.chord);
   });
 });
