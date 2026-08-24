@@ -37,16 +37,19 @@
     <div class="ends">
       <div class="mini">
         <span class="mini-label tabular-nums">at {fmt(score.atMin.twsKt, 0, 'kt')}</span>
-        <span class="mini-value tabular-nums">−{fmt(score.atMin.regretSPerMile, 1)} s/mi</span>
+        <span class="mini-value tabular-nums">{fmt(score.atMin.regretSPerMile, 1)} s/mi slower</span
+        >
       </div>
       <div class="mini">
         <span class="mini-label tabular-nums">at {fmt(score.atMax.twsKt, 0, 'kt')}</span>
-        <span class="mini-value tabular-nums">−{fmt(score.atMax.regretSPerMile, 1)} s/mi</span>
+        <span class="mini-value tabular-nums">{fmt(score.atMax.regretSPerMile, 1)} s/mi slower</span
+        >
       </div>
     </div>
 
     <p class="worst tabular-nums">
-      Worst at {fmt(score.worst.twsKt, 0, 'kt')}: −{fmt(score.worst.regretSPerMile, 1)} s/mi
+      Worst case {fmt(score.worst.twsKt, 0, 'kt')}: {fmt(score.worst.regretSPerMile, 1)} s/mi slower than
+      a rig tuned for it
     </p>
 
     {#if path}
