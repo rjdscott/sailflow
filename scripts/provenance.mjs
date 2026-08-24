@@ -12,6 +12,10 @@ const boat = JSON.parse(readFileSync('data/boats/j70.json', 'utf8'));
 const north = JSON.parse(readFileSync('data/tuning/north-j70.json', 'utf8'));
 const quantum = JSON.parse(readFileSync('data/tuning/quantum-j70.json', 'utf8'));
 const polar = JSON.parse(readFileSync('data/polar/orc-j70.json', 'utf8'));
+// Written by calibration/fit.ts. Absent before the first fit, and the
+// calibrated-parameter table degrades to knob + value when it is.
+const RESIDUALS = 'calibration/residuals.json';
+const residuals = existsSync(RESIDUALS) ? JSON.parse(readFileSync(RESIDUALS, 'utf8')) : null;
 
 function get(obj, path) {
   return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
@@ -54,8 +58,24 @@ function assumptionsBody() {
   const cal = Object.entries(boat.calibration);
   if (!cal.length) out.push('_None yet. Populated by `calibration/fit.ts` in phase 02._');
   else {
-    out.push('| Knob | Value |', '|---|---|');
-    for (const [k, v] of cal) out.push(`| \`${k}\` | ${v} |`);
+    const stageOf = new Map();
+    for (const s of residuals?.stages ?? [])
+      for (const k of s.knobs) stageOf.set(k.name, { stage: s.stage, name: s.name, loss: s.lossEnd });
+    out.push('| Knob | Value | Stage | Fit loss |', '|---|---|---|---|');
+    for (const [k, v] of cal) {
+      const s = stageOf.get(k);
+      out.push(
+        `| \`${k}\` | ${Number(v.toPrecision(6))} | ${s ? `${s.stage} ${s.name}` : 'unfitted'} | ${
+          s ? s.loss.toPrecision(4) : ''
+        } |`,
+      );
+    }
+    if (residuals)
+      out.push(
+        '',
+        `Fit set: TWS ${residuals.fitTws.join('/')} kt; held out: TWS ${residuals.heldOutTws.join('/')} kt` +
+          ` (ADR ${residuals.adr ?? '0007'}). Per-point residuals: \`${RESIDUALS}\`.`,
+      );
   }
   return out.join('\n') + '\n';
 }

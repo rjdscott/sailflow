@@ -68,6 +68,8 @@ export interface HullDef {
   kgM: number;
   /** Metacentric height, m. */
   gmM: number;
+  /** ORC certificate "RM measured", kg·m per degree of heel at small angles. */
+  rmMeasuredKgMPerDeg?: number;
 }
 
 export interface RigDef {

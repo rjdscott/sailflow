@@ -79,6 +79,7 @@ export class DockStore {
     return this.client.request<DockScoreRequest>({
       type: 'dockScore',
       setups,
+      candidates: candidateSetups(),
       forecast: $state.snapshot(this.forecast),
     });
   }

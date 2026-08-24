@@ -8,6 +8,31 @@ The rig-bend-to-sail-shape sensitivity layer (`src/core/aero/shape`) is
 invented for this app: sign-correct by construction and tested for it,
 magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
+## Where the model is honestly weak (2026-08-25 fit)
+
+- **Upwind speed plateau.** The ORC polar holds 5.79–5.95 kt from 12 to 20 kt;
+  linear residuary bins 0.1 Fn apart cannot build that wall, so the model is
+  ~5 % slow at 6 kt and ~6–8 % fast at 16–20 kt. Held-out TWS 14 upwind misses
+  the 3 % gate by 2.8 points. Candidate fix: a finer Fn table or a wave-making
+  hump term (Epic 2).
+- **Asymmetric optimum angle.** ORC's downwind optimum jumps 150° → 172°
+  between 12 and 16 kt at nearly constant speed; the model stays near 147°.
+  A single CL multiplier (`aero.asymClMul`) cannot shape an angle error.
+- **Downwind heel** prints 11.7° in the polar; the model gives 0.5–2°. No
+  knob touches it; not gated.
+- **Dock-setup sensitivity.** In VPP mode `optimal()` overrides the
+  shape-derived `flat`, so a dock setup enters only as a small coefficient
+  perturbation and the setup ranking is nearly wind-independent. Stage 4 could
+  not separate the North 8–10 and 12–16 kt bands; all six rig/shape knobs sit
+  on their bounds. Dock-mode regrets are therefore small and tier-B in
+  practice until race controls are optimised through the shape layer.
+- `hydro.heelDragK` fitted at ~2× the value `hydro/resistance.ts` assumes;
+  `aero.hbiM` pinned at its 1.4 m upper bound (the fit wanted more heeling
+  arm). Both are the fit compensating for missing physics, not measurements.
+- **Drill medals**: gold ≤ 1 %, silver ≤ 3 %, bronze ≤ 6 % VMG loss
+  (`src/lib/drills.ts`, assumed).
+- **Dock forecast pmf**: triangular on a 1-kt grid with a 5 % floor (ADR 0009, assumed).
+
 <!-- generated: do not edit below this line -->
 
 ## Assumed boat parameters
@@ -44,4 +69,25 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
 ## Calibrated free parameters
 
-_None yet. Populated by `calibration/fit.ts` in phase 02._
+| Knob | Value | Stage | Fit loss |
+|---|---|---|---|
+| `hydro.formFactor` | 0.0296571 | 1 hydro-jib | 0.1388 |
+| `hydro.rrMul.fn20` | 0.364214 | 1 hydro-jib | 0.1388 |
+| `hydro.rrMul.fn30` | 0.812076 | 1 hydro-jib | 0.1388 |
+| `hydro.rrMul.fn40` | 0.974563 | 1 hydro-jib | 0.1388 |
+| `hydro.rrMul.fn50` | 1.63226 | 1 hydro-jib | 0.1388 |
+| `hydro.rrMul.fn60` | 1.69371 | 1 hydro-jib | 0.1388 |
+| `hydro.planingRelief` | 0.153826 | 1 hydro-jib | 0.1388 |
+| `hydro.keelLiftSlope` | 0.751711 | 1 hydro-jib | 0.1388 |
+| `hydro.heelDragK` | 1.09438 | 1 hydro-jib | 0.1388 |
+| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.1388 |
+| `aero.asymClMul` | 1.01107 | 2 asym | 0.4739 |
+| `hydro.crewArmMul` | 0.768062 | 3 righting | 0.01014 |
+| `rig.EI` | 685000 | 4 rig-shape | 15.99 |
+| `rig.turnsToN` | 100 | 4 rig-shape | 15.99 |
+| `rig.sagK` | 25 | 4 rig-shape | 15.99 |
+| `shape.bendToDraft` | 0.36 | 4 rig-shape | 15.99 |
+| `shape.sagToDraft` | 0.0003 | 4 rig-shape | 15.99 |
+| `shape.sheetToTwist` | 0.15 | 4 rig-shape | 15.99 |
+
+Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out split), 0007 (tolerances)). Per-point residuals: `calibration/residuals.json`.

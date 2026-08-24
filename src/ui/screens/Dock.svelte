@@ -10,6 +10,31 @@
   import CommitButton from '../dock/CommitButton.svelte';
   import { fmt } from '../format';
   import { signed } from '../dock/logic';
+  import Panel from '../disagree/Panel.svelte';
+  import { ModelOptimumStore } from '../disagree/store.svelte';
+  import { getClient } from '../dock/client';
+  import { logStoreUi } from '../log/store.svelte';
+
+  const model = new ModelOptimumStore(getClient());
+  $effect(() => {
+    if (advanced)
+      model.request(dock.forecast.likelyKt, dock.forecast.seaState, dock.forecast.crewKg);
+  });
+
+  function commit(): void {
+    const lock = dock.commit();
+    logStoreUi.setDraft({
+      date: lock.committedAt.slice(0, 10),
+      forecast: {
+        minKt: lock.forecast.minKt,
+        likelyKt: lock.forecast.likelyKt,
+        maxKt: lock.forecast.maxKt,
+      },
+      seaState: lock.forecast.seaState,
+      crewKg: lock.forecast.crewKg,
+      dock: lock.setup,
+    });
+  }
 
   const advanced = $derived(settings.mode === 'advanced');
   const score = $derived(dock.score);
@@ -95,8 +120,21 @@
   </details>
 {/if}
 
+{#if advanced}
+  <section>
+    <h2>Model vs tuning guides</h2>
+    <Panel
+      twsKt={dock.forecast.likelyKt}
+      seaState={dock.forecast.seaState}
+      crewKg={dock.forecast.crewKg}
+      modelOptimum={model.optimum}
+      busy={model.busy}
+    />
+  </section>
+{/if}
+
 <section class="commit">
-  <CommitButton oncommit={() => dock.commit()} />
+  <CommitButton oncommit={commit} />
 </section>
 
 <style>

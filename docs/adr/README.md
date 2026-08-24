@@ -44,5 +44,11 @@ line. Don't hand-edit.
 | [0003](0003-ui-talks-to-physics-only-through-a-typed-worker-protocol.md) | The UI talks to the physics core only through a typed worker protocol | Accepted |
 | [0004](0004-typescript-solver-now-rust-engine-at-multiplayer.md) | TypeScript solver now; a Rust engine only when multiplayer or heavier aero demands it | Accepted |
 | [0005](0005-svelte-5-vite-no-router-no-state-library.md) | Svelte 5 + Vite for the UI, with hash routing and no router or state library | Accepted |
+| [0006](0006-faithful-orc-aero-layer-plus-invented-shape-layer-with-confidence-tiers.md) | A faithful ORC aero layer plus an explicitly invented shape-sensitivity layer, with confidence tiers on every output | Accepted |
+| [0007](0007-calibration-and-validation-are-separate-with-a-held-out-gate.md) | Calibration and validation are separate, with a held-out polar gate | Superseded by [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) (split only; tolerances stand) |
 | [0008](0008-third-party-reference-data-committed-with-provenance.md) | Third-party reference data is committed to the repo with inline provenance | Accepted |
+| [0009](0009-dock-mode-score-is-expected-regret-over-a-forecast-distribution.md) | Dock-mode score is expected regret in seconds per mile over a forecast distribution | Accepted |
+| [0010](0010-persistence-behind-a-log-store-interface-localstorage-then-indexeddb.md) | Persistence behind a LogStore interface: localStorage now, IndexedDB when the schema settles | Accepted |
+| [0011](0011-two-d-svg-and-canvas-only-for-epic-1.md) | 2D SVG and Canvas only for Epic 1; no WebGL until measured | Accepted |
+| [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) | The calibration hold-out is split by wind speed, not by sailing angle | Accepted |
 <!-- index:end -->
