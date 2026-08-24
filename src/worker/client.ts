@@ -35,7 +35,11 @@ export class SolverClient {
 
   request<R extends Request>(req: Omit<R, 'id' | 'protocolVersion'>): Promise<ResultOf<R>> {
     const id = this.nextId++;
-    const message = { ...req, id, protocolVersion: PROTOCOL_VERSION } as unknown as R;
+    // The protocol is JSON by contract; the round-trip also strips reactive
+    // proxies (Svelte $state) that structured clone refuses.
+    const message = JSON.parse(
+      JSON.stringify({ ...req, id, protocolVersion: PROTOCOL_VERSION }),
+    ) as R;
     return new Promise<ResultOf<R>>((resolve, reject) => {
       this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject });
       this.worker.postMessage(message);
