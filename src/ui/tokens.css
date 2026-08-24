@@ -1,0 +1,74 @@
+/* Design tokens (Phase 03). Sun-readable light theme by default, dark theme
+   via prefers-color-scheme or an explicit [data-theme] override. */
+
+:root {
+  --bg: #ffffff;
+  --surface: #f2f4f7;
+  --ink: #0b1220;
+  --ink-2: #3a4250;
+  --accent: #0057d9;
+  --on-accent: #ffffff;
+  --good: #1b8a3a;
+  --warn: #b7791f;
+  --bad: #b42318;
+
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 40px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --radius: 8px;
+  --hit-min: 44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0b0f14;
+    --surface: #151b23;
+    --ink: #f3f6fa;
+    --ink-2: #aeb7c4;
+    --accent: #6fa8ff;
+    --on-accent: #0b0f14;
+    --good: #5bd07c;
+    --warn: #f2c069;
+    --bad: #ff7a6e;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0b0f14;
+  --surface: #151b23;
+  --ink: #f3f6fa;
+  --ink-2: #aeb7c4;
+  --accent: #6fa8ff;
+  --on-accent: #0b0f14;
+  --good: #5bd07c;
+  --warn: #f2c069;
+  --bad: #ff7a6e;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
