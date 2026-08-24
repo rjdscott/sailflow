@@ -65,4 +65,4 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 | `shape.sagToDraft` | 0.0003 | 4 rig-shape | 15.99 |
 | `shape.sheetToTwist` | 0.15 | 4 rig-shape | 15.99 |
 
-Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0007). Per-point residuals: `calibration/residuals.json`.
+Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out split), 0007 (tolerances)). Per-point residuals: `calibration/residuals.json`.

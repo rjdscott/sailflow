@@ -13,7 +13,7 @@
     "test": "vitest run",
     "calibrate": "tsx calibration/fit.ts",
     "golden": "tsx calibration/golden.ts",
-    "validate": "vitest run validation && tsx validation/report.ts"
+    "validate": "vitest run --config vitest.polar.config.ts; tsx validation/report.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

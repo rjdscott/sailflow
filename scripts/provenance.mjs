@@ -74,7 +74,7 @@ function assumptionsBody() {
       out.push(
         '',
         `Fit set: TWS ${residuals.fitTws.join('/')} kt; held out: TWS ${residuals.heldOutTws.join('/')} kt` +
-          ` (ADR 0007). Per-point residuals: \`${RESIDUALS}\`.`,
+          ` (ADR ${residuals.adr ?? '0007'}). Per-point residuals: \`${RESIDUALS}\`.`,
       );
   }
   return out.join('\n') + '\n';
