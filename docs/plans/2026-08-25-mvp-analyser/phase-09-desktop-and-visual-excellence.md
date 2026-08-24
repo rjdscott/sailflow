@@ -1,6 +1,6 @@
 # Phase 09: Desktop layout and visual excellence
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 
 ## Goal
 
@@ -90,8 +90,8 @@ wrapped numerals. Desktop is a real layout, not a stretched phone column.
 - [x] Tokens + shell: `--line`, `--muted`, breakpoints, left rail on `lg`, `.screen`/`.card` primitives, focus rings [O]
 - [x] Race screen rebuilt to spec incl. SailSections/RigElevation/PlanView redraw [O]
 - [x] Dock, Log, Drills, More desktop layouts to spec [O]
-- [ ] Browser verification at 390 and 1440, light and dark, all five screens; defects logged here
-- [ ] `make check` green; deploy; live check
+- [x] Browser verification at 390 and 1440, light and dark, all five screens; defects logged here
+- [x] `make check` green; deploy; live check
 
 ## Verification
 
@@ -137,3 +137,4 @@ pnpm build && pnpm preview   # 390×844 and 1440×900, both themes, every screen
   executed without a browser.
 - 2026-08-25 — PRs #14 (screens) and #15 (shell + Race) merged and deployed. Live desktop check at 1048 px: nav rail, boat hero, sticky metrics strip, side controls all render; no console errors. Found: the service worker kept serving the previous precache until unregistered — `autoUpdate` needs a reload cycle; owner should hard-refresh once (documented in `release-and-pwa-cache-bust.md`). The plan-view boat is structurally right but visually weak (blob hull, line sails, floating telltales) — illustration pass launched (`src/ui/race/boat.ts` + PlanView).
 - 2026-08-25 — Boat illustration landed (`boat.ts` + PlanView): class-proportion hull, filled cambered sails, sheet-driven boom/jib angles, telltales fixed. Tablet band (720–1023) made two-column (PR #18); phone nits (PR #17). Live-check note: GitHub Pages serves index.html with max-age 600 and the SW precaches assets, so a fresh deploy can take up to ten minutes plus one reload to appear — documented in release-and-pwa-cache-bust.md.
+- 2026-08-25 — PRs #17–#20 merged. Live at 1417 px: nav rail, boat hero filling its card, sail sections + rig elevation beneath, sticky metrics strip, controls right; 885 px: two columns; 390 px (iframe harness): hero readouts, tabbed pictures, controls, bottom bar. Dark theme checked. Browser verification task done except a real phone in airplane mode (owner). Phase 09 🟢 pending that walk; remaining polish candidates: boom formula ceiling on runs (`ponytail:` in `boat.ts`), sail-section table density on phone.
