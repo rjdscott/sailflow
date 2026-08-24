@@ -6,6 +6,6 @@ export default defineConfig({
   base: process.env.GITHUB_PAGES ? '/sailflow/' : '/',
   plugins: [svelte()],
   test: {
-    include: ['src/**/*.test.ts', 'validation/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'validation/**/*.test.ts', 'calibration/**/*.test.ts'],
   },
 });
