@@ -32,6 +32,10 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 - **Drill medals**: gold ≤ 1 %, silver ≤ 3 %, bronze ≤ 6 % VMG loss
   (`src/lib/drills.ts`, assumed).
 - **Dock forecast pmf**: triangular on a 1-kt grid with a 5 % floor (ADR 0009, assumed).
+- **Plan-view drawing** (`src/ui/race/boat.ts`, presentation only, not in the
+  solver): mast step at 0.45·LOA; boom angle ≈ 6° + (100 − mainsheet)·0.25° +
+  traveller·0.08°; jib sheeting angle ≈ 7° + jibLead·0.4° + (100 − jibSheet)·0.15°.
+  Sign-correct, magnitude assumed; the figcaption says so.
 
 <!-- generated: do not edit below this line -->
 
