@@ -46,6 +46,7 @@
   .value {
     font-size: var(--text-lg);
     color: var(--ink);
+    white-space: nowrap;
   }
 
   .readout.lg .value {

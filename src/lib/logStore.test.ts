@@ -1,5 +1,13 @@
+import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LogEntry } from './logStore';
+
+let dbNameCounter = 0;
+/** A fresh db name per test avoids fake-indexeddb state leaking between tests. */
+function uniqueDbName(): string {
+  dbNameCounter += 1;
+  return `sailflow-test-${dbNameCounter}`;
+}
 
 function mockLocalStorage(initial: Record<string, string> = {}) {
   const store = new Map(Object.entries(initial));
@@ -142,5 +150,119 @@ describe('nextId', () => {
     expect(a).toBeTruthy();
     expect(b).toBeTruthy();
     expect(a).not.toBe(b);
+  });
+});
+
+describe('indexedDbLogStore', () => {
+  it('starts empty with nothing stored', async () => {
+    mockLocalStorage();
+    const { indexedDbLogStore } = await import('./logStore');
+    const store = indexedDbLogStore(uniqueDbName());
+    expect(await store.list()).toEqual([]);
+  });
+
+  it('round-trips put -> list', async () => {
+    mockLocalStorage();
+    const { indexedDbLogStore } = await import('./logStore');
+    const store = indexedDbLogStore(uniqueDbName());
+    const entry = makeEntry('a');
+    await store.put(entry);
+    expect(await store.list()).toEqual([entry]);
+  });
+
+  it('put with an existing id replaces rather than duplicates', async () => {
+    mockLocalStorage();
+    const { indexedDbLogStore } = await import('./logStore');
+    const store = indexedDbLogStore(uniqueDbName());
+    await store.put(makeEntry('a'));
+    const updated = { ...makeEntry('a'), venue: 'Different club' };
+    await store.put(updated);
+    const list = await store.list();
+    expect(list).toHaveLength(1);
+    expect(list[0].venue).toBe('Different club');
+  });
+
+  it('persists across a fresh store instance on the same db name', async () => {
+    mockLocalStorage();
+    const { indexedDbLogStore } = await import('./logStore');
+    const dbName = uniqueDbName();
+    await indexedDbLogStore(dbName).put(makeEntry('a'));
+    expect(await indexedDbLogStore(dbName).list()).toHaveLength(1);
+  });
+
+  it('remove deletes only the matching entry', async () => {
+    mockLocalStorage();
+    const { indexedDbLogStore } = await import('./logStore');
+    const store = indexedDbLogStore(uniqueDbName());
+    await store.put(makeEntry('a'));
+    await store.put(makeEntry('b'));
+    await store.remove('a');
+    const list = await store.list();
+    expect(list.map((e) => e.id)).toEqual(['b']);
+  });
+
+  it('clear empties the store', async () => {
+    mockLocalStorage();
+    const { indexedDbLogStore } = await import('./logStore');
+    const store = indexedDbLogStore(uniqueDbName());
+    await store.put(makeEntry('a'));
+    await store.clear();
+    expect(await store.list()).toEqual([]);
+  });
+
+  it('migrates existing localStorage entries on first open, leaving localStorage as-is', async () => {
+    const lsKey = 'sailflow.log.v1';
+    const existing = makeEntry('from-ls');
+    const raw = mockLocalStorage({ [lsKey]: JSON.stringify([existing]) });
+    const { indexedDbLogStore } = await import('./logStore');
+    const store = indexedDbLogStore(uniqueDbName(), lsKey);
+    expect(await store.list()).toEqual([existing]);
+    // localStorage's own copy is untouched — migration only adds a marker key.
+    expect(JSON.parse(raw.get(lsKey)!)).toEqual([existing]);
+    expect(raw.has(`${lsKey}.migrated`)).toBe(true);
+  });
+
+  it('does not re-copy localStorage entries added after the first migration', async () => {
+    const lsKey = 'sailflow.log.v1';
+    const raw = mockLocalStorage({ [lsKey]: JSON.stringify([makeEntry('first')]) });
+    const { indexedDbLogStore } = await import('./logStore');
+    const dbName = uniqueDbName();
+    await indexedDbLogStore(dbName, lsKey).list();
+
+    raw.set(lsKey, JSON.stringify([makeEntry('first'), makeEntry('second')]));
+    const list = await indexedDbLogStore(dbName, lsKey).list();
+    expect(list.map((e) => e.id)).toEqual(['first']);
+  });
+
+  it('leaves the db empty when localStorage has nothing to migrate', async () => {
+    mockLocalStorage();
+    const { indexedDbLogStore } = await import('./logStore');
+    expect(await indexedDbLogStore(uniqueDbName()).list()).toEqual([]);
+  });
+});
+
+describe('chooseLogStore', () => {
+  it('returns an IndexedDB-backed store when indexedDB is available', async () => {
+    mockLocalStorage();
+    const { chooseLogStore } = await import('./logStore');
+    const store = chooseLogStore();
+    await store.put(makeEntry('a'));
+    expect(await store.list()).toEqual([makeEntry('a')]);
+  });
+
+  it('falls back to localStorage when indexedDB is unavailable', async () => {
+    mockLocalStorage();
+    vi.stubGlobal('indexedDB', undefined);
+    const { chooseLogStore } = await import('./logStore');
+    const store = chooseLogStore();
+    await store.put(makeEntry('a'));
+    expect(await store.list()).toEqual([makeEntry('a')]);
+  });
+
+  it('requests persistent storage without throwing when navigator.storage is absent', async () => {
+    mockLocalStorage();
+    vi.stubGlobal('navigator', {});
+    const { chooseLogStore } = await import('./logStore');
+    expect(() => chooseLogStore()).not.toThrow();
   });
 });

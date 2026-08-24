@@ -194,9 +194,11 @@
   }
 
   .range::-webkit-slider-runnable-track {
-    height: 6px;
+    height: 4px;
     border-radius: var(--radius);
-    background: var(--surface);
+    /* Explicit ink-derived colour, not --surface: Dock puts this slider on a
+       --surface card, where a --surface track disappears (both themes). */
+    background: color-mix(in srgb, var(--ink-2) 45%, transparent);
   }
 
   .range::-webkit-slider-thumb {
@@ -211,9 +213,9 @@
   }
 
   .range::-moz-range-track {
-    height: 6px;
+    height: 4px;
     border-radius: var(--radius);
-    background: var(--surface);
+    background: color-mix(in srgb, var(--ink-2) 45%, transparent);
   }
 
   .range::-moz-range-thumb {

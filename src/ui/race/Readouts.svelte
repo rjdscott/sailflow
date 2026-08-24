@@ -8,7 +8,7 @@
 <section class="readouts" class:stale={!result.converged}>
   <div class="hero">
     <Readout label="BSP" value={result.bsKt.value} tier={result.bsKt.tier} unit="kt" size="lg" />
-    <Readout label="Height" value={twaDeg} unit="° TWA" size="lg" decimals={0} />
+    <Readout label="TWA" value={twaDeg} unit="°" size="lg" decimals={0} />
     <Readout
       label="VMG"
       value={result.vmgKt.value}
