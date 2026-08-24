@@ -1,6 +1,9 @@
 /**
- * Tuning log persistence. localStorage impl for the MVP; IndexedDB impl
- * lands in Phase 08 behind the same LogStore interface.
+ * Tuning log persistence. Two implementations behind the same `LogStore`
+ * interface: `localStorageLogStore` (MVP, still used as a fallback) and
+ * `indexedDbLogStore` (Phase 08, preferred — iOS Safari PWAs can evict
+ * localStorage but IndexedDB is the durable option). `chooseLogStore` picks
+ * whichever the runtime supports.
  *
  * localStorage access is wrapped in try/catch — iOS Safari PWAs can throw in
  * private contexts, and stored data can be corrupted or hand-edited.
@@ -87,4 +90,115 @@ export function localStorageLogStore(key = 'sailflow.log.v1'): LogStore {
       writeAll(key, []);
     },
   };
+}
+
+const STORE_NAME = 'log';
+
+function idbRequest<T>(req: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error as Error);
+  });
+}
+
+function openDb(dbName: string): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(dbName, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error as Error);
+  });
+}
+
+/**
+ * One-time copy of any localStorage-resident entries into a freshly opened
+ * IndexedDB store. localStorage is left untouched (per the migration
+ * contract) — a `<lsKey>.migrated` marker key stops it re-copying on every
+ * open. `put` is idempotent by id, so a lost/duplicated marker just re-copies
+ * harmlessly rather than corrupting anything.
+ */
+async function migrateFromLocalStorage(db: IDBDatabase, lsKey: string): Promise<void> {
+  const migratedFlag = `${lsKey}.migrated`;
+  try {
+    if (localStorage.getItem(migratedFlag)) return;
+  } catch {
+    return; // no localStorage in this context — nothing to migrate
+  }
+  const entries = readAll(lsKey);
+  if (entries.length > 0) {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    for (const e of entries) store.put(e);
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error as Error);
+    });
+  }
+  try {
+    localStorage.setItem(migratedFlag, '1');
+  } catch {
+    // best-effort marker; a re-run just re-copies (harmless, see above)
+  }
+}
+
+/** IndexedDB-backed LogStore: db `sailflow` (or `dbName`), store `log`, keyPath `id`. */
+export function indexedDbLogStore(dbName = 'sailflow', lsKey = 'sailflow.log.v1'): LogStore {
+  let dbPromise: Promise<IDBDatabase> | undefined;
+  function db(): Promise<IDBDatabase> {
+    if (!dbPromise) {
+      dbPromise = openDb(dbName).then(async (opened) => {
+        await migrateFromLocalStorage(opened, lsKey);
+        return opened;
+      });
+    }
+    return dbPromise;
+  }
+
+  return {
+    async list(): Promise<LogEntry[]> {
+      const conn = await db();
+      const store = conn.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME);
+      return idbRequest(store.getAll());
+    },
+    async put(e: LogEntry): Promise<void> {
+      const conn = await db();
+      const store = conn.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME);
+      await idbRequest(store.put(e));
+    },
+    async remove(id: string): Promise<void> {
+      const conn = await db();
+      const store = conn.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME);
+      await idbRequest(store.delete(id));
+    },
+    async clear(): Promise<void> {
+      const conn = await db();
+      const store = conn.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME);
+      await idbRequest(store.clear());
+    },
+  };
+}
+
+let persistRequested = false;
+
+/** Best-effort `navigator.storage.persist()`, called at most once per session. */
+function requestPersistentStorage(): void {
+  if (persistRequested) return;
+  persistRequested = true;
+  try {
+    void navigator.storage?.persist?.();
+  } catch {
+    // unsupported or blocked — the log still works, just evictable
+  }
+}
+
+/** IndexedDB when the runtime supports it, else localStorage. */
+export function chooseLogStore(): LogStore {
+  if (typeof indexedDB === 'undefined') return localStorageLogStore();
+  requestPersistentStorage();
+  return indexedDbLogStore();
 }

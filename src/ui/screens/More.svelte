@@ -3,8 +3,7 @@
   import Segmented from '../components/Segmented.svelte';
   import { settings, type Theme } from '../stores/settings.svelte';
 
-  // ponytail: static build version; wire to package.json at build time if it drifts.
-  const VERSION = '0.0.0';
+  const VERSION = import.meta.env.VITE_APP_VERSION;
 </script>
 
 <TopBar title="More" />

@@ -14,10 +14,16 @@
   // simply re-renders the sections. Nothing here animates.
   const CHORD = 100;
   const TICK = 16;
+  // Row spacing (54) leaves ~11 units of clearance between one row's typical
+  // camber peak and the next row's label at realistic draft (~12%); the old
+  // 62-unit spacing plus a generous bottom margin made the viewBox taller
+  // than it needed to be (aspect ratio 1.28), which is what pushed the ¼ and
+  // ½ rows out of the ~40vh picture pane on a 380px viewport. Height below
+  // is trimmed to match, bringing the aspect ratio to ~1:1.
   const ROWS: { key: keyof SailShape; label: string; y: number }[] = [
     { key: 'threeQuarter', label: '¾', y: 10 },
-    { key: 'half', label: '½', y: 72 },
-    { key: 'quarter', label: '¼', y: 134 },
+    { key: 'half', label: '½', y: 64 },
+    { key: 'quarter', label: '¼', y: 118 },
   ];
 
   const sails = $derived(
@@ -49,7 +55,7 @@
       {#each sails as sail (sail.name)}
         <div class="sail">
           <h3>{sail.name}</h3>
-          <svg viewBox="-26 -14 152 194" role="img" aria-label="{sail.name} sections">
+          <svg viewBox="-26 -14 152 158" role="img" aria-label="{sail.name} sections">
             {#each ROWS as row (row.key)}
               {@const s = sail.shape[row.key]}
               <g

@@ -1,12 +1,12 @@
 /**
  * Reactive wrapper around LogStore for the Log screen. Persistence itself
- * lives in src/lib/logStore.ts (localStorage now, IndexedDB in Phase 08) —
- * this class just holds the loaded list as Svelte state and re-loads after
- * every write, since a localStorage-backed store is small enough that
- * re-reading is simpler than patching state in place.
+ * lives in src/lib/logStore.ts (IndexedDB when available, localStorage
+ * fallback) — this class just holds the loaded list as Svelte state and
+ * re-loads after every write, since the log is small enough that re-reading
+ * is simpler than patching state in place.
  */
 
-import { localStorageLogStore, nextId, type LogEntry, type LogStore } from '../../lib/logStore';
+import { chooseLogStore, nextId, type LogEntry, type LogStore } from '../../lib/logStore';
 import { download, fromJson, toCsv, toJson } from '../../lib/logExport';
 
 /** Partial entry Dock mode can pre-fill before the log form opens. */
@@ -21,7 +21,7 @@ class LogUiStore {
   entries: LogEntry[] = $state([]);
   draft: LogDraft = $state({});
 
-  constructor(private store: LogStore = localStorageLogStore()) {}
+  constructor(private store: LogStore = chooseLogStore()) {}
 
   async load(): Promise<void> {
     const list = await this.store.list();
