@@ -133,3 +133,13 @@ describe('dock scoring', () => {
     expect(scores[0].perTws).toHaveLength(1);
   });
 });
+
+describe('optimal at a fixed angle', () => {
+  it('maximises boat speed at 90° instead of collapsing flat to its floor', () => {
+    const r = optimal(boat, baseDock(), { ...up, twaDeg: 90 }, { optimiseTwa: false });
+    expect(r.converged).toBe(true);
+    expect(r.aero.flat).toBeGreaterThan(0.6);
+    const base = trimmed(boat, { dock: baseDock(), race: baseRace() }, { ...up, twaDeg: 90 });
+    expect(r.bsKt.value).toBeGreaterThanOrEqual(base.bsKt.value - 0.05);
+  });
+});

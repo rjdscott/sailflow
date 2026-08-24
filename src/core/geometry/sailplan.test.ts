@@ -4,7 +4,7 @@ import type { SailGeometryFn } from '../internal';
 import { sailGeometry } from './sailplan';
 import j70 from '../../../data/boats/j70.json';
 
-const boat = j70 as unknown as BoatDefinition;
+const boat = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // module tests run on default knobs;
 const SAILS: SailId[] = ['main', 'jib', 'asym'];
 
 describe('sailGeometry', () => {

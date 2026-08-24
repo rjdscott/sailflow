@@ -12,7 +12,7 @@ import {
 } from './rig';
 import j70 from '../../../data/boats/j70.json';
 
-const boat = j70 as unknown as BoatDefinition;
+const boat = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // module tests run on default knobs;
 
 describe('mastStations', () => {
   it('runs from the partners to the tip in 11 evenly spaced steps', () => {

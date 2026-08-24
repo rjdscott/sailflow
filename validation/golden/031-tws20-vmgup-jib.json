@@ -1,0 +1,131 @@
+{
+  "name": "tws20-vmgup-jib",
+  "protocolVersion": 1,
+  "boatHash": "3e0f62560bbf8ecadf3e7449045e051e46fe85a42a92b251d32a4cd800b5c345",
+  "calibHash": "d15174601819e6a182f9318c539782a2cad3dd1ca06aa7c034eeea041a06ab5d",
+  "request": {
+    "fn": "optimal",
+    "dock": {
+      "upperTurns": 0,
+      "lowerTurns": 0,
+      "forestayMm": 0
+    },
+    "condition": {
+      "twsKt": 20,
+      "twaDeg": 45,
+      "seaState": 1,
+      "crewKg": 300,
+      "sailset": "jib"
+    },
+    "optimiseTwa": true
+  },
+  "result": {
+    "converged": true,
+    "iters": 4,
+    "bsKt": {
+      "value": 6.298551733512317,
+      "tier": "A"
+    },
+    "vmgKt": {
+      "value": 4.754153925526299,
+      "tier": "A"
+    },
+    "heelDeg": {
+      "value": 24.969801232331925,
+      "tier": "B",
+      "band": [21.224331047482135, 28.715271417181714]
+    },
+    "leewayDeg": {
+      "value": 5.251121395747317,
+      "tier": "B",
+      "band": [3.938341046810488, 6.563901744684147]
+    },
+    "aero": {
+      "flat": 0.7499525503484143,
+      "reef": 1,
+      "twistEff": 7.9600023304603535,
+      "awaDeg": 28.036625971390144,
+      "awsKt": 22.02188241481995,
+      "fxN": 539.9235779457908,
+      "fyN": 2111.039444977176,
+      "mxNm": 6007.991045819385,
+      "ceHeightM": 3.249286218411373
+    },
+    "rig": {
+      "bendMm": [
+        0, 19.094464390765403, 36.6761677245752, 51.232348944473806, 61.250246993505606,
+        65.21710081471502, 61.91208793529462, 52.116144067840786, 37.44984752921282,
+        19.53664920980209, 0
+      ],
+      "sagMm": 14.160729017506423,
+      "rakeMm": 3.427932202101178e-12,
+      "prebendMm": 50,
+      "forestayN": 3530.8916608874247,
+      "upperN": 3400,
+      "lowerN": 1600
+    },
+    "shape": {
+      "main": {
+        "quarter": {
+          "draft": 0.07902184370670258,
+          "draftPos": 0.418,
+          "twistDeg": 4.53260520977658,
+          "entryDeg": 20.711351878368593,
+          "exitDeg": 15.192462550637126
+        },
+        "half": {
+          "draft": 0.08352184370670257,
+          "draftPos": 0.418,
+          "twistDeg": 9.820644621182591,
+          "entryDeg": 21.782936449283653,
+          "exitDeg": 16.014360160418477
+        },
+        "threeQuarter": {
+          "draft": 0.07077184370670259,
+          "draftPos": 0.418,
+          "twistDeg": 15.1086840325886,
+          "entryDeg": 18.707193270868235,
+          "exitDeg": 13.669087524039899
+        }
+      },
+      "jib": {
+        "quarter": {
+          "draft": 0.10424821870525193,
+          "draftPos": 0.37,
+          "twistDeg": 2.76,
+          "entryDeg": 28.201428277609132,
+          "exitDeg": 18.31179256246723
+        },
+        "half": {
+          "draft": 0.09924821870525193,
+          "draftPos": 0.37,
+          "twistDeg": 5.9799999999999995,
+          "entryDeg": 27.012528449168734,
+          "exitDeg": 17.48826929619784
+        },
+        "threeQuarter": {
+          "draft": 0.07924821870525194,
+          "draftPos": 0.37,
+          "twistDeg": 9.2,
+          "entryDeg": 21.988779114620172,
+          "exitDeg": 14.121502668176268
+        }
+      }
+    },
+    "residuals": [-8.863434871665397e-7, 7.683917181896729e-11, -2.0355353360880118e-13],
+    "twaDeg": 40.992004575597406,
+    "race": {
+      "backstay": 43,
+      "mainsheet": 60,
+      "traveller": 0,
+      "cunningham": 20,
+      "outhaul": 50,
+      "vang": 30,
+      "jibSheet": 60,
+      "jibLead": 5,
+      "inhauler": 30,
+      "mainHalyard": 50,
+      "jibHalyard": 50
+    }
+  }
+}

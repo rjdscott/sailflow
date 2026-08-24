@@ -62,6 +62,9 @@ export function optimal(
       const { r } = solveAt(twaDeg, flat);
       if (!r.converged) return -1e3; // non-converged states lose the search
       const v = r.bsKt.value;
+      // At a fixed angle the argmax of VMG is the argmax of boat speed, and
+      // at 90° cos is ~0 so VMG would be a degenerate objective.
+      if (!opts.optimiseTwa) return v;
       const vmg = v * Math.cos((twaDeg * Math.PI) / 180);
       return upwind ? vmg : -vmg;
     };

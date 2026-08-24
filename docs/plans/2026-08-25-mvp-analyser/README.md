@@ -22,13 +22,13 @@ three.js, Rust, multiplayer, accounts, backend.
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
 | 00 | Repo hygiene + tooling | 🟢 Completed | 2026-08-25 |
-| 01 | Contracts + data | 🟡 In progress | 2026-08-25 |
-| 02 | Solver + calibration + validation | 🔵 Not started | none |
-| 03 | Design system + app shell | 🔵 Not started | none |
-| 04 | Race mode | 🔵 Not started | none |
-| 05 | Dock mode | 🔵 Not started | none |
-| 06 | Disagreement panel + tuning log | 🔵 Not started | none |
-| 07 | Drills | 🔵 Not started | none |
+| 01 | Contracts + data | 🟢 Completed | 2026-08-25 |
+| 02 | Solver + calibration + validation | 🟡 In progress | 2026-08-25 |
+| 03 | Design system + app shell | 🟢 Completed | 2026-08-25 |
+| 04 | Race mode | 🟡 In progress | 2026-08-25 |
+| 05 | Dock mode | 🟡 In progress | 2026-08-25 |
+| 06 | Disagreement panel + tuning log | 🟡 In progress | 2026-08-25 |
+| 07 | Drills | 🟡 In progress | 2026-08-25 |
 | 08 | PWA, polish, docs close-out | 🔵 Not started | none |
 
 Order: 00 → 01 → 02 ∥ 03 → 04 ∥ 05 → 06 → 07 → 08. Phase 03 builds against a

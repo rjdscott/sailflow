@@ -242,7 +242,24 @@
       "label": "Bowsprit position"
     }
   },
-  "calibration": {},
+  "calibration": {
+    "hydro.rrMul.fn20": 1.0546063368512453,
+    "hydro.rrMul.fn30": 0.9634936410911494,
+    "hydro.rrMul.fn40": 0.926738642791064,
+    "hydro.keelLiftSlope": 1.7284750920083523,
+    "hydro.heelDragK": 2.709832919811972,
+    "aero.hbiM": 0.5,
+    "hydro.rrMul.fn50": 0.9669671368524025,
+    "hydro.rrMul.fn60": 1.4940249591561408,
+    "hydro.planingRelief": 0.043378081458765906,
+    "hydro.crewArmMul": 0.3937282096585073,
+    "rig.EI": 685000,
+    "rig.turnsToN": 100,
+    "rig.sagK": 25,
+    "shape.bendToDraft": 0.36,
+    "shape.sagToDraft": 0.0003,
+    "shape.sheetToTwist": 0.15
+  },
   "provenance": {
     "hull.loaM": {
       "source": "orc-cert",

@@ -1,6 +1,6 @@
 # Phase 05: Dock mode
 
-- **Status:** 🔵 Not started
+- **Status:** 🟡 In progress
 
 ## Goal
 
@@ -8,11 +8,11 @@ Commit a rig setup against a forecast range, sea state and crew weight; see expe
 
 ## Tasks
 
-- [ ] Dock store + batch worker request (N setups × TWS grid) [O]
-- [ ] Dock screen: forecast dual slider, sea state, crew stepper, rig sliders with guide ticks, regret card + sparkline, Commit [S]
-- [ ] Suggest: grid search over legal increments, tie band [S]
-- [ ] Lock indicator + unlock-with-warning in Race [S]
-- [ ] ADR 0009 (dock scoring)
+- [x] Dock store + batch worker request (N setups × TWS grid) [O]
+- [x] Dock screen: forecast dual slider, sea state, crew stepper, rig sliders with guide ticks, regret card + sparkline, Commit [S]
+- [x] Suggest: grid search over legal increments, tie band [S]
+- [x] Lock indicator + unlock-with-warning in Race [S]
+- [x] ADR 0009 (dock scoring)
 
 ## Verification
 
@@ -27,3 +27,4 @@ pnpm test -- dock
 
 ## Progress log
 
+- 2026-08-25 — Built by an Opus agent in a worktree; PR #8 merged. 36-setup suggest grid; three labelled sliders instead of a dual-thumb range (ponytail note); optimum-at-min/max shown as text under sliders. ADR 0009 written by Fable. Real-worker swap in `src/ui/dock/client.ts` pending the solver PR.

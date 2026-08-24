@@ -44,4 +44,23 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
 ## Calibrated free parameters
 
-_None yet. Populated by `calibration/fit.ts` in phase 02._
+| Knob | Value | Stage | Fit loss |
+|---|---|---|---|
+| `hydro.rrMul.fn20` | 1.40204 | 1 hydro-upwind | 0.03328 |
+| `hydro.rrMul.fn30` | 0.983551 | 1 hydro-upwind | 0.03328 |
+| `hydro.rrMul.fn40` | 0.912722 | 1 hydro-upwind | 0.03328 |
+| `hydro.keelLiftSlope` | 0.653849 | 1 hydro-upwind | 0.03328 |
+| `hydro.heelDragK` | 3.72397 | 1 hydro-upwind | 0.03328 |
+| `aero.hbiM` | 2.8869 | 1 hydro-upwind | 0.03328 |
+| `hydro.rrMul.fn50` | 1.42742 | 2 hydro-downwind | 0.2635 |
+| `hydro.rrMul.fn60` | 0.970451 | 2 hydro-downwind | 0.2635 |
+| `hydro.planingRelief` | 0.0503042 | 2 hydro-downwind | 0.2635 |
+| `hydro.crewArmMul` | 0.928272 | 3 righting | 0.02189 |
+| `rig.EI` | 1500000 | 4 rig-shape | 12.00 |
+| `rig.turnsToN` | 100 | 4 rig-shape | 12.00 |
+| `rig.sagK` | 15 | 4 rig-shape | 12.00 |
+| `shape.bendToDraft` | 1.38069 | 4 rig-shape | 12.00 |
+| `shape.sagToDraft` | 0.0001 | 4 rig-shape | 12.00 |
+| `shape.sheetToTwist` | 0.6 | 4 rig-shape | 12.00 |
+
+Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0007). Per-point residuals: `calibration/residuals.json`.

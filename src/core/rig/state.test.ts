@@ -6,7 +6,7 @@ import { peakBendMm, rigState } from './state';
 import { baseDock } from '../shape/base';
 import j70 from '../../../data/boats/j70.json';
 
-const boat = j70 as unknown as BoatDefinition;
+const boat = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // module tests run on default knobs;
 const BASE_BACKSTAY = 30;
 
 function sweep(spec: { min: number; max: number; step: number }): number[] {

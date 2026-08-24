@@ -7,7 +7,7 @@ import { baseDock, baseRace } from './base';
 import { shapeToOrc } from './toOrc';
 import j70 from '../../../data/boats/j70.json';
 
-const boat = j70 as unknown as BoatDefinition;
+const boat = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // module tests run on default knobs;
 const UPWIND: SailId[] = ['main', 'jib'];
 
 function shapesAt(

@@ -1,6 +1,6 @@
 # Phase 07: Drills
 
-- **Status:** 🔵 Not started
+- **Status:** 🟡 In progress
 
 ## Goal
 
@@ -8,9 +8,9 @@ Ten static trim drills, each a condition plus a wrong setup, scored against the 
 
 ## Tasks
 
-- [ ] Drill schema + scorer (VMG loss %, Gold/Silver/Bronze) [O]
-- [ ] 10 drill definitions across tiers, incl. one downwind C-tier [S]
-- [ ] Drill screen reusing Race screen with locked controls + Check [S]
+- [x] Drill schema + scorer (VMG loss %, Gold/Silver/Bronze) [O]
+- [x] 10 drill definitions across tiers, incl. one downwind C-tier [S]
+- [x] Drill screen reusing Race screen with locked controls + Check [S]
 - [ ] Runbook add-a-drill
 
 ## Verification
@@ -26,3 +26,4 @@ pnpm test -- drills
 
 ## Progress log
 
+- 2026-08-25 — Built by an Opus agent; PR #7 merged. Downwind drill needed `down`/`freeDown` fields; downwind drills score on VMG only. Medal thresholds (1/3/6 %) assumed — ASSUMPTIONS row and add-a-drill runbook owed in close-out.

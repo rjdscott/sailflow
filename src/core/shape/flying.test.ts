@@ -6,7 +6,7 @@ import { baseDock, baseRace } from './base';
 import { flyingShape } from './flying';
 import j70 from '../../../data/boats/j70.json';
 
-const boat = j70 as unknown as BoatDefinition;
+const boat = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // module tests run on default knobs;
 const SAILS: SailId[] = ['main', 'jib', 'asym'];
 const SECTIONS = ['quarter', 'half', 'threeQuarter'] as const;
 

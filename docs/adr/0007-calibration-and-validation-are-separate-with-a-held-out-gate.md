@@ -1,6 +1,6 @@
 # 0007. Calibration and validation are separate, with a held-out polar gate
 
-- **Status:** Accepted
+- **Status:** Superseded by [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) (split only; tolerances stand)
 - **Date:** 2026-08-25
 
 ## Context

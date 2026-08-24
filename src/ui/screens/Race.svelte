@@ -8,6 +8,16 @@
   import SailSections from '../race/SailSections.svelte';
   import { race } from '../race/store.svelte';
   import { conditions } from '../stores/conditions.svelte';
+  import { settings } from '../stores/settings.svelte';
+  import Panel from '../disagree/Panel.svelte';
+  import { ModelOptimumStore } from '../disagree/store.svelte';
+  import { getClient } from '../race/client';
+
+  const advanced = $derived(settings.mode === 'advanced');
+  const model = new ModelOptimumStore(getClient());
+  $effect(() => {
+    if (advanced) model.request(conditions.twsKt, conditions.seaState, conditions.crewKg);
+  });
 
   const PANES = ['Sections', 'Rig', 'Plan'];
   let carousel: HTMLDivElement | undefined = $state();
@@ -81,7 +91,30 @@
 
 <ControlPanel />
 
+{#if advanced}
+  <details class="disagree">
+    <summary>Model vs tuning guides</summary>
+    <Panel
+      twsKt={conditions.twsKt}
+      seaState={conditions.seaState}
+      crewKg={conditions.crewKg}
+      modelOptimum={model.optimum}
+      busy={model.busy}
+    />
+  </details>
+{/if}
+
 <style>
+  .disagree {
+    margin: var(--space-4, 16px) 0;
+  }
+  .disagree > summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    cursor: pointer;
+  }
   .pictures {
     display: grid;
     grid-auto-flow: column;

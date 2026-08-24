@@ -10,13 +10,7 @@ import { PROTOCOL_VERSION, type Request, type ResultOf, type Response } from './
 import type { DockControls, DockScore, OptimalResult, SolveResult } from '../core/types';
 
 function createSolverWorker(): Worker {
-  // ponytail: Vite's worker plugin statically resolves a literal
-  // `new URL('...', import.meta.url)` specifier at build time, even inside a
-  // function nobody calls yet — so a literal here breaks `pnpm build` until
-  // solver.worker.ts exists (Phase 04). The indirection opts out of that
-  // static analysis; inline the literal back once the file lands.
-  const specifier = './solver.worker.ts';
-  return new Worker(new URL(specifier, import.meta.url), { type: 'module' });
+  return new Worker(new URL('./solver.worker.ts', import.meta.url), { type: 'module' });
 }
 
 export class SolverClient {

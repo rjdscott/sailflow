@@ -9,7 +9,7 @@ import { crewRighting, hullRighting } from './righting';
 import { addedResistanceWaves, significantHeightM } from './waves';
 import j70 from '../../../data/boats/j70.json';
 
-const BOAT = j70 as unknown as BoatDefinition;
+const BOAT = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // module tests run on default knobs;
 
 /** A copy of the J/70 with calibration knobs overridden. */
 function withKnobs(calibration: Record<string, number>): BoatDefinition {

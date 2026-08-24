@@ -4,7 +4,7 @@ import { MAST_STATIONS, mastAboveDeckM, mastStations } from '../geometry/rig';
 import { beamPeakMm, bendCurveMm, bendShape, mastEI, pinPinDeflection, pinPinPeak } from './beam';
 import j70 from '../../../data/boats/j70.json';
 
-const boat = j70 as unknown as BoatDefinition;
+const boat = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // module tests run on default knobs;
 
 describe('pinPinDeflection', () => {
   it('is zero at both pins and positive in between for a positive load', () => {

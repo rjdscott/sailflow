@@ -59,6 +59,7 @@ describe('solver worker dispatch', () => {
       id: 7,
       type: 'dockScore',
       setups: [baseDock()],
+      candidates: [baseDock(), { upperTurns: 2, lowerTurns: 1, forestayMm: 0 }],
       forecast: { minKt: 10, likelyKt: 10, maxKt: 10, seaState: 1, crewKg: 300 },
     });
     expect(d).toMatchObject({ type: 'ok', id: 7 });

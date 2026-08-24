@@ -45,7 +45,7 @@ export function handle(req: Request): Response {
         return {
           ...base,
           type: 'ok',
-          result: scoreDockSetups(need(), req.setups, req.forecast, undefined, geom!),
+          result: scoreDockSetups(need(), req.setups, req.forecast, req.candidates, geom!),
         };
     }
   } catch (e) {

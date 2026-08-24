@@ -5,7 +5,7 @@ import type { AeroInput, ShapeDeltas } from '../../internal';
 import { aeroForces, apparentWind, fallbackGeometry, roachOf, windAt } from './forces';
 import { WIND_Z_REF_M } from './tables';
 
-const boat = j70 as unknown as BoatDefinition;
+const boat = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // module tests run on default knobs;
 
 function withCalibration(cal: Record<string, number>): BoatDefinition {
   return { ...boat, calibration: { ...boat.calibration, ...cal } };

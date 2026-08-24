@@ -46,6 +46,8 @@ export interface DockScoreRequest extends Base {
   type: 'dockScore';
   setups: DockControls[];
   forecast: Forecast;
+  /** Optional reference grid for T*(w); defaults to the solver's legal grid. */
+  candidates?: DockControls[];
 }
 
 export type Request = LoadBoatRequest | TrimmedRequest | OptimalRequest | DockScoreRequest;
