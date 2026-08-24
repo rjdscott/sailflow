@@ -50,7 +50,7 @@ export function nelderMead(
   opts: NelderMeadOptions = {},
 ): NelderMeadResult {
   const n = x0.length;
-  const maxIter = opts.maxIter ?? 400;
+  const maxIter = opts.maxIter ?? 400; // prov: assumed, default iteration budget
   const tol = opts.tol ?? 1e-10;
   const steps = Array.isArray(opts.step) ? opts.step : new Array(n).fill(opts.step ?? 1);
 

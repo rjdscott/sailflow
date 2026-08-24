@@ -17,6 +17,7 @@ docs: ## Regenerate docs indexes
 
 docs-check: ## Check docs indexes, provenance files, and run doc tests
 	python3 scripts/docs_index.py --check
+	python3 scripts/prov_check.py
 	node scripts/provenance.mjs --check
 	PYTHONPATH=scripts uvx pytest tests -q
 

@@ -1,6 +1,6 @@
 # Phase 04: Race mode
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 
 ## Goal
 
@@ -28,3 +28,4 @@ pnpm test -- race
 ## Progress log
 
 - 2026-08-25 — Built by an Opus agent in a worktree against `stubClient()`; PR #5 merged. Store at `src/ui/race/store.svelte.ts` (plan said `src/ui/stores/race.ts`). Coach line probes 4 controls ±1 step via extra `trimmed` requests. Real-worker swap is one line in `src/ui/race/client.ts`; done in the solver integration PR.
+- 2026-08-25 — Integrated with the real solver worker in PR #9; browser-verified on preview. Phase closed.

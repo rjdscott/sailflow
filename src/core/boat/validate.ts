@@ -151,5 +151,5 @@ const REQUIRED_CONTROLS = [
   'jibHalyard',
 ];
 
-const ORC_TABLES = new Set(['5.1', '5.4', '5.6', '5.7', '5.8']);
+const ORC_TABLES = new Set(['5.1', '5.4', '5.6', '5.7', '5.8']); // prov: ORC VPP 2023 coefficient table numbers (types.ts SailDef.orcTable)
 const PROV_KINDS = new Set(['published', 'measured', 'derived', 'assumed']);

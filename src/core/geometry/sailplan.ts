@@ -45,9 +45,9 @@ function girthStations(boat: BoatDefinition, sail: SailId): Station[] {
   if (sail === 'main')
     return [
       { h: 0, c: mm(boat, sail, 'footMm') },
-      { h: 0.25, c: mm(boat, sail, 'quarterMm') },
+      { h: 0.25, c: mm(boat, sail, 'quarterMm') }, // prov: J/70 Class Rules sail measurement points
       { h: 0.5, c: mm(boat, sail, 'halfMm') },
-      { h: 0.75, c: mm(boat, sail, 'threeQuarterMm') },
+      { h: 0.75, c: mm(boat, sail, 'threeQuarterMm') }, // prov: J/70 Class Rules sail measurement points
       { h: 0.875, c: mm(boat, sail, 'upperMm') }, // prov: upper girth is the 7/8 point
       { h: 1, c: mm(boat, sail, 'topMm') },
     ];
@@ -55,7 +55,7 @@ function girthStations(boat: BoatDefinition, sail: SailId): Station[] {
     { h: 0, c: mm(boat, sail, 'lpMm') }, // prov: LP stands in for the jib foot chord
     { h: 0.25, c: mm(boat, sail, 'quarterMm') },
     { h: 0.5, c: mm(boat, sail, 'halfMm') },
-    { h: 0.75, c: mm(boat, sail, 'threeQuarterMm') },
+    { h: 0.75, c: mm(boat, sail, 'threeQuarterMm') }, // prov: J/70 Class Rules sail measurement points
     { h: 1, c: mm(boat, sail, 'topMm') },
   ];
 }

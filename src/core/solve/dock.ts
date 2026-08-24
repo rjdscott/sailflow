@@ -80,18 +80,18 @@ export function lapTimeHoursUncached(
   const up = optimal(
     boat,
     setup,
-    { ...base, twaDeg: 45, sailset: 'jib' },
+    { ...base, twaDeg: 45, sailset: 'jib' }, // prov: assumed, canonical upwind TWA for lap-time scoring
     { optimiseTwa: true },
     geom,
   );
   const dn = optimal(
     boat,
     setup,
-    { ...base, twaDeg: 150, sailset: 'asym' },
+    { ...base, twaDeg: 150, sailset: 'asym' }, // prov: assumed, canonical downwind TWA for lap-time scoring
     { optimiseTwa: true },
     geom,
   );
-  const vmgUp = Math.max(0.1, up.vmgKt.value);
+  const vmgUp = Math.max(0.1, up.vmgKt.value); // prov: assumed, VMG floor to avoid divide-by-zero
   const vmgDn = Math.max(0.1, -dn.vmgKt.value);
   return 1 / vmgUp + 1 / vmgDn;
 }
@@ -101,7 +101,7 @@ export function candidateGrid(): DockControls[] {
   const out: DockControls[] = [];
   for (const upperTurns of [-3, -1, 0, 2, 4, 6])
     for (const lowerTurns of [-2, 0, 1, 2, 3, 5])
-      for (const forestayMm of [0, 15, 30]) out.push({ upperTurns, lowerTurns, forestayMm });
+      for (const forestayMm of [0, 15, 30]) out.push({ upperTurns, lowerTurns, forestayMm }); // prov: assumed grid step, from tuning-guide adjustment ranges
   return out;
 }
 
@@ -136,7 +136,7 @@ export function scoreDockSetups(
     const tier = tierFor('dockRegret', { sailset: 'jib', twsKt: forecast.maxKt });
     return {
       setup,
-      expectedRegretSPerMile: tiered(expected, tier, 0.2),
+      expectedRegretSPerMile: tiered(expected, tier, 0.2), // prov: assumed, wider uncertainty band for dock regret (tier B)
       atMin: perTws[0],
       atMax: perTws[perTws.length - 1],
       worst,

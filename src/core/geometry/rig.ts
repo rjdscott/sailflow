@@ -12,7 +12,7 @@ import type { BoatDefinition } from '../types';
 import { knob } from '../internal';
 
 /** Number of mast stations reported, partners (0) to tip (last). */
-export const MAST_STATIONS = 11;
+export const MAST_STATIONS = 11; // prov: assumed, rig bend curve reporting resolution
 
 const DEG = 180 / Math.PI;
 

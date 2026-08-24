@@ -1,6 +1,6 @@
 # Phase 05: Dock mode
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 
 ## Goal
 
@@ -28,3 +28,4 @@ pnpm test -- dock
 ## Progress log
 
 - 2026-08-25 — Built by an Opus agent in a worktree; PR #8 merged. 36-setup suggest grid; three labelled sliders instead of a dual-thumb range (ponytail note); optimum-at-min/max shown as text under sliders. ADR 0009 written by Fable. Real-worker swap in `src/ui/dock/client.ts` pending the solver PR.
+- 2026-08-25 — Integrated with the real solver worker in PR #9; browser-verified on preview. Phase closed.

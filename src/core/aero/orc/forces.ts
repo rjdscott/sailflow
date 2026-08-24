@@ -78,7 +78,7 @@ function spanOf(boat: BoatDefinition, id: SailId): number {
 export function fallbackGeometry(boat: BoatDefinition, id: SailId): AeroGeometry {
   return {
     areaM2: boat.sails[id].ratedAreaM2,
-    ceHeightM: 0.39 * spanOf(boat, id) + 0.9,
+    ceHeightM: 0.39 * spanOf(boat, id) + 0.9, // prov: ORC VPP 2023 §5.2.1 default mainsail CE fraction (0.39); +0.9 m boom-above-water offset is assumed
   };
 }
 
@@ -88,7 +88,7 @@ export function fallbackGeometry(boat: BoatDefinition, id: SailId): AeroGeometry
  * prov: ORC VPP 2023 §7.1, eq (7.1)
  */
 export function windAt(vtRefMs: number, zM: number): number {
-  const z = Math.max(zM, WIND_Z0_M * 1.0001);
+  const z = Math.max(zM, WIND_Z0_M * 1.0001); // prov: assumed, numerical guard against log(0) at the roughness height
   return (vtRefMs * Math.log(z / WIND_Z0_M)) / Math.log(WIND_Z_REF_M / WIND_Z0_M);
 }
 
@@ -138,7 +138,7 @@ export function roachOf(boat: BoatDefinition): number {
   const mtw = dim(m, 'threeQuarterMm', 0) / 1000;
   const muw = dim(m, 'upperMm', 0) / 1000;
   const mhb = dim(m, 'topMm', 0) / 1000;
-  const denom = 0.375 * p * mqw;
+  const denom = 0.375 * p * mqw; // prov: ORC VPP 2023 §5.2.1, eq (5.4)
   if (denom <= 0) return EFF_SPAN.roachRef; // prov: ORC VPP 2023 §5.4.3 reference roach
   const upper34 = (p / 8) * (mqw + 2 * mhw + 1.5 * mtw + muw + 0.5 * mhb);
   return Math.max(0, (upper34 / denom - 1) / ROACH_NORM); // negative roach counts as zero
@@ -151,7 +151,7 @@ export function roachOf(boat: BoatDefinition): number {
  * prov: ORC VPP 2023 §5.6.1, §5.6.2, §5.6.3
  */
 function blanketing(id: SailId, awaDeg: number, fj: number): number {
-  if (id !== 'jib' || awaDeg <= 135) return 1;
+  if (id !== 'jib' || awaDeg <= 135) return 1; // prov: ORC VPP 2023 §5.6.2 (blanketing starts at AWA 135)
   return 1 - (fj * (awaDeg - 135)) / 45;
 }
 

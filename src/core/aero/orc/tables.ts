@@ -38,11 +38,11 @@ export interface CoeffTable {
 // cdyc/clyc = high set). Transcribed cell for cell.
 // ---------------------------------------------------------------------------
 export const MAIN_TABLE: CoeffTable = {
-  awaDeg: [0, 7, 9, 12, 28, 60, 90, 120, 150, 180],
-  cdLow: [0.0431, 0.02586, 0.02328, 0.02328, 0.03259, 0.11302, 0.3825, 0.96888, 1.31578, 1.34483],
-  clLow: [0.0, 0.86207, 1.05172, 1.16379, 1.34698, 1.35345, 1.26724, 0.93103, 0.38793, -0.11207],
-  cdHigh: [0.03448, 0.01724, 0.01466, 0.01466, 0.02586, 0.11302, 0.3825, 0.96888, 1.31578, 1.34483],
-  clHigh: [0.0, 0.94828, 1.13793, 1.25, 1.42681, 1.38319, 1.26724, 0.93103, 0.38793, -0.11207],
+  awaDeg: [0, 7, 9, 12, 28, 60, 90, 120, 150, 180], // prov: ORC VPP 2023 Table 5.1, awa row
+  cdLow: [0.0431, 0.02586, 0.02328, 0.02328, 0.03259, 0.11302, 0.3825, 0.96888, 1.31578, 1.34483], // prov: ORC VPP 2023 Table 5.1, cdnc row
+  clLow: [0.0, 0.86207, 1.05172, 1.16379, 1.34698, 1.35345, 1.26724, 0.93103, 0.38793, -0.11207], // prov: ORC VPP 2023 Table 5.1, clnc row
+  cdHigh: [0.03448, 0.01724, 0.01466, 0.01466, 0.02586, 0.11302, 0.3825, 0.96888, 1.31578, 1.34483], // prov: ORC VPP 2023 Table 5.1, cdyc row
+  clHigh: [0.0, 0.94828, 1.13793, 1.25, 1.42681, 1.38319, 1.26724, 0.93103, 0.38793, -0.11207], // prov: ORC VPP 2023 Table 5.1, clyc row
   kp: 0.01379, // prov: ORC VPP 2023 Table 5.1, kpmm
 };
 
@@ -53,11 +53,11 @@ export const MAIN_TABLE: CoeffTable = {
 // matches the source rather than being "helpfully" deduplicated.
 // ---------------------------------------------------------------------------
 export const JIB_TABLE: CoeffTable = {
-  awaDeg: [7, 15, 20, 27, 50, 60, 100, 150, 180],
-  cdLow: [0.05, 0.032, 0.031, 0.037, 0.25, 0.35, 0.73, 0.95, 0.9],
-  clLow: [0.0, 1.0, 1.375, 1.45, 1.45, 1.25, 0.4, 0.0, -0.1],
-  cdHigh: [0.05, 0.032, 0.031, 0.037, 0.25, 0.35, 0.73, 0.95, 0.9],
-  clHigh: [0.0, 1.1, 1.475, 1.5, 1.45, 1.25, 0.4, 0.0, -0.1],
+  awaDeg: [7, 15, 20, 27, 50, 60, 100, 150, 180], // prov: ORC VPP 2023 Table 5.4, awa row
+  cdLow: [0.05, 0.032, 0.031, 0.037, 0.25, 0.35, 0.73, 0.95, 0.9], // prov: ORC VPP 2023 Table 5.4, cdjnb row
+  clLow: [0.0, 1.0, 1.375, 1.45, 1.45, 1.25, 0.4, 0.0, -0.1], // prov: ORC VPP 2023 Table 5.4, cljnb row
+  cdHigh: [0.05, 0.032, 0.031, 0.037, 0.25, 0.35, 0.73, 0.95, 0.9], // prov: ORC VPP 2023 Table 5.4, cdjyb row
+  clHigh: [0.0, 1.1, 1.475, 1.5, 1.45, 1.25, 0.4, 0.0, -0.1], // prov: ORC VPP 2023 Table 5.4, cljyb row
   kp: 0.016, // prov: ORC VPP 2023 Table 5.4, kpj
 };
 
@@ -70,17 +70,19 @@ export const JIB_TABLE: CoeffTable = {
 // and high rows are the same data.
 // ---------------------------------------------------------------------------
 export const ASYM_TABLE: CoeffTable = {
-  awaDeg: [28, 41, 50, 60, 67, 75, 100, 115, 130, 150, 170, 180],
+  awaDeg: [28, 41, 50, 60, 67, 75, 100, 115, 130, 150, 170, 180], // prov: ORC VPP 2023 Table 5.7, awa row
   cdLow: [
+    // prov: ORC VPP 2023 Table 5.7, cdasc row
     0.15405, 0.23925, 0.30877, 0.38852, 0.43624, 0.47713, 0.5453, 0.56574, 0.475, 0.352, 0.29,
     0.262,
   ],
-  clLow: [0.01738, 0.69825, 0.89933, 1.04, 1.072, 1.075, 0.985, 0.805, 0.372, 0.1, 0.02, 0.0],
+  clLow: [0.01738, 0.69825, 0.89933, 1.04, 1.072, 1.075, 0.985, 0.805, 0.372, 0.1, 0.02, 0.0], // prov: ORC VPP 2023 Table 5.7, clasc row
   cdHigh: [
+    // prov: ORC VPP 2023 Table 5.7, cdasc row (single coefficient set)
     0.15405, 0.23925, 0.30877, 0.38852, 0.43624, 0.47713, 0.5453, 0.56574, 0.475, 0.352, 0.29,
     0.262,
   ],
-  clHigh: [0.01738, 0.69825, 0.89933, 1.04, 1.072, 1.075, 0.985, 0.805, 0.372, 0.1, 0.02, 0.0],
+  clHigh: [0.01738, 0.69825, 0.89933, 1.04, 1.072, 1.075, 0.985, 0.805, 0.372, 0.1, 0.02, 0.0], // prov: ORC VPP 2023 Table 5.7, clasc row (single coefficient set)
   kp: 0.02648, // prov: ORC VPP 2023 Table 5.7, kpasc (== kpasp of Table 5.8)
 };
 
@@ -116,9 +118,11 @@ export const FLAT_MIN_BASE = 0.42;
  * prov: ORC VPP 2023 §5.4.3, table under Figure 5.15
  */
 export const FCDMULT_FLAT: readonly number[] = [
+  // prov: ORC VPP 2023 §5.4.3, table under Figure 5.15 (flat index row)
   0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0,
 ];
 export const FCDMULT_VALUE: readonly number[] = [
+  // prov: ORC VPP 2023 §5.4.3, table under Figure 5.15 (fcdmult row)
   1.06, 1.06, 1.06, 1.06, 1.06, 1.06, 1.055, 1.048, 1.035, 1.02, 1.008, 1.002, 1.0, 1.004, 1.06,
 ];
 
@@ -136,7 +140,7 @@ export const FCDMULT_VALUE: readonly number[] = [
  * prov: ORC VPP 2023 §5.4.3, Figure 5.14 (1.45 value revised in 2023)
  */
 export const KHEFF_AWA: readonly number[] = [20, 80];
-export const KHEFF_VALUE: readonly number[] = [1.45, 0.8];
+export const KHEFF_VALUE: readonly number[] = [1.45, 0.8]; // prov: ORC VPP 2023 §5.4.3, Figure 5.14 endpoints
 
 // ---------------------------------------------------------------------------
 // Twist function
@@ -147,7 +151,7 @@ export const KHEFF_VALUE: readonly number[] = [1.45, 0.8];
  * prov: ORC VPP 2023 §5.4.4, eq (5.49) (CE lowering doubled in 2023)
  */
 export const TWIST_K_FLAT = 0.406;
-export const TWIST_K_FRAC = 0.902;
+export const TWIST_K_FRAC = 0.902; // prov: ORC VPP 2023 §5.4.4, eq (5.49)
 
 // ---------------------------------------------------------------------------
 // Table 5.10 — Windage force model
@@ -159,14 +163,14 @@ export const TWIST_K_FRAC = 0.902;
  * prov: ORC VPP 2023 Table 5.10
  */
 export const WINDAGE_CD = {
-  hullFront: 0.816,
-  hullSide: 0.816,
-  mastSailFront: 0.4, // mast with mainsail set, AWA 0
-  mastSailSide: 0.6, // mast with mainsail set, AWA 90
-  mastBareFront: 0.8, // mast above the reefed portion, both angles
+  hullFront: 0.816, // prov: ORC VPP 2023 Table 5.10, HULL front
+  hullSide: 0.816, // prov: ORC VPP 2023 Table 5.10, HULL side
+  mastSailFront: 0.4, // prov: ORC VPP 2023 Table 5.10, mast with mainsail set, AWA 0
+  mastSailSide: 0.6, // prov: ORC VPP 2023 Table 5.10, mast with mainsail set, AWA 90
+  mastBareFront: 0.8, // prov: ORC VPP 2023 Table 5.10, mast above the reefed portion, both angles
   mastBareSide: 0.8,
-  rigging: 1.0, // round rigging; non-round would be 0.25
-  crew: 1.08,
+  rigging: 1.0, // prov: ORC VPP 2023 Table 5.10, round rigging; non-round would be 0.25
+  crew: 1.08, // prov: ORC VPP 2023 Table 5.10, CREW
 } as const;
 
 /** Crew reference areas. prov: ORC VPP 2023 Table 5.10, CREW row */
@@ -185,7 +189,7 @@ export const SPREADER_FACTOR_WINDAGE = 0.2;
  * (eq 5.29) needs the heeled average freeboard from a hull offset file, which
  * this project does not have, so the superseded closed form is used instead.
  */
-export const HSA_HEEL_FACTOR = 0.75;
+export const HSA_HEEL_FACTOR = 0.75; // prov: ORC VPP 2023 §5.3, eq (5.28)
 
 // ---------------------------------------------------------------------------
 // Wind gradient
@@ -203,14 +207,14 @@ export const WIND_Z0_M = 0.005;
 // prov: ORC VPP 2023 §5.4.3, eq (5.42)
 // ---------------------------------------------------------------------------
 export const EFF_SPAN = {
-  base: 1.1,
-  roachGain: 0.08,
-  roachRef: 0.2,
+  base: 1.1, // prov: ORC VPP 2023 §5.4.3, eq (5.42)
+  roachGain: 0.08, // prov: ORC VPP 2023 §5.4.3, eq (5.42)
+  roachRef: 0.2, // prov: ORC VPP 2023 §5.4.3, eq (5.42)
   outerGain: 0.5,
-  innerBase: 0.68,
-  fracGain: 0.31,
-  overlapGain: 0.075,
-  innerRef: 1.1,
+  innerBase: 0.68, // prov: ORC VPP 2023 §5.4.3, eq (5.42)
+  fracGain: 0.31, // prov: ORC VPP 2023 §5.4.3, eq (5.42)
+  overlapGain: 0.075, // prov: ORC VPP 2023 §5.4.3, eq (5.42)
+  innerRef: 1.1, // prov: ORC VPP 2023 §5.4.3, eq (5.42)
 } as const;
 
 /** Roach normalising constant. prov: ORC VPP 2023 §5.2.1, eq (5.3) */

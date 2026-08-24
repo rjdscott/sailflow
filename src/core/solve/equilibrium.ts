@@ -51,13 +51,13 @@ export function hikeFraction(boat: BoatDefinition, heelDeg: number): number {
 /** Fixed seed table: boat speed (kt) versus TWS for an upwind J/70. prov: ORC Speed Guide J/70 rounded */
 const SEED_TWS = [4, 6, 8, 10, 12, 14, 16, 20, 25];
 const SEED_BS_UP = [3.2, 4.6, 5.4, 5.9, 6.1, 6.2, 6.3, 6.4, 6.4];
-const SEED_BS_DN = [3.0, 4.4, 5.3, 6.0, 6.6, 7.2, 8.0, 10.0, 11.0];
+const SEED_BS_DN = [3.0, 4.4, 5.3, 6.0, 6.6, 7.2, 8.0, 10.0, 11.0]; // prov: ORC Speed Guide J/70 rounded
 
 export function seedFor(c: Condition): [number, number, number] {
-  const up = Math.abs(c.twaDeg) < 90;
+  const up = Math.abs(c.twaDeg) < 90; // prov: assumed, upwind/downwind split at 90° TWA
   const bs = interp1(SEED_TWS, up ? SEED_BS_UP : SEED_BS_DN, c.twsKt);
   const heel = up ? Math.min(25, 4 + c.twsKt * 1.1) : Math.min(12, 2 + c.twsKt * 0.4);
-  const leeway = up ? 4 : 1.5;
+  const leeway = up ? 4 : 1.5; // prov: assumed seed leeway guess, just a Newton starting point
   return [bs, heel * Math.sign(c.twaDeg || 1), leeway];
 }
 
@@ -77,7 +77,7 @@ export function solveEquilibrium(
   const c = input.condition;
   const sign = c.twaDeg < 0 ? -1 : 1;
   const weightN = boat.hull.dispKg * G;
-  const scale: [number, number, number] = [weightN * 0.05, weightN * 0.05, weightN * 0.05];
+  const scale: [number, number, number] = [weightN * 0.05, weightN * 0.05, weightN * 0.05]; // prov: assumed, residual normalisation ~5% of displacement weight so Newton's tolerance is unitless
 
   const evalState = (x: readonly number[]) => {
     const bs = Math.max(V_MIN_KT, x[0]);
@@ -128,7 +128,7 @@ export function solveEquilibrium(
   for (const s0 of seeds) {
     const r = newton3(residual, [s0[0], Math.abs(s0[1]), s0[2]], {
       tol: 1e-6,
-      maxIter: 50,
+      maxIter: 50, // prov: assumed, Newton iteration budget
       fdStep: [1e-3, 1e-3, 1e-3],
     });
     iters += r.iters;

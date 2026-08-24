@@ -46,7 +46,7 @@ import { froude } from './resistance';
  * Significant wave height by sea state, m, for the report. prov: assumed.
  * 0 flat, 1 ripple, 2 chop, 3 short steep chop, 4 waves.
  */
-export const HS_BY_SEA_STATE = [0, 0.15, 0.35, 0.6, 1.0] as const;
+export const HS_BY_SEA_STATE = [0, 0.15, 0.35, 0.6, 1.0] as const; // prov: assumed
 
 export function significantHeightM(seaState: SeaState): number {
   return HS_BY_SEA_STATE[seaState] ?? 0;
@@ -59,7 +59,7 @@ export function significantHeightM(seaState: SeaState): number {
  * table f(Vt)_25; the sea-state-to-TWS mapping is assumed. Sea state 0 is
  * forced to exactly 0: flat water means no added resistance.
  */
-export const SEA_STATE_ENERGY = [0, 2.866, 9.975, 15.981, 20.0] as const;
+export const SEA_STATE_ENERGY = [0, 2.866, 9.975, 15.981, 20.0] as const; // prov: ORC VPP 2023 Figure 6.13, f(Vt)_25 baseline curve
 
 export function seaStateFactor(seaState: SeaState): number {
   return SEA_STATE_ENERGY[seaState] ?? 0;
@@ -84,13 +84,13 @@ export function addedResistanceWaves(
   const b = boat.hull.beamM;
   const fn = froude(boat, vMs);
 
-  const fFn = 0.00191 * (fn - 0.325);
-  const fLB = (5.23 ** (-l / b) - 5.23 ** -3.327) / 8.494;
-  const fBT = 0.000166 * (b / canoeBodyDraftM(boat) - 4.443);
-  const fL30 = 0.5059 * Math.log10(l / 30) + 1;
-  const bracket = 0.00146 + fFn + fLB + fBT;
+  const fFn = 0.00191 * (fn - 0.325); // prov: ORC VPP 2023 eq. 6.62-6.70, f(Fn)
+  const fLB = (5.23 ** (-l / b) - 5.23 ** -3.327) / 8.494; // prov: ORC VPP 2023 eq. 6.62-6.70, f(L/B)
+  const fBT = 0.000166 * (b / canoeBodyDraftM(boat) - 4.443); // prov: ORC VPP 2023 eq. 6.62-6.70, f(B/T)
+  const fL30 = 0.5059 * Math.log10(l / 30) + 1; // prov: ORC VPP 2023 eq. 6.62-6.70, f(L30)
+  const bracket = 0.00146 + fFn + fLB + fBT; // prov: ORC VPP 2023 eq. 6.62-6.70, bracket constant
 
-  const raw = 0.64 * 2 * RHO_WATER * G * l * energy * 0.55 * fL30 * bracket;
+  const raw = 0.64 * 2 * RHO_WATER * G * l * energy * 0.55 * fL30 * bracket; // prov: ORC VPP 2023 eq. 6.62-6.70 (fs=0.64, wave-direction factor 0.55)
 
   // ORC evaluates RAW only over its VPP speed range and the bracket stays
   // positive as Fn -> 0, which would leave a stationary boat with drag. Ramp

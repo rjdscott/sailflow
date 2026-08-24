@@ -49,7 +49,7 @@ export function optimal(
   geom: Record<SailId, AeroGeometry> = geometryFor(boat),
 ): OptimalResult {
   const baseRaceCtl = opts.race ?? baseRace();
-  const upwind = Math.abs(condition.twaDeg) < 90;
+  const upwind = Math.abs(condition.twaDeg) < 90; // prov: assumed, upwind/downwind split at 90° TWA
 
   const solveAt = (twaDeg: number, flat: number) => {
     const race = { ...baseRaceCtl, backstay: backstayFromFlat(flat) };
