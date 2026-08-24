@@ -24,6 +24,7 @@ export function tierFor(
 }
 
 /** Wrap a value with its tier and, for B, a band of ±`bandFrac`. */
+// prov: assumed, default ±5% uncertainty band for tier B outputs
 export function tiered(value: number, tier: Tier, bandFrac = 0.05, sign?: -1 | 0 | 1): Tiered {
   if (tier === 'A') return { value, tier };
   if (tier === 'B')
@@ -36,7 +37,7 @@ export function tiered(value: number, tier: Tier, bandFrac = 0.05, sign?: -1 | 0
 }
 
 export function shapeInfluence(d: ShapeDeltas): number {
-  return Math.abs(d.dCLmax) + Math.abs(d.dCD0) * 5 + Math.abs(d.dCEh) + Math.abs(d.dTwistDeg) / 20;
+  return Math.abs(d.dCLmax) + Math.abs(d.dCD0) * 5 + Math.abs(d.dCEh) + Math.abs(d.dTwistDeg) / 20; // prov: assumed weighting (dCD0 x5, dTwistDeg /20)
 }
 
 function demote(t: Tier): Tier {

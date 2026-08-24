@@ -45,8 +45,8 @@ export function trimmed(
     iters: eq.iters,
     bsKt: tiered(eq.bsKt, tierFor('bs', ctx)),
     vmgKt: tiered(vmg, tierFor('vmg', ctx)),
-    heelDeg: tiered(eq.heelDeg, tierFor('heel', ctx), 0.15),
-    leewayDeg: tiered(eq.leewayDeg, tierFor('leeway', ctx), 0.25),
+    heelDeg: tiered(eq.heelDeg, tierFor('heel', ctx), 0.15), // prov: assumed, wider ±15% band for heel (tier B)
+    leewayDeg: tiered(eq.leewayDeg, tierFor('leeway', ctx), 0.25), // prov: assumed, wider ±25% band for leeway (tier B)
     aero: eq.aero,
     rig,
     shape,

@@ -26,16 +26,16 @@ export function baseDock(): DockControls {
  */
 export function baseRace(): RaceControls {
   return {
-    backstay: 30,
+    backstay: 30, // prov: assumed, app's own reading of the North guide's base wind band
     mainsheet: 60,
     traveller: 0,
-    cunningham: 20,
+    cunningham: 20, // prov: assumed, app's own reading of the North guide's base wind band
     outhaul: 50,
     vang: 30,
-    jibSheet: 60,
+    jibSheet: 60, // prov: assumed, app's own reading of the North guide's base wind band
     jibLead: 5,
     inhauler: 30,
-    mainHalyard: 50,
+    mainHalyard: 50, // prov: assumed, app's own reading of the North guide's base wind band
     jibHalyard: 50,
   };
 }

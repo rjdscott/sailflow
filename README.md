@@ -15,7 +15,7 @@ confidence tier: **A** (a number), **B** (direction + a band), or **C**
 (direction only, no magnitude). This is a decision-rehearsal tool for tuning
 and trim choices, not a wind tunnel.
 
-Status: **Phase 00: scaffold. No physics yet.** Build plan:
+Status: **Epic 1 phases 00–07 merged; phase 08 (PWA, polish, docs) in progress.** The polar hold-out gate currently **fails on 2 of 10 held-out rows**; see [`validation/report.md`](validation/report.md) and `ASSUMPTIONS.md` "Where the model is honestly weak". Build plan:
 [`docs/plans/2026-08-25-mvp-analyser/`](docs/plans/2026-08-25-mvp-analyser/).
 
 Two epics are in scope after the MVP analyser (Epic 1): Epic 2 is a

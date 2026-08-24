@@ -8,6 +8,31 @@ The rig-bend-to-sail-shape sensitivity layer (`src/core/aero/shape`) is
 invented for this app: sign-correct by construction and tested for it,
 magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
+## Where the model is honestly weak (2026-08-25 fit)
+
+- **Upwind speed plateau.** The ORC polar holds 5.79–5.95 kt from 12 to 20 kt;
+  linear residuary bins 0.1 Fn apart cannot build that wall, so the model is
+  ~5 % slow at 6 kt and ~6–8 % fast at 16–20 kt. Held-out TWS 14 upwind misses
+  the 3 % gate by 2.8 points. Candidate fix: a finer Fn table or a wave-making
+  hump term (Epic 2).
+- **Asymmetric optimum angle.** ORC's downwind optimum jumps 150° → 172°
+  between 12 and 16 kt at nearly constant speed; the model stays near 147°.
+  A single CL multiplier (`aero.asymClMul`) cannot shape an angle error.
+- **Downwind heel** prints 11.7° in the polar; the model gives 0.5–2°. No
+  knob touches it; not gated.
+- **Dock-setup sensitivity.** In VPP mode `optimal()` overrides the
+  shape-derived `flat`, so a dock setup enters only as a small coefficient
+  perturbation and the setup ranking is nearly wind-independent. Stage 4 could
+  not separate the North 8–10 and 12–16 kt bands; all six rig/shape knobs sit
+  on their bounds. Dock-mode regrets are therefore small and tier-B in
+  practice until race controls are optimised through the shape layer.
+- `hydro.heelDragK` fitted at ~2× the value `hydro/resistance.ts` assumes;
+  `aero.hbiM` pinned at its 1.4 m upper bound (the fit wanted more heeling
+  arm). Both are the fit compensating for missing physics, not measurements.
+- **Drill medals**: gold ≤ 1 %, silver ≤ 3 %, bronze ≤ 6 % VMG loss
+  (`src/lib/drills.ts`, assumed).
+- **Dock forecast pmf**: triangular on a 1-kt grid with a 5 % floor (ADR 0009, assumed).
+
 <!-- generated: do not edit below this line -->
 
 ## Assumed boat parameters

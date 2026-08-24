@@ -43,7 +43,7 @@ function solveNeg(J: number[][], r: Vec3): Vec3 | null {
         pivotRow = row;
       }
     }
-    if (pivotVal < 1e-14) return null;
+    if (pivotVal < 1e-14) return null; // prov: assumed, near-zero pivot threshold for a singular Jacobian
     if (pivotRow !== col) [m[col], m[pivotRow]] = [m[pivotRow], m[col]];
 
     for (let row = col + 1; row < 3; row++) {
@@ -85,7 +85,7 @@ export function newton3(
   opts: Newton3Options = {},
 ): Newton3Result {
   const tol = opts.tol ?? 1e-9;
-  const maxIter = opts.maxIter ?? 50;
+  const maxIter = opts.maxIter ?? 50; // prov: assumed, default Newton iteration budget
   const fdStep = opts.fdStep ?? [1e-6, 1e-6, 1e-6];
   const damping = opts.damping ?? true;
 

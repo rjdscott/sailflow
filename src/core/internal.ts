@@ -17,7 +17,7 @@ import type {
   SeaState,
 } from './types';
 
-export const KT_TO_MS = 0.514444;
+export const KT_TO_MS = 0.514444; // prov: derived, 1 international nautical mile (1852 m) / 3600 s
 export const RHO_AIR = 1.225; // kg/m³ prov: ISA sea level
 export const RHO_WATER = 1025; // kg/m³ prov: seawater
 export const G = 9.80665; // m/s² prov: standard gravity

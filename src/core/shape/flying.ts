@@ -40,21 +40,21 @@ const DEG = 180 / Math.PI;
 /** Physical clamps. prov: assumed, the range soft sails actually fly in. */
 const DRAFT_MIN = 0.05;
 const DRAFT_MAX = 0.25;
-const DRAFT_POS_MIN = 0.3;
+const DRAFT_POS_MIN = 0.3; // prov: assumed, chordwise draft-position clamp range
 const DRAFT_POS_MAX = 0.6;
 const TWIST_MIN = 0;
-const TWIST_MAX = 30;
+const TWIST_MAX = 30; // prov: assumed, twist clamp range
 
 /** The three reported heights, as fractions of the luff. */
-const HEIGHTS = [0.25, 0.5, 0.75] as const;
+const HEIGHTS = [0.25, 0.5, 0.75] as const; // prov: assumed, quarter/half/three-quarter reporting heights (matches class girth stations)
 
 /** Per-height multipliers. prov: assumed; sails flatten and twist toward the head. */
 const MAIN_DRAFT_F = [1.0, 0.95, 0.8];
 const MAIN_OUTHAUL_F = [1.0, 0.4, 0.1];
-const JIB_DRAFT_F = [1.0, 0.95, 0.75];
+const JIB_DRAFT_F = [1.0, 0.95, 0.75]; // prov: assumed; sails flatten toward the head (per-height multiplier)
 const JIB_LEAD_F = [1.0, 0.3, 0.0];
 const TWIST_F = [0.3, 0.65, 1.0];
-const ASYM_DRAFT_F = [1.0, 1.0, 0.85];
+const ASYM_DRAFT_F = [1.0, 1.0, 0.85]; // prov: assumed; per-height multiplier, asym flattens toward the head
 const ASYM_TWIST_F = [0.5, 0.8, 1.0];
 
 function clamp(v: number, lo: number, hi: number): number {

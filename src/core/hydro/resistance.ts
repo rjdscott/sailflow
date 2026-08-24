@@ -54,7 +54,7 @@ export function viscousResistance(boat: BoatDefinition, vMs: number): number {
  * below Fn 0.2, wave-making hump through 0.4-0.5, flattening as the hull
  * starts to lift. Anchored at (0, 0) so resistance is exactly zero at rest.
  */
-const RR_FN = [0, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6];
+const RR_FN = [0, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6]; // prov: assumed base curve (see docstring above)
 const RR_COEFF = [0, 0.0002, 0.0008, 0.002, 0.004, 0.0075, 0.014, 0.025, 0.04, 0.056, 0.07, 0.082];
 
 /** Froude bins carrying the fitted multipliers. prov: app convention. */
