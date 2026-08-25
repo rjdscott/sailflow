@@ -50,3 +50,5 @@ with minimal disruption.
 | 30 | Continuous improvement without a backend: CI hold-out visibility, local-first instrumentation, prefilled GitHub-issue feedback | plan drills-and-loop phase 05 |
 | 31 | Owner accepted ADR 0013 (generated fault-template drills, control-space scoring) and the drills-and-loop plan end to end, autonomously | ADR 0013, plan `2026-08-25-drills-and-loop` |
 | 32 | When the model's optimum contradicts a tuning guide inside a drill: show both, grade on the model, flag the disagreement on the score sheet | plan phase 00 (H-04), phase 02 |
+| 33 | Rig elevation redrawn to scale from the class rules and ORC certificate; freeboard, mast-step and gooseneck heights are assumptions listed in the phase-00 log | PR #47 |
+| 34 | Boat hero cropped to the hull with a wind rose off the bow; heel shown by the hull tilt, inset removed | PR #42 |
