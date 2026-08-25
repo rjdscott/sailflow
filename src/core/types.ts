@@ -117,12 +117,13 @@ export interface BoatDefinition {
   /** The base race trim, read by `shape/base.ts` and by Race mode alike. */
   baseRace: RaceControls;
   /**
-   * What changes about the base race trim once the kite is up: the overrides
-   * that go on top of `baseRace`, not a second full trim. Currently one entry
-   * — the mainsheet eased to the shroud — because that is the only control
-   * whose upwind value draws an outright wrong picture downwind.
+   * The base state once the kite is up. Two halves: the `RaceControls`
+   * *overrides* that go on top of `baseRace` — one entry, the mainsheet eased
+   * to the shroud, the only control whose upwind value draws an outright
+   * wrong picture downwind — and the four `DownControls` in full, which have
+   * no upwind value to override.
    */
-  baseRaceDown: Partial<RaceControls> & { mainsheet: number };
+  baseRaceDown: Partial<RaceControls> & { mainsheet: number } & DownControls;
   /** Every fitted free parameter, flat namespace, e.g. "hydro.rrMul.fn30". */
   calibration: Record<string, number>;
   provenance: Record<string, ProvenanceEntry>;

@@ -2,9 +2,16 @@
 /**
  * WCAG contrast gate for src/ui/tokens.css (cockpit phase 01 / ADR 0015).
  *
- * Reads the two full palettes out of the stylesheet — `:root` (dark, the
- * default) and `:root[data-theme='light']` — and asserts the floors below in
- * both. No dependencies: it is a hex parser, a luminance formula and a table.
+ * Reads the three full palettes out of the stylesheet and asserts the floors
+ * below in every one. No dependencies: it is a hex parser, a luminance
+ * formula and a table.
+ *
+ * Three, not two: light has two entry points and they are separate blocks of
+ * hex. `:root[data-theme='light']` is the explicit toggle;
+ * `:root:not([data-theme='dark'])` inside `@media (prefers-color-scheme:
+ * light)` is what a viewer on the default "system" setting actually gets, and
+ * it is the one most people see. It was unchecked, which made tokens.css's
+ * own "a hand-edited hex here fails CI" untrue for a third of the file.
  *
  * Run by `make docs-check`, so a hand-tuned hex that drops a slider trough
  * under 3:1 fails CI rather than shipping.
@@ -85,8 +92,11 @@ const RULES = [
 
 const css = readFileSync(TOKENS, 'utf-8');
 const palettes = [
-  ['dark  (:root)', block(css, ':root')],
-  ["light (:root[data-theme='light'])", block(css, ":root[data-theme='light']")],
+  ['dark   (:root)', block(css, ':root')],
+  ["light  (:root[data-theme='light'])", block(css, ":root[data-theme='light']")],
+  // The system-preference block. `block()` slices to the first `}`, which is
+  // this rule's own, so the enclosing @media costs it nothing.
+  ["system (@media prefers-color-scheme: light)", block(css, ":root:not([data-theme='dark'])")],
 ];
 
 let failures = 0;

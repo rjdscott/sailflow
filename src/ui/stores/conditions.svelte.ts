@@ -25,7 +25,13 @@ export const BASE_RACE: RaceControls = boatJson.baseRace as RaceControls;
  * one thing about the upwind trim that is not merely unfast but wrong.
  * Tier C — a cue from the sailmaker guides, not a solve (`optimalTrim`).
  */
-export const BASE_RACE_DOWN: Partial<RaceControls> & { mainsheet: number } = boatJson.baseRaceDown;
+// Picked key by key, not spread: `baseRaceDown` also carries the four
+// gennaker controls (`BASE_DOWN` in `race/store.svelte.ts` reads those), and
+// this constant is spread into a `RaceControls` below, where they do not
+// belong.
+export const BASE_RACE_DOWN: Partial<RaceControls> & { mainsheet: number } = {
+  mainsheet: boatJson.baseRaceDown.mainsheet,
+};
 
 export interface Preset {
   id: string;

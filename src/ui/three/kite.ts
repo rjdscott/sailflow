@@ -118,7 +118,17 @@ export const KITE_CHORDS: SailChords = {
  * `geom.asymTackHeightM` (0.7 m, assumed) to within that freeboard.
  */
 export const TACK_MIN_M = 0.05;
-export const TACK_TRAVEL_M = 0.6;
+/**
+ * prov: research 2026-08-25-spinnaker doc 04 §2.4 — the J/70-specific figures
+ * span 0–12 in (0–0.30 m) across four North and Doyle sources, so 0.3 m puts
+ * the fully-eased tack at the top of the class band rather than at double it.
+ * Was 0.6, which with `TACK_MIN_M` gave 0.65 m of travel — above every cited
+ * J/70 source, and above the 0–12 in band the downwind panel prints beside it
+ * (`src/ui/race/downwind.ts`). The sportboat literature reaches 18 in, but
+ * this is a J/70. Doc 04's second half — showing the source spread as a band
+ * instead of one number — is still open.
+ */
+export const TACK_TRAVEL_M = 0.3;
 
 /**
  * How far the head drops below the masthead at `kiteHalyard = 0`, m.
@@ -198,10 +208,13 @@ export const CURL_EASE_THRESHOLD = 0.55;
 /**
  * How far forward the luff bows, as a fraction of how far it bows to leeward.
  * prov: assumed 0.6. A free luff flies out ahead of the boat as well as to
- * leeward — further forward than the forestay's `SAG_FORWARD_FRACTION` (0.35),
- * because nothing holds it. Only the two directions are claimed, not the split.
+ * leeward — further forward than the forestay's own forward fraction
+ * (`SAG_FORWARD_FRACTION` = 0.35 in `rig3d.ts`), because a forestay is held at
+ * both ends and a free luff is not. Only the two directions are claimed, not
+ * the split. Named for the luff, not "sag", so it cannot be confused with the
+ * forestay constant again: the two shared a name and disagreed on value.
  */
-export const SAG_FORWARD_FRACTION = 0.6;
+export const LUFF_FORWARD_FRACTION = 0.6;
 
 /**
  * Cap on the luff bow, as a fraction of the sail's luff length.
@@ -306,7 +319,7 @@ export const BARE_SPAR: KiteRig = {
  * Two conditions — that offset is `FOOT_M` long, and its projection on the
  * tack→head axis is fixed by the two radii — leave a quadratic in `r` with one
  * root aft and to leeward. No root finder, and it reproduces doc 02 §6's
- * solved table to the centimetre.
+ * solved table to within 5 cm (the measured spread is 3.6–4.3 cm).
  *
  * The visible consequence, and the reason this is worth the algebra: **easing
  * the sheet lifts the clew**, ~0.3 m per 10° of ease. The old construction
@@ -352,9 +365,12 @@ export interface KiteGeometry {
   /** Eased past `CURL_EASE_THRESHOLD`: the luff is unloaded and curling. */
   curl: boolean;
   /**
-   * The loft's sections: chord and twist per height taken from the bowed
-   * luff to the *straight* leech, so the leech runs head → clew as a line
-   * and only the luff bows. Camber and draft position are `shape.asym`'s.
+   * The loft's sections: chord and twist per height taken from the bowed luff
+   * to `leechAt`, the bulged leech. Both edges bow, and they bow
+   * independently — the luff on its own parabola, the leech on
+   * `leechBulgeProfile` — which is the point: carrying one edge's bow into
+   * the other is what made the sail read as a banana from astern. Camber and
+   * draft position are `shape.asym`'s.
    */
   sections: (shape: SailShape) => Section[];
   /** The leech point at height `y` (clamped to the clew→head span). */
@@ -393,7 +409,7 @@ export function kiteGeometry(
 
   // Luff sag from the surplus cloth. A parabola of maximum deflection d over a
   // chord c is about c·(1 + 8/3·(d/c)²) long, which inverts in closed form —
-  // no root finder, and within about 2 % of the exact arc at the deflections
+  // no root finder, and within about 3 % of the exact arc at the deflections
   // this reaches. Same reduction as the forestay's (`rig3d.ts`), same reason.
   const chordVec = sub(head, tack);
   const c = Math.hypot(...chordVec) || 1;
@@ -402,7 +418,7 @@ export function kiteGeometry(
   // Direction, not magnitude: `norm` is applied before `d`, so the bow is the
   // same distance at every apparent wind angle and only swings from leeward
   // (reaching) through straight ahead (the crossover) to windward (running).
-  const bow = scaled(norm([SAG_FORWARD_FRACTION, 0, lee(side) * luffLateral(awaDeg)]), d);
+  const bow = scaled(norm([LUFF_FORWARD_FRACTION, 0, lee(side) * luffLateral(awaDeg)]), d);
   // A quadratic's midpoint sits halfway to its control point, so the control
   // offset is twice the bow we want to see.
   const ctrl = add(lerp3(tack, head, 0.5), scaled(bow, 2));
@@ -421,12 +437,13 @@ export function kiteGeometry(
   const clew = clewOnCircle(tack, head, sheetRad, side, leechChord);
   const bulgeDir = norm([LEECH_BULGE_FORWARD_FRACTION, 0, lee(side)]);
 
-  // The leech is a straight line from head to clew — a gennaker's leech is
-  // held by the sheet and stands nearly straight, while the luff is the free
-  // edge that bows. Lofting each section as luff point + a fixed chord vector
+  // The leech runs head → clew and then stands off that line by its own
+  // bulge, most of all in the upper half where the shoulders are. It is not
+  // the luff's bow: the two edges are shaped independently, which is the
+  // whole point. Lofting each section as luff point + a fixed chord vector
   // carried the luff's bow into the leech too, and the sail read as a banana
-  // from astern. Each section here spans from the bowed luff to the leech
-  // point at the same height, so the loft's chord and twist follow the line.
+  // from astern. Each section here spans from the bowed luff to `leechAt` at
+  // the same height, so the loft's chord and twist follow the real leech.
   //
   // Now that the clew is on the leech/foot circle it no longer sits at exactly
   // the tack's height: trimmed it hangs a little below, eased it climbs above.

@@ -1,7 +1,8 @@
 /**
- * Writes `validation/report.md`: the polar comparison, the ADR 0007 gate
- * verdict, the model's own best dock setup against the North tuning guide,
- * and a plain list of what this model is bad at.
+ * Writes `validation/report.md`: the polar comparison, the hold-out gate
+ * verdict (ADR 0007 tolerances over ADR 0012's split), the model's own best
+ * dock setup against the North tuning guide, and a plain list of what this
+ * model is bad at.
  *
  *   pnpm tsx validation/report.ts
  *
@@ -22,6 +23,7 @@ import {
   calibHash,
   compareRow,
   angleRows,
+  gateRows,
   loadPolar,
   vmgRows,
   type Comparison,
@@ -59,11 +61,22 @@ function gitSha(): string {
 const pct = (f: number) => `${(f * 100).toFixed(1)} %`;
 const progress = (msg: string) => process.stderr.write(`${msg}\n`);
 
-function comparisonRow(c: Comparison): string {
+/**
+ * One table row. `gated` is membership of `gateRows()` — every row at a
+ * held-out TWS (ADR 0012). Rows at a fitted TWS are shown for completeness
+ * but carry no verdict: a fit residual says only that the optimiser worked
+ * (ADR 0007), so the tolerance column is blank and the last column says so.
+ */
+function comparisonRow(c: Comparison, gated: boolean): string {
   const twa = c.twaErrDeg === null ? '—' : `${c.twaErrDeg.toFixed(1)}°`;
   const label = c.kind === 'angle' ? `${c.polar.twaDeg}° ${c.sail}` : `${c.kind} ${c.sail}`;
-  const limit = c.limitTwaDeg === null ? `${pct(c.limitBsFrac)}` : `${pct(c.limitBsFrac)} / 2°`;
-  return `| ${label} | ${c.polar.bsKt.toFixed(2)} | ${c.model.bsKt.toFixed(2)} | ${pct(c.bsErrFrac)} | ${c.polar.twaDeg.toFixed(1)} | ${c.model.twaDeg.toFixed(1)} | ${twa} | ${c.polar.heelDeg.toFixed(1)} | ${c.model.heelDeg.toFixed(1)} | ${limit} | ${c.pass ? 'ok' : '**FAIL**'} |`;
+  const limit = !gated
+    ? '—'
+    : c.limitTwaDeg === null
+      ? `${pct(c.limitBsFrac)}`
+      : `${pct(c.limitBsFrac)} / 2°`;
+  const verdict = !gated ? 'fit residual' : c.pass ? 'ok' : '**FAIL**';
+  return `| ${label} | ${c.polar.bsKt.toFixed(2)} | ${c.model.bsKt.toFixed(2)} | ${pct(c.bsErrFrac)} | ${c.polar.twaDeg.toFixed(1)} | ${c.model.twaDeg.toFixed(1)} | ${twa} | ${c.polar.heelDeg.toFixed(1)} | ${c.model.heelDeg.toFixed(1)} | ${limit} | ${verdict} |`;
 }
 
 const TABLE_HEAD = [
@@ -114,30 +127,35 @@ function main(): void {
     );
     out.push('');
     out.push(
-      'VMG rows are solved with the TWA optimised; 60/90/120° rows are solved at the printed angle. TWS 8 and 14 are **held out** of the fit and are the ones the gate is defined on; the 60/90/120° rows are held out at every TWS (ADR 0007).',
+      'VMG rows are solved with the TWA optimised; 60/90/120° rows are solved at the printed angle. All 25 printed rows are shown, each section labelled FIT or HELD-OUT. The gate is defined on **every row at TWS 8 and 14** — the two wind speeds the fit never saw (ADR 0012, superseding ADR 0007’s split by angle). Rows at a fitted TWS are marked *fit residual* and are not gated: a small residual there says only that the optimiser worked (ADR 0007).',
     );
     out.push('');
+    // The gate row set, straight from the function the vitest gate uses, so
+    // the shipped report and `pnpm validate` can never disagree (ADR 0012).
+    // `vmgRows`/`angleRows` return references into `polar.rows`, so identity
+    // membership is enough.
+    const gateSet = new Set(gateRows(polar));
     for (const tws of polar.twsKt) {
       const heldOut = HELD_OUT_TWS.includes(tws);
       progress(`polar: TWS ${tws} kt`);
       out.push(`### TWS ${tws} kt — ${heldOut ? 'HELD-OUT' : 'FIT'}`);
       out.push('');
       out.push(...TABLE_HEAD);
-      const rows = [...vmgRows(polar, tws), ...angleRows(polar, tws)].map(compareRow);
-      for (const c of rows) {
-        out.push(comparisonRow(c));
-        // The gate covers held-out VMG rows and every fixed-angle row.
-        if (c.kind === 'angle' || heldOut) gated.push(c);
+      for (const row of [...vmgRows(polar, tws), ...angleRows(polar, tws)]) {
+        const c = compareRow(row);
+        const isGated = gateSet.has(row);
+        out.push(comparisonRow(c, isGated));
+        if (isGated) gated.push(c);
       }
       out.push('');
     }
   }
 
   // --- gate ----------------------------------------------------------------
-  out.push('## Gate (ADR 0007)');
+  out.push('## Gate (ADR 0007 tolerances, ADR 0012 split)');
   out.push('');
   out.push(
-    `Tolerances, frozen by ADR 0007: held-out VMG rows within **${pct(TOL_VMG_BS_FRAC)}** boat speed and **${TOL_VMG_TWA_DEG}°** VMG angle; 60/90/120° rows within **${pct(TOL_ANGLE_BS_FRAC)}** boat speed.`,
+    `Row set, frozen by ADR 0012: every row at the held-out wind speeds ${HELD_OUT_TWS.join(' and ')} kt. Tolerances, frozen by ADR 0007: VMG rows within **${pct(TOL_VMG_BS_FRAC)}** boat speed and **${TOL_VMG_TWA_DEG}°** VMG angle; 60/90/120° rows within **${pct(TOL_ANGLE_BS_FRAC)}** boat speed (tier B). This is the same row set \`validation/polar.test.ts\` gates on.`,
   );
   out.push('');
   if (gated.length === 0) {
@@ -175,8 +193,9 @@ function main(): void {
   // --- model optimum vs the North guide ------------------------------------
   out.push('## Model optimum vs North base settings');
   out.push('');
+  const grid = candidateGrid();
   out.push(
-    'For each North tuning-guide band, the dock setup the model picks at the band midpoint (best over `candidateGrid()`, 108 legal setups, scored on windward-leeward lap time) against the setting the guide publishes. Stage-4 rig calibration targets the 8–10 and 12–16 kt bands only; every other band is a genuine disagreement (ADR 0007), and the panel shows both sides rather than resolving it.',
+    `For each North tuning-guide band, the dock setup the model picks at the band midpoint (best over \`candidateGrid()\`, ${grid.length} legal setups, scored on windward-leeward lap time) against the setting the guide publishes. Stage-4 rig calibration targets the 8–10 and 12–16 kt bands only; every other band is a genuine disagreement (ADR 0007), and the panel shows both sides rather than resolving it.`,
   );
   out.push('');
   out.push(
@@ -184,7 +203,6 @@ function main(): void {
   );
   out.push('| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |');
 
-  const grid = candidateGrid();
   for (const band of north.bands) {
     const tws = bandMidpoint(band);
     progress(`dock optimum: ${band.label} (TWS ${tws} kt, ${grid.length} setups)`);

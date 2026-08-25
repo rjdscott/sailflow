@@ -91,6 +91,13 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   split. Illustrative hull stations, spar radii and scene colours in
   `src/ui/three/{hull,rig3d,SailView3D}.svelte` are drawing furniture, tagged
   `prov: assumed` at each literal, and the caption labels the hull illustrative.
+- **3D hero: gennaker luff bow direction** `LUFF_FORWARD_FRACTION` = 0.6
+  (`src/ui/three/kite.ts`). Assumed. How far the free luff bows forward, as a
+  fraction of how far it bows to leeward. Higher than the forestay's 0.35
+  above because a forestay is held at both ends and a luff flown off a sprit
+  is not; only the two directions are claimed, not the split. It was itself
+  called `SAG_FORWARD_FRACTION` until 2026-08-26 — two exported constants,
+  one name, two values, one row between them.
 - **Gennaker flying shape** (`src/core/shape/flying.ts` `asymShape`, tier C).
   Camber, draft position and twist by height are **derived** from Deparday's
   full-scale J/80 photogrammetry at AWA 124°, a running angle (`F1` Table 3.1;
@@ -134,10 +141,12 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     never longer" is claimed; the head chord is zero, the parabola's own answer.
   - **Tack**: on the bowsprit at `sprit`% of `bowspritOuterMm` (1.495 m,
     published, Class Rules C.9.4), `TACK_MIN_M` = 0.05 m above it strapped
-    down, rising by `TACK_TRAVEL_M` = 0.6 m eased. **Assumed and known wide**:
-    the J/70-specific figures span 0–12 in (0–0.30 m) across four North and
+    down, rising by `TACK_TRAVEL_M` = 0.3 m eased — **inside the J/70 band**.
+    The J/70-specific figures span 0–12 in (0–0.30 m) across four North and
     Doyle sources and disagree among themselves; the sportboat literature
-    reaches 18 in. Narrowing it and showing the band is doc 04 §2.4, not done.
+    reaches 18 in, but this is a J/70. Doc 04 §2.4's narrowing is applied
+    (0.6 m → 0.3 m); showing the source spread as a band in the panel rather
+    than one number is the half of that recommendation still outstanding.
   - **Head**: masthead at `kiteHalyard` = 100, dropping `HALYARD_DROP_M` =
     1.2 m at 0. **Assumed, and the sources contradict it**: "ease the halyard
     6–12 inches" could not be sourced to any sailmaker publication, and North
@@ -350,7 +359,11 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 | `baseRace.outhaul` | 50 | see baseRace.backstay |
 | `baseRace.traveller` | 0 | see baseRace.backstay |
 | `baseRace.vang` | 30 | see baseRace.backstay |
+| `baseRaceDown.kiteHalyard` | 100 | the four gennaker controls the race screen starts from, on the same 0-100 scale as baseRace, moved here from a literal in src/ui/race/store.svelte.ts so they carry provenance like every other datum. Halyard two-blocked at the masthead before the sheet is touched: North and Westaway both say the hoist should always be full (research 2026-08-25-spinnaker doc 04 section 2.5), so 100 is the honest default |
+| `baseRaceDown.kiteSheet` | 50 | kite sheet mid-range, to be trimmed to the curl. Tier C cue, not a solve: core/solve/optimalTrim does not solve the downwind sheet. See baseRaceDown.kiteHalyard |
 | `baseRaceDown.mainsheet` | 15 | the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, mid the 60-80 degree band of research 2026-08-25-spinnaker doc 03 sections 2.1 (T3) and 2.2 (T2). Tier C cue, not a solve: see core/solve/optimalTrim notSolved |
+| `baseRaceDown.sprit` | 100 | sprit fully out. On a J/70 the pole is either all the way out or the kite is not up, so 100 is class practice rather than a chosen midpoint. See baseRaceDown.kiteHalyard |
+| `baseRaceDown.tackLine` | 50 | tack line mid-range, a trim control the sailor is expected to move rather than a setting: the J/70 sources disagree between two-block-it and ease 4-12 in (research 2026-08-25-spinnaker doc 03 section 4, doc 04 section 2.4), so the app starts in the middle of the band instead of picking a side. See baseRaceDown.kiteHalyard |
 | `controls.forestayMm.max` | 40 | see controls.forestayMm.min |
 | `controls.forestayMm.min` | 0 | range not published in Class Rules; app convention for a workable forestay length adjustment sweep |
 | `controls.forestayMm.step` | 2 | see controls.forestayMm.min |
