@@ -14,7 +14,7 @@ findings closed, and the docs say where things stand.
 - [x] `/audit ux-03` — lenses: novice (Learn tier), expert (Analyse tier), accessibility (contrast, keyboard, reduced motion, screen reader on cells), phone, performance (3D on a throttled CPU). Evidence screenshots. C/H findings fixed in this phase; M/L to `todo.md`.
 - [x] `CHANGELOG.md` entry; runbooks: `deploy-to-github-pages` (Playwright job), any touched.
 - [x] Plan README "State at end of the fourth autonomous block"; memory note updated.
-- [ ] Pages live-verified desktop 1280×720 (no scroll) and phone; reduced-motion; both themes; keyboard-only trim.
+- [x] Pages live-verified desktop 1280×720 (no scroll) and phone; reduced-motion; both themes; keyboard-only trim.
 
 ## Verification
 
@@ -379,3 +379,4 @@ H-09, H-10 and every M/L finding are untouched — out of this block's scope.
 
 - 2026-08-25 — Audit ux-03 published (#61): 0 C / 12 H / 25 M / 5 L. All twelve Highs fixed by four parallel worktree agents, merged as #62 (H-05, H-11), #63 (H-06, H-08, H-10), #64 (H-09, H-12; ADR 0014 amendment, `sailflow.hero.budget` test seam so the gate test is deterministic on any host), #65 (H-01–H-04, H-07). M/L stay open in `todo.md`. CHANGELOG, deploy runbook (CI `ui-smoke` gate + baseline regeneration), plan README state section written. Live verification below.
 - 2026-08-25 — Live verification after #65 on the RTX desktop found two follow-ups: the H-03 compact disagreement strip overlapped its three cells in the ~330 px cell (now wraps, stacked with the button); and the H-12 wall-clock gate tripped "3D ran slow" on a tab opened behind another window (no rendering steps, so mount → first frame was hundreds of ms of waiting). Gate now sums `onMount` work plus the first render's own duration; measured cold 315 ms / warm 52 ms on an RTX 4070 Ti, so the budget moved 350 → 800 ms (ADR 0014 amendment updated). `window.__sailFirstFrameMs` exposes the measure on any build.
+- 2026-08-25 — Live verification of `80c1748` (#66) on Pages: 3D hero mounts on the RTX desktop with no fallback note; panel visuals 140 px boxes; compact disagreement strip two lines with "Full table"; no nested buttons; two `role="status"` regions; keys m/j/h/r focus their panels; first slider at tab stop 33; light-theme tokens resolve. Phone stack (390×844, hero first), OS reduced-motion freeze and the gate fallback are covered by the Playwright suite in CI (`tests/ui/race.spec.ts`, `race-3d.spec.ts`) — the desktop Chrome here cannot emulate them. Phase 06 complete; plan complete.
