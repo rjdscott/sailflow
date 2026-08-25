@@ -10,7 +10,14 @@
  * Newton runs a fixed budget and falls back to a second seed set.
  */
 import type { AeroState, BoatDefinition, Condition, SailId } from '../types';
-import { G, knob, type OrcTune, type ShapeDeltas, type HydroState } from '../internal';
+import {
+  G,
+  knob,
+  type AeroInput,
+  type OrcTune,
+  type ShapeDeltas,
+  type HydroState,
+} from '../internal';
 import { aeroForces, type AeroGeometry } from '../aero/orc/forces';
 import { sailGeometry } from '../geometry/sailplan';
 import { hydroForces } from '../hydro';
@@ -20,6 +27,7 @@ export interface EquilibriumInput {
   condition: Condition;
   tune: OrcTune;
   deltas?: ShapeDeltas;
+  sheeting?: AeroInput['sheeting'];
 }
 
 export interface Equilibrium {
@@ -94,6 +102,7 @@ export function solveEquilibrium(
         sailset: c.sailset,
         tune: input.tune,
         deltas: input.deltas,
+        sheeting: input.sheeting,
       },
       geom,
     );

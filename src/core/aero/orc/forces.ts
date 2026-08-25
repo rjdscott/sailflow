@@ -16,6 +16,7 @@
  */
 import type { AeroState, BoatDefinition, SailDef, SailId, SailSet } from '../../types';
 import type { AeroInput, ShapeDeltas } from '../../internal';
+import { sheetingEffect } from '../../shape/sheeting';
 import { KT_TO_MS, RHO_AIR, knob } from '../../internal';
 import { fcoefOf, lerpTable, sailCoeffs, type CoeffSet, type OrcSail } from './coeffs';
 import { efficiencyCoeff, reduction, sailsetCd, sailsetCl, clampFlat } from './depower';
@@ -323,6 +324,17 @@ export function aeroForces(
   let agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj, clMul);
   zRef = agg.zceWaterM > 0 ? agg.zceWaterM : zRef;
   aw = apparentWind(windAt(vtRefMs, zRef), input.twaDeg, vsMs, input.heelDeg);
+  // ---- sheeting (INVENTED, race mode only, see shape/sheeting.ts) --------
+  let stallCd0 = 0;
+  if (input.sheeting) {
+    for (const id of ids) {
+      const sh = input.sheeting[id];
+      if (!sh) continue;
+      const e = sheetingEffect(boat, id, aw.awaDeg, sh);
+      clMul[id] = (clMul[id] ?? 1) * e.clMul;
+      stallCd0 += e.dCd0;
+    }
+  }
   agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj, clMul);
 
   const awaAbs = aw.awaDeg;
@@ -333,7 +345,7 @@ export function aeroForces(
   const shaped = applyShapeDeltas(
     {
       clMax: agg.clMax,
-      cd0: agg.cd0Max,
+      cd0: agg.cd0Max + stallCd0,
       ceH: agg.zceWaterM,
       twist: input.tune.twistEffDeg,
     },

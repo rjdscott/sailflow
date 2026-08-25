@@ -138,12 +138,12 @@ describe('jibSheetAngle', () => {
     expect(jibSheetAngle(5, 100)).toBeLessThan(jibSheetAngle(5, 0));
   });
 
-  it('stays inside the jib slot at every legal control state', () => {
+  it('stays between the centreline and a beam-reach angle at every legal control state', () => {
     for (const lead of [0, 5, 10]) {
       for (const sheet of [0, 50, 100]) {
         const a = jibSheetAngle(lead, sheet);
         expect(a).toBeGreaterThanOrEqual(2);
-        expect(a).toBeLessThan(30);
+        expect(a).toBeLessThanOrEqual(60);
       }
     }
   });

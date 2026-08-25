@@ -218,3 +218,17 @@ target, badge reads B; undo returns every slider.
   height", "choking the slot") whatever the objective. That is a copy task,
   not a wiring one, and was not in this slice.
 - 2026-08-25 — UI merged as PR #33 (core as #28). Mid-phone budget still unmeasured; desktop descent ≈15 ms. Phase 🟢 on desktop evidence.
+- 2026-08-25 — Owner: "optimum trim is not correct". Root cause was physics, not
+  the point of sail: the shape layer maps sheets only to draft/twist, so the
+  solver never saw a flogging or pinned sail and the descent ran the sheets to
+  the stops (16 kt: mainsheet 70→10; run: 70→100). Fix: `src/core/shape/sheeting.ts`
+  (INVENTED, tier B) — sheeting angle from the sliders vs AWA, lift lost past
+  the luffing band or the stall band (stall drag only below 90° AWA, where
+  drag is not drive), exponential decays so the optimiser always has a
+  gradient. Race mode only; VPP mode (`optimal`, dock, polar, golden) keeps
+  ORC's ideal-trim assumption, so calibration is untouched. Boom formula now
+  reaches 90° at 0 % sheet (was capped ~39°). `optimalTrim` ranks
+  non-converged states by objective so it can climb out of a flogging start;
+  sweep budget 12→20. Golden 002 regenerated (race-mode results changed by
+  design). Result at 10 kt: beat sheets on (75 %), beam reach eases main to
+  45 % and jib to 20 %, broad reach main to 15 %, run boom out.

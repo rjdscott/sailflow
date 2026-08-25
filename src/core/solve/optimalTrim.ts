@@ -88,7 +88,7 @@ export interface OptimalTrimOptions {
  * The search stops early the moment a sweep moves nothing, so a trim already
  * near its optimum costs one sweep.
  */
-const SWEEPS = 12; // prov: assumed, sweep budget (measured, see above)
+const SWEEPS = 20; // prov: assumed, sweep budget (measured, see above)
 const EPS_KT = 1e-4; // prov: assumed, below Newton's own convergence noise
 const LOST = -1e3; // a non-converged state loses the search, as in optimal.ts
 
@@ -127,10 +127,10 @@ export function optimalTrim(
   };
   /** Upwind: VMG. Downwind under the kite: −VMG. Reaches: boat speed. */
   const score = (r: SolveResult) => {
-    if (!r.converged) return LOST;
-    if (upwind) return r.vmgKt.value;
-    if (downwind) return -r.vmgKt.value;
-    return r.bsKt.value;
+    const obj = upwind ? r.vmgKt.value : downwind ? -r.vmgKt.value : r.bsKt.value;
+    // A non-converged state loses to any converged one, but still ranks
+    // against other non-converged states so a flogging start can climb out.
+    return r.converged ? obj : LOST + obj;
   };
 
   let best = solve(race);

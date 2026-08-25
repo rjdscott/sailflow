@@ -45,3 +45,4 @@ with minimal disruption.
 | 25 | Point-of-sail chips: Close-hauled and Run resolve to the VPP-optimal VMG angle at the current TWS; Close reach / Beam reach / Broad reach fixed at 60 / 90 / 135 | plan phase 01 |
 | 26 | Cheap 2D motion now (telltale flutter, heel tilt, eased tweens, all honouring reduced-motion); North-Sails-style 3D sail rendering stays Epic 2 (E2-05) | plan phase 04, ADR 0011 |
 | 27 | Owner runs the block autonomously end to end (audit → plan → build → merge → Pages check); stop only for decisions costing more than a day to unwind | this log |
+| 28 | Race mode models sheeting angle vs AWA (luff / stall efficiency, invented, tier B); VPP mode keeps ORC ideal trim so calibration and the polar gate are unaffected | `src/core/shape/sheeting.ts`, plan ux-excellence phase 02 log |

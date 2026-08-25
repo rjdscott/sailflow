@@ -123,3 +123,48 @@ describe('snap', () => {
     expect(snap(t, 2)).toBe(0);
   });
 });
+
+describe('optimalTrim sheeting sanity (ux follow-up)', () => {
+  const dock = { upperTurns: 0, lowerTurns: 0, forestayMm: 0 };
+  const race = {
+    backstay: 30,
+    mainsheet: 70,
+    traveller: 20,
+    cunningham: 20,
+    outhaul: 60,
+    vang: 30,
+    jibSheet: 70,
+    jibLead: 5,
+    inhauler: 20,
+    mainHalyard: 50,
+    jibHalyard: 50,
+  };
+  const down = { kiteHalyard: 50, tackLine: 50, kiteSheet: 50, sprit: 0 };
+  const sea = { seaState: 1, crewKg: 300 } as const;
+  it('does not dump the sheets in breeze upwind', () => {
+    const o = optimalTrim(
+      boat,
+      { dock, race, down },
+      { ...sea, twsKt: 16, twaDeg: 38, sailset: 'jib' },
+    );
+    expect(o.race.mainsheet).toBeGreaterThanOrEqual(50);
+    expect(o.race.jibSheet).toBeGreaterThanOrEqual(50);
+  });
+  it('eases the sheets on a beam reach', () => {
+    const o = optimalTrim(
+      boat,
+      { dock, race, down },
+      { ...sea, twsKt: 10, twaDeg: 90, sailset: 'jib' },
+    );
+    expect(o.race.mainsheet).toBeLessThan(race.mainsheet);
+    expect(o.race.jibSheet).toBeLessThan(race.jibSheet);
+  });
+  it('eases the main on a run rather than pinning it', () => {
+    const o = optimalTrim(
+      boat,
+      { dock, race, down },
+      { ...sea, twsKt: 10, twaDeg: 149, sailset: 'asym' },
+    );
+    expect(o.race.mainsheet).toBeLessThan(40);
+  });
+});
