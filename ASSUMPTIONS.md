@@ -138,9 +138,11 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   model read −0.6 there and the verdict called for lead aft from the trim the
   guide calls right. The lead car then walks ±1.35 stripes over ±3 holes,
   which rounds to the 22" and 18" stripes but is not calibrated to hit them
-  exactly. Race mode's own `BASE_RACE` is a harder-sheeted trim than
-  `baseRace()` (jib sheet 70 % against 60 %) and reads about −0.45 there; the
-  two base trims should be reconciled.
+  exactly. **Resolved in cockpit phase 05:** Race mode's `BASE_RACE` used to
+  be a harder-sheeted trim than `baseRace()` (jib sheet 70 % against 60 %) and
+  read about −0.45 there. Both now read the one `baseRace` block in
+  `data/boats/j70.json`, so the trim the sliders start on is the trim these
+  meters are calibrated on.
 - **Helm load reference** `HELM_REF_NM` = 300 N·m, assumed: the yaw moment of
   a well-powered J/70 upwind at 12–14 kt with the crew hiking, chosen so 1.0
   reads "firm" and the cockpit's 1.2 "heavy helm" threshold trips when heel
@@ -158,6 +160,47 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   stall > 0.7 reads stalled, < 0.3 upwind reads under-trimmed, stripe < 0.5
   reads hooked, |helm| > 1.2 reads heavy, and a gap under 0.02 kt reads on
   target. All assumed, all above or below the bands the guides publish.
+- **Heel gauge top of scale** `HEEL_SCALE_MAX` = 25°
+  (`src/ui/instruments/gauges.ts`), assumed: past 25° a J/70 is not being
+  sailed, it is being survived. Drawing range only — the value and its band
+  are unaffected.
+
+### Modes, crew position and the puff replay (cockpit phase 05)
+
+- **Mode angle offsets** (`src/ui/race/store.svelte.ts`, `MODE_OFFSET_DEG`).
+  Upwind: high −3°, VMG 0, fast +3°, applied to the angle the close-hauled
+  chip solved for. Sailing World's "The Mechanics of Mode" (research 02 S11)
+  says modes are a deliberate 3–10° deviation from VMG but publishes no
+  per-mode angle, so 3° — the tight end of its own range — is the app's
+  choice. Downwind: plane −10°, soak +8°, wing +15° off the run's solved
+  angle, assumed outright; the five-downwind-modes article (S15) describes
+  the modes qualitatively (backstay %, vang, crew position) and prints no
+  angles. **What is claimed is the sign and the ordering only** — heat it up
+  to plane, drop down to soak, square away to wing — not the magnitudes. The
+  angle then goes through the ordinary solver, so everything downstream of it
+  is as honest as any other angle you could have typed.
+- **Crew fore-aft is not modelled at all.** The solver takes crew *weight*,
+  never its position, so the Fwd/Mid/Aft control changes no number on the
+  screen. It carries a C badge saying so, and it exists so the tuning log can
+  record what the crew was actually doing. Adding it to the physics means a
+  longitudinal trim term in the hydro layer, which is Epic 2.
+- **Puff sequences** (`src/ui/race/puff.ts`): gust 8→14→10 kt, lull
+  14→8→12 kt and a ±8° shift, each over six steps. Teaching sequences, not a
+  measured gust profile; nothing is fitted to them and the app solves each
+  step as an ordinary steady state. The replay is a slideshow of steady-state
+  solves — there is no time-domain physics behind it (Epic 2), and the UI
+  says "replay", never "simulate".
+- **Power-state thresholds** (`powerState`): full power is `aero.flat` ≥ 0.98
+  and overpowered is `flat` < 0.9, both assumed — `flat` is the ORC VPP
+  depowering parameter, and where along it "the sails are flattened" begins
+  is a judgement. The heel half of the test is the North guide's published
+  heel band (above). The three-state split itself is SailZing's (S9) and the
+  order of work per state is Ingham's (S10); only the two numbers are ours.
+- **Replay step timing** `PUFF_STEP_MS` = 1600 ms, with a 200 ms poll and a
+  3 s cap while waiting for the optimum search to answer
+  (`src/ui/race/puffPlayer.svelte.ts`). Presentation only: long enough to
+  read the panels lighting up, and the wait means the ghost bugs on screen
+  belong to the step you are looking at.
 
 <!-- generated: do not edit below this line -->
 
@@ -165,6 +208,17 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
 | Path | Value | Note |
 |---|---|---|
+| `baseRace.backstay` | 30 | the app's own reading of the North guide's base wind band onto the 0-100 control scales; the guide publishes qualitative settings ("Firm", "Snug", "5-6 holes showing"), not percentages. This is the datum every shape delta in core/shape/toOrc.ts is measured against and the trim the cockpit's leech-stall and spreader-stripe meters are calibrated on, so the solver and Race mode's default trim read the one block instead of keeping two |
+| `baseRace.cunningham` | 20 | see baseRace.backstay |
+| `baseRace.inhauler` | 30 | see baseRace.backstay |
+| `baseRace.jibHalyard` | 50 | see baseRace.backstay |
+| `baseRace.jibLead` | 5 | see baseRace.backstay |
+| `baseRace.jibSheet` | 60 | see baseRace.backstay |
+| `baseRace.mainHalyard` | 50 | see baseRace.backstay |
+| `baseRace.mainsheet` | 60 | see baseRace.backstay |
+| `baseRace.outhaul` | 50 | see baseRace.backstay |
+| `baseRace.traveller` | 0 | see baseRace.backstay |
+| `baseRace.vang` | 30 | see baseRace.backstay |
 | `controls.forestayMm.max` | 40 | see controls.forestayMm.min |
 | `controls.forestayMm.min` | 0 | range not published in Class Rules; app convention for a workable forestay length adjustment sweep |
 | `controls.forestayMm.step` | 2 | see controls.forestayMm.min |

@@ -6,6 +6,7 @@
  * by construction every delta is zero here. Tests use it as the reference
  * point for every monotonicity sweep.
  */
+import boatJson from '../../../data/boats/j70.json';
 import type { BoatDefinition, DockControls, RaceControls, SailId, SailShape } from '../types';
 import { rigState } from '../rig/state';
 import { flyingShape } from './flying';
@@ -20,24 +21,16 @@ export function baseDock(): DockControls {
 
 /**
  * Race base: mid-range trim for a boat sailing upwind in the guide's base
- * wind band. prov: assumed. The North guide publishes qualitative settings
- * ("Firm", "Snug", "5-6 holes showing"), not percentages, so these are the
- * app's own reading of that band onto the 0-100 control scales.
+ * wind band, read from `data/boats/j70.json` (`baseRace`; prov: assumed — the
+ * North guide publishes qualitative settings, not percentages).
+ *
+ * The JSON is the one source. Race mode's default trim
+ * (`src/ui/stores/conditions.svelte.ts`) reads the same block, so the datum
+ * the shape deltas are measured against and the trim the sliders start on
+ * cannot drift apart again (cockpit phase 05, carried from phase 03).
  */
 export function baseRace(): RaceControls {
-  return {
-    backstay: 30, // prov: assumed, app's own reading of the North guide's base wind band
-    mainsheet: 60,
-    traveller: 0,
-    cunningham: 20, // prov: assumed, app's own reading of the North guide's base wind band
-    outhaul: 50,
-    vang: 30,
-    jibSheet: 60, // prov: assumed, app's own reading of the North guide's base wind band
-    jibLead: 5,
-    inhauler: 30,
-    mainHalyard: 50, // prov: assumed, app's own reading of the North guide's base wind band
-    jibHalyard: 50,
-  };
+  return { ...(boatJson.baseRace as RaceControls) };
 }
 
 /** Flying shapes at the base state, for the sails asked for. */

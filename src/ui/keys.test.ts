@@ -29,6 +29,8 @@ describe('keyAction', () => {
   it('maps the trim keys', () => {
     expect(keyAction({ key: 'o' }, false)).toEqual({ type: 'applyOptimum' });
     expect(keyAction({ key: 'u' }, false)).toEqual({ type: 'undo' });
+    expect(keyAction({ key: 'b' }, false)).toEqual({ type: 'abCompare' });
+    expect(keyAction({ key: 'p' }, false)).toEqual({ type: 'puffReplay' });
     expect(keyAction({ key: '?' }, false)).toEqual({ type: 'help' });
   });
 
@@ -44,13 +46,15 @@ describe('keyAction', () => {
     expect(keyAction({ key: 'j' }, true)).toBeNull();
     expect(keyAction({ key: 'o', metaKey: true }, false)).toBeNull();
     expect(keyAction({ key: 'u', ctrlKey: true }, false)).toBeNull();
+    expect(keyAction({ key: 'b' }, true)).toBeNull();
+    expect(keyAction({ key: 'p' }, true)).toBeNull();
   });
 });
 
 describe('SHORTCUTS', () => {
   it('documents every key the mapping answers to', () => {
     const documented = SHORTCUTS.map((s) => s.keys).join(' ');
-    for (const key of ['1 – 5', 'm', 'j', 'o', 'u', '?']) {
+    for (const key of ['1 – 5', 'm', 'j', 'o', 'u', 'b', 'p', '?']) {
       expect(documented, `${key} is bound but not in the help sheet`).toContain(key);
     }
   });
@@ -60,5 +64,6 @@ describe('panelControlsId', () => {
   it('names the element the jump looks inside', () => {
     expect(panelControlsId('mainsail')).toBe('mainsail-controls');
     expect(panelControlsId('headsail')).toBe('headsail-controls');
+    expect(panelControlsId('helm')).toBe('helm-controls');
   });
 });

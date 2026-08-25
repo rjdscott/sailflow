@@ -26,6 +26,17 @@ method), **assumed** (no source; see ASSUMPTIONS.md).
 
 | Path | Value | Kind | Source | Note |
 |---|---|---|---|---|
+| `baseRace.backstay` | 30 | assumed | `app-convention` | the app's own reading of the North guide's base wind band onto the 0-100 control scales; the guide publishes qualitative settings ("Firm", "Snug", "5-6 holes showing"), not percentages. This is the datum every shape delta in core/shape/toOrc.ts is measured against and the trim the cockpit's leech-stall and spreader-stripe meters are calibrated on, so the solver and Race mode's default trim read the one block instead of keeping two |
+| `baseRace.cunningham` | 20 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.inhauler` | 30 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.jibHalyard` | 50 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.jibLead` | 5 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.jibSheet` | 60 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.mainHalyard` | 50 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.mainsheet` | 60 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.outhaul` | 50 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.traveller` | 0 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.vang` | 30 | assumed | `app-convention` | see baseRace.backstay |
 | `controls.backstay.max` | 100 | derived | `app-convention` | app control range; 0-100% travel |
 | `controls.backstay.min` | 0 | derived | `app-convention` | app control range; 0-100% travel |
 | `controls.backstay.purchaseMax` | 4 | published | `class-rules-2026` | Class Rules F.4.2: Backstay Control purchase maximum 4:1 |

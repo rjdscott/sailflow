@@ -22,6 +22,31 @@ undiagnosable.
 
 ### Added
 
+- The cockpit's last two panels (ADR 0015). **Helm & conditions** puts the
+  heel gauge and the helm-load bar side by side — helm feel only reports trim
+  while heel is steady, so neither is shown without the other — with a mode
+  selector (high / VMG / fast upwind, plane / soak / wing / VMG downwind,
+  steered off the angle the point-of-sail chip solved for), the crew-weight
+  slider, a crew fore-aft position that is logged rather than solved and says
+  so, and the kite controls under the gennaker. **Rig** is dock-gated: with
+  nothing committed today it is the three dock sliders and a way to the Dock;
+  once committed it reads the tune back, adds rake and prebend, and prints
+  the wind-range gear chart from North or Quantum with your wind's row lit up
+  and the source named.
+- **A/B compare** in a new actions bar: swap between the trim on the sliders
+  and the one you left, keeping _both_, with the objective delta between them
+  and the controls that differ outlined. Keyboard `b`. Unlike "Back to my
+  trim", pressing it twice is exactly where you started.
+- **Puff replay** (keyboard `p`): a scripted gust — 8 → 14 → 10 kt, or a lull
+  or a ±8° shift — solved a step at a time, lighting the panels in the order
+  the power state calls for (Ingham's "controls, hike, ease, point, trim" in
+  the transition, "ease, point, trim" overpowered) and showing the optimum's
+  moves as ghost bugs. It is a slideshow of steady-state solves, not
+  time-domain physics, and restores the wind exactly when it finishes or is
+  stopped.
+- Drills use the same instrument bar as Race, so a drill and a race read the
+  same numbers the same way; `Readouts.svelte` is retired.
+
 - Race mode's controls are two task-named cockpit panels (ADR 0015).
   **Mainsail** carries mainsheet, traveller, backstay, vang, outhaul and
   cunningham with the main halyard under a collapsed "Setup", beside the
@@ -88,6 +113,12 @@ undiagnosable.
 
 ### Changed
 
+- **One base trim.** The solver's `baseRace()` and Race mode's default trim
+  were two different trims — Race sheeted harder (main 70 %, jib 70 % against
+  60/60), so the meters were calibrated on a trim the screen never started
+  from. Both now read one `baseRace` block in `data/boats/j70.json`. No
+  physics moved: every value in the golden corpus is byte-identical, and only
+  the boat-geometry hash changed.
 - **The main leech stall meter is rescaled.** It now reads the leech's twist
   against the twist that would put the sail on the sheeting model's optimum,
   rather than borrowing that model's lift-loss e-fold — which had confined the

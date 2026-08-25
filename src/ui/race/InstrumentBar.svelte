@@ -5,7 +5,7 @@
   import BulletGauge from '../components/BulletGauge.svelte';
   import Sheet from '../components/Sheet.svelte';
   import { READOUT_EXPLAIN } from '../explain';
-  import { heelBands } from '../instruments/gauges';
+  import { heelBands, HEEL_SCALE_MAX, HELM_TARGET } from '../instruments/gauges';
   import type { History } from '../instruments/history';
   import type { Objective } from './store.svelte';
   import { verdict } from './verdict';
@@ -68,12 +68,6 @@
 
   const heel = $derived(heelBands(twsKt));
   const line = $derived(verdict({ result, target, objective, coach }));
-
-  /**
-   * Helm load a well-sailed boat carries: enough feel to steer by, well short
-   * of the rudder braking. prov: assumed (ASSUMPTIONS.md, helm load proxy).
-   */
-  const HELM_TARGET = 0.3;
 
   let explaining: string | null = $state(null);
   let sheetOpen = $state(false);
@@ -152,7 +146,7 @@
       unit="°"
       value={Math.abs(result.heelDeg.value)}
       min={0}
-      max={25}
+      max={HEEL_SCALE_MAX}
       target={heel.target}
       ranges={[heel.lo, heel.hi]}
       tier={result.heelDeg.tier}

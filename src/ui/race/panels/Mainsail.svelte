@@ -11,6 +11,7 @@
   import { battenAngleDeg } from '../geometry';
   import LeechProfile from '../LeechProfile.svelte';
   import SailSectionStack from '../SailSectionStack.svelte';
+  import { puffPlayer } from '../puffPlayer.svelte';
   import { race } from '../store.svelte';
   import ControlRow from './ControlRow.svelte';
   import { explainText, explainTitle } from './copy';
@@ -46,6 +47,7 @@
 <Panel
   title="Mainsail"
   id="mainsail-title"
+  lit={puffPlayer.litIndex('mainsail')}
   cue="Leech ribbons stalling about half the time is right; flowing all the time means you are building speed."
 >
   {#snippet controls()}

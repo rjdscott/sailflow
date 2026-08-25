@@ -1,7 +1,7 @@
 {
-  "note": "Gzip size, bytes, of the entry chunk index.html loads. ADR 0014's promise is that the three.js sail view does not land on first load; `bundle_check.mjs` is what makes that promise checkable. Raise this deliberately, in the PR that earns it, never to make CI green \u2014 and if the number jumps by tens of kilobytes, something that should be behind a dynamic import is not.",
+  "note": "Gzip size, bytes, of the entry chunk index.html loads. ADR 0014's promise is that the three.js sail view does not land on first load; `bundle_check.mjs` is what makes that promise checkable. Raise this deliberately, in the PR that earns it, never to make CI green — and if the number jumps by tens of kilobytes, something that should be behind a dynamic import is not.",
   "measured": "2026-08-25",
-  "entryGzipBytes": 115207,
+  "entryGzipBytes": 121717,
   "toleranceBytes": 2048,
   "history": [
     {
@@ -23,6 +23,11 @@
       "date": "2026-08-25",
       "bytes": 115207,
       "note": "phase 03: Mainsail and Headsail panels, section stack per sail, leech profile, spreader gauge, sag indicator. All first-load UI by design."
+    },
+    {
+      "date": "2026-08-25",
+      "bytes": 121717,
+      "note": "phase 05: Helm & conditions and Rig panels, the actions bar with A/B compare, the puff replay and its player, and the gear chart. All first-load Race UI by design; the tuning-guide JSON the chart reads was already in the entry for the disagreement panel, so none of the +6.5 KB is data."
     }
   ]
 }

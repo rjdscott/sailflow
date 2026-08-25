@@ -148,6 +148,20 @@ export function heelBands(twsKt: number): HeelBand {
 }
 
 /**
+ * Top of the heel gauge's scale, degrees. Past 25° a J/70 is not being sailed,
+ * it is being survived, so the scale ends there rather than at a round 30.
+ * prov: assumed (ASSUMPTIONS.md).
+ */
+export const HEEL_SCALE_MAX = 25;
+
+/**
+ * Helm load a well-sailed boat carries: enough feel to steer by, well short of
+ * the rudder braking. prov: assumed (ASSUMPTIONS.md, helm load proxy). Read by
+ * the instrument bar and the Helm panel, which show the same gauge twice.
+ */
+export const HELM_TARGET = 0.3;
+
+/**
  * Value as a percentage of its target — 100 is on target. A target of zero or
  * below has no meaningful ratio (and would divide by zero), so it reads
  * `undefined` and the caller shows nothing rather than an invented number.

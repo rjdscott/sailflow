@@ -156,10 +156,11 @@ describe('coach line', () => {
   });
 
   it('picks the largest gain and phrases it', async () => {
-    // Easing the mainsheet one step (70 -> 65) is worth more than anything else.
+    // Easing the mainsheet one step off the base trim is worth more than
+    // anything else; the traveller up one step is the runner-up.
     const { client } = scoringClient((r) => {
-      if (r.mainsheet === 65) return 4.86;
-      if (r.traveller === 25) return 4.83;
+      if (r.mainsheet === BASE_RACE.mainsheet - 5) return 4.86;
+      if (r.traveller === BASE_RACE.traveller + 5) return 4.83;
       return 4.8;
     });
     const store = new RaceStore(client);
@@ -238,8 +239,11 @@ describe('coach wording per point of sail', () => {
   const splitClient: Client = {
     request: (req) => {
       const race = (req as unknown as TrimmedRequest).controls.race;
-      const bsKt = race.mainsheet === 65 ? 6.4 : 6.0;
-      const vmgKt = race.traveller === 25 ? 5.0 : 4.0;
+      // One step up from the base trim, whatever the base trim is: these
+      // used to be the literals 65 and 25, which quietly pinned the test to
+      // Race mode's old base values (cockpit phase 05).
+      const bsKt = race.mainsheet === BASE_RACE.mainsheet + 5 ? 6.4 : 6.0;
+      const vmgKt = race.traveller === BASE_RACE.traveller + 5 ? 5.0 : 4.0;
       return Promise.resolve(result(vmgKt, bsKt)) as never;
     },
   };
@@ -299,7 +303,9 @@ describe('one-level undo', () => {
 describe('coach line downwind', () => {
   it('treats a more negative VMG as the gain when the asym is up', async () => {
     // Downwind VMG is negative; easing the mainsheet makes it more so.
-    const { client } = scoringClient((r) => (r.mainsheet === 65 ? -3.2 : -3.0));
+    const { client } = scoringClient((r) =>
+      r.mainsheet === BASE_RACE.mainsheet - 5 ? -3.2 : -3.0,
+    );
     const store = new RaceStore(client);
     store.request(controls(), { ...CONDITION, twaDeg: 150, sailset: 'asym' });
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
@@ -494,5 +500,144 @@ describe('RaceStore.history', () => {
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
     expect(store.history.series('bs')).toHaveLength(1);
     expect(store.history.key).toBe(historyKey({ ...CONDITION, twsKt: 14 }));
+  });
+});
+
+/**
+ * A/B compare (cockpit phase 05): unlike undo, which throws the other trim
+ * away, this keeps both — so the question "which of these two is faster" can
+ * be asked as many times as it takes.
+ */
+describe('RaceStore.abToggle', () => {
+  const store = () => new RaceStore(deferredClient().client);
+
+  beforeEach(() => conditions.apply(CONDITION));
+
+  it('swaps in the remembered trim and keeps the one it replaced', () => {
+    const s = store();
+    s.controls.race.mainsheet = 40;
+    s.remember();
+    s.controls.race.mainsheet = 80;
+
+    s.abToggle();
+    expect(s.controls.race.mainsheet).toBe(40);
+    expect(s.previousRace?.mainsheet).toBe(80);
+    expect(s.ab).toBe('B');
+  });
+
+  it('round-trips: two toggles are exactly where you started, same object', () => {
+    const s = store();
+    const bound = s.controls.race;
+    s.controls.race.mainsheet = 40;
+    s.controls.race.jibLead = 3;
+    s.remember();
+    s.controls.race.mainsheet = 80;
+    s.controls.race.jibLead = 7;
+    const started = { ...s.controls.race };
+
+    s.abToggle();
+    s.abToggle();
+
+    // Identity, not just equality: every slider in the panels binds through
+    // this object, so replacing it would silently unbind them.
+    expect(s.controls.race).toBe(bound);
+    expect({ ...s.controls.race }).toEqual(started);
+    expect(s.ab).toBe('A');
+  });
+
+  it('does nothing with no previous trim to compare against', () => {
+    const s = store();
+    s.controls.race.mainsheet = 55;
+    s.abToggle();
+    expect(s.controls.race.mainsheet).toBe(55);
+    expect(s.previousRace).toBeNull();
+    expect(s.ab).toBe('A');
+    expect(s.abMoved).toEqual([]);
+    expect(s.abDeltaKt).toBeNull();
+  });
+
+  it('lists the controls that differ between the two sides', () => {
+    const s = store();
+    s.remember();
+    s.controls.race.mainsheet += 5;
+    s.controls.race.vang += 5;
+    expect(s.abMoved).toEqual(['mainsheet', 'vang']);
+  });
+
+  it('reports the objective delta from the parked solve, signed this-way-round', () => {
+    const s = store();
+    s.result = result(4.2);
+    s.remember(); // parks 4.2 kt VMG
+    s.result = result(4.5);
+    expect(s.abDeltaKt).toBeCloseTo(0.3, 6);
+
+    s.abToggle(); // the parked side is now the 4.5 one
+    expect(s.previousObjKt).toBeCloseTo(4.5, 6);
+    expect(s.abDeltaKt).toBeCloseTo(0, 6); // same solve on screen until it re-solves
+  });
+
+  it('undo throws the other side away, so the compare ends', () => {
+    const s = store();
+    s.remember();
+    s.controls.race.mainsheet += 5;
+    s.abToggle();
+    s.undo();
+    expect(s.previousRace).toBeNull();
+    expect(s.previousObjKt).toBeNull();
+    expect(s.ab).toBe('A');
+  });
+});
+
+describe('RaceStore.setMode', () => {
+  const store = () => new RaceStore(deferredClient().client);
+
+  beforeEach(() => conditions.apply(CONDITION));
+
+  it('steers the offset off the angle the chip solved for, not off the last mode', () => {
+    const s = store();
+    s.modeBaseTwaDeg = 42;
+    s.setMode('high');
+    expect(conditions.twaDeg).toBe(39);
+    s.setMode('fast');
+    expect(conditions.twaDeg).toBe(45); // 6 degrees, not two 3s
+    s.setMode('vmg');
+    expect(conditions.twaDeg).toBe(42);
+    expect(s.mode).toBe('vmg');
+  });
+
+  it('adopts the angle on screen as the base when no chip has been tapped', () => {
+    const s = store();
+    conditions.twaDeg = 150;
+    s.setMode('soak');
+    expect(s.modeBaseTwaDeg).toBe(150);
+    expect(conditions.twaDeg).toBe(158);
+  });
+
+  it('never steers outside the angles the boat has', () => {
+    const s = store();
+    s.modeBaseTwaDeg = 175;
+    s.setMode('wing');
+    expect(conditions.twaDeg).toBe(180);
+    s.modeBaseTwaDeg = 21;
+    s.setMode('high');
+    expect(conditions.twaDeg).toBe(20);
+  });
+
+  it('offers the downwind modes from a beam reach out', () => {
+    const s = store();
+    conditions.twaDeg = 42;
+    conditions.sailset = 'jib';
+    expect(s.downwindModes).toBe(false);
+    conditions.twaDeg = 150;
+    expect(s.downwindModes).toBe(true);
+  });
+
+  it('re-takes the base angle from a point-of-sail chip', () => {
+    const s = store();
+    s.setMode('high');
+    s.setPointOfSail('beam-reach');
+    expect(s.mode).toBe('vmg');
+    expect(s.modeBaseTwaDeg).toBe(90);
+    expect(conditions.twaDeg).toBe(90);
   });
 });
