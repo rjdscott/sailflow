@@ -188,8 +188,38 @@ describe('kiteGeometry', () => {
 describe('the lofted kite', () => {
   const build = (side: Side, over: Partial<DownControls> = {}) => {
     const g = kiteGeometry(down(over), rig3d(RIG, side, 0.3), side);
-    return { g, mesh: buildSail(sectionStack(SHAPE, g.chords), g.spine, g.sheetRad, side) };
+    return { g, mesh: buildSail(g.sections(SHAPE), g.spine, g.sheetRad, side) };
   };
+
+  it('flies a straight leech from head to clew while the luff bows', () => {
+    for (const side of [1, -1] as Side[]) {
+      const { g, mesh } = build(side);
+      const dir = [g.head[0] - g.clew[0], g.head[1] - g.clew[1], g.head[2] - g.clew[2]] as Vec3;
+      const L = Math.hypot(...dir);
+      let maxOff = 0;
+      let maxLuffBow = 0;
+      for (let i = 0; i < mesh.N; i++) {
+        const row = gridRow(mesh, i);
+        // Leech point: distance from the head→clew line.
+        const p = row[mesh.M - 1];
+        const w = [p[0] - g.clew[0], p[1] - g.clew[1], p[2] - g.clew[2]];
+        const t = (w[0] * dir[0] + w[1] * dir[1] + w[2] * dir[2]) / (L * L);
+        const off = Math.hypot(...([0, 1, 2].map((k) => w[k] - t * dir[k]) as Vec3));
+        maxOff = Math.max(maxOff, off);
+        // Luff point: distance from the tack→head line.
+        const q = row[0];
+        const d2 = [g.head[0] - g.tack[0], g.head[1] - g.tack[1], g.head[2] - g.tack[2]];
+        const L2 = Math.hypot(...d2);
+        const w2 = [q[0] - g.tack[0], q[1] - g.tack[1], q[2] - g.tack[2]];
+        const t2 = (w2[0] * d2[0] + w2[1] * d2[1] + w2[2] * d2[2]) / (L2 * L2);
+        maxLuffBow = Math.max(maxLuffBow, Math.hypot(...([0, 1, 2].map((k) => w2[k] - t2 * d2[k]) as Vec3)));
+      }
+      // The leech sits on its line to within the loft's interpolation between
+      // seventeen knots; the luff bows by metres.
+      expect(maxOff).toBeLessThan(0.1);
+      expect(maxLuffBow).toBeGreaterThan(1);
+    }
+  });
 
   it('is a finite surface with unit normals', () => {
     for (const side of [1, -1] as Side[]) {

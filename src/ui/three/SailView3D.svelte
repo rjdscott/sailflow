@@ -512,7 +512,7 @@
     const asym = result.shape.asym;
     const kg = kiteUp && down && asym ? kiteGeometry(down, r, side) : null;
     const kite =
-      kg && asym ? buildSail(sectionStack(asym, kg.chords), kg.spine, kg.sheetRad, side) : null;
+      kg && asym ? buildSail(kg.sections(asym), kg.spine, kg.sheetRad, side) : null;
 
     applySail(mainSail, main);
     applySail(jibSail, jib);

@@ -37,7 +37,8 @@ import {
   type Side,
   type Vec3,
 } from './conventions';
-import type { SailChords, Spine } from './loft';
+import { pchip, sectionStack, type SailChords, type Section, type Spine } from './loft';
+import type { SailShape } from '../../core/types';
 
 const asym = boat.sails.asym;
 const SPRIT_M = boat.rig.bowspritOuterMm / 1000;
@@ -188,6 +189,12 @@ export interface KiteGeometry {
   sheetRad: number;
   /** Eased past `CURL_EASE_THRESHOLD`: the luff is unloaded and curling. */
   curl: boolean;
+  /**
+   * The loft's sections: chord and twist per height taken from the bowed
+   * luff to the *straight* leech, so the leech runs head → clew as a line
+   * and only the luff bows. Camber and draft position are `shape.asym`'s.
+   */
+  sections: (shape: SailShape) => Section[];
 }
 
 const pct = (v: number): number => Math.min(1, Math.max(0, v / 100));
@@ -230,14 +237,56 @@ export function kiteGeometry(down: DownControls, rig: KiteRig, side: Side): Kite
 
   const ease = 1 - pct(down.kiteSheet);
   const sheetRad = (SHEET_TRIM_DEG + ease * (SHEET_EASE_DEG - SHEET_TRIM_DEG)) * DEG2RAD;
+  const clew = add(tack, scaled(chordDir(sheetRad, side), KITE_CHORDS.foot));
+
+  // The leech is a straight line from head to clew — a gennaker's leech is
+  // held by the sheet and stands nearly straight, while the luff is the free
+  // edge that bows. Lofting each section as luff point + a fixed chord vector
+  // carried the luff's bow into the leech too, and the sail read as a banana
+  // from astern. Each section here spans from the bowed luff to the leech
+  // point at the same height, so the loft's chord and twist follow the line.
+  const leechAt = (y: number): Vec3 => {
+    const t = Math.min(1, Math.max(0, (y - clew[1]) / (head[1] - clew[1] || 1)));
+    return lerp3(clew, head, t);
+  };
+  // Seventeen knots, not the stack's five: the loft interpolates chord and
+  // twist between knots, and five cannot follow a parabolic luff closely
+  // enough to keep the leech on its line (measured 0.57 m off; 17 keeps it
+  // under a few centimetres). Camber, draft position and entry are the
+  // stack's, interpolated the same way the loft would have.
+  const sections = (shape: SailShape): Section[] => {
+    const stack = sectionStack(shape, KITE_CHORDS);
+    const hs = stack.map((k) => k.h);
+    const camber = pchip(hs, stack.map((k) => k.camber));
+    const draftPos = pchip(hs, stack.map((k) => k.draftPos));
+    const entry = pchip(hs, stack.map((k) => k.entryRad));
+    const KNOTS = 17;
+    return Array.from({ length: KNOTS }, (_, i) => {
+      const h = i / (KNOTS - 1);
+      const luff = spine(h);
+      const v = sub(leechAt(luff[1]), luff);
+      const chord = Math.hypot(v[0], v[2]);
+      // `chordDir(theta)` = (−cos θ, 0, lee·sin θ); invert it for this chord.
+      const theta = chord > 1e-6 ? Math.atan2(lee(side) * v[2], -v[0]) : sheetRad;
+      return {
+        h,
+        chord,
+        camber: camber(h),
+        draftPos: draftPos(h),
+        entryRad: entry(h),
+        twistRad: theta - sheetRad,
+      };
+    });
+  };
 
   return {
     tack,
     head,
-    clew: add(tack, scaled(chordDir(sheetRad, side), KITE_CHORDS.foot)),
+    clew,
     spine,
     chords: KITE_CHORDS,
     sheetRad,
     curl: ease >= CURL_EASE_THRESHOLD,
+    sections,
   };
 }
