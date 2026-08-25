@@ -84,13 +84,17 @@
 
   const scene = new Scene();
   scene.background = new Color('#0a1520'); // prov: assumed — dusk water, tokens v2 dark shell
-  scene.fog = new Fog('#0a1520', 26, 70);
+  // The fog is one step lighter than the sky, so the water fades up into a
+  // faint horizon band instead of meeting the sky at a hard line.
+  // prov: assumed #16293c — the sky colour lifted ~8 % towards --surface-2.
+  scene.fog = new Fog('#16293c', 26, 70);
 
   /** Heels; everything inside it is in the boat frame of `conventions.ts`. */
   const boat = new Group();
   scene.add(boat);
 
-  const SAIL_COLOUR = '#e8eef4';
+  /** prov: assumed — warm cloth, not paper: a Dacron main under a low sun. */
+  const SAIL_COLOUR = '#f2ece0';
   const sailMat = new MeshLambertMaterial({
     color: SAIL_COLOUR,
     side: DoubleSide,
@@ -99,19 +103,26 @@
   });
   const sparMat = new MeshLambertMaterial({ color: '#3d4a57' });
   const wireMat = new LineBasicMaterial({ color: '#7d8b99' });
-  const stripeMat = new LineBasicMaterial({ color: '#ff8a3d' });
-  const edgeMat = new LineBasicMaterial({ color: '#5f7186' });
+  // Draw stripes: deep enough to read on the lit face of warm cloth as well
+  // as the shaded one. prov: assumed #c2571f.
+  const stripeMat = new LineBasicMaterial({ color: '#c2571f' });
+  const edgeMat = new LineBasicMaterial({ color: '#6f8092' });
 
   // Double-sided: the hull is a generated open shell, so which way a station
   // triangle happens to face is not worth reasoning about for four hundred
   // triangles that never occlude anything.
+  // Topsides and deck are both lifted well clear of the water: at the old
+  // #8ea6bd the hull read as a shadow on #0d2233 from the leeward quarter,
+  // which is the one view the hero exists for (owner feedback, 2026-08-25).
+  // prov: assumed #b7c8d8 topsides / #d5e0ea deck — a white boat in shade,
+  // deck one step lighter so the sheerline is a line and not a guess.
   const hull = new Mesh(
     toGeometry(hullMesh()),
-    new MeshLambertMaterial({ color: '#8ea6bd', side: DoubleSide }),
+    new MeshLambertMaterial({ color: '#b7c8d8', side: DoubleSide }),
   );
   const deck = new Mesh(
     toGeometry(deckMesh()),
-    new MeshLambertMaterial({ color: '#a9bccf', side: DoubleSide }),
+    new MeshLambertMaterial({ color: '#d5e0ea', side: DoubleSide }),
   );
   boat.add(hull, deck);
 
@@ -144,7 +155,10 @@
       void main() {
         vSpan = aUv.x;
         float wave = sin(uTime * 6.0 + aPhase + aUv.x * 5.0) * 0.05 * aUv.x;
-        vec3 p = aRoot + aDir * (aUv.x * 0.26) + aUp * (aUv.y * 0.028 + wave);
+        // prov: assumed 0.39 m ribbon, 1.5x the first cut: at 0.26 m they read
+        // as specks from the leeward-quarter preset, which is the flow cue the
+        // view exists to show.
+        vec3 p = aRoot + aDir * (aUv.x * 0.39) + aUp * (aUv.y * 0.028 + wave);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
       }`,
     fragmentShader: `
@@ -156,7 +170,9 @@
   boat.add(telltales);
 
   // Water and the grid stay in world space, so heel reads against them.
-  const water = new Mesh(new PlaneGeometry(90, 90), new MeshBasicMaterial({ color: '#0d2233' }));
+  // prov: assumed #12293c — a shade lighter than the sky, so the hull has a
+  // ground to sit on rather than floating in one flat colour.
+  const water = new Mesh(new PlaneGeometry(90, 90), new MeshBasicMaterial({ color: '#12293c' }));
   water.rotation.x = -Math.PI / 2;
   water.position.y = WATER_Y;
   const grid = new GridHelper(60, 60, '#1d3a4f', '#14293a');
@@ -174,7 +190,13 @@
   sun.position.set(6, 12, 9);
   const fill = new DirectionalLight('#cfe2f5', 0.9);
   fill.position.set(-5, 7, -9);
-  scene.add(sun, fill);
+  // A low, cold rim from behind and below the sails: it catches the sheerline
+  // and the leech and separates both from the water without brightening the
+  // faces the two lights above already model.
+  // prov: assumed 0.55 intensity — enough for an edge, not a third key light.
+  const rim = new DirectionalLight('#bcd6ef', 0.55);
+  rim.position.set(-8, 1.5, 6);
+  scene.add(sun, fill, rim);
 
   // --- renderer and camera -------------------------------------------------
 
@@ -548,10 +570,12 @@
 
 <style>
   /* Height, not aspect ratio: it has to match the plan view's so that
-     swapping between them — or falling back to it — never shifts the page. */
+     swapping between them — or falling back to it — never shifts the page.
+     `--hero-h` is published by the hero slot (SailHero), which is the only
+     thing that knows whether it is a phone card or a cockpit cell. */
   .stage {
     width: 100%;
-    height: 340px;
+    height: var(--hero-h, 340px);
     border-radius: var(--radius);
     overflow: hidden;
     background: #0a1520;
@@ -564,15 +588,18 @@
     height: 100%;
   }
 
-  @media (min-width: 1024px) {
-    .stage {
-      height: 360px;
-    }
-  }
-
   .caption {
     margin: var(--space-2) 0 0;
     font-size: var(--text-xs);
     color: var(--ink-2);
+  }
+
+  /* Cockpit cell: the stage takes what the caption leaves, rather than a
+     height of its own that would push the caption out of the card. */
+  @media (min-width: 1280px) {
+    .stage {
+      flex: 1;
+      min-height: 0;
+    }
   }
 </style>

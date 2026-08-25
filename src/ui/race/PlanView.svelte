@@ -351,11 +351,13 @@
     align-items: start;
   }
 
+  /* `--hero-h` is the hero slot's height, published by SailHero; the 3D stage
+     reads the same one, which is what keeps the swap between them still. */
   svg {
     display: block;
     width: 100%;
     height: auto;
-    max-height: 340px;
+    max-height: var(--hero-h, 340px);
     margin-inline: auto;
   }
 
@@ -369,7 +371,7 @@
        aspect ratio picks the width. */
     svg {
       width: auto;
-      height: 360px;
+      height: var(--hero-h, 360px);
       max-height: none;
       max-width: 100%;
       margin-inline: 0;

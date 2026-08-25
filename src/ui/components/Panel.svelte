@@ -56,6 +56,10 @@
     padding: var(--space-4);
     border-radius: var(--radius-card);
     background: var(--surface-2, var(--surface));
+    /* The phone's tab strip is sticky over the top of whatever it scrolled
+       to, so a panel keeps the strip's height clear of its own heading.
+       prov: assumed 88 px — the 48 px strip, its padding and one gap. */
+    scroll-margin-top: 88px;
   }
 
   /* Lit by the puff replay. The outline is static, so the panel still reads as

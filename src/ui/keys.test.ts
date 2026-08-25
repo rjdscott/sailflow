@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { isTypingTarget, keyAction, panelControlsId, SHORTCUTS } from './keys';
+import {
+  isTypingTarget,
+  keyAction,
+  PANELS,
+  panelControlsId,
+  panelTitleId,
+  SHORTCUTS,
+} from './keys';
 
 const el = (tagName: string, type = '', isContentEditable = false): EventTarget =>
   ({ tagName, type, isContentEditable }) as unknown as EventTarget;
@@ -34,9 +41,21 @@ describe('keyAction', () => {
     expect(keyAction({ key: '?' }, false)).toEqual({ type: 'help' });
   });
 
-  it('jumps to a sail panel', () => {
+  it('jumps to a panel', () => {
     expect(keyAction({ key: 'm' }, false)).toEqual({ type: 'focusPanel', panel: 'mainsail' });
     expect(keyAction({ key: 'j' }, false)).toEqual({ type: 'focusPanel', panel: 'headsail' });
+    expect(keyAction({ key: 'h' }, false)).toEqual({ type: 'focusPanel', panel: 'helm' });
+    expect(keyAction({ key: 'r' }, false)).toEqual({ type: 'focusPanel', panel: 'rig' });
+  });
+
+  it('has one key per panel and no key bound twice', () => {
+    const bound = ['1', '2', '3', '4', '5', 'o', 'u', 'b', 'p', 'm', 'j', 'h', 'r', '?'];
+    expect(new Set(bound).size).toBe(bound.length);
+    const panels = bound
+      .map((key) => keyAction({ key }, false))
+      .filter((a) => a?.type === 'focusPanel')
+      .map((a) => (a as { panel: string }).panel);
+    expect(panels.sort()).toEqual(PANELS.map((p) => p.id).sort());
   });
 
   it('stays out of the way while typing and under a modifier', () => {
@@ -54,7 +73,7 @@ describe('keyAction', () => {
 describe('SHORTCUTS', () => {
   it('documents every key the mapping answers to', () => {
     const documented = SHORTCUTS.map((s) => s.keys).join(' ');
-    for (const key of ['1 – 5', 'm', 'j', 'o', 'u', 'b', 'p', '?']) {
+    for (const key of ['1 – 5', 'm', 'j', 'h', 'r', 'o', 'u', 'b', 'p', '?']) {
       expect(documented, `${key} is bound but not in the help sheet`).toContain(key);
     }
   });
@@ -65,5 +84,17 @@ describe('panelControlsId', () => {
     expect(panelControlsId('mainsail')).toBe('mainsail-controls');
     expect(panelControlsId('headsail')).toBe('headsail-controls');
     expect(panelControlsId('helm')).toBe('helm-controls');
+    expect(panelControlsId('rig')).toBe('rig-controls');
+  });
+
+  /* The panels hard-code these two ids in their markup; if the convention
+     drifts the keyboard jump and the phone tab strip both go quiet. */
+  it('names each panel heading the same way the panels do', () => {
+    expect(PANELS.map((p) => panelTitleId(p.id))).toEqual([
+      'mainsail-title',
+      'headsail-title',
+      'helm-title',
+      'rig-title',
+    ]);
   });
 });

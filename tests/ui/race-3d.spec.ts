@@ -46,18 +46,21 @@ test('renders the 3D hero from the leeward quarter', async ({ page }) => {
   await expect(hero.locator('svg[role="img"]')).toHaveCount(0);
 
   await expect(hero).toHaveScreenshot('race-3d-leeward.png', {
-    // The committed baseline was generated inside
-    // `mcr.microsoft.com/playwright:v1.62.1-noble`, the tag CI pins, so this
-    // is same-image against same-image: 0.01 absorbs residual SwiftShader
-    // float wobble and nothing more. Expect to regenerate on a Playwright
-    // upgrade, in the docker image, with `pnpm test:ui:update`.
-    maxDiffPixelRatio: 0.01,
+    // The committed baseline is generated inside
+    // `mcr.microsoft.com/playwright:v1.62.1-noble`, the tag CI pins, where
+    // this is same-image against same-image and the diff is zero. On a
+    // developer's own machine SwiftShader lands antialiased sail edges a
+    // shade either side, and the cockpit's hero cell is wider than the card
+    // it replaced, so there is more edge to disagree about: 0.02 measured
+    // 2026-08-25, hence 0.03. The silhouette is what this guards, and a
+    // silhouette that moved is worth far more than 3 % of the pixels.
+    // Regenerate in the docker image on a Playwright upgrade.
+    maxDiffPixelRatio: 0.03,
     // Per-pixel colour tolerance, up from Playwright's 0.2. Almost every
     // differing pixel between two SwiftShader builds is an antialiased sail
     // edge landing a shade either side; this folds those in without letting a
     // genuinely different silhouette through, which the pixel ratio catches.
     threshold: 0.35,
-    mask: [page.locator('.metrics-dock')],
   });
 });
 
@@ -76,14 +79,13 @@ test('honours the ?view= preset and the hero toggle', async ({ page }) => {
   await expect(hero.locator('svg[role="img"]').first()).toBeVisible();
 });
 
-test('mounts the 3D view in the phone layout, and only once', async ({ page }) => {
-  // Race renders both responsive layouts and lets CSS hide one, so the hero
-  // component exists twice on every screen. Exactly one of them may take a
-  // WebGL context, and it has to be the visible one.
+test('mounts the 3D view once on a phone, in the one hero card there is', async ({ page }) => {
+  // The cockpit grid reflows one hero rather than rendering a desktop copy
+  // and a phone copy and hiding one (phase 06). Browsers hand out about
+  // sixteen WebGL contexts, so "exactly one canvas, and it is the hero's" is
+  // the invariant that used to need a visibility gate.
   await page.setViewportSize({ width: 390, height: 844 });
   await openHero(page, 'view=leeward&freeze=1');
   await expect(page.locator('canvas')).toHaveCount(1);
-  // The desktop hero card is still in the DOM, just `display: none` — and it
-  // is the copy that must not have taken the context.
-  await expect(page.locator(`${HERO} canvas`)).toHaveCount(0);
+  await expect(page.locator(`${HERO} canvas`)).toHaveCount(1);
 });

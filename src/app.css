@@ -283,6 +283,31 @@ button.chip {
   }
 }
 
+/* ----------------------------------------------------------------- cockpit */
+
+/* The Race cockpit is height-capped to one screen from 1280 px (ADR 0015),
+   and every 44 px of thumb padding it inherits from the phone comes out of
+   the hero. Inside `.cockpit`, and only there, the chip rows and the shared
+   chips are drawn at mouse size — the 44 px hit area survives on anything
+   wearing `.hit-44`, so the target does not shrink with the paint. */
+@media (min-width: 1280px) {
+  .cockpit .chip-row {
+    min-height: 0;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  .cockpit .chip {
+    height: 28px;
+    padding: 0 var(--space-2);
+  }
+
+  /* Same reason: a 44 px disclosure row inside the actions strip is 44 px
+     the hero does not get. The arrow and its label are unchanged. */
+  .cockpit summary {
+    min-height: 32px;
+  }
+}
+
 /* ------------------------------------------------------------------- print */
 
 /* Printing is for the Dock's tuning card (audit ux-02 M-25): the shell, the
