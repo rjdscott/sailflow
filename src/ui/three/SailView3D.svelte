@@ -306,13 +306,34 @@
   const TWEEN_MS = 600;
   let tween: { from: [Vector3, Vector3]; to: [Vector3, Vector3]; start: number } | null = null;
 
+  /**
+   * Radius of the sphere a preset frames, m: the rig with the jib, or the
+   * rig with a 10.8 m luff flying 2 m to leeward. The presets were cut for
+   * one slot shape and the cockpit now gives the hero anything from a
+   * 400 px landscape band to a 1100 px portrait column; framing the sphere
+   * vertically keeps the masthead in every shape, and a 7 m hull still
+   * fits across a portrait column at that distance.
+   * prov: assumed 5.5 / 6.5 — mast 8.5 m over a 0.75 m freeboard, centred
+   * on the preset targets; the kite adds its sag and the sprit.
+   */
+  const FIT_RADIUS_M = { jib: 5.5, kite: 6.5 } as const;
+
+  /** Distance that puts a sphere of `r` inside the vertical field of view. */
+  function fitDistance(r: number): number {
+    return r / Math.sin((camera.fov / 2) * DEG2RAD);
+  }
+
   function presetPose(id: PresetId, side: Side): [Vector3, Vector3] {
     const p = PRESETS[id];
     const z = lee(side);
-    return [
-      new Vector3(p.position[0], p.position[1], p.position[2] * z),
-      new Vector3(p.target[0], p.target[1], p.target[2] * z),
-    ];
+    const pos = new Vector3(p.position[0], p.position[1], p.position[2] * z);
+    const target = new Vector3(p.target[0], p.target[1], p.target[2] * z);
+    // Helm is an eye in the cockpit, not a view of the boat: it stays put.
+    if (id !== 'helm') {
+      const dir = pos.clone().sub(target).normalize();
+      pos.copy(target).addScaledVector(dir, fitDistance(FIT_RADIUS_M[kiteUp ? 'kite' : 'jib']));
+    }
+    return [pos, target];
   }
 
   function goTo(id: PresetId, instant: boolean): void {
@@ -511,8 +532,7 @@
     // the other two. `src/core` is untouched by any of it.
     const asym = result.shape.asym;
     const kg = kiteUp && down && asym ? kiteGeometry(down, r, side) : null;
-    const kite =
-      kg && asym ? buildSail(kg.sections(asym), kg.spine, kg.sheetRad, side) : null;
+    const kite = kg && asym ? buildSail(kg.sections(asym), kg.spine, kg.sheetRad, side) : null;
 
     applySail(mainSail, main);
     applySail(jibSail, jib);
@@ -593,6 +613,15 @@
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      // A resized slot keeps the direction you were looking from and refits
+      // the distance, so a layout change never crops the masthead; a zoom
+      // you had dialled in is the one thing it costs.
+      if (orbit && preset !== 'helm') {
+        const dir = camera.position.clone().sub(orbit.target).normalize();
+        camera.position
+          .copy(orbit.target)
+          .addScaledVector(dir, fitDistance(FIT_RADIUS_M[kiteUp ? 'kite' : 'jib']));
+      }
       invalidate();
     });
     ro.observe(host);
