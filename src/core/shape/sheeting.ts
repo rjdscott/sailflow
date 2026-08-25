@@ -49,6 +49,47 @@ export interface SheetingEffect {
 
 export const IDEAL_SHEETING: SheetingEffect = { clMul: 1, dCd0: 0 };
 
+/** Everything `sheetingEffect` decides from, exposed so the instruments can reuse it. */
+export interface SheetingDeviation {
+  /** Mid-height angle of attack minus the ideal, degrees. + over-trimmed, − eased. */
+  devDeg: number;
+  /** Half-width of the "in the groove" band, degrees. */
+  bandDeg: number;
+  luffScaleDeg: number;
+  stallScaleDeg: number;
+  stallDragPerDeg: number;
+}
+
+/**
+ * How far this sail sits from its ideal angle of attack, and the scales the
+ * penalties are measured on. Split out of `sheetingEffect` unchanged so
+ * `solve/instruments.ts` reads the same deviation the forces do rather than
+ * keeping a second copy of the two angle formulas.
+ */
+export function sheetingDeviation(
+  boat: BoatDefinition,
+  sail: 'main' | 'jib',
+  awaDeg: number,
+  s: Sheeting,
+): SheetingDeviation {
+  const opt =
+    sail === 'main'
+      ? knob(boat, 'aero.sheet.optAoaMain', 16) // prov: assumed, ideal mid-height AoA for the main
+      : knob(boat, 'aero.sheet.optAoaJib', 13); // prov: assumed, ideal mid-height AoA for the jib
+  const bandDeg = knob(boat, 'aero.sheet.bandDeg', 4); // prov: assumed, half-width of the "in the groove" band
+  // Exponential decays, not linear-to-a-floor: a plateau gives the trim
+  // optimiser no gradient to climb back out of a badly eased or pinned sail.
+  const luffScaleDeg = knob(boat, 'aero.sheet.luffScaleDeg', 20); // prov: assumed, e-fold of lift lost per degree eased past the band
+  const stallScaleDeg = knob(boat, 'aero.sheet.stallScaleDeg', 30); // prov: assumed, e-fold of lift lost per degree over-trimmed past the band
+  const stallDragPerDeg = knob(boat, 'aero.sheet.stallDragPerDeg', 0.004); // prov: assumed, CD0 added per degree over-trimmed past the band
+  const aoa = awaDeg - s.sheetDeg - 0.25 * Math.max(0, s.twistDeg);
+  // Ideal AoA is unreachable when the boom cannot go out far enough (deep
+  // running); that is real, not a penalty for good trim, so cap the ideal at
+  // what a 90° boom can give.
+  const target = Math.max(opt, awaDeg - 90); // prov: geometry, a boom cannot pass 90° off the centreline
+  return { devDeg: aoa - target, bandDeg, luffScaleDeg, stallScaleDeg, stallDragPerDeg };
+}
+
 /**
  * Lift and drag penalty for a sail sheeted away from its ideal angle of attack.
  * Angle of attack at mid-height = AWA − sheeting angle − twist/4.
@@ -60,22 +101,13 @@ export function sheetingEffect(
   s: Sheeting,
 ): SheetingEffect {
   if (sail === 'asym') return IDEAL_SHEETING; // ponytail: kite sheet is a DownControl, C-tier, not modelled here
-  const opt =
-    sail === 'main'
-      ? knob(boat, 'aero.sheet.optAoaMain', 16) // prov: assumed, ideal mid-height AoA for the main
-      : knob(boat, 'aero.sheet.optAoaJib', 13); // prov: assumed, ideal mid-height AoA for the jib
-  const band = knob(boat, 'aero.sheet.bandDeg', 4); // prov: assumed, half-width of the "in the groove" band
-  // Exponential decays, not linear-to-a-floor: a plateau gives the trim
-  // optimiser no gradient to climb back out of a badly eased or pinned sail.
-  const luffScaleDeg = knob(boat, 'aero.sheet.luffScaleDeg', 20); // prov: assumed, e-fold of lift lost per degree eased past the band
-  const stallScaleDeg = knob(boat, 'aero.sheet.stallScaleDeg', 30); // prov: assumed, e-fold of lift lost per degree over-trimmed past the band
-  const stallDragPerDeg = knob(boat, 'aero.sheet.stallDragPerDeg', 0.004); // prov: assumed, CD0 added per degree over-trimmed past the band
-  const aoa = awaDeg - s.sheetDeg - 0.25 * Math.max(0, s.twistDeg);
-  // Ideal AoA is unreachable when the boom cannot go out far enough (deep
-  // running); that is real, not a penalty for good trim, so cap the ideal at
-  // what a 90° boom can give.
-  const target = Math.max(opt, awaDeg - 90); // prov: geometry, a boom cannot pass 90° off the centreline
-  const dev = aoa - target; // + over-trimmed, − eased
+  const {
+    devDeg: dev, // + over-trimmed, − eased
+    bandDeg: band,
+    luffScaleDeg,
+    stallScaleDeg,
+    stallDragPerDeg,
+  } = sheetingDeviation(boat, sail, awaDeg, s);
   if (dev < -band) {
     const excess = -dev - band;
     return { clMul: 0.2 + 0.8 * Math.exp(-excess / luffScaleDeg), dCd0: 0 }; // prov: assumed floor 0.2, a flogging sail still drags the boat along

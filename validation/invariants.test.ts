@@ -1,10 +1,13 @@
 /**
- * The thirteen solver invariants (12 from the MVP plan phase 02; 13 added
- * with the per-control trim optimum, ux-excellence phase 02).
+ * The eighteen solver invariants (12 from the MVP plan phase 02; 13 added with
+ * the per-control trim optimum, ux-excellence phase 02; 14 with the backstay
+ * direction fix; 15-18 with the cockpit instrument outputs).
  *
  * These are statements about signs, symmetry and monotonicity, not about
  * magnitudes: they must hold with an empty `calibration` block and still hold
- * after the fit lands. Nothing here reads the reference polar.
+ * after the fit lands. Invariant 18 is the one exception — `pctPolar` is a
+ * ratio against the reference polar, so it has to read it — and it asserts a
+ * band taken from the model's own published residuals, not a new tolerance.
  */
 import { describe, expect, it } from 'vitest';
 import type {
@@ -28,7 +31,15 @@ import { optimal } from '../src/core/solve/optimal';
 import { scoreDockSetups } from '../src/core/solve/dock';
 import { trimmed } from '../src/core/solve/trimmed';
 import { TRIM_CONTROLS, optimalTrim, snap } from '../src/core/solve/optimalTrim';
-import { boat } from './compare';
+import {
+  angleRows,
+  boat,
+  HELD_OUT_TWS,
+  loadPolar,
+  POLAR_CREW_KG,
+  POLAR_SEA_STATE,
+  vmgRows,
+} from './compare';
 import j70 from '../data/boats/j70.json';
 
 const GEOM = geometryFor(boat);
@@ -563,6 +574,121 @@ describe('14. backstay direction matches the tuning guides', () => {
   it('is strictly more backstay at 20 kt than at 6 kt', () => {
     expect(heavy()).toBeGreaterThan(light());
   });
+});
+
+// ---------------------------------------------------------------------------
+// 15-18. Instrument outputs (cockpit phase 02)
+// ---------------------------------------------------------------------------
+
+/**
+ * The four cockpit instruments are tier C re-expressions of the invented
+ * sheeting and flying-shape layers (three of them) plus one ratio against the
+ * reference polar. Nothing here asserts a magnitude those layers do not earn:
+ * 15-17 are directions, and 18 is a band read off the model's own published
+ * residuals, not a new accuracy claim.
+ */
+describe('15. main leech stall rises with mainsheet', () => {
+  // Trimming the sheet closes the boom towards the centreline, which raises
+  // the angle of attack, which is the deviation the stall meter reads.
+  for (const c of [cond(6, 42), cond(12, 42), cond(20, 40)]) {
+    it(`TWS ${c.twsKt}: non-decreasing across mainsheet 20 / 60 / 100 %`, () => {
+      let prev = -Infinity;
+      for (const mainsheet of [20, 60, 100]) {
+        const r = trimmed(boat, controls(baseDock(), { ...baseRace(), mainsheet }), c, GEOM);
+        const f = r.instruments.leechStallFrac.value;
+        expect(f, `stall at mainsheet ${mainsheet} %`).toBeGreaterThanOrEqual(prev);
+        expect(f).toBeGreaterThanOrEqual(0);
+        expect(f).toBeLessThanOrEqual(1);
+        prev = f;
+      }
+      // And the top of the range is genuinely more stalled than the bottom.
+      expect(prev).toBeGreaterThan(0);
+    });
+  }
+});
+
+describe('16. jib leech stripe moves outboard as the lead goes aft', () => {
+  it('strictly increases across the lead car', () => {
+    const c = cond(12, 42);
+    let prev = -Infinity;
+    for (const jibLead of [0, 2, 4, 6, 8, 10]) {
+      const r = trimmed(boat, controls(baseDock(), { ...baseRace(), jibLead }), c, GEOM);
+      const s = r.instruments.jibLeechStripe;
+      expect(s, `stripe at jib lead ${jibLead}`).toBeDefined();
+      expect(s!.value, `stripe at jib lead ${jibLead}`).toBeGreaterThan(prev);
+      prev = s!.value;
+    }
+  });
+
+  it('is absent under the kite: there is no jib to read', () => {
+    const r = trimmed(boat, controls(), cond(14, 150, 'asym'), GEOM);
+    expect('jibLeechStripe' in r.instruments).toBe(false);
+  });
+});
+
+describe('17. helm load rises as the crew comes off the rail', () => {
+  it('increases as crew weight is removed at a fixed trim', () => {
+    const race = baseRace();
+    let prev = -Infinity;
+    for (const crewKg of [320, 280, 240, 200]) {
+      const r = trimmed(boat, controls(baseDock(), race), { ...cond(12, 42), crewKg }, GEOM);
+      expect(r.instruments.helmLoad.value, `helm at ${crewKg} kg`).toBeGreaterThan(prev);
+      prev = r.instruments.helmLoad.value;
+    }
+  });
+
+  it('is weather-positive on both tacks', () => {
+    const stbd = trimmed(boat, controls(), cond(12, 42), GEOM).instruments.helmLoad.value;
+    const port = trimmed(boat, controls(), cond(12, -42), GEOM).instruments.helmLoad.value;
+    expect(stbd).toBeGreaterThan(0);
+    expect(port).toBeCloseTo(stbd, 10);
+  });
+});
+
+/**
+ * 18. `pctPolar` on the rows the calibration was fitted to.
+ *
+ * The tolerance is ±10 points, not ADR 0007's 3 %/5 %. Those tolerances are
+ * the *held-out* gate; the fit rows themselves already miss them, and
+ * `validation/report.md` records why (the upwind speed plateau and the
+ * asymmetric optimum angle, both in ASSUMPTIONS.md "where the model is
+ * honestly weak"). Its largest fit-row boat-speed residual is 10.8 %, so ±10
+ * on this reading is a guard against a regression in the lookup or the solve,
+ * which is what an invariant can honestly claim here — not a re-statement of
+ * a gate this model does not pass on these rows.
+ */
+describe('18. pctPolar on the calibration fit rows', () => {
+  const polar = loadPolar();
+  if (!polar) {
+    it.skip('reference polar not present', () => {});
+  } else {
+    const fitTws = polar.twsKt.filter((t) => !HELD_OUT_TWS.includes(t));
+    for (const tws of fitTws) {
+      it(`TWS ${tws}: every fitted row reads 100 ± 10 % of polar, tier A`, () => {
+        const rows = [...vmgRows(polar, tws), ...angleRows(polar, tws)];
+        expect(rows.length, 'no fitted rows at this TWS').toBeGreaterThan(0);
+        for (const row of rows) {
+          const r = optimal(
+            boat,
+            baseDock(),
+            {
+              twsKt: tws,
+              twaDeg: row.twaDeg,
+              seaState: POLAR_SEA_STATE,
+              crewKg: POLAR_CREW_KG,
+              sailset: row.sail,
+            },
+            { optimiseTwa: false },
+            GEOM,
+          );
+          const p = r.instruments.pctPolar;
+          const label = `${row.sail} ${row.kind} ${row.twaDeg}° -> ${p.value.toFixed(1)} %`;
+          expect(p.tier, label).toBe('A');
+          expect(Math.abs(p.value - 100), label).toBeLessThanOrEqual(10);
+        }
+      });
+    }
+  }
 });
 
 // Type-level guard: the boat file really is a BoatDefinition.

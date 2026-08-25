@@ -15,6 +15,23 @@ undiagnosable.
 
 ### Added
 
+- Four cockpit instruments on every solve (`SolveResult.instruments`, protocol
+  v1, additive): main leech stall fraction, jib leech position against the
+  18/20/22" spreader stripes, a weather-helm load proxy, and boat speed as a
+  percentage of the ORC Speed Guide polar for the sail being carried. The
+  first three are tier C, direction only; `%POLAR` is tier A inside the
+  printed grid and C outside it. Assumptions and the stall meter's known
+  ceiling are in `ASSUMPTIONS.md`.
+- Race mode's readouts are now an instrument bar: BSP, %POLAR and VMG with
+  target bugs and trend lines, TWA, a heel bullet gauge against the guide's
+  wind-dependent target band, a helm load bar beside it, and one verdict
+  sentence — "0.20 kt below target: main leech stalled, ease". Learn drops the
+  angle and the helm bar and leads with the verdict; Analyse adds the two
+  leech readings. Drills keeps the old readouts card for now.
+- Solver invariants 15–18: leech stall rises with mainsheet, the jib stripe
+  moves outboard as the lead goes aft, helm load rises as the crew comes off
+  the rail, and `%POLAR` reads 100 ± 10 on every calibration fit row.
+
 - Local-first usage counters (`src/lib/telemetry.ts`): screen views, drills
   started and checked, apply-optimum, rig commits and log saves, counted in
   IndexedDB on the device. An "Improve Sailflow" card on More shows them, with

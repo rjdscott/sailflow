@@ -233,6 +233,24 @@ export interface AeroState {
 // Solver output
 // ---------------------------------------------------------------------------
 
+/**
+ * The four cues a crew watches, in the units they read them in
+ * (`solve/instruments.ts`). Additive in protocol v1.
+ */
+export interface Instruments {
+  /** Fraction of the main's leech ribbons stalled, 0..1. Tier C. */
+  leechStallFrac: Tiered;
+  /**
+   * Where the jib leech crosses the spreader, as a continuous stripe index:
+   * 0 = 18", 1 = 20", 2 = 22". Absent under the kite. Tier C.
+   */
+  jibLeechStripe?: Tiered;
+  /** Weather-helm proxy, + = weather, 1.0 ≈ firm. Tier C. */
+  helmLoad: Tiered;
+  /** Boat speed as a percentage of the reference polar's target. */
+  pctPolar: Tiered;
+}
+
 export interface SolveResult {
   converged: boolean;
   iters: number;
@@ -243,6 +261,7 @@ export interface SolveResult {
   aero: AeroState;
   rig: RigState;
   shape: Partial<Record<SailId, SailShape>>;
+  instruments: Instruments;
   /** Normalised residuals [Fx, Fy, Mx] at the returned state. */
   residuals: [number, number, number];
 }
