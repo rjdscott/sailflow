@@ -181,6 +181,24 @@ export function sectionBox(s: SectionShape, chord: number, luff: Pt, deg: number
   };
 }
 
+/**
+ * Tightest box round `pts`, grown by `pad` on every side. The crop the plan
+ * view is drawn to: feed it every point the picture can put on the canvas and
+ * it says how big the viewBox has to be, so "does anything clip?" is a unit
+ * test rather than a browser check.
+ */
+export function cropBox(pts: Pt[], pad = 0): Box {
+  if (pts.length === 0) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+  const xs = pts.map((p) => p.x);
+  const ys = pts.map((p) => p.y);
+  return {
+    minX: Math.min(...xs) - pad,
+    maxX: Math.max(...xs) + pad,
+    minY: Math.min(...ys) - pad,
+    maxY: Math.max(...ys) + pad,
+  };
+}
+
 export function unionBox(a: Box, b: Box): Box {
   return {
     minX: Math.min(a.minX, b.minX),

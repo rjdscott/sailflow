@@ -302,57 +302,69 @@ export function sailPath(tack: Pt, clew: Pt, s: SectionShape, side: Side): strin
 }
 
 // ---------------------------------------------------------------------------
-// Wind arrows
+// Wind rose
+//
+// The two arrows used to be parked on an ellipse around the whole boat, which
+// forced a viewBox twice the hull's length and left the drawing floating in
+// empty space (owner feedback, 2026-08-25). They are a rose off the windward
+// bow instead: fixed centre, fixed rim, arrows swinging inside it, labels
+// stacked underneath. Same bow-up frame as the boat, so the angles still read
+// against the deck, and nothing has to clear the transom on a run.
 // ---------------------------------------------------------------------------
 
 /**
- * The ellipse an arrow is parked on. Slightly wider than tall, because the
- * viewBox has room to spare abeam and none to spare ahead of the bowsprit.
- */
-export interface Ring {
-  rx: number;
-  ry: number;
-  /** Arrow length, drawn inward from the ring toward the boat. */
-  len: number;
-  /** Tag offset along the ring, signed: the two arrows tag opposite sides. */
-  tagOff: number;
-}
-
-/**
  * Arrow length in px, linear in true wind speed. prov: assumed — 4–25 kt is
- * the app's wind range, and 12–30 px is what the viewBox has room for at dead
- * downwind, where the arrow runs from the ring toward the bottom edge.
+ * the app's wind range, and the rose radius is what the arrow has to fit
+ * inside. Both arrows carry the true wind's strength: the apparent arrow says
+ * where the wind is, not how hard it blows, so two lengths would read as two
+ * winds.
  */
-export function arrowLength(twsKt: number, lo = 12, hi = 30): number {
+export function arrowLength(twsKt: number, lo = 9, hi = 19): number {
   return lo + clamp((twsKt - 4) / 21, 0, 1) * (hi - lo);
 }
 
 export interface Arrow {
-  /** Point of the arrow, nearest the boat. */
-  head: Pt;
+  /** On the rim, where the wind comes from. */
   tail: Pt;
-  tag: Pt;
+  /** Inboard end, where the arrowhead points. */
+  head: Pt;
 }
 
 /**
- * A wind arrow at `deg` off the bow, blowing toward the boat. The arrow lives
- * entirely outside the ring, so it never crosses the hull or the sails, and
- * its tag sits off the tail rather than further out — which is what keeps the
- * labels inside the viewBox at every angle from close-hauled to dead downwind.
+ * One rose arrow for `deg` off the bow, blowing inward from the rim. Negative
+ * `deg` is port tack and mirrors, exactly like the boat.
  */
-export function windArrow(deg: number, hub: Pt, ring: Ring): Arrow {
+export function roseArrow(deg: number, centre: Pt, radius: number, len: number): Arrow {
   const side = tackSide(deg);
   const a = (Math.abs(deg) * Math.PI) / 180;
   const u = { x: side * Math.sin(a), y: -Math.cos(a) };
-  const r = 1 / Math.hypot(u.x / ring.rx, u.y / ring.ry);
-  const at = (d: number): Pt => ({ x: hub.x + u.x * d, y: hub.y + u.y * d });
-  const tail = at(r + ring.len);
-  return {
-    head: at(r),
-    tail,
-    tag: {
-      x: tail.x + side * Math.cos(a) * ring.tagOff,
-      y: tail.y + Math.sin(a) * ring.tagOff,
-    },
-  };
+  const at = (d: number): Pt => ({ x: centre.x + u.x * d, y: centre.y + u.y * d });
+  return { tail: at(radius), head: at(radius - len) };
 }
+
+// ---------------------------------------------------------------------------
+// Plan-view layout
+//
+// One place holds the numbers the drawing and its fit test both use, as
+// SECTION_LAYOUT does for the sail sections. Cropped to the boat: the hull
+// runs nearly the full height of the viewBox, and the rose and the heel tag
+// fill the flanks the hull's own shape leaves empty.
+// ---------------------------------------------------------------------------
+
+/** Plan-view layout, in the viewBox user units the component draws in. */
+export const PLAN_LAYOUT = {
+  /** viewBox is `0 0 w h`. */
+  w: 150,
+  h: 190,
+  /** px per metre. The hull is 145 units long, so it owns the crop. */
+  scale: 21,
+  /** Stem, in viewBox coordinates: everything on the deck hangs off this. */
+  origin: { x: 76, y: 38 },
+  /**
+   * Wind rose: centre offset from the stem, signed athwartships by the tack,
+   * plus its rim radius and the two label baselines below it.
+   */
+  rose: { dx: 49, dy: 18, radius: 22, labelY: [87, 96] },
+  /** Heel figure, leeward of the transom, in the corner the sails never reach. */
+  heelTag: { dx: -40, y: 186 },
+} as const;

@@ -14,6 +14,7 @@
     unit = '',
     tick,
     target,
+    targetStale = false,
     guide,
     locked = false,
     lockReason = 'Committed at the dock, rule C.9.5.',
@@ -31,6 +32,8 @@
     tick?: number;
     /** Solver optimum, drawn as a ghost marker above the trough. */
     target?: number;
+    /** The optimum on screen predates the current trim: a re-search is running. */
+    targetStale?: boolean;
     /** Guide band [lo, hi], announced as "guide 60–75 %". */
     guide?: [number, number];
     locked?: boolean;
@@ -166,7 +169,12 @@
     {#if targetPct !== undefined}
       <!-- Hover gets the title; keyboard and AT get the same words through
            aria-valuetext, so the ghost tick is never mouse-only. -->
-      <div class="target" style="left: {targetPct}%" title={targetLabel}></div>
+      <div
+        class="target"
+        class:stale={targetStale}
+        style="left: {targetPct}%"
+        title={targetStale ? `${targetLabel} — re-searching from this trim` : targetLabel}
+      ></div>
     {/if}
     {#if locked}
       <button
@@ -316,6 +324,12 @@
     border-top: 6px solid var(--ink-2);
     transform: translate(-4px, -15px);
     pointer-events: none;
+  }
+
+  /* The answer on screen was found from a trim you have since moved: still
+     shown, visibly not current (audit ux-02 H-07). */
+  .target.stale {
+    opacity: 0.35;
   }
 
   .tick {

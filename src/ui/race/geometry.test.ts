@@ -8,6 +8,7 @@ import {
   sectionBox,
   sectionPath,
   sectionPoints,
+  cropBox,
   telltaleState,
   twistRelativeDeg,
   unionBox,
@@ -208,5 +209,30 @@ describe('SECTION_LAYOUT', () => {
   it('keeps the two sail panels from overlapping', () => {
     const [mainX, jibX] = SECTION_LAYOUT.luffX;
     expect(jibX).toBeGreaterThan(mainX + SECTION_LAYOUT.chord);
+  });
+});
+
+describe('cropBox', () => {
+  it('is the tightest box round the points', () => {
+    expect(
+      cropBox([
+        { x: 3, y: -1 },
+        { x: -2, y: 7 },
+        { x: 1, y: 2 },
+      ]),
+    ).toEqual({
+      minX: -2,
+      maxX: 3,
+      minY: -1,
+      maxY: 7,
+    });
+  });
+
+  it('grows by the pad on every side', () => {
+    expect(cropBox([{ x: 0, y: 0 }], 5)).toEqual({ minX: -5, maxX: 5, minY: -5, maxY: 5 });
+  });
+
+  it('returns an empty box rather than an infinite one with no points', () => {
+    expect(cropBox([])).toEqual({ minX: 0, maxX: 0, minY: 0, maxY: 0 });
   });
 });

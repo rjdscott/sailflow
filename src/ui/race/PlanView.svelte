@@ -2,6 +2,7 @@
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion, Tween } from 'svelte/motion';
   import type { AeroState, SailShape } from '../../core/types';
+  import Sheet from '../components/Sheet.svelte';
   import {
     arrowLength,
     boomAngle,
@@ -12,10 +13,11 @@
     MAX_DRAWN_HEEL,
     jibSheetAngle,
     openBy,
+    PLAN_LAYOUT,
+    roseArrow,
     sailPath,
     sailPoints,
     tackSide,
-    windArrow,
     localAoa,
     luffRibbon,
     leechRibbon,
@@ -41,26 +43,18 @@
   // off the boat JSON). Starboard tack on positive TWA, mirrored on negative.
   // Sheeting angles are read off the sheet controls, not solved from sheet
   // loads — the picture answers a slider the way the boat does, and the
-  // caption says so. Everything lives in one viewBox, so the card sets the
-  // size and nothing ever clips.
-  const VIEW = { w: 320, h: 264 };
-  /** px per metre. Fixed: the ring radii below are sized against it. */
-  const SCALE = 21;
-  const D = deck(SCALE);
-  /** Wind hub: the middle of the boat's whole length, bowsprit tip to transom. */
-  const HUB = { x: VIEW.w / 2, y: 132 };
-  /** Stem, in viewBox coordinates: everything on the deck hangs off this. */
-  const ORIGIN = { x: HUB.x, y: HUB.y - (D.sternY + D.spritTip.y) / 2 };
+  // explainer says so. The viewBox is cropped to the boat (`PLAN_LAYOUT`),
+  // which is what makes the hull the size of the card rather than a detail in
+  // the middle of it; boat.test.ts holds every clearance against those numbers.
+  const L = PLAN_LAYOUT;
+  const D = deck(L.scale);
+  const ORIGIN = L.origin;
   const MAST = { x: ORIGIN.x, y: ORIGIN.y + D.mast.y };
   const TACK = { x: ORIGIN.x, y: ORIGIN.y };
+  /** Heel pivot: the middle of the boat's whole length, bowsprit tip to transom. */
+  const HUB = { x: ORIGIN.x, y: ORIGIN.y + (D.sternY + D.spritTip.y) / 2 };
   /** Inner shadow: the deck outline shrunk just inside itself. */
   const SHADE = `translate(0 ${(D.sternY * 0.55).toFixed(2)}) scale(0.94 0.98) translate(0 ${(-D.sternY * 0.55).toFixed(2)})`;
-
-  // One ring for both arrows, centred on the boat, wide enough to clear the
-  // bowsprit and the transom at every angle. The two tags sit on opposite
-  // sides of their arrows, which is what keeps them apart when TWA and AWA
-  // are only a few degrees apart. boat.test.ts holds both clearances.
-  const RING = { rx: 110, ry: 100 };
 
   /**
    * Solves land in steps; the drawing shouldn't. prov: assumed 250 ms.
@@ -73,9 +67,9 @@
     easing: cubicOut,
   };
 
+  let explaining = $state(false);
+
   const side = $derived(tackSide(twaDeg));
-  /** Bottom corner to windward: the one place the wind arrows never sweep. */
-  const heelX = $derived(side === 1 ? 50 : VIEW.w - 50);
   const ctl = $derived(race.controls.race);
   const main = $derived(race.result?.shape.main);
 
@@ -106,14 +100,17 @@
     jib && jibUp ? ghost(TACK, jibDeg, D.jibFootPx * DIMS.headChord.jib, jib) : '',
   );
 
-  // Both arrows carry the true wind's strength: the apparent arrow says where
-  // the wind is, not how hard it blows, so two lengths would read as two winds.
+  // The rose sits off the windward bow and mirrors with the tack, so it is
+  // always on the side the wind is coming from and never over the sails.
+  const rose = $derived({ x: ORIGIN.x + side * L.rose.dx, y: ORIGIN.y + L.rose.dy });
   const armLen = $derived(arrowLength(conditions.twsKt));
-  const twa = $derived(windArrow(twaDeg, HUB, { ...RING, len: armLen, tagOff: 28 }));
-  const awa = $derived(windArrow(side * aero.awaDeg, HUB, { ...RING, len: armLen, tagOff: -28 }));
+  const twa = $derived(roseArrow(twaDeg, rose, L.rose.radius, armLen));
+  const awa = $derived(roseArrow(side * aero.awaDeg, rose, L.rose.radius, armLen));
 
   /** Plan view has no third axis: the tilt is a metaphor, and it is capped. */
   const tiltDeg = $derived(drawnHeel(heelDeg, side));
+  /** The solved angle, uncapped, in the corner the sails never reach. */
+  const heelX = $derived(ORIGIN.x + side * L.heelTag.dx);
 
   // Target entry AoA; the shape's entryDeg mixes datums (camber + inhauler) so it is not used here.
   const entryDeg = 12; // prov: assumed
@@ -159,22 +156,24 @@
   );
 
   const fmt = (v: number) => Math.abs(v).toFixed(0);
+
+  /** One string, so the accessible name is not a wrapped attribute literal. */
+  const alt = $derived(
+    `Plan view of the boat, bow up, on ${side === 1 ? 'starboard' : 'port'} tack, ` +
+      `heeling ${fmt(heelDeg)} degrees, true wind ${fmt(twaDeg)} degrees off the bow`,
+  );
 </script>
 
-<figure>
-  <svg
-    viewBox="0 0 {VIEW.w} {VIEW.h}"
-    role="img"
-    aria-label="Plan view of the boat, bow up, on {side === 1 ? 'starboard' : 'port'} tack"
-  >
+<div class="plan">
+  <svg viewBox="0 0 {L.w} {L.h}" role="img" aria-label={alt}>
     <defs>
       <marker
         id="plan-cap-twa"
         viewBox="0 0 8 8"
         refX="7"
         refY="4"
-        markerWidth="4.5"
-        markerHeight="4.5"
+        markerWidth="4"
+        markerHeight="4"
         orient="auto"
       >
         <path class="cap-twa" d="M 0 0.6 L 8 4 L 0 7.4 z" />
@@ -184,37 +183,13 @@
         viewBox="0 0 8 8"
         refX="7"
         refY="4"
-        markerWidth="4.5"
-        markerHeight="4.5"
+        markerWidth="4"
+        markerHeight="4"
         orient="auto"
       >
         <path class="cap-awa" d="M 0 0.6 L 8 4 L 0 7.4 z" />
       </marker>
     </defs>
-
-    <!-- Wind first, so the boat sits on top of it. -->
-    <g class="wind">
-      <line
-        class="twa"
-        x1={twa.tail.x.toFixed(2)}
-        y1={twa.tail.y.toFixed(2)}
-        x2={twa.head.x.toFixed(2)}
-        y2={twa.head.y.toFixed(2)}
-        marker-end="url(#plan-cap-twa)"
-      />
-      <line
-        class="awa"
-        x1={awa.tail.x.toFixed(2)}
-        y1={awa.tail.y.toFixed(2)}
-        x2={awa.head.x.toFixed(2)}
-        y2={awa.head.y.toFixed(2)}
-        marker-end="url(#plan-cap-awa)"
-      />
-      <text class="tag" x={twa.tag.x.toFixed(2)} y={twa.tag.y.toFixed(2)}>TWA {fmt(twaDeg)}°</text>
-      <text class="tag accent" x={awa.tag.x.toFixed(2)} y={awa.tag.y.toFixed(2)}>
-        AWA {fmt(aero.awaDeg)}°
-      </text>
-    </g>
 
     <!-- Everything that heels: deck, sails and the ribbons flying off them,
          leaning to leeward about the middle of the boat. -->
@@ -274,58 +249,106 @@
       {/each}
     </g>
 
-    <!-- Heel, seen from astern, parked clear of the plan. -->
-    <g class="heel" transform="translate({heelX} 226)">
-      <line class="water" x1="-30" y1="0" x2="30" y2="0" />
-      <!-- The inset shows the real angle, uncapped; only the plan-view tilt
-           is a metaphor. Rotation is a CSS transform so it can ease. -->
-      <g class="heel-boat" style="transform: rotate({(-side * heelDeg).toFixed(2)}deg)">
-        <path class="keel" d="M -2 5 L -1.4 20 L 1.4 20 L 2 5 Z" />
-        <path class="hull" d="M -22 -8 C -21 0 -15 6 0 6 C 15 6 21 0 22 -8 Z" />
-        <line class="mast" x1="0" y1="-8" x2="0" y2="-40" />
-      </g>
-      <text class="tag" x="0" y="32">Heel {fmt(heelDeg)}°</text>
+    <!-- Wind rose, off the windward bow: both arrows blow in from the rim,
+         labels stacked underneath so they never chase the arrowheads. -->
+    <g class="wind">
+      <circle class="rim" cx={rose.x} cy={rose.y} r={L.rose.radius} />
+      <line
+        class="twa"
+        x1={twa.tail.x.toFixed(2)}
+        y1={twa.tail.y.toFixed(2)}
+        x2={twa.head.x.toFixed(2)}
+        y2={twa.head.y.toFixed(2)}
+        marker-end="url(#plan-cap-twa)"
+      />
+      <line
+        class="awa"
+        x1={awa.tail.x.toFixed(2)}
+        y1={awa.tail.y.toFixed(2)}
+        x2={awa.head.x.toFixed(2)}
+        y2={awa.head.y.toFixed(2)}
+        marker-end="url(#plan-cap-awa)"
+      />
+      <text class="tag" x={rose.x} y={L.rose.labelY[0]}>TWA {fmt(twaDeg)}°</text>
+      <text class="tag accent" x={rose.x} y={L.rose.labelY[1]}>AWA {fmt(aero.awaDeg)}°</text>
     </g>
+
+    <!-- Heel is the lean of the hull itself; the figure carries the solved
+         angle, because the lean is capped and the number is not. -->
+    <text class="tag" x={heelX} y={L.heelTag.y}>Heel {fmt(heelDeg)}°</text>
   </svg>
 
-  <figcaption>
-    Bow up, {side === 1 ? 'starboard' : 'port'} tack. Camber, twist, heel and the wind angles are solved;
-    boom and jib sheeting angles are read off the sheet controls, not from sheet loads. The lean of the
-    plan view is illustrative and capped at {MAX_DRAWN_HEEL}°; the inset carries the solved heel.
-  </figcaption>
-</figure>
+  <div class="side">
+    <p class="caption">
+      Bow up, {side === 1 ? 'starboard' : 'port'} tack. Sheeting angles are read off the controls.
+      <button
+        type="button"
+        class="info"
+        onclick={() => (explaining = true)}
+        aria-label="How to read this picture">?</button
+      >
+    </p>
 
-<!-- The ribbon colours mean three states, and nothing on screen said which
-     (audit ux-01 M-02's sibling complaint: colour with no legend). A sibling
-     of the figure, not a child: `figcaption` has to stay its last child. -->
-<ul class="legend">
-  <li><span class="swatch streaming"></span>Streaming — flow attached, this is the target</li>
-  <li><span class="swatch lifting"></span>Lifting — entry too high, bear away or ease</li>
-  <li><span class="swatch stalled"></span>Stalled — over-trimmed, the sail is choking</li>
-</ul>
+    <!-- The ribbon colours mean three states, and nothing on screen said which
+         (audit ux-01 M-02's sibling complaint: colour with no legend). -->
+    <ul class="legend">
+      <li title="Flow attached: this is the target.">
+        <span class="swatch streaming"></span>Streaming
+      </li>
+      <li title="Entry too high: bear away or ease.">
+        <span class="swatch lifting"></span>Lifting
+      </li>
+      <li title="Over-trimmed: the sail is choking.">
+        <span class="swatch stalled"></span>Stalled
+      </li>
+    </ul>
 
-<dl class="mono">
-  <div>
-    <dt>Main draft</dt>
-    <dd>{((main?.half.draft ?? 0) * 100).toFixed(1)}%</dd>
+    <dl class="mono">
+      <div>
+        <dt>Main draft</dt>
+        <dd>{((main?.half.draft ?? 0) * 100).toFixed(1)}%</dd>
+      </div>
+      <div>
+        <dt>Jib draft</dt>
+        <dd>{((jib?.half.draft ?? 0) * 100).toFixed(1)}%</dd>
+      </div>
+      <div>
+        <dt>Twist</dt>
+        <dd>{(main?.threeQuarter.twistDeg ?? 0).toFixed(0)}°</dd>
+      </div>
+      <div>
+        <dt>Flat</dt>
+        <dd>{aero.flat.toFixed(2)}</dd>
+      </div>
+    </dl>
   </div>
-  <div>
-    <dt>Jib draft</dt>
-    <dd>{((jib?.half.draft ?? 0) * 100).toFixed(1)}%</dd>
-  </div>
-  <div>
-    <dt>Twist</dt>
-    <dd>{(main?.threeQuarter.twistDeg ?? 0).toFixed(0)}°</dd>
-  </div>
-  <div>
-    <dt>Flat</dt>
-    <dd>{aero.flat.toFixed(2)}</dd>
-  </div>
-</dl>
+</div>
+
+<Sheet bind:open={explaining} title="Reading the boat">
+  <p>
+    Bow up, on the tack the true wind angle says. Camber, twist, heel and the wind angles are
+    solved; boom and jib sheeting angles are read off the sheet controls, not from sheet loads.
+  </p>
+  <p>
+    The lean of the plan view is illustrative and capped at {MAX_DRAWN_HEEL}°. The Heel figure is
+    the solved angle, uncapped.
+  </p>
+  <p>The telltale ribbons carry three states:</p>
+  <ul>
+    <li><strong>Streaming</strong> — flow attached, this is the target.</li>
+    <li><strong>Lifting</strong> — entry too high, bear away or ease.</li>
+    <li><strong>Stalled</strong> — over-trimmed, the sail is choking.</li>
+  </ul>
+</Sheet>
 
 <style>
-  figure {
-    margin: 0;
+  /* Phone and tablet: picture over facts. From 1024 the hero card is wide and
+     the boat is tall, so the facts move into the flank the hull leaves empty
+     — which is what takes the card from ~660 px to ~430 px. */
+  .plan {
+    display: grid;
+    gap: var(--space-3);
+    align-items: start;
   }
 
   svg {
@@ -336,17 +359,53 @@
     margin-inline: auto;
   }
 
-  figcaption {
-    margin-top: var(--space-2);
+  @media (min-width: 1024px) {
+    .plan {
+      grid-template-columns: auto minmax(160px, 1fr);
+      gap: var(--space-4);
+    }
+
+    /* Height-driven, so the card's height is the picture's height and the
+       aspect ratio picks the width. */
+    svg {
+      width: auto;
+      height: 360px;
+      max-height: none;
+      max-width: 100%;
+      margin-inline: 0;
+    }
+  }
+
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .caption {
+    margin: 0;
     font-size: var(--text-xs);
+    line-height: 1.5;
     color: var(--ink-2);
+  }
+
+  .info {
+    padding: 0 6px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-2);
+    font: inherit;
+    line-height: 1.4;
+    cursor: pointer;
   }
 
   .legend {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-1) var(--space-3);
-    margin: var(--space-2) 0 0;
+    margin: 0;
     padding: 0;
     list-style: none;
     font-size: var(--text-xs);
@@ -383,7 +442,7 @@
   .hull {
     fill: var(--hull);
     stroke: var(--ink);
-    stroke-width: 1.25;
+    stroke-width: 0.9;
     stroke-linejoin: round;
   }
 
@@ -392,21 +451,21 @@
     fill: none;
     stroke: var(--ink);
     stroke-opacity: 0.06;
-    stroke-width: 4;
+    stroke-width: 3;
   }
 
   .well {
     fill: var(--surface);
     stroke: var(--ink);
-    stroke-width: 1.25;
+    stroke-width: 0.9;
     stroke-linejoin: round;
   }
 
   .centreline {
     fill: none;
     stroke: var(--muted);
-    stroke-width: 1;
-    stroke-dasharray: 4 4;
+    stroke-width: 0.7;
+    stroke-dasharray: 3 3;
   }
 
   .sprit {
@@ -427,7 +486,7 @@
     fill: var(--accent);
     fill-opacity: 0.18;
     stroke: var(--accent);
-    stroke-width: 1.5;
+    stroke-width: 1.1;
     stroke-linejoin: round;
   }
 
@@ -436,25 +495,32 @@
     fill-opacity: 0.07;
     stroke: var(--accent);
     stroke-opacity: 0.4;
-    stroke-width: 1;
+    stroke-width: 0.7;
   }
 
   .boom {
     stroke: var(--ink);
-    stroke-width: 2;
+    stroke-width: 1.4;
     stroke-linecap: round;
   }
 
   /* Wind ------------------------------------------------------------------ */
 
   .wind line {
-    stroke-width: 1.5;
+    stroke-width: 1.2;
     stroke-linecap: round;
+  }
+
+  .rim {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 0.7;
+    stroke-dasharray: 2 3;
   }
 
   .wind .twa {
     stroke: var(--ink-2);
-    stroke-dasharray: 5 3;
+    stroke-dasharray: 4 2.5;
   }
 
   .wind .awa {
@@ -472,10 +538,10 @@
   .tag {
     fill: var(--ink-2);
     font-family: var(--font-sans);
-    font-size: var(--tag-size, 11px);
+    font-size: 7px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
     text-anchor: middle;
   }
 
@@ -508,24 +574,6 @@
     fill: var(--bad);
   }
 
-  /* Heel ------------------------------------------------------------------ */
-
-  .heel .water {
-    stroke: var(--accent);
-    stroke-width: 1.25;
-    stroke-opacity: 0.6;
-  }
-
-  .heel .mast {
-    stroke: var(--ink);
-    stroke-width: 1.5;
-    stroke-linecap: round;
-  }
-
-  .heel .keel {
-    fill: var(--muted);
-  }
-
   /* Motion -----------------------------------------------------------------
 
      transform/opacity only, so nothing here can trigger layout, and every rule
@@ -537,16 +585,8 @@
     transform-box: view-box;
   }
 
-  /* Its local origin is already the waterline it pivots on; the CSS default
-     of 50% would swing it out of the inset. */
-  .heel-boat {
-    transform-box: view-box;
-    transform-origin: 0 0;
-  }
-
   @media (prefers-reduced-motion: no-preference) {
-    .boat,
-    .heel-boat {
+    .boat {
       transition: transform 300ms ease-out;
     }
 
@@ -598,16 +638,17 @@
   /* Readouts -------------------------------------------------------------- */
 
   dl {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-4);
-    margin: var(--space-3) 0 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-1) var(--space-4);
+    margin: 0;
     padding-top: var(--space-3);
     border-top: 1px solid var(--line);
   }
 
   dl div {
     display: flex;
+    justify-content: space-between;
     gap: var(--space-2);
   }
 

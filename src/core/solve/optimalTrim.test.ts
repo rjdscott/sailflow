@@ -73,6 +73,30 @@ describe('optimalTrim', () => {
     expect(b).toEqual(a);
   });
 
+  // audit ux-02 H-07: one descent is path-dependent, so the ticks depended on
+  // the order the sliders were touched. Two seeds, best wins.
+  it('keeps the better of the two seeded descents, and is deterministic', () => {
+    const only = (seed: RaceControls) =>
+      optimalTrim(boat, from(mistrim), up, { seeds: [seed] }, GEOM);
+    const fromStart = only(mistrim);
+    const fromBase = only(baseRace());
+    const both = optimalTrim(boat, from(mistrim), up, {}, GEOM); // default seeds
+
+    expect(both.result.vmgKt.value).toBeGreaterThanOrEqual(fromStart.result.vmgKt.value);
+    expect(both.result.vmgKt.value).toBeGreaterThanOrEqual(fromBase.result.vmgKt.value);
+    // The winner is one of the two descents, not a blend of them.
+    expect([fromStart.race, fromBase.race]).toContainEqual(both.race);
+    expect(optimalTrim(boat, from(mistrim), up, {}, GEOM)).toEqual(both);
+  });
+
+  it('seeds only the controls it searches, never the halyards or inhauler', () => {
+    const seed = { ...baseRace(), inhauler: 99, mainHalyard: 99, jibHalyard: 99 };
+    const o = optimalTrim(boat, from(mistrim), up, { seeds: [seed] }, GEOM);
+    expect(o.race.inhauler).toBe(mistrim.inhauler);
+    expect(o.race.mainHalyard).toBe(mistrim.mainHalyard);
+    expect(o.race.jibHalyard).toBe(mistrim.jibHalyard);
+  });
+
   it('returns controls on the legal grid, inside min/max', () => {
     for (const cond of [up, dn]) {
       const o = optimalTrim(boat, from(mistrim), cond, {}, GEOM);

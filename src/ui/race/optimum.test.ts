@@ -73,9 +73,19 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe('optimumKey', () => {
-  it('ignores the race controls', () => {
+  // audit ux-02 H-07: the answer is seeded from the trim on screen, so a
+  // different trim is a different question.
+  it('separates a changed trim', () => {
     const a = controls();
     const b = controls({ race: { ...BASE_RACE, backstay: 95, mainsheet: 20 } });
+    expect(optimumKey(b, CONDITION)).not.toBe(optimumKey(a, CONDITION));
+  });
+
+  it('ignores the controls the search cannot move', () => {
+    const a = controls();
+    const b = controls({
+      race: { ...BASE_RACE, inhauler: 99, mainHalyard: 99, jibHalyard: 99 },
+    });
     expect(optimumKey(b, CONDITION)).toBe(optimumKey(a, CONDITION));
   });
 
@@ -89,13 +99,51 @@ describe('optimumKey', () => {
 });
 
 describe('OptimumStore.request', () => {
-  it('does not re-search when only a race slider moved', async () => {
+  it('re-searches when a trim slider settles, once per drag', async () => {
     const { client, calls } = deferredClient();
     const store = new OptimumStore(client);
 
     store.request(controls(), CONDITION);
-    store.request(controls({ race: { ...BASE_RACE, backstay: 80 } }), CONDITION);
+    await vi.advanceTimersByTimeAsync(OPTIMUM_DEBOUNCE_MS);
+    expect(calls).toHaveLength(1);
+
+    // A drag: every frame re-keys, the debounce collapses them into one search
+    // seeded from where the thumb stopped.
+    for (const backstay of [60, 70, 80]) {
+      store.request(controls({ race: { ...BASE_RACE, backstay } }), CONDITION);
+    }
+    expect(store.stale).toBe(false); // no answer yet, so nothing to go stale
+    await vi.advanceTimersByTimeAsync(OPTIMUM_DEBOUNCE_MS);
+    expect(calls).toHaveLength(2);
+    expect(calls[1].req.controls.race.backstay).toBe(80);
+  });
+
+  it('marks the standing answer stale while a trim change is searching', async () => {
+    const { client, calls } = deferredClient();
+    const store = new OptimumStore(client);
+
+    store.request(controls(), CONDITION);
+    await vi.advanceTimersByTimeAsync(OPTIMUM_DEBOUNCE_MS);
+    calls[0].resolve(optimalTrim(6.0));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.stale).toBe(false);
+
     store.request(controls({ race: { ...BASE_RACE, mainsheet: 40 } }), CONDITION);
+    expect(store.stale).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(OPTIMUM_DEBOUNCE_MS);
+    calls[1].resolve(optimalTrim(6.2));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.stale).toBe(false);
+  });
+
+  it('does not re-search when a halyard or the inhauler moves', async () => {
+    const { client, calls } = deferredClient();
+    const store = new OptimumStore(client);
+
+    store.request(controls(), CONDITION);
+    store.request(controls({ race: { ...BASE_RACE, inhauler: 80 } }), CONDITION);
+    store.request(controls({ race: { ...BASE_RACE, mainHalyard: 20 } }), CONDITION);
 
     await vi.advanceTimersByTimeAsync(OPTIMUM_DEBOUNCE_MS);
     expect(calls).toHaveLength(1);

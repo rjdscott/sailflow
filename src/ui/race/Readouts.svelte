@@ -1,18 +1,23 @@
 <script lang="ts">
   import type { SolveResult, Tier } from '../../core/types';
-  import { fmt, round } from '../format';
+  import { fmt, targetOf } from '../format';
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
   import { OPTIMUM_REASON, OPTIMUM_TIER } from './optimum.svelte';
+  import type { Objective } from './store.svelte';
 
   let {
     result,
     twaDeg,
+    objective,
     variant = 'hero',
     busy = false,
     target,
   }: {
     result: SolveResult;
     twaDeg: number;
+    /** What "faster" means here. Downwind VMG is negative towards the mark, so
+        the gap to the target has to be signed against it, not against zero. */
+    objective: Objective;
     /** `hero` = three big readouts + a quiet row (phone). `strip` = the sticky
         desktop metrics band, every number the same size. */
     variant?: 'hero' | 'strip';
@@ -31,21 +36,13 @@
   }
 
   /**
-   * "target 5.8 (+0.3)". The delta is ink, never red or green: the optimum is
-   * somewhere to steer towards, not a mark you are failing (ux-01 M-02, M-09).
+   * The delta is ink, never red or green: the optimum is somewhere to steer
+   * towards, not a mark you are failing (ux-01 M-02, M-09). One convention
+   * across the whole card — positive means the target is faster than you —
+   * which downwind means flipping the raw difference (ux-02 M-09).
    */
-  function targetOf(
-    value: number,
-    to: number | undefined,
-    decimals: number,
-  ): Metric['target'] | undefined {
-    if (to === undefined) return undefined;
-    const d = round(to - value, decimals);
-    return {
-      text: fmt(to, decimals),
-      delta: `${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d).toFixed(decimals)}`,
-    };
-  }
+  const vmgBetter = $derived(objective === 'vmgDown' ? ('less' as const) : ('more' as const));
+  const DELTA_TITLE = 'Gap to the target: + means the target is faster than you.';
 
   // Only the solver's own tiered outputs carry a badge. AWA and flat come out
   // of the aero state untiered, so they get none rather than an invented one.
@@ -63,7 +60,7 @@
       text: fmt(result.vmgKt.value, 2),
       unit: 'kt',
       tier: result.vmgKt.tier,
-      target: targetOf(result.vmgKt.value, target?.vmgKt, 2),
+      target: targetOf(result.vmgKt.value, target?.vmgKt, 2, vmgBetter),
     },
   ]);
 
@@ -102,7 +99,7 @@
     {#if m.target}
       <span class="target">
         target {m.target.text}
-        <span class="delta tabular-nums">{m.target.delta}</span>
+        <span class="delta tabular-nums" title={DELTA_TITLE}>{m.target.delta}</span>
         <ConfidenceBadge tier={OPTIMUM_TIER} reason={OPTIMUM_REASON} />
       </span>
     {/if}
