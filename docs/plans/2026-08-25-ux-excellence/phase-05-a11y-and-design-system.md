@@ -125,3 +125,4 @@ existing `tick` when absent) and `lockReason?: string` (defaults to "Committed
 at the dock, rule C.9.5."). `Segmented` and `ConfidenceBadge` are unchanged.
 
 `make check` green: docs, lint, svelte-check 0 errors 0 warnings, 634 tests.
+- 2026-08-25 — Merged as PR #30. Emoji swaps in ControlPanel/Dock and Tabs adoption in Race handed to the phase-02 UI PR and the phase-03 latency PR; M-06 to the latency PR. Phase 🟢.

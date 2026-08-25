@@ -75,3 +75,4 @@ them stream; toggle reduced motion and confirm stillness.
   user motion follows the system. If a toggle lands, it wires into the two
   `EASE` objects and one media query.
 - `make check` green (625 tests, svelte-check 0 errors).
+- 2026-08-25 — Merged as PR #29. Chevron magnitude tooltip and telltale legend handed to the phase-02 UI PR. Phase 🟢.

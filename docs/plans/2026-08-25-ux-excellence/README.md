@@ -25,12 +25,12 @@ already exists as `optimal` with `optimiseTwa: false`).
 
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
-| 00 | [P0 defects](phase-00-p0-defects.md) | 🟡 In progress | 2026-08-25 |
-| 01 | [Conditions and point of sail](phase-01-conditions-and-point-of-sail.md) | 🔵 Not started | none |
-| 02 | [Optimise to target](phase-02-optimise-to-target.md) | 🔵 Not started | none |
-| 03 | [Phone flow and loading states](phase-03-phone-flow.md) | 🔵 Not started | none |
-| 04 | [Motion](phase-04-motion.md) | 🔵 Not started | none |
-| 05 | [Accessibility and design system](phase-05-a11y-and-design-system.md) | 🔵 Not started | none |
+| 00 | [P0 defects](phase-00-p0-defects.md) | 🟢 Completed | 2026-08-25 |
+| 01 | [Conditions and point of sail](phase-01-conditions-and-point-of-sail.md) | 🟢 Completed | 2026-08-25 |
+| 02 | [Optimise to target](phase-02-optimise-to-target.md) | 🟡 In progress | 2026-08-25 |
+| 03 | [Phone flow and loading states](phase-03-phone-flow.md) | 🟡 In progress | 2026-08-25 |
+| 04 | [Motion](phase-04-motion.md) | 🟢 Completed | 2026-08-25 |
+| 05 | [Accessibility and design system](phase-05-a11y-and-design-system.md) | 🟢 Completed | 2026-08-25 |
 | 06 | [Content and comparison](phase-06-content-and-comparison.md) | 🔵 Not started | none |
 
 ## Critical files
