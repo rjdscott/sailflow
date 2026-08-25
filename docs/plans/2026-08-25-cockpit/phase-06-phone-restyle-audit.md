@@ -177,3 +177,36 @@ plan view's svg read it, so the swap between them still moves nothing.
   concurrent half of this phase; audit ux-03 and the plan README state
   section are still open.
 - **2026-08-25 — grid rebalanced after a live look.** At a 715 px viewport the agent's equal-ish rows left the 3D stage 112 px tall and every panel with a horizontal scrollbar. Now: hero row `minmax(300px, 1fr)`, Helm/Rig row `minmax(150px, 0.55fr)`, panel bodies clip horizontally, the hero caption is visually hidden in the cockpit; and below 800 px viewport height the page scrolls with a fixed 360 px hero row instead of a one-screen lock (prov: assumed threshold). Playwright asserts one-screen only at ≥ 800 px tall and a ≥ 250 px hero below it. Measured: 1388×715 → page 1421 px, hero 296 px; 1468×815 → one screen, hero 236 px.
+
+### 2026-08-25 — audit ux-03 H-05 and H-11
+
+**H-05, the puff cue was a step behind.** `PuffPlayer` read `race.result` in
+`#playStep`, immediately after writing the new wind — the previous step's
+solve — so the gust's 14 kt peak was classified from 12 kt heel and read
+"Underpowered: weight up, point, trim." at 15° of heel, with the `lit` panel
+order stale to match. The read moved into `#next`'s poll-loop exit, which now
+does two jobs in order: wait out `race.busy` / `optimum.busy` / `optimum.stale`
+(200 ms poll, 3 s cap, unchanged), light the panels off the solve that landed,
+then hold the step for what is left of its own dwell. The settle is spent out
+of `PUFF_STEP_MS`, so a sequence still runs at one step per 1.6 s when the
+solver keeps up. Between the condition change and the solve landing the cue is
+blank rather than wrong. `puffPlayer.test.ts` walks the whole gust with the
+audit's own measured heels (8 kt → 4°, 10 → 6°, 12 → 9°, 14 → 15°) and asserts
+every step's state equals what the pure `puff.ts` classifier says for that
+step's solve; the peak is `over`. It fails on the old code with `under` at the
+peak.
+
+**H-11, hero first on the phone.** The plan README asks for "hero first,
+sticky panel tabs" and what shipped had the hero 1045 px down under a strip
+whose every tab scrolled past it. A new `@media (max-width: 719px)` block
+orders the flex column head / hero / tabs / bar / insight / panels /
+disagree — `order` only, no DOM change, so the desktop grid stays free to
+order the same elements its own way. Measured at 390×844 before any scroll:
+hero top 302 px (was 1045), tabs 801, instrument band 877. The strip is still
+`position: sticky` and still pins at `top: 0`; `tests/ui/race.spec.ts` now
+asserts the hero's top is inside the first viewport and above both the strip
+and the band, alongside the existing sticky and scroll-to-panel assertions.
+
+**Gates.** `make check` green (10 doc tests, eslint + prettier clean,
+svelte-check 1031 files / 0 errors, vitest 70 files / 1109 tests).
+`pnpm test:ui` 13 passed — no screenshot baseline drift, so no regeneration.
