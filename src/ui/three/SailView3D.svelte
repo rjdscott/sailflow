@@ -178,10 +178,12 @@
       varying float vSpan;
       void main() {
         vSpan = aUv.x;
-        // A curling luff is an unloaded one: its ribbons stop streaming, hang
-        // and flap. prov: assumed 0.9 of droop and 5x the wave — a drawn cue
-        // for a threshold that is geometric (ADR 0017), not measured flutter.
-        vec3 dir = normalize(aDir - vec3(0.0, aLimp * 0.9, 0.0));
+        // A curling luff is an unloaded one, and it folds to windward. The
+        // fold direction is geometry and arrives on aDir (buildTelltales);
+        // aLimp is left to say how hard the ribbon flutters. prov: assumed
+        // 5x the wave — a drawn cue for a threshold that is geometric
+        // (ADR 0017), not measured flutter.
+        vec3 dir = normalize(aDir);
         float wave = sin(uTime * 6.0 + aPhase + aUv.x * 5.0) * (0.05 + aLimp * 0.2) * aUv.x;
         // prov: assumed 0.39 m ribbon, 1.5x the first cut: at 0.26 m they read
         // as specks from the leeward-quarter preset, which is the flow cue the
@@ -422,7 +424,22 @@
    * reads as a column of ribbons up the luff rather than three loose specks.
    */
   const CURL_RIBBON_CHORD = 0.06;
-  const CURL_RIBBON_HEIGHTS = [0.15, 0.35, 0.55, 0.75, 0.9];
+  /**
+   * Where the curl is, as measured: it begins at **¾ height** and travels down
+   * as "a spanwise propagating wave going downwards", and the luff folds
+   * toward the **windward** side (research `2026-08-25-spinnaker` doc 02 §5,
+   * `F1` Ch. 4; Quantum puts the extent at "the top 50 percent of the luff").
+   * prov: published for the origin, the downward travel and the fold
+   * direction. The ribbons are listed top-down so the phase step makes the
+   * fold run downwards rather than up.
+   */
+  const CURL_RIBBON_HEIGHTS = [0.75, 0.67, 0.58, 0.5];
+  /**
+   * How far a folding ribbon leaves the streaming direction, 0–1.
+   * prov: assumed 0.85 — a drawn cue for a threshold that is geometric
+   * (ADR 0017), not measured flutter. Only the direction is claimed.
+   */
+  const CURL_FOLD = 0.85;
 
   /** Telltale roots: jib luff pair (aft of the wire) and upper leech, main leech. */
   function buildTelltales(
@@ -430,6 +447,7 @@
     jib: SailMesh | null,
     kite: SailMesh | null,
     curl: boolean,
+    side: Side,
   ): void {
     const root: number[] = [];
     const dir: number[] = [];
@@ -459,9 +477,16 @@
     };
 
     let ph = 0;
-    const ribbon = (mesh: SailMesh, row: number, j: number, lift: number, lp = 0): void => {
-      const { root, along } = ribbonAnchor(mesh, row, j, lift);
-      add(root, along, [0, 1, 0], ph, lp);
+    const ribbon = (
+      mesh: SailMesh,
+      row: number,
+      j: number,
+      lift: number,
+      lp = 0,
+      dir?: Vec3,
+    ): void => {
+      const a = ribbonAnchor(mesh, row, j, lift);
+      add(a.root, dir ?? a.along, [0, 1, 0], ph, lp);
       ph += 1.7; // prov: assumed phase offset, so the ribbons do not beat as one
     };
     if (jib) {
@@ -475,11 +500,22 @@
     }
     if (main) for (const row of main.stripeRows) ribbon(main, row, main.M - 1, 0);
     if (kite) {
-      // The curl cue: a column up the free luff. They stream while the sheet
-      // is trimmed and go limp when the mapping says the luff is curling.
+      // The curl cue: a column down the free luff from ¾ height. They stream
+      // while the sheet is trimmed; past the (tier-C) sheet threshold they
+      // fold to windward, which is the way the fold was measured to go.
       const luffCol = nearestColumn(kite, CURL_RIBBON_CHORD);
+      const w = -lee(side) * CURL_FOLD;
       for (const f of CURL_RIBBON_HEIGHTS) {
-        ribbon(kite, Math.round(f * (kite.N - 1)), luffCol, LUFF_TELLTALE_LIFT, curl ? 1 : 0);
+        const row = Math.round(f * (kite.N - 1));
+        if (!curl) {
+          ribbon(kite, row, luffCol, LUFF_TELLTALE_LIFT);
+          continue;
+        }
+        const { along } = ribbonAnchor(kite, row, luffCol, LUFF_TELLTALE_LIFT);
+        const k = 1 - CURL_FOLD;
+        const fold: Vec3 = [along[0] * k, along[1] * k - 0.15 * CURL_FOLD, w];
+        const l = Math.hypot(...fold) || 1;
+        ribbon(kite, row, luffCol, LUFF_TELLTALE_LIFT, 1, [fold[0] / l, fold[1] / l, fold[2] / l]);
       }
     }
 
@@ -531,7 +567,7 @@
     // and draft position from `shape.asym`, lofted by the same `buildSail` as
     // the other two. `src/core` is untouched by any of it.
     const asym = result.shape.asym;
-    const kg = kiteUp && down && asym ? kiteGeometry(down, r, side) : null;
+    const kg = kiteUp && down && asym ? kiteGeometry(down, r, side, result.aero.awaDeg) : null;
     const kite = kg && asym ? buildSail(kg.sections(asym), kg.spine, kg.sheetRad, side) : null;
 
     applySail(mainSail, main);
@@ -571,7 +607,7 @@
     boom = new Mesh(tube(r.boom, 0.045), sparMat);
     boat.add(boom);
 
-    buildTelltales(main, jib, kite, kg?.curl ?? false);
+    buildTelltales(main, jib, kite, kg?.curl ?? false, side);
     boat.rotation.x = heelRad(heelDeg, side);
     invalidate();
   }
@@ -690,8 +726,10 @@
   Sails lofted from the solved sections; hull illustrative, not a measured J/70. Bend, sag and rake
   drawn true.
   {#if kiteUp}
-    The gennaker's position, luff sag and curl cue are drawn from the four downwind controls —
-    direction only, not solved.
+    The gennaker is drawn, not solved: the clew rides the circle its published leech and foot fix,
+    and the luff bows to leeward reaching and to windward running, as measured. The curl cue starts
+    at three-quarter height and folds to windward, but its onset is an assumed threshold on the
+    sheet.
   {/if}
 </p>
 

@@ -76,7 +76,7 @@ describe('clamps hold across the whole control space', () => {
       for (const rig of rigs)
         for (const sec of sections(flyingShape(boat, rig, race, sail))) {
           expect(sec.draft).toBeGreaterThanOrEqual(0.05);
-          expect(sec.draft).toBeLessThanOrEqual(0.25);
+          expect(sec.draft).toBeLessThanOrEqual(0.32);
           expect(sec.draftPos).toBeGreaterThanOrEqual(0.3);
           expect(sec.draftPos).toBeLessThanOrEqual(0.6);
           expect(sec.twistDeg).toBeGreaterThanOrEqual(0);
@@ -88,7 +88,7 @@ describe('clamps hold across the whole control space', () => {
     for (const sail of SAILS)
       for (const sec of sections(shapeAt(sail))) {
         expect(sec.draft).toBeGreaterThan(0.05);
-        expect(sec.draft).toBeLessThan(0.25);
+        expect(sec.draft).toBeLessThan(0.32);
         expect(sec.draftPos).toBeGreaterThan(0.3);
         expect(sec.draftPos).toBeLessThan(0.6);
         expect(sec.twistDeg).toBeGreaterThan(0);
@@ -270,6 +270,33 @@ describe('asym', () => {
     expect(a.threeQuarter.twistDeg).toBeGreaterThan(a.quarter.twistDeg);
     // Documented gap: RaceControls carries no kite trim, so nothing moves it.
     expect(shapeAt('asym', { backstay: 100, vang: 100 })).toEqual(a);
+  });
+
+  it('carries the measured camber, draft position and twist, by height', () => {
+    // Deparday's full-scale J/80 photogrammetry at a running apparent wind
+    // angle (research `2026-08-25-spinnaker` doc 02 §2, `F1` Table 3.1),
+    // transferred dimensionless. Held to the table, not to a fit: if a clamp
+    // or a multiplier moves, these move with it and the test says so.
+    const a = shapeAt('asym');
+    expect(a.quarter.draft).toBeCloseTo(0.3, 3);
+    expect(a.half.draft).toBeCloseTo(0.24, 3);
+    expect(a.threeQuarter.draft).toBeCloseTo(0.19, 2);
+    // Draft moves aft with height; it used to be one constant at every height.
+    expect(a.quarter.draftPos).toBeCloseTo(0.46, 6);
+    expect(a.half.draftPos).toBeCloseTo(0.48, 6);
+    expect(a.threeQuarter.draftPos).toBeCloseTo(0.58, 6);
+    expect(a.threeQuarter.draftPos).toBeGreaterThan(a.quarter.draftPos);
+    // Foot-to-top twist at running angles is 26°, not the 12° it was: the
+    // single biggest error in the old constants (doc 04 §3).
+    expect(a.threeQuarter.twistDeg).toBeCloseTo(26, 6);
+    // Fullest low, flattening steadily to the head — not flat-then-taper.
+    expect(a.quarter.draft).toBeGreaterThan(a.half.draft);
+    expect(a.half.draft).toBeGreaterThan(a.threeQuarter.draft);
+    // And nothing here has hit a clamp, which would silently truncate the
+    // measurement instead of carrying it.
+    expect(a.quarter.draft).toBeLessThan(0.32);
+    expect(a.threeQuarter.draftPos).toBeLessThan(0.6);
+    expect(a.threeQuarter.twistDeg).toBeLessThan(30);
   });
 });
 

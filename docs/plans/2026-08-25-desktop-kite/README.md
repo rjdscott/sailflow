@@ -31,7 +31,7 @@ gennaker is drawn, answers its four controls, and has its own panel.
 | 02 | [Kite geometry: loft, plan view, section stack](phase-02-kite-geometry.md) | 🟢 Completed | 2026-08-25 |
 | 03 | [Gennaker panel](phase-03-gennaker-panel.md) | 🔵 Not started | none |
 | 04 | [Verify and close out](phase-04-close-out.md) | 🔵 Not started | none |
-| 05 | [Kite flying shape from the research](phase-05-kite-shape-from-research.md) | 🔵 Not started | none |
+| 05 | [Kite flying shape from the research](phase-05-kite-shape-from-research.md) | 🟢 Completed | 2026-08-25 |
 | 06 | [Core downwind corrections](phase-06-core-downwind-corrections.md) | 🔵 Not started | none |
 
 Order: 00 → 01 ∥ 02 → 03 ∥ 05 ∥ 06 → 04. Phases 03, 05 and 06 touch disjoint

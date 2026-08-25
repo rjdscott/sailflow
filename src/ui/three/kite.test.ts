@@ -1,9 +1,11 @@
 /**
- * The kite mapping is tier C and every number in it is assumed, so nothing
- * here asserts a coefficient. What it asserts is what ADR 0017 actually
- * claims: where the tack is, which way the clew goes as the sheet moves, that
- * the luff carries the sail's own luff length, and that the surface the loft
- * makes of it is a surface rather than a NaN field.
+ * The kite mapping is tier C, so nothing here asserts a *fitted* coefficient.
+ * What it asserts is what ADR 0017 claims plus what research
+ * `2026-08-25-spinnaker` measured: where the tack is, which way the clew goes
+ * as the sheet moves, that the luff carries the sail's own luff length and
+ * bows to the side the apparent wind angle says it should, that the clew sits
+ * on the circle the published leech and foot pin it to, and that the surface
+ * the loft makes of it is a surface rather than a NaN field.
  */
 import { describe, expect, it } from 'vitest';
 import boat from '../../../data/boats/j70.json';
@@ -15,20 +17,34 @@ import {
   kiteGeometry,
   kiteGirthM,
   KITE_CHORDS,
+  LUFF_CROSSOVER_AWA_DEG,
+  LUFF_LEEWARD_AWA_DEG,
+  LUFF_WINDWARD_AWA_DEG,
+  luffLateral,
+  SHEET_EASE_DEG,
+  SHEET_TRIM_DEG,
   TACK_MIN_M,
 } from './kite';
-import { buildSail, gridRow } from './loft';
+import { buildSail, gridColumn, gridRow } from './loft';
 import { rig3d } from './rig3d';
 import type { RigState } from '../../core/types';
 
 const MID: DownControls = { kiteHalyard: 50, tackLine: 50, kiteSheet: 50, sprit: 0 };
 const down = (over: Partial<DownControls> = {}): DownControls => ({ ...MID, ...over });
 
-/** The solver's asym constants, mid-band (`core/shape/flying.ts:asymShape`). */
+/**
+ * Apparent wind angles either side of the measured crossover: a tight reach,
+ * where the whole luff was measured on the leeward side, and a run, which is
+ * where the J/70's own downwind optimum (142-174° TWA) actually sits.
+ */
+const AWA_REACH = 70;
+const AWA_RUN = 150;
+
+/** The solver's asym constants (`core/shape/flying.ts:asymShape`). */
 const SHAPE: SailShape = {
-  quarter: { draft: 0.17, draftPos: 0.45, twistDeg: 6, entryDeg: 37.1, exitDeg: 31.7 },
-  half: { draft: 0.17, draftPos: 0.45, twistDeg: 9.6, entryDeg: 37.1, exitDeg: 31.7 },
-  threeQuarter: { draft: 0.145, draftPos: 0.45, twistDeg: 12, entryDeg: 32.8, exitDeg: 27.7 },
+  quarter: { draft: 0.3, draftPos: 0.46, twistDeg: 13, entryDeg: 52.5, exitDeg: 48.0 },
+  half: { draft: 0.24, draftPos: 0.48, twistDeg: 20.8, entryDeg: 45.0, exitDeg: 42.7 },
+  threeQuarter: { draft: 0.1899, draftPos: 0.58, twistDeg: 26, entryDeg: 33.2, exitDeg: 42.1 },
 };
 
 const RIG: RigState = {
@@ -42,6 +58,7 @@ const RIG: RigState = {
 };
 
 const len = (a: Vec3, b: Vec3): number => Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+const sub3 = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 
 /** Arc length of the spine, sampled fine enough that the parabola is resolved. */
 function luffLength(spine: (h: number) => Vec3, n = 400): number {
@@ -83,18 +100,21 @@ describe('KITE_CHORDS', () => {
 
 describe('kiteGeometry', () => {
   it('tacks on the bowsprit tip at sprit = 100, at the stem at 0', () => {
-    expect(kiteGeometry(down({ sprit: 100 }), BARE_SPAR, 1).tack[0]).toBeCloseTo(SPRIT_TIP_X, 9);
-    expect(kiteGeometry(down({ sprit: 0 }), BARE_SPAR, 1).tack[0]).toBeCloseTo(STEM_X, 9);
+    expect(kiteGeometry(down({ sprit: 100 }), BARE_SPAR, 1, AWA_RUN).tack[0]).toBeCloseTo(
+      SPRIT_TIP_X,
+      9,
+    );
+    expect(kiteGeometry(down({ sprit: 0 }), BARE_SPAR, 1, AWA_RUN).tack[0]).toBeCloseTo(STEM_X, 9);
     // The sprit is on the centreline whatever the tack.
     for (const side of [1, -1] as Side[]) {
-      expect(kiteGeometry(down(), BARE_SPAR, side).tack[2]).toBe(0);
+      expect(kiteGeometry(down(), BARE_SPAR, side, AWA_RUN).tack[2]).toBe(0);
     }
   });
 
   it('lifts the tack off the sprit as the tack line is eased', () => {
-    const strapped = kiteGeometry(down({ tackLine: 100 }), BARE_SPAR, 1).tack[1];
-    const mid = kiteGeometry(down({ tackLine: 50 }), BARE_SPAR, 1).tack[1];
-    const eased = kiteGeometry(down({ tackLine: 0 }), BARE_SPAR, 1).tack[1];
+    const strapped = kiteGeometry(down({ tackLine: 100 }), BARE_SPAR, 1, AWA_RUN).tack[1];
+    const mid = kiteGeometry(down({ tackLine: 50 }), BARE_SPAR, 1, AWA_RUN).tack[1];
+    const eased = kiteGeometry(down({ tackLine: 0 }), BARE_SPAR, 1, AWA_RUN).tack[1];
     expect(strapped).toBeCloseTo(TACK_MIN_M, 9);
     expect(mid).toBeGreaterThan(strapped);
     expect(eased).toBeGreaterThan(mid);
@@ -102,13 +122,15 @@ describe('kiteGeometry', () => {
 
   it('puts the head at the masthead at full hoist and drops it below on ease', () => {
     const r = rig3d(RIG, 1, 0.3);
-    expect(kiteGeometry(down({ kiteHalyard: 100 }), r, 1).head).toEqual(r.masthead);
-    expect(kiteGeometry(down({ kiteHalyard: 0 }), r, 1).head[1]).toBeLessThan(r.masthead[1]);
+    expect(kiteGeometry(down({ kiteHalyard: 100 }), r, 1, AWA_RUN).head).toEqual(r.masthead);
+    expect(kiteGeometry(down({ kiteHalyard: 0 }), r, 1, AWA_RUN).head[1]).toBeLessThan(
+      r.masthead[1],
+    );
   });
 
   it('flies the luff at the sail definition length, bowed to leeward and forward', () => {
     for (const side of [1, -1] as Side[]) {
-      const g = kiteGeometry(down({ kiteHalyard: 100 }), rig3d(RIG, side, 0.3), side);
+      const g = kiteGeometry(down({ kiteHalyard: 100 }), rig3d(RIG, side, 0.3), side, AWA_REACH);
       // The cloth is the cloth: the drawn luff carries the sail's luff length,
       // which is why it has to bow at all.
       expect(luffLength(g.spine)).toBeCloseTo(boat.sails.asym.luffMm / 1000, 0);
@@ -130,7 +152,7 @@ describe('kiteGeometry', () => {
   it('sags more as the halyard is eased and the luff goes slacker', () => {
     const r = rig3d(RIG, 1, 0.3);
     const bow = (kiteHalyard: number): number => {
-      const g = kiteGeometry(down({ kiteHalyard }), r, 1);
+      const g = kiteGeometry(down({ kiteHalyard }), r, 1, AWA_REACH);
       return Math.abs(g.spine(0.5)[2] - (g.tack[2] + g.head[2]) / 2);
     };
     expect(bow(0)).toBeGreaterThan(bow(50));
@@ -139,29 +161,121 @@ describe('kiteGeometry', () => {
 
   it('flies the clew to leeward, on both tacks', () => {
     for (const side of [1, -1] as Side[]) {
-      const g = kiteGeometry(down(), BARE_SPAR, side);
+      const g = kiteGeometry(down(), BARE_SPAR, side, AWA_RUN);
       expect(Math.sign(g.clew[2])).toBe(lee(side));
-      // And a foot chord away from the tack, which is the loft's foot row.
-      expect(len(g.tack, g.clew)).toBeCloseTo(KITE_CHORDS.foot, 9);
     }
   });
 
-  it('moves the clew forward and outboard, monotonically, as the sheet eases', () => {
+  it('keeps the clew on the circle the published leech and foot pin it to', () => {
+    // The clew is not a free parameter: it is where a sphere of radius = leech
+    // about the head meets one of radius = foot about the tack. The sheet
+    // chooses a point on that circle and nothing else (research doc 02 §6).
+    const leech = boat.sails.asym.leechMm / 1000;
+    const foot = boat.sails.asym.footMm / 1000;
     for (const side of [1, -1] as Side[]) {
-      const clews = [100, 80, 60, 40, 20, 0].map(
-        (kiteSheet) => kiteGeometry(down({ kiteSheet }), BARE_SPAR, side).clew,
-      );
-      for (let i = 1; i < clews.length; i++) {
-        expect(clews[i][0]).toBeGreaterThan(clews[i - 1][0]); // forward
-        expect(Math.abs(clews[i][2])).toBeGreaterThan(Math.abs(clews[i - 1][2])); // outboard
+      for (const kiteSheet of [0, 25, 50, 75, 100]) {
+        for (const sprit of [0, 100]) {
+          for (const tackLine of [0, 100]) {
+            for (const kiteHalyard of [0, 100]) {
+              const g = kiteGeometry(
+                { kiteSheet, sprit, tackLine, kiteHalyard },
+                rig3d(RIG, side, 0.3),
+                side,
+                AWA_RUN,
+              );
+              expect(len(g.head, g.clew) / leech).toBeCloseTo(1, 2);
+              expect(len(g.tack, g.clew) / foot).toBeCloseTo(1, 2);
+            }
+          }
+        }
       }
     }
   });
 
+  it('moves the clew forward, outboard and up, monotonically, as the sheet eases', () => {
+    for (const side of [1, -1] as Side[]) {
+      const clews = [100, 80, 60, 40, 20, 0].map(
+        (kiteSheet) => kiteGeometry(down({ kiteSheet }), BARE_SPAR, side, AWA_RUN).clew,
+      );
+      for (let i = 1; i < clews.length; i++) {
+        expect(clews[i][0]).toBeGreaterThan(clews[i - 1][0]); // forward
+        expect(Math.abs(clews[i][2])).toBeGreaterThan(Math.abs(clews[i - 1][2])); // outboard
+        expect(clews[i][1]).toBeGreaterThan(clews[i - 1][1]); // and up
+      }
+      // And the whole band lives inside the circle's achievable arc.
+      expect(SHEET_TRIM_DEG).toBeGreaterThan(18);
+      expect(SHEET_EASE_DEG).toBeLessThan(89);
+    }
+  });
+
+  it('lifts the clew about a metre across the sheet band, as measured', () => {
+    // Research doc 02 §6 solves the same circle on the app's own tack-down,
+    // full-hoist head and tack and gets +0.09 m of clew height at 25° and
+    // +1.17 m at 60°. Deparday measured 1.4 m of clew rise from AWA 64° to
+    // 141° on the J/80 — two entirely different routes to about the same
+    // number, which is the corroboration the construction rests on.
+    const at = (kiteSheet: number): number =>
+      kiteGeometry(
+        { kiteSheet, sprit: 100, tackLine: 100, kiteHalyard: 100 },
+        BARE_SPAR,
+        1,
+        AWA_RUN,
+      ).clew[1];
+    const rise = at(0) - at(100);
+    expect(rise).toBeGreaterThan(0.9);
+    expect(rise).toBeLessThan(1.5);
+  });
+
+  it('bows the luff to leeward reaching and to windward running, crossing once', () => {
+    // Two full-scale programmes: the whole luff is to leeward at AWA 64°, and
+    // it has rotated to windward and across the centreline by 120-141°.
+    expect(luffLateral(LUFF_LEEWARD_AWA_DEG)).toBeCloseTo(1, 9);
+    expect(luffLateral(LUFF_WINDWARD_AWA_DEG)).toBeCloseTo(-1, 9);
+    expect(luffLateral(LUFF_CROSSOVER_AWA_DEG)).toBeCloseTo(0, 9);
+    // Clamped, not extrapolated, outside the measured pair.
+    expect(luffLateral(20)).toBe(1);
+    expect(luffLateral(180)).toBe(-1);
+    // Monotone, so the luff crosses the centreline exactly once.
+    let prev = Infinity;
+    for (let a = 0; a <= 180; a += 5) {
+      expect(luffLateral(a)).toBeLessThanOrEqual(prev);
+      prev = luffLateral(a);
+    }
+
+    for (const side of [1, -1] as Side[]) {
+      const r = rig3d(RIG, side, 0.3);
+      const offset = (awaDeg: number): number => {
+        const g = kiteGeometry(down({ kiteHalyard: 100 }), r, side, awaDeg);
+        return g.spine(0.5)[2] - (g.tack[2] + g.head[2]) / 2;
+      };
+      expect(Math.sign(offset(AWA_REACH))).toBe(lee(side));
+      expect(Math.sign(offset(AWA_RUN))).toBe(-lee(side));
+      expect(Math.abs(offset(LUFF_CROSSOVER_AWA_DEG))).toBeLessThan(1e-9);
+    }
+  });
+
+  it('keeps the bow magnitude while its direction rotates', () => {
+    // The research corroborates the *magnitude* model (within 3 % of the exact
+    // circular arc) and contradicts only the direction, so the direction is
+    // normalised before the arc-length surplus scales it: the mid-luff sits
+    // the same distance off the tack-head line at every apparent wind angle.
+    const r = rig3d(RIG, 1, 0.3);
+    const bow = (awaDeg: number): number => {
+      const g = kiteGeometry(down({ kiteHalyard: 100 }), r, 1, awaDeg);
+      const mid = g.spine(0.5);
+      const straight = [0, 1, 2].map((k) => (g.tack[k] + g.head[k]) / 2) as Vec3;
+      return len(mid, straight);
+    };
+    const ref = bow(AWA_REACH);
+    for (const awaDeg of [40, LUFF_CROSSOVER_AWA_DEG, 124, AWA_RUN, 180]) {
+      expect(bow(awaDeg)).toBeCloseTo(ref, 9);
+    }
+  });
+
   it('curls when the sheet is eased past the threshold, and not when it is trimmed', () => {
-    expect(kiteGeometry(down({ kiteSheet: 100 }), BARE_SPAR, 1).curl).toBe(false);
-    expect(kiteGeometry(down({ kiteSheet: 50 }), BARE_SPAR, 1).curl).toBe(false);
-    expect(kiteGeometry(down({ kiteSheet: 0 }), BARE_SPAR, 1).curl).toBe(true);
+    expect(kiteGeometry(down({ kiteSheet: 100 }), BARE_SPAR, 1, AWA_RUN).curl).toBe(false);
+    expect(kiteGeometry(down({ kiteSheet: 50 }), BARE_SPAR, 1, AWA_RUN).curl).toBe(false);
+    expect(kiteGeometry(down({ kiteSheet: 0 }), BARE_SPAR, 1, AWA_RUN).curl).toBe(true);
   });
 
   it('never emits NaN, at any corner of the four controls', () => {
@@ -169,15 +283,18 @@ describe('kiteGeometry', () => {
       for (const tackLine of [0, 100]) {
         for (const kiteSheet of [0, 100]) {
           for (const sprit of [0, 100]) {
-            const g = kiteGeometry(
-              { kiteHalyard, tackLine, kiteSheet, sprit },
-              rig3d(RIG, 1, 0.3),
-              1,
-            );
-            for (const p of [g.tack, g.head, g.clew, g.spine(0.5), g.spine(0.25)]) {
-              expect(p.every(Number.isFinite)).toBe(true);
+            for (const awaDeg of [AWA_REACH, LUFF_CROSSOVER_AWA_DEG, AWA_RUN]) {
+              const g = kiteGeometry(
+                { kiteHalyard, tackLine, kiteSheet, sprit },
+                rig3d(RIG, 1, 0.3),
+                1,
+                awaDeg,
+              );
+              for (const p of [g.tack, g.head, g.clew, g.spine(0.5), g.spine(0.25)]) {
+                expect(p.every(Number.isFinite)).toBe(true);
+              }
+              expect(Number.isFinite(g.sheetRad)).toBe(true);
             }
-            expect(Number.isFinite(g.sheetRad)).toBe(true);
           }
         }
       }
@@ -186,8 +303,8 @@ describe('kiteGeometry', () => {
 });
 
 describe('the lofted kite', () => {
-  const build = (side: Side, over: Partial<DownControls> = {}) => {
-    const g = kiteGeometry(down(over), rig3d(RIG, side, 0.3), side);
+  const build = (side: Side, over: Partial<DownControls> = {}, awaDeg = AWA_RUN) => {
+    const g = kiteGeometry(down(over), rig3d(RIG, side, 0.3), side, awaDeg);
     return { g, mesh: buildSail(g.sections(SHAPE), g.spine, g.sheetRad, side) };
   };
 
@@ -224,6 +341,34 @@ describe('the lofted kite', () => {
     }
   });
 
+  it('carries the published leech length, within 2 %, at every sheet setting', () => {
+    // The old loft let the leech emerge and it emerged 25-40 % long: 11.0-12.4
+    // m of drawn cloth against a published 8.800 m (research doc 02 §6). The
+    // leech the mapping draws is now the head-to-clew line, and the clew is on
+    // the circle the published leech and foot pin it to, so the drawn leech is
+    // the sail's leech by construction — at every sheet setting, not just one.
+    const leech = boat.sails.asym.leechMm / 1000;
+    for (const side of [1, -1] as Side[]) {
+      for (const kiteSheet of [0, 25, 50, 75, 100]) {
+        const { g, mesh } = build(side, { kiteSheet });
+        expect(len(g.head, g.clew) / leech).toBeGreaterThan(0.98);
+        expect(len(g.head, g.clew) / leech).toBeLessThan(1.02);
+        // And the loft's own leech column stays on that line to within 2 % of
+        // its length, so the drawn sail cannot quietly put back the cloth the
+        // constraint removed. (The residual is the loft interpolating chord
+        // and twist independently between knots, not a longer leech.)
+        const dir = sub3(g.head, g.clew);
+        const L2 = dir[0] ** 2 + dir[1] ** 2 + dir[2] ** 2;
+        for (const p of gridColumn(mesh, mesh.M - 1)) {
+          const w = sub3(p, g.clew);
+          const t = (w[0] * dir[0] + w[1] * dir[1] + w[2] * dir[2]) / L2;
+          const off = [0, 1, 2].map((k) => w[k] - t * dir[k]);
+          expect(Math.hypot(...off)).toBeLessThan(0.02 * leech);
+        }
+      }
+    }
+  });
+
   it('is a finite surface with unit normals', () => {
     for (const side of [1, -1] as Side[]) {
       const { mesh } = build(side);
@@ -240,7 +385,11 @@ describe('the lofted kite', () => {
       const { g, mesh } = build(side);
       const foot = gridRow(mesh, 0);
       expect(len(foot[0], g.tack)).toBeCloseTo(0, 6);
-      expect(len(foot[mesh.M - 1], g.clew)).toBeCloseTo(0, 6);
+      // The foot row ends on the leech line at the tack's own height: the clew
+      // no longer sits at that height, because the circle lifts it as the
+      // sheet eases and drops it a little below when the sheet is trimmed.
+      expect(foot[mesh.M - 1][1]).toBeCloseTo(g.tack[1], 6);
+      expect(len(foot[mesh.M - 1], g.clew)).toBeLessThan(0.6);
       // The head closes to a point: the ORC parabola's head girth is zero.
       const head = gridRow(mesh, mesh.N - 1);
       expect(len(head[0], head[mesh.M - 1])).toBeCloseTo(0, 6);

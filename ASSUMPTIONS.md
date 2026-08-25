@@ -91,50 +91,116 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   split. Illustrative hull stations, spar radii and scene colours in
   `src/ui/three/{hull,rig3d,SailView3D}.svelte` are drawing furniture, tagged
   `prov: assumed` at each literal, and the caption labels the hull illustrative.
+- **Gennaker flying shape** (`src/core/shape/flying.ts` `asymShape`, tier C).
+  Camber, draft position and twist by height are **derived** from Deparday's
+  full-scale J/80 photogrammetry at AWA 124°, a running angle (`F1` Table 3.1;
+  research `docs/research/2026-08-25-spinnaker` doc 02 §2, doc 04 §3). Derived
+  and not published: the J/80 is the J/70's sprit-tacked sister and the shape
+  parameters are dimensionless, but **the transfer is the inference**. Camber
+  `[0.30, 0.24, 0.19]` of chord at the quarter, half and three-quarter heights
+  (was 0.17 × `[1.0, 1.0, 0.85]`, ~40 % too flat and flat-then-taper where the
+  measured sail is fullest low); draft position `[0.46, 0.48, 0.58]` (was 0.45
+  at every height — right low down, wrong up high); twist base 26° at the
+  three-quarter height (was 12°, the single biggest error: 12° suits a tight
+  reach and the kite is used at 26–28°). `DRAFT_MAX` raised 0.25 → 0.32,
+  derived from the same table's 15–32 % measured band; the upwind sails are
+  nowhere near it. The per-height twist multipliers `[0.5, 0.8, 1.0]` stay
+  assumed — doc 02 §2 says they approximate the measured ramp reasonably.
+  **This moved the solver.** Doc 04 §3 assumed the flying shape does not reach
+  the numbers; it does, through `shape/toOrc.ts`, which measures mean draft
+  against the same shape at the base state, so changing the asym constants
+  shifts the denominator of the draft deviation and with it `flat` and the
+  coefficient deltas. The movement is confined to downwind rows — no jib or
+  upwind golden case changed at all, held-out rows moved ≤ 0.12 % in boat speed
+  against a 3 % gate, the worst fit-row move is 0.58 % at TWS 20, and the ADR
+  0007 gate verdict in `validation/report.md` is unchanged (21/25, same failing
+  rows, same worst residuals). Nothing was tuned to keep it that way. Still not
+  modelled: the shape is constant when camber, draft and twist are all strongly
+  AWA-dependent (`F2`: camber 17 → 37 %, draft 34 → 45 % over AWA 60 → 120°).
+  That is an upgrade `FlyingShapeFn` cannot express today, and it is *not* what
+  ADR 0017 refused — kite shape versus *sheet* is unmeasured and stays out.
 - **Gennaker geometry from the downwind controls** (`src/ui/three/kite.ts`,
-  presentation only, not in the solver; ADR 0017). The solver switches its aero
-  tables under `sailset = 'asym'` but `shape.asym` is a set of constants and no
-  `DownControls` value reaches it, so the four downwind controls move the
-  drawn sail and nothing else. Tier C throughout, and both pictures say so in
-  their captions. What is claimed is the direction of each control and the sign
-  conventions (`kite.test.ts`); every number is assumed:
+  presentation only, not in the solver; ADR 0017). The four downwind controls
+  move the drawn sail and nothing else, and both pictures say so. Research
+  `docs/research/2026-08-25-spinnaker` took most of this block off `assumed`;
+  the tags are per constant and `kite.test.ts` holds every claim.
   - **Chords**: the ORC spinnaker girth parabola through (0, foot 5.700 m),
     (½, half width 5.560 m), (1, 0) — the same distribution
-    `core/geometry/sailplan.ts` integrates for the rated area, so the drawn
-    silhouette and the solver's area agree by construction — scaled by
-    `FLYING_CHORD_FRACTION` = 0.85. Assumed: the sail definition is flat
-    dimensions and a spinnaker is cut with shape a flat measurement cannot see,
-    so the flying chord is shorter. Only "shorter, never longer" is claimed.
-    The head chord is zero, which is the parabola's own answer.
-  - **Tack**: on the bowsprit at `sprit`% of `bowspritOuterMm` (1.495 m), and
-    `TACK_MIN_M` = 0.05 m above it at full tack-line tension, rising by
-    `TACK_TRAVEL_M` = 0.6 m as it is eased. Assumed. At full tension that is
-    0.8 m over the assumed 0.75 m freeboard, which is `geom.asymTackHeightM`
-    (0.7 m, itself assumed) to within that freeboard.
-  - **Head**: at the masthead at `kiteHalyard` = 100, dropping
-    `HALYARD_DROP_M` = 1.2 m down the spar at 0. Assumed; its visible effect is
-    the sag it adds, not the drop.
-  - **Luff sag**: the drawn luff carries the sail's own luff length (10.800 m,
-    published), so the surplus over the tack-to-head distance is what bows it.
-    Magnitude inverts the parabola arc-length approximation
-    `L ≈ c(1 + 8/3·(d/c)²)` — within ~2 % of the exact arc at these
-    deflections, and the same reduction `rig3d.ts` uses for forestay sag —
-    capped at `SAG_MAX_FRACTION` = 0.3 of the luff. Direction:
-    `SAG_FORWARD_FRACTION` = 0.6 forward per unit to leeward, assumed, larger
-    than the forestay's 0.35 because nothing holds a free luff. Only the two
-    directions are claimed.
-  - **Sheeting angle**: linear from `SHEET_TRIM_DEG` = 25° at full trim to
-    `SHEET_EASE_DEG` = 60° at full ease. Assumed. Claimed: eased puts the clew
-    forward and outboard, trimmed puts it aft and inboard, monotonically.
-  - **Luff curl**: `CURL_EASE_THRESHOLD` = 0.55 of sheet travel. Assumed, and a
-    geometric threshold rather than an aero one — nothing in the solver knows
-    when a luff curls. It drives the limp luff ribbons in the 3D hero and the
-    dashed outline in the plan view, and both captions say it is direction only.
+    `core/geometry/sailplan.ts` integrates for the rated area — scaled by
+    `FLYING_CHORD_FRACTION` = 0.85. **Assumed.** The measured chord/curve
+    ratio per stripe runs 0.75–1.00 (`F1` Fig 3.2), so 0.85 is the middle of a
+    published band but is not itself measured, and it is physically a
+    consequence of camber rather than a constant beside it. Only "shorter,
+    never longer" is claimed; the head chord is zero, the parabola's own answer.
+  - **Tack**: on the bowsprit at `sprit`% of `bowspritOuterMm` (1.495 m,
+    published, Class Rules C.9.4), `TACK_MIN_M` = 0.05 m above it strapped
+    down, rising by `TACK_TRAVEL_M` = 0.6 m eased. **Assumed and known wide**:
+    the J/70-specific figures span 0–12 in (0–0.30 m) across four North and
+    Doyle sources and disagree among themselves; the sportboat literature
+    reaches 18 in. Narrowing it and showing the band is doc 04 §2.4, not done.
+  - **Head**: masthead at `kiteHalyard` = 100, dropping `HALYARD_DROP_M` =
+    1.2 m at 0. **Assumed, and the sources contradict it**: "ease the halyard
+    6–12 inches" could not be sourced to any sailmaker publication, and North
+    and Westaway both say the halyard should always be fully hoisted. The
+    honest default is 0 with a documented penalty of *instability*, not a shape
+    gain (doc 04 §2.5); the control is unchanged and the conflict recorded.
+  - **Luff sag magnitude**: the drawn luff carries the sail's own luff length
+    (10.800 m, published), so the surplus over the tack-to-head distance bows
+    it; magnitude inverts `L ≈ c(1 + 8/3·(d/c)²)`. **Derived, and
+    corroborated** — within **3 %** of the exact circular-arc sagitta at every
+    control state (doc 02 §3.1). `SAG_MAX_FRACTION` = 0.3 of the luff is still
+    assumed and does almost no work; the arc bound is looser nearly everywhere.
+  - **Luff bow direction** (`luffLateral`): the athwartships share of the bow
+    runs **+1 (leeward) at AWA 64°** to **−1 (windward, across the centreline)
+    at AWA 141°**. **Published for the two endpoints** — Deparday has "the
+    whole luff on the leeward side" at 64° and "the luff rotating to the
+    windward side" deeper (`F1`); Motta et al. have it moving "more to
+    windward, towards and across the centreline" (`F2`). The **crossover**
+    falls out as their midpoint, 102.5°, inside the 100–120° band doc 04 §2.1
+    proposes — but nothing brackets it tighter than "between 64° and 124°", so
+    the crossover, the linear ramp and the equal windward excursion are
+    **assumed**. This corrected an outright error: the luff bowed to leeward
+    unconditionally, the wrong side of the boat at the 142–174° TWA the J/70
+    runs at, while the app taught a cue about rotating the sail to weather that
+    the picture contradicted. The bow's *magnitude* is unchanged at every angle.
+  - **Clew** (`clewOnCircle`): **derived** from the published leech (8.800 m)
+    and foot (5.700 m). The clew is where a sphere of radius = leech about the
+    head meets one of radius = foot about the tack — a circle — and the sheet
+    picks a point on it (doc 02 §6, doc 04 §2.2). It replaces `tack +
+    chordDir(sheet) × KITE_CHORDS.foot`, under which the drawn leech carried
+    **25–40 % more cloth than the sail has** (11.0–12.4 m against 8.800 m).
+    Two consequences, both tested: head-to-clew *is* the published leech, and
+    **easing the sheet lifts the clew** — ~0.3 m per 10°, ~1.1 m across the
+    app's 25°–60° band, against Deparday's measured 1.4 m of clew rise from
+    AWA 64° to 141°. Two independent routes to about the same number.
+  - **Sheeting angle**: `SHEET_TRIM_DEG` = 25° to `SHEET_EASE_DEG` = 60°.
+    **Assumed**, but now a choice of *arc* on a derived circle rather than an
+    invented clew distance; both sit inside the circle's achievable 18°–89°.
+    Claimed: eased is forward, outboard and up; trimmed aft, inboard and down.
+  - **Luff curl**: `CURL_EASE_THRESHOLD` = 0.55 of sheet travel. **Assumed and
+    it stays that way** — curl onset against sheet position is unmeasured
+    anywhere in the literature, so this is a geometric threshold, not an aero
+    one, and every surface showing it says so. Everything *except* the onset is
+    now measured (`F1` Ch. 4, doc 02 §5): the curl **begins at ¾ height**,
+    propagates **downwards** as a spanwise wave, and folds toward the
+    **windward** side, which is why `SailView3D.svelte`'s
+    `CURL_RIBBON_HEIGHTS` runs top-down 0.75 → 0.5 and the ribbons fold across
+    the boat rather than drooping. Not drawn yet, and worth teaching: flapping
+    was present in every stable optimum-trim run, so curl is what correct trim
+    looks like, not an error state.
+  - **Open question, not papered over**: the app's tack and head give the J/70
+    a **16.4 % luff excess** over the tack-to-head distance against the
+    **8.9 % measured** on the J/80. At the J/80's ratio the tack-to-head
+    distance would be 9.92 m, 0.64 m more than drawn. Either a class-maximum
+    kite really is that much rounder-luffed on a short rig, or the drawn head
+    or tack is misplaced. Resolvable by measuring a photograph (doc 04 §2.3).
   - **Plan-view projection** (`src/ui/race/PlanView.svelte`): athwartships at
     the plan's own scale, fore-and-aft anchored at the mast and the bowsprit
     tip, because the plan's assumed mast station (0.45·LOA) is not the rig's J.
     The kite hangs off a straight, unraked spar there: a plan view has no third
     axis. Presentation only.
+  - **The 0–100 slider mapping** for every downwind control is **assumed**: no
+    source defines physical control travel against a UI range.
 - **Leech-profile drawing** (`src/ui/race/geometry.ts` `leechProfile`,
   presentation only): the main's chord at the foot, ¼, ½ and ¾ heights is
   taken as 1 / 0.78 / 0.56 / 0.34 of the foot — assumed, a roughly triangular
