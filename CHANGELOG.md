@@ -15,6 +15,7 @@ undiagnosable.
 
 ### Fixed
 
+- 3D hero: jib luff telltales sat on the forestay wire; they now sit 15 % aft of the luff, and the jib carries upper-leech ribbons (the North jib cue) alongside the main's. New "Helm" camera preset: from the cockpit looking up the main. Orbit may now look upward (polar clamp relaxed).
 - 3D hero perf gate timed the first render, which includes context creation and shader compiles, so it fell back to the plan view on every device (seen on a desktop GPU). It now times a warm second frame.
 - Default theme is dark (ADR 0015 dark-first); Auto and Light remain selectable on More.
 

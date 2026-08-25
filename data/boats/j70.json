@@ -242,19 +242,6 @@
       "label": "Bowsprit position"
     }
   },
-  "baseRace": {
-    "backstay": 30,
-    "mainsheet": 60,
-    "traveller": 0,
-    "cunningham": 20,
-    "outhaul": 50,
-    "vang": 30,
-    "jibSheet": 60,
-    "jibLead": 5,
-    "inhauler": 30,
-    "mainHalyard": 50,
-    "jibHalyard": 50
-  },
   "calibration": {
     "hydro.formFactor": 0.02965707577002189,
     "hydro.rrMul.fn20": 0.36421419027076724,
@@ -914,62 +901,7 @@
     "hull.rmMeasuredKgMPerDeg": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC RM Measured, kg\u00b7m per degree of heel at small angles (inclining test); prefer over assumed gmM in righting model"
-    },
-    "baseRace.backstay": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "the app's own reading of the North guide's base wind band onto the 0-100 control scales; the guide publishes qualitative settings (\"Firm\", \"Snug\", \"5-6 holes showing\"), not percentages. This is the datum every shape delta in core/shape/toOrc.ts is measured against and the trim the cockpit's leech-stall and spreader-stripe meters are calibrated on, so it is one number read by both the solver and the UI"
-    },
-    "baseRace.mainsheet": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.traveller": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.cunningham": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.outhaul": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.vang": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.jibSheet": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.jibLead": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.inhauler": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.mainHalyard": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.jibHalyard": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
+      "note": "ORC RM Measured, kg·m per degree of heel at small angles (inclining test); prefer over assumed gmM in righting model"
     }
   },
   "sources": {

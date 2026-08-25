@@ -359,6 +359,25 @@ export function buildSail(
   return { positions, normals, indices, stripeRows, N, M };
 }
 
+/** Chord fraction of grid column `j` under the cosine clustering `buildSail` uses. */
+export function chordFraction(j: number, M: number): number {
+  return 0.5 * (1 - Math.cos((Math.PI * j) / (M - 1)));
+}
+
+/** The grid column nearest to chord fraction `x` (0 = luff, 1 = leech). */
+export function nearestColumn(mesh: { M: number }, x: number): number {
+  let best = 0;
+  let err = Infinity;
+  for (let j = 0; j < mesh.M; j++) {
+    const e = Math.abs(chordFraction(j, mesh.M) - x);
+    if (e < err) {
+      err = e;
+      best = j;
+    }
+  }
+  return best;
+}
+
 /** One row of the grid as `Vec3`s — draft stripes, leech and luff lines. */
 export function gridRow(mesh: SailMesh, i: number): Vec3[] {
   return Array.from({ length: mesh.M }, (_, j) => vertexOf(mesh, i, j));

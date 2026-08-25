@@ -9,6 +9,8 @@ import type { SailShape } from '../../core/types';
 import { camberDir, chordDir, cross, DEG2RAD, dot, norm, sub, type Vec3 } from './conventions';
 import {
   buildSail,
+  chordFraction,
+  nearestColumn,
   DEFAULT_M,
   DEFAULT_N,
   gridRow,
@@ -304,5 +306,21 @@ describe('buildSail', () => {
    */
   it('matches the golden surface for the canonical trim', () => {
     expect([...mesh.positions].map((v) => Number(v.toFixed(4)))).toMatchSnapshot();
+  });
+});
+
+describe('chord columns', () => {
+  it('cosine clustering runs luff to leech and nearestColumn inverts it', () => {
+    const M = 32;
+    expect(chordFraction(0, M)).toBe(0);
+    expect(chordFraction(M - 1, M)).toBeCloseTo(1, 12);
+    for (let j = 1; j < M; j++)
+      expect(chordFraction(j, M)).toBeGreaterThan(chordFraction(j - 1, M));
+    // 15 % chord lands well aft of the wire and well short of the draft.
+    const j = nearestColumn({ M }, 0.15);
+    expect(j).toBeGreaterThan(2);
+    expect(Math.abs(chordFraction(j, M) - 0.15)).toBeLessThan(0.03);
+    expect(nearestColumn({ M }, 0)).toBe(0);
+    expect(nearestColumn({ M }, 1)).toBe(M - 1);
   });
 });
