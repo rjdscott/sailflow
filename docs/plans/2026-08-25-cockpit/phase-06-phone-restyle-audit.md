@@ -264,3 +264,53 @@ so no snapshot regeneration was needed.
 
 **Not done.** H-07 (tab order), H-09 (`prefers-reduced-motion` in the 3D hero),
 M-13, M-14, L-02 and L-03 from the same finding doc are untouched.
+### 2026-08-25 — ux-03 H-09 and H-12: reduced motion reaches the WebGL hero, and the first-frame gate measures the first frame
+
+**H-09.** `SailView3D`'s `still` gate tested only `settings.motion === 'off'`,
+so the `'system'` default — every real visitor — animated telltales at 60 fps
+and tweened camera presets under an OS reduce preference, against ADR 0014's
+Consequences. `still` now folds in `prefersReducedMotion.current` from
+`svelte/motion` (the same import six other components already use) when the
+setting is `'system'`, and the preset effect passes that same `still` instead
+of re-testing `motion === 'off'`, which was algebraically the same test twice.
+
+**H-12.** The gate timed the *second* render — a warm context, ~1 ms on any
+device — so it passed at every CPU throttle rate and the 2D fallback was
+unreachable. It now times wall-clock from `onMount` to the first presented
+frame. Frame 2 still exists and still sets `window.__sailViewReady`, because
+`ResizeObserver` callbacks run after animation frames: frame 1 draws at the
+renderer's default size, and the screenshot baseline needs the sized one.
+
+**Budget: 350 ms**, up from 50 ms because it is now a different and much larger
+quantity — geometry build, context creation, shader compiles and upload, not
+GPU command submission. Measured in `mcr.microsoft.com/playwright:v1.62.1-noble`
+at 1440×900 / 390×844, mount → first frame:
+
+| CPU throttle | desktop | phone |
+|---|---|---|
+| 1× | 65 ms | 61 ms |
+| 1×, 2-core container (CI worst case) | 137 ms | 104 ms |
+| 2× | 72 ms | 93 ms |
+| 4× | 119 ms | 115 ms |
+| 10× | 272 ms | 279 ms |
+| 20× | 609 ms | 605 ms |
+
+350 ms sits in the gap between the 10× class, which still renders acceptably,
+and the 20× stand-in for a low-end Android that the fallback exists for, with
+~2.6× headroom over the slowest fast-path measurement so no desktop and no CI
+runner trips it. Recorded as a dated amendment under ADR 0014's Consequences
+rather than a superseding ADR: the Decision — 3D behind a lazy chunk and a
+first-frame gate, 2D otherwise — is unchanged and still correct. Only the
+number and what it measures moved, which is a calibration, not a fork.
+
+**Tests.** Two new Playwright cases in `tests/ui/race-3d.spec.ts`, both
+verified to fail against the pre-fix code. The reduced-motion one runs with
+`sailflow.motion` *unset* and `emulateMedia({ reducedMotion: 'reduce' })` —
+pinning it to `'off'`, which the other cases do, is what hid H-09 — and
+asserts two canvas screenshots 400 ms apart are byte-identical and that the rAF
+loop parks (zero `gl.clear` calls in the window, the audit's own instrument).
+The gate one throttles CPU 20× over CDP and asserts the "3D ran slow on this
+device" note, no canvas, and the 2D view in the slot.
+
+**Screenshot baseline unchanged** — no regeneration needed; `race-3d-leeward`
+still passes in the pinned image.
