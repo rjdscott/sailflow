@@ -22,19 +22,13 @@
       model.request(dock.forecast.likelyKt, dock.forecast.seaState, dock.forecast.crewKg);
   });
 
+  /**
+   * Commit locks the rig and files a real, persisted log entry (status
+   * 'draft'), so "starts a log entry" survives a reload and the Log screen
+   * has something to show (audit ux-02 M-04).
+   */
   function commit(): void {
-    const lock = dock.commit();
-    logStoreUi.setDraft({
-      date: lock.committedAt.slice(0, 10),
-      forecast: {
-        minKt: lock.forecast.minKt,
-        likelyKt: lock.forecast.likelyKt,
-        maxKt: lock.forecast.maxKt,
-      },
-      seaState: lock.forecast.seaState,
-      crewKg: lock.forecast.crewKg,
-      dock: lock.setup,
-    });
+    void logStoreUi.startDraft(dock.commit());
   }
 
   const advanced = $derived(settings.mode === 'advanced');

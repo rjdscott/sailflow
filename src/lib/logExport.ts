@@ -4,7 +4,7 @@
  */
 
 import type { DockControls, RaceControls } from '../core/types';
-import type { LogEntry } from './logStore';
+import { LOG_SCHEMA_VERSION, migrateEntry, type LogEntry } from './logStore';
 
 export function toJson(entries: LogEntry[]): string {
   return JSON.stringify(entries, null, 2);
@@ -47,11 +47,22 @@ function isRaceControls(v: unknown): v is RaceControls {
   return RACE_FIELDS.every((f) => typeof r[f] === 'number');
 }
 
+/** A recorded number, or `null` for "not recorded" (see LogNumber). */
+function isLogNumber(v: unknown): boolean {
+  return typeof v === 'number' || v === null;
+}
+
 /** Validate one row; returns a reason string if invalid, undefined if ok. */
 function validateRow(row: unknown, i: number): string | undefined {
   if (typeof row !== 'object' || row === null) return `row ${i}: not an object`;
   const e = row as Record<string, unknown>;
-  if (e.v !== 1) return `row ${i}: unsupported version ${JSON.stringify(e.v)}`;
+  // v1 rows are accepted and migrated on the way in (migrateEntry).
+  if (e.v !== 1 && e.v !== LOG_SCHEMA_VERSION) {
+    return `row ${i}: unsupported version ${JSON.stringify(e.v)}`;
+  }
+  if (e.status !== undefined && e.status !== 'draft' && e.status !== 'complete') {
+    return `row ${i}: invalid status`;
+  }
   if (typeof e.id !== 'string' || !e.id) return `row ${i}: missing id`;
   if (typeof e.date !== 'string') return `row ${i}: missing date`;
   if (typeof e.venue !== 'string') return `row ${i}: missing venue`;
@@ -59,23 +70,22 @@ function validateRow(row: unknown, i: number): string | undefined {
   if (
     typeof f !== 'object' ||
     f === null ||
-    typeof f.minKt !== 'number' ||
-    typeof f.likelyKt !== 'number' ||
-    typeof f.maxKt !== 'number'
+    !isLogNumber(f.minKt) ||
+    !isLogNumber(f.likelyKt) ||
+    !isLogNumber(f.maxKt)
   ) {
     return `row ${i}: invalid forecast`;
   }
   const a = e.actual as Record<string, unknown> | undefined;
-  if (
-    typeof a !== 'object' ||
-    a === null ||
-    typeof a.minKt !== 'number' ||
-    typeof a.maxKt !== 'number'
-  ) {
+  if (typeof a !== 'object' || a === null || !isLogNumber(a.minKt) || !isLogNumber(a.maxKt)) {
     return `row ${i}: invalid actual`;
   }
   if (!SEA_STATES.has(e.seaState as number)) return `row ${i}: invalid seaState`;
-  if (typeof e.crewKg !== 'number') return `row ${i}: missing crewKg`;
+  if (!isLogNumber(e.crewKg)) return `row ${i}: missing crewKg`;
+  const o = e.outcome as Record<string, unknown> | undefined;
+  if (o !== undefined && (typeof o.result !== 'string' || !isLogNumber(o.placing))) {
+    return `row ${i}: invalid outcome`;
+  }
   if (!isDockControls(e.dock)) return `row ${i}: invalid dock`;
   if (e.race !== undefined && !isRaceControls(e.race)) return `row ${i}: invalid race`;
   if (typeof e.notes !== 'string') return `row ${i}: missing notes`;
@@ -100,23 +110,25 @@ export function fromJson(text: string): ImportResult {
   parsed.forEach((row, i) => {
     const reason = validateRow(row, i);
     if (reason) reasons.push(reason);
-    else entries.push(row as LogEntry);
+    else entries.push(migrateEntry(row));
   });
   return { entries, reasons };
 }
 
+/** `null` (not recorded) exports as an empty cell, never as a 0. */
 const CSV_COLUMNS: [string, (e: LogEntry) => string | number][] = [
   ['id', (e) => e.id],
   ['v', (e) => e.v],
   ['date', (e) => e.date],
   ['venue', (e) => e.venue],
-  ['forecast.minKt', (e) => e.forecast.minKt],
-  ['forecast.likelyKt', (e) => e.forecast.likelyKt],
-  ['forecast.maxKt', (e) => e.forecast.maxKt],
-  ['actual.minKt', (e) => e.actual.minKt],
-  ['actual.maxKt', (e) => e.actual.maxKt],
+  ['status', (e) => e.status],
+  ['forecast.minKt', (e) => e.forecast.minKt ?? ''],
+  ['forecast.likelyKt', (e) => e.forecast.likelyKt ?? ''],
+  ['forecast.maxKt', (e) => e.forecast.maxKt ?? ''],
+  ['actual.minKt', (e) => e.actual.minKt ?? ''],
+  ['actual.maxKt', (e) => e.actual.maxKt ?? ''],
   ['seaState', (e) => e.seaState],
-  ['crewKg', (e) => e.crewKg],
+  ['crewKg', (e) => e.crewKg ?? ''],
   ['dock.upperTurns', (e) => e.dock.upperTurns],
   ['dock.lowerTurns', (e) => e.dock.lowerTurns],
   ['dock.forestayMm', (e) => e.dock.forestayMm],
@@ -133,6 +145,8 @@ const CSV_COLUMNS: [string, (e: LogEntry) => string | number][] = [
   ['race.jibHalyard', (e) => e.race?.jibHalyard ?? ''],
   ['notes', (e) => e.notes],
   ['fast', (e) => e.fast],
+  ['outcome.result', (e) => e.outcome.result],
+  ['outcome.placing', (e) => e.outcome.placing ?? ''],
   ['createdAt', (e) => e.createdAt],
 ];
 

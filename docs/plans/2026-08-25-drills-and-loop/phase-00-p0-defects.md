@@ -15,6 +15,9 @@ safe, the Race optimum honest about its path.
 - [ ] H-05 Log form: number rows wrap (`flex-wrap`, `min-width: 0`, `NumberField` width), no page-level horizontal scroll at 390/720/1440; new entry prefilled from committed rig + last forecast instead of zeros.
 - [ ] H-06 Log editor deep-copies (`structuredClone` / `$state.snapshot`) on open; Cancel discards; Dock draft never aliases a committed entry. Test.
 - [x] H-07 Race optimum: key includes race sliders (debounced), descent seeded from both current and base and the better kept; "Why" copy says "from where your sliders are now, and from the base tune". Closed 2026-08-25, with M-09 and M-26 on the same card.
+- [x] H-05 Log form: number rows wrap (`flex-wrap`, `min-width: 0`, `NumberField` width), no page-level horizontal scroll at 390/720/1440; new entry prefilled from committed rig + last forecast instead of zeros.
+- [x] H-06 Log editor deep-copies (`structuredClone` / `$state.snapshot`) on open; Cancel discards; Dock draft never aliases a committed entry. Test.
+- [ ] H-07 Race optimum: key includes race sliders (debounced), descent seeded from both current and base and the better kept; "Why" copy says "from where your sliders are now, and from the base tune".
 - [ ] Tick the punchlist lines.
 
 ## Verification
@@ -160,3 +163,20 @@ a different, worse basin. The committed calibration block and
 `calibration/residuals.json` are unchanged; the shape knobs it fits are
 untouched by this change, and re-fitting is a separate decision with its own
 evidence. `make check` green (730 tests).
+- **2026-08-25 — H-05 and H-06 closed.** `.row` is now a
+  `repeat(auto-fit, minmax(7rem, 1fr))` grid (the `.row.wrap` variant and its
+  one use are deleted), `.field`/`NumberField` carry `min-width: 0` and the
+  input `width: 100%`, and `NumberField`'s invisible `--surface` border is
+  `--line` — no page-level horizontal scroll left to produce at 390/720/1440
+  (verified by construction and `pnpm build`; no browser available in this
+  worktree to walk the manual step). A new entry comes from
+  `prefillEntry()` (`src/ui/log/logic.ts`): rig and forecast from
+  `rigLock.locked`, venue from the last entry, date from today, and `null` —
+  an empty field — for anything with no source, instead of a wall of zeros.
+  `LogNumber = number | null` runs through the schema, the CSV and `windLine`,
+  so "not recorded" can no longer export as a real 0 kt / 0 kg. H-06: the
+  editor loads via `structuredClone($state.snapshot(entry))`, so Cancel
+  discards and no form binding can reach a stored entry or the committed rig;
+  regression tests in `src/ui/log/store.test.ts` ("never aliases the committed
+  rig") and `src/ui/log/logic.test.ts` ("does not alias the lock"). The other
+  H-lines in this phase belong to the drills/Race agents and stay unticked.
