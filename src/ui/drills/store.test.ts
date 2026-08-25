@@ -208,4 +208,74 @@ describe('DrillStore spacing', () => {
     expect(store.due).toHaveLength(store.templates.length);
     expect(store.due.every((s) => s.overdueDays >= 0)).toBe(true);
   });
+
+  it('offers a Today drill the current mode can actually see', async () => {
+    const { client } = fakeClient(keyRace);
+    const store = new DrillStore(client, fakeHistory().history, now);
+    await store.refresh();
+    const visible = store.visible;
+    const first = store.due.find((s) => visible.some((v) => v.id === s.templateId))!;
+    expect(store.today!.id).toBe(first.templateId);
+    expect(visible.some((t) => t.id === store.today!.id)).toBe(true);
+  });
+});
+
+describe('DrillStore.visible ordering', () => {
+  it('is tier-ordered, and Simple mode stops at tier 2 (M-03)', () => {
+    const { client } = fakeClient(keyRace);
+    const store = new DrillStore(client, fakeHistory().history, now);
+
+    settings.mode = 'simple';
+    const simple = store.visible;
+    expect(simple.map((t) => t.tier)).toEqual([...simple.map((t) => t.tier)].sort());
+    expect(simple.some((t) => t.tier === 3)).toBe(false);
+
+    settings.mode = 'advanced';
+    const advanced = store.visible;
+    expect(advanced.map((t) => t.tier)).toEqual([...advanced.map((t) => t.tier)].sort());
+    // Advanced is the same list plus tier 3, in the same relative order.
+    expect(advanced.filter((t) => t.tier <= 2).map((t) => t.id)).toEqual(simple.map((t) => t.id));
+    expect(advanced.some((t) => t.tier === 3)).toBe(true);
+  });
+});
+
+describe('DrillStore history export and reset', () => {
+  it('exports every attempt and resets the roll-up with the store (L-02)', async () => {
+    const { client } = fakeClient(keyRace);
+    const store = new DrillStore(client, fakeHistory().history, now);
+    await store.open(template, 1);
+    await store.check();
+
+    const dump = JSON.parse(await store.exportHistory()) as { v: number; attempts: unknown[] };
+    expect(dump.v).toBe(2);
+    expect(dump.attempts).toHaveLength(1);
+    expect(store.streak).toBe(1);
+
+    await store.resetHistory();
+    expect(store.best).toEqual({});
+    expect(store.streak).toBe(0);
+    expect(JSON.parse(await store.exportHistory())).toMatchObject({ attempts: [] });
+  });
+});
+
+describe('DrillStore.check personal best', () => {
+  it('carries the previous best distance so the sheet can name it', async () => {
+    vi.useFakeTimers();
+    const { client } = fakeClient(keyRace);
+    const store = new DrillStore(client, fakeHistory().history, now);
+
+    await store.open(template, 1);
+    await store.check();
+    const first = store.score!.distanceSteps;
+    expect(store.score!.prevBestSteps).toBeNull();
+    expect(store.score!.isBest).toBe(true);
+
+    // Sitting on the key is closer than the fault start, so it is a new best.
+    store.controls = { ...keyRace };
+    store.solve();
+    await vi.advanceTimersByTimeAsync(200);
+    await store.check();
+    expect(store.score!.prevBestSteps).toBe(first);
+    expect(store.score!.isBest).toBe(true);
+  });
 });

@@ -17,6 +17,7 @@
     type TelemetryCounts,
   } from '../../lib/telemetry';
   import { logStoreUi } from '../log/store.svelte';
+  import { drills } from '../drills/store.svelte';
   import { GUIDE_LABELS, referenceStatus, type GuideId } from '../../lib/reference';
 
   // Bundled at build time so the honesty documents open on a dock with no
@@ -88,6 +89,26 @@
     resetArmed = false;
     const ok = await logStoreUi.reset();
     say(ok ? 'Log reset — every entry deleted' : (logStoreUi.error ?? 'Reset failed'));
+  }
+
+  /* Drill progress: the attempt history behind the medals, the streak and the
+     spacing schedule (audit ux-02 L-02). Same export-then-reset pair, and the
+     same two-tap arming, as the log and the usage counters. */
+  let drillResetArmed = $state(false);
+
+  async function exportDrills(): Promise<void> {
+    download('sailflow-drills.json', await drills.exportHistory(), 'application/json');
+    say('Drill history saved to your downloads.');
+  }
+
+  async function resetDrills(): Promise<void> {
+    if (!drillResetArmed) {
+      drillResetArmed = true;
+      return;
+    }
+    drillResetArmed = false;
+    await drills.resetHistory();
+    say('Drill history reset — medals, streak and schedule cleared.');
   }
 </script>
 
@@ -203,6 +224,44 @@
         <p class="warn" role="alert">
           This deletes every log entry on this device. There is no undo and no cloud copy — export
           first if you might want them.
+        </p>
+      {/if}
+    </section>
+    <section class="card">
+      <h2 class="section-title">Drill progress</h2>
+      <dl class="rows">
+        <dt>Streak</dt>
+        <dd class="tabular-nums">
+          {drills.streak}
+          {drills.streak === 1 ? 'day' : 'days'}
+        </dd>
+        <dt>Drills attempted</dt>
+        <dd class="tabular-nums">
+          {Object.keys(drills.best).length} of {drills.templates.length}
+        </dd>
+      </dl>
+      <p class="note first">
+        Every attempt, the medals, the streak and the spaced-repetition schedule live in this
+        browser only. Nothing is uploaded and nothing follows you to another device — clearing site
+        data clears all of it, so export first if it matters.
+      </p>
+      <div class="data-actions">
+        <button type="button" class="quiet" onclick={() => void exportDrills()}>
+          Export drill history
+        </button>
+        <button
+          type="button"
+          class="danger"
+          class:armed={drillResetArmed}
+          onclick={() => void resetDrills()}
+        >
+          {drillResetArmed ? 'Tap again to delete every attempt' : 'Reset drill progress'}
+        </button>
+      </div>
+      {#if drillResetArmed}
+        <p class="warn" role="alert">
+          This deletes every drill attempt on this device, and with it the streak and the schedule.
+          There is no undo.
         </p>
       {/if}
     </section>

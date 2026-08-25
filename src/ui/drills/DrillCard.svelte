@@ -2,6 +2,7 @@
   import type { DrillTemplate } from '../../lib/drills';
   import type { DrillBest } from '../../lib/drillHistory';
   import { SEA_LABELS } from '../format';
+  import { masteryLevel } from './progress';
 
   let {
     template,
@@ -17,7 +18,19 @@
     onopen: (template: DrillTemplate) => void;
   } = $props();
 
-  const MEDAL_GLYPH = { gold: '🥇', silver: '🥈', bronze: '🥉', none: '—' };
+  const MEDAL_LABEL = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze', none: 'No medal' };
+
+  /**
+   * Mastery, on the card face rather than in a `title` a touch device never
+   * shows (audit ux-02 M-18): three dots filled to the best medal, and the
+   * attempt count in words next to them.
+   */
+  const mastery = $derived(masteryLevel(best));
+  const masteryLabel = $derived(
+    best
+      ? `Best ${MEDAL_LABEL[best.medal]}, ${best.attempts} ${best.attempts === 1 ? 'attempt' : 'attempts'}`
+      : 'Not attempted',
+  );
 
   const condition = $derived(
     [
@@ -35,9 +48,16 @@
         <span class="dot" class:on={n <= template.tier}></span>
       {/each}
     </span>
-    {#if best}
-      <span class="medal" title="{best.attempts} attempts">{MEDAL_GLYPH[best.medal]}</span>
-    {/if}
+    <span class="mastery" aria-label={masteryLabel}>
+      <span class="dots" aria-hidden="true">
+        {#each [1, 2, 3] as n (n)}
+          <span class="dot mastery-dot" class:on={n <= mastery}></span>
+        {/each}
+      </span>
+      <span class="tries tabular-nums" aria-hidden="true">
+        {best ? `${best.attempts}×` : '—'}
+      </span>
+    </span>
   </span>
   <span class="title">{template.title}</span>
   <span class="meta tabular-nums">
@@ -83,9 +103,22 @@
     border-color: var(--accent);
   }
 
-  .medal {
-    font-size: var(--text-md);
-    line-height: 1;
+  .mastery {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  /* Tier dots say what the drill is; mastery dots say how you have done on it,
+     so they are a different colour rather than a second row of the same mark. */
+  .mastery-dot.on {
+    background: var(--good);
+    border-color: var(--good);
+  }
+
+  .tries {
+    font-size: var(--text-xs);
+    color: var(--ink-2);
   }
 
   .title {

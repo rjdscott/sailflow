@@ -36,7 +36,9 @@ import {
 } from '../../lib/drillHistory';
 import { nextDue, type Spacing } from '../../lib/spacing';
 import { hashSeed } from '../../lib/prng';
+import { track } from '../../lib/telemetry';
 import { settings } from '../stores/settings.svelte';
+import { streakDays } from './progress';
 import { getClient } from './client';
 
 const DEBOUNCE_MS = 80;
@@ -59,6 +61,8 @@ export interface DrillScore {
   hintUsed: boolean;
   /** True when this attempt beat every previous one on control distance. */
   isBest: boolean;
+  /** The best distance before this attempt: `null` when there was none to beat. */
+  prevBestSteps: number | null;
 }
 
 /**
@@ -90,6 +94,8 @@ export class DrillStore {
   valid = $state(true);
   best = $state<Record<string, DrillBest>>({});
   due = $state<Spacing[]>([]);
+  /** Consecutive local days with at least one Check, in this browser only. */
+  streak = $state(0);
   /** Set when `next()` walks off the end of the visible list. */
   endNote = $state<string | undefined>(undefined);
 
@@ -117,11 +123,33 @@ export class DrillStore {
     return settings.mode === 'simple' ? this.templates.filter((t) => t.tier <= 2) : this.templates;
   }
 
-  /** Re-read the attempt history: best-per-template and the spacing queue. */
+  /** Re-read the attempt history: best-per-template, the spacing queue, the streak. */
   async refresh(): Promise<void> {
     const attempts = await this.history.list();
     this.best = bestByTemplate(attempts);
     this.due = nextDue(this.templates, attempts, this.now());
+    this.streak = streakDays(attempts, this.now());
+  }
+
+  /** The drill the schedule puts up next, or the first visible one if it is hidden. */
+  get today(): DrillTemplate | undefined {
+    const visible = this.visible;
+    for (const s of this.due) {
+      const t = visible.find((v) => v.id === s.templateId);
+      if (t) return t;
+    }
+    return visible[0];
+  }
+
+  /** Every recorded attempt as JSON. What the More screen's export saves. */
+  async exportHistory(): Promise<string> {
+    return JSON.stringify({ v: 2, attempts: await this.history.list() }, null, 2);
+  }
+
+  /** Delete every attempt: the bests, the streak and the schedule go with it. */
+  async resetHistory(): Promise<void> {
+    await this.history.clear();
+    await this.refresh();
   }
 
   /** Generate and open a drill. Default seed is today's, the same for everyone. */
@@ -145,6 +173,7 @@ export class DrillStore {
       this.result = g.startResult;
       this.scoreStale = false;
       this.openedAt = this.now().getTime();
+      track('drill.started');
     } finally {
       if (ticket === this.seq) this.loading = false;
     }
@@ -225,7 +254,8 @@ export class DrillStore {
       const s = scoreDrill({ race, result: user }, { race: key.race, result: key.result }, drill);
       const deltas = perControlDelta(race, key.race, drill.free);
       const prev = this.best[drill.templateId];
-      const isBest = !prev || prev.distanceSteps === null || s.distanceSteps < prev.distanceSteps;
+      const prevBestSteps = prev?.distanceSteps ?? null;
+      const isBest = prevBestSteps === null || s.distanceSteps < prevBestSteps;
       this.score = {
         ...s,
         deltas,
@@ -233,8 +263,10 @@ export class DrillStore {
         optimum: key,
         hintUsed: this.hintUsed,
         isBest,
+        prevBestSteps,
       };
       this.scoreStale = false;
+      track('drill.checked');
 
       const attempt: DrillAttempt = {
         id: attemptId(),
