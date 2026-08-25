@@ -48,3 +48,5 @@ with minimal disruption.
 | 28 | Race mode models sheeting angle vs AWA (luff / stall efficiency, invented, tier B); VPP mode keeps ORC ideal trim so calibration and the polar gate are unaffected | `src/core/shape/sheeting.ts`, plan ux-excellence phase 02 log |
 | 29 | Audit `ux-02` (whole app + drills pedagogy + engagement benchmark): drills answer key fabricated, scoring blind; drills rebuilt as generated fault templates scored in control space (ADR 0013, proposed) | audit ux-02, ADR 0013 |
 | 30 | Continuous improvement without a backend: CI hold-out visibility, local-first instrumentation, prefilled GitHub-issue feedback | plan drills-and-loop phase 05 |
+| 31 | Owner accepted ADR 0013 (generated fault-template drills, control-space scoring) and the drills-and-loop plan end to end, autonomously | ADR 0013, plan `2026-08-25-drills-and-loop` |
+| 32 | When the model's optimum contradicts a tuning guide inside a drill: show both, grade on the model, flag the disagreement on the score sheet | plan phase 00 (H-04), phase 02 |

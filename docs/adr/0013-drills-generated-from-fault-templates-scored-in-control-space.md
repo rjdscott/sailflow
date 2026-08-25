@@ -1,6 +1,6 @@
 # 0013. Drills generated from fault templates, scored in control space
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-25
 
 ## Context
