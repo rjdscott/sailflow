@@ -49,7 +49,9 @@ line. Don't hand-edit.
 | [0008](0008-third-party-reference-data-committed-with-provenance.md) | Third-party reference data is committed to the repo with inline provenance | Accepted |
 | [0009](0009-dock-mode-score-is-expected-regret-over-a-forecast-distribution.md) | Dock-mode score is expected regret in seconds per mile over a forecast distribution | Accepted |
 | [0010](0010-persistence-behind-a-log-store-interface-localstorage-then-indexeddb.md) | Persistence behind a LogStore interface: localStorage now, IndexedDB when the schema settles | Accepted |
-| [0011](0011-two-d-svg-and-canvas-only-for-epic-1.md) | 2D SVG and Canvas only for Epic 1; no WebGL until measured | Accepted |
+| [0011](0011-two-d-svg-and-canvas-only-for-epic-1.md) | 2D SVG and Canvas only for Epic 1; no WebGL until measured | Superseded by [0014](0014-three-js-sail-view-behind-lazy-chunk-and-perf-gate.md) |
 | [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) | The calibration hold-out is split by wind speed, not by sailing angle | Accepted |
 | [0013](0013-drills-generated-from-fault-templates-scored-in-control-space.md) | Drills generated from fault templates, scored in control space | Accepted |
+| [0014](0014-three-js-sail-view-behind-lazy-chunk-and-perf-gate.md) | A three.js 3D sail and rig view, lazily loaded behind a performance gate with the 2D view as fallback | Accepted |
+| [0015](0015-cockpit-panels-by-sail-system-with-density-tiers.md) | Race mode is a cockpit of task-named sail-system panels, one instrument-cell contract, and three density tiers | Accepted |
 <!-- index:end -->

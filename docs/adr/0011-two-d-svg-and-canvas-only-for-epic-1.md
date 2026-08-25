@@ -1,6 +1,6 @@
 # 0011. 2D SVG and Canvas only for Epic 1; no WebGL until measured
 
-- **Status:** Accepted
+- **Status:** Superseded by [0014](0014-three-js-sail-view-behind-lazy-chunk-and-perf-gate.md)
 - **Date:** 2026-08-25
 
 ## Context
