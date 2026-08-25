@@ -7,7 +7,13 @@
  * a missing `solver.worker.ts` doesn't break the build.
  */
 import { PROTOCOL_VERSION, type Request, type ResultOf, type Response } from './protocol';
-import type { DockControls, DockScore, OptimalResult, SolveResult } from '../core/types';
+import type {
+  DockControls,
+  DockScore,
+  OptimalResult,
+  OptimalTrimResult,
+  SolveResult,
+} from '../core/types';
 
 function createSolverWorker(): Worker {
   return new Worker(new URL('./solver.worker.ts', import.meta.url), { type: 'module' });
@@ -96,6 +102,13 @@ const stubOptimal: OptimalResult = {
   },
 };
 
+const stubOptimalTrim: OptimalTrimResult = {
+  race: stubOptimal.race,
+  result: stubSolve,
+  moved: ['backstay', 'mainsheet'],
+  iters: 96,
+};
+
 function stubDockScore(setup: DockControls): DockScore {
   const regret = { twsKt: 10, regretSPerMile: 2.5, optimum: setup };
   return {
@@ -120,6 +133,8 @@ export function stubClient(): Pick<SolverClient, 'request'> {
           return Promise.resolve(stubSolve as ResultOf<R>);
         case 'optimal':
           return Promise.resolve(stubOptimal as ResultOf<R>);
+        case 'optimalTrim':
+          return Promise.resolve(stubOptimalTrim as ResultOf<R>);
         case 'dockScore': {
           const setups = (req as unknown as { setups: DockControls[] }).setups;
           return Promise.resolve(setups.map(stubDockScore) as ResultOf<R>);

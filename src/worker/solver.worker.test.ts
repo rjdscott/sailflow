@@ -32,7 +32,7 @@ describe('solver worker dispatch', () => {
     const bad = { ...boat, sails: {} } as unknown as BoatDefinition;
     expect(handle({ protocolVersion: 1, id: 3, type: 'loadBoat', boat: bad }).type).toBe('error');
   });
-  it('loads a boat then solves trimmed, optimal and dockScore, all JSON-safe', () => {
+  it('loads a boat then solves trimmed, optimal, optimalTrim and dockScore, all JSON-safe', () => {
     expect(handle({ protocolVersion: 1, id: 4, type: 'loadBoat', boat })).toMatchObject({
       type: 'ok',
       result: null,
@@ -54,6 +54,14 @@ describe('solver worker dispatch', () => {
       optimiseTwa: false,
     });
     expect(o).toMatchObject({ type: 'ok', id: 6 });
+    const ot = handle({
+      protocolVersion: 1,
+      id: 8,
+      type: 'optimalTrim',
+      controls: { dock: baseDock(), race: { ...baseRace(), backstay: 90, mainsheet: 20 } },
+      condition: cond,
+    });
+    expect(ot).toMatchObject({ type: 'ok', id: 8 });
     const d = handle({
       protocolVersion: 1,
       id: 7,
@@ -63,7 +71,7 @@ describe('solver worker dispatch', () => {
       forecast: { minKt: 10, likelyKt: 10, maxKt: 10, seaState: 1, crewKg: 300 },
     });
     expect(d).toMatchObject({ type: 'ok', id: 7 });
-    for (const r of [t, o, d]) {
+    for (const r of [t, o, ot, d]) {
       const json = JSON.stringify(r);
       expect(json).not.toMatch(/NaN|Infinity/);
       expect(JSON.parse(json)).toEqual(r);

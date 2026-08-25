@@ -8,6 +8,7 @@ import { validateBoat } from '../core/boat/validate';
 import { geometryFor } from '../core/solve/equilibrium';
 import { trimmed } from '../core/solve/trimmed';
 import { optimal } from '../core/solve/optimal';
+import { optimalTrim } from '../core/solve/optimalTrim';
 import { scoreDockSetups } from '../core/solve/dock';
 import type { AeroGeometry } from '../core/aero/orc/forces';
 import type { SailId } from '../core/types';
@@ -40,6 +41,12 @@ export function handle(req: Request): Response {
           ...base,
           type: 'ok',
           result: optimal(need(), req.dock, req.condition, { optimiseTwa: req.optimiseTwa }, geom!),
+        };
+      case 'optimalTrim':
+        return {
+          ...base,
+          type: 'ok',
+          result: optimalTrim(need(), req.controls, req.condition, {}, geom!),
         };
       case 'dockScore':
         return {
