@@ -38,15 +38,15 @@ number the app shows and were not fixed silently.
 
 ## P2 — owner decisions on displayed numbers
 
-- [x] **M-07** (P2, S) `pctPolar` tier under the kite: routed through `lowerTier` — the lower of the grid tier and `bsKt`'s, no band at A (#TBD).
-- [x] **M-06** (P2, S) Dock regret tier: B, by design — the lap time sums a downwind leg the model does not fit (#TBD).
-- [x] **M-05** (P2, S) Forecast pmf floor: kept as coded, 5 % of peak; ADR 0009 and `ASSUMPTIONS.md` record the decision (#TBD).
-- [x] **M-04** (P2, S) Dock `T*(w)` reference: fold-in kept and documented — regret stays non-negative and monotone (#TBD).
-- [x] **M-11** (P2, S) `--range-*` are decorative: `tokens.css` reworded, ADR 0015's 3:1 promise narrowed to `contrast_check`'s gated list (#TBD).
+- [x] **M-07** (P2, S) `pctPolar` tier under the kite: routed through `lowerTier` — the lower of the grid tier and `bsKt`'s, no band at A (#85).
+- [x] **M-06** (P2, S) Dock regret tier: B, by design — the lap time sums a downwind leg the model does not fit (#85).
+- [x] **M-05** (P2, S) Forecast pmf floor: kept as coded, 5 % of peak; ADR 0009 and `ASSUMPTIONS.md` record the decision (#85).
+- [x] **M-04** (P2, S) Dock `T*(w)` reference: fold-in kept and documented — regret stays non-negative and monotone (#85).
+- [x] **M-11** (P2, S) `--range-*` are decorative: `tokens.css` reworded, ADR 0015's 3:1 promise narrowed to `contrast_check`'s gated list (#85).
 - [ ] **M-12** (P2, S) Third palette block in `contrast_check` (the `prefers-color-scheme: light` media query is unread).
-- [x] **M-09** (P2, S) Report commit stamp dropped; the boat and calibration hashes identify the model (#TBD).
+- [x] **M-09** (P2, S) Report commit stamp dropped; the boat and calibration hashes identify the model (#85).
 - [ ] **M-10**, **M-20** (P2, S) `boat.ts` ceiling comment; research doc 02 §6 clew-rise cell.
-- [x] **M-25b** (P2, M) Plan view draws the bulged leech: `leechAt` sampled at 9 heights, same projection as the luff (#TBD).
+- [x] **M-25b** (P2, M) Plan view draws the bulged leech: `leechAt` sampled at 9 heights, same projection as the luff (#85).
 
 ## P3
 
