@@ -105,6 +105,17 @@
     else if (e.key === 'Escape') cancelEdit();
   }
 
+  /**
+   * `[` and `]` alongside the arrow keys the range input already handles, so
+   * a desktop study session never leaves the home row (audit ux-02 M-13).
+   */
+  function onTrackKey(e: KeyboardEvent): void {
+    if (e.key !== '[' && e.key !== ']') return;
+    e.preventDefault();
+    if (locked) return;
+    value = snap(value + (e.key === ']' ? step : -step), min, max, step);
+  }
+
   /** The editor is useless unless it is where you are typing. */
   function focusOnMount(node: HTMLInputElement): void {
     node.focus();
@@ -162,6 +173,7 @@
       {step}
       {value}
       oninput={onInput}
+      onkeydown={onTrackKey}
     />
     {#if tickPct !== undefined}
       <div class="tick" style="left: {tickPct}%"></div>

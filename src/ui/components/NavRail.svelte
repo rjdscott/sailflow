@@ -4,6 +4,8 @@
 </script>
 
 <nav class="nav-rail" aria-label="Primary">
+  <!-- The product name, once, where every screen can see it (audit ux-02 M-01). -->
+  <p class="wordmark">Sailflow</p>
   {#each NAV_ITEMS as tab (tab.route)}
     <button
       type="button"
@@ -43,6 +45,15 @@
     padding-block: var(--space-4);
     background: var(--surface);
     border-right: 1px solid var(--line);
+  }
+
+  .wordmark {
+    margin: 0 0 var(--space-2);
+    color: var(--ink-2);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-align: center;
   }
 
   button {

@@ -27,11 +27,37 @@ undiagnosable.
 - CI job `validate`: regenerates the polar hold-out report on every push,
   prints the held-out rows and the gate verdict in the job summary and uploads
   the report. Non-blocking while the gate has known failures.
+- Addressable scenarios: `#/race?tws=…&twa=…&sea=…&crew=…&set=…&r=…` carries the
+  condition and the whole race trim, written debounced with `replaceState` and
+  read back on load or paste. `#/drills/<template>/<seed>` is parsed too.
+- The session — condition, race trim and dock forecast — survives a reload,
+  under `sailflow.session.v1`. A link wins over the stored session.
+- Keyboard shortcuts on Race: `1`–`5` point of sail, `[`/`]` (and the arrow
+  keys) to nudge the focused slider, `o` apply optimum, `u` undo, `?` for the
+  list.
+- Tap any readout label — BSP, Height, VMG, Heel, Leeway, AWA, Depower — for a
+  one-paragraph explanation of the quantity.
+- Provenance, Assumptions and the validation report are bundled with the app
+  and open in a sheet from More, so they work with no signal. GitHub links kept.
+- "Print tuning card" on Dock: rig setup, guide band, forecast and the
+  per-wind-speed regret table on one sheet, with the app furniture hidden.
+- A Motion setting on More (System / On / Reduced) overriding the OS
+  reduce-motion preference, and a Detail setting carrying Simple/Advanced.
+- "Log this trim" on Race, a committed-forecast chip on the conditions strip,
+  a one-line purpose statement on Race and a wordmark on both navigations.
 
 ### Changed
 
 - The PWA "new version available" prompt is an in-app toast with a Reload
   action instead of a native `confirm()`.
+- Simple/Advanced is one control on More rather than a header segment on every
+  screen; Race keeps a chip, the screens it did not change no longer show it.
+- Each screen sets its own `<title>` ("Race · Sailflow") and starts at the top
+  of the page.
+- The `#/kit` design-system screen is dev-only and no longer ships; an
+  unrecognised hash falls back to Race and says so in the console.
+- The "Flat" readout is "Depower (flat)", so it no longer collides with the
+  flat sea state.
 
 ### Fixed
 

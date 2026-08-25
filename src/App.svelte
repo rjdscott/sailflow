@@ -9,13 +9,67 @@
   import Log from './ui/screens/Log.svelte';
   import Drills from './ui/screens/Drills.svelte';
   import More from './ui/screens/More.svelte';
-  import Kit from './ui/screens/Kit.svelte';
   import Toast from './ui/components/Toast.svelte';
+  import { conditions } from './ui/stores/conditions.svelte';
+  import { race } from './ui/race/store.svelte';
+  import { dock } from './ui/dock/store.svelte';
+  import { decodeScenario, encodeScenario, readSession, writeSession } from './ui/scenario';
 
   $effect(() => {
     const theme = settings.theme === 'auto' ? undefined : settings.theme;
     if (theme) document.documentElement.setAttribute('data-theme', theme);
     else document.documentElement.removeAttribute('data-theme');
+  });
+
+  $effect(() => {
+    const motion = settings.motion;
+    if (motion === 'system') document.documentElement.removeAttribute('data-motion');
+    else document.documentElement.setAttribute('data-motion', motion);
+  });
+
+  // --- Scenario: URL and session (audit ux-02 M-05) ------------------------
+  // Storage first, then the URL over the top: a link someone sent you beats
+  // whatever this browser was last doing, and a plain `#/race` keeps the
+  // session it had. Both are validated in `scenario.ts`; nothing here trusts
+  // either enough to skip that.
+  function restore(): void {
+    const stored = readSession();
+    if (stored.condition) Object.assign(conditions, stored.condition);
+    if (stored.race) Object.assign(race.controls.race, stored.race);
+    if (stored.forecast) Object.assign(dock.forecast, stored.forecast);
+    applyUrl();
+  }
+
+  function applyUrl(): void {
+    if (router.route !== 'race') return;
+    const { condition, race: trim } = decodeScenario(router.params);
+    Object.assign(conditions, condition);
+    if (trim) Object.assign(race.controls.race, trim);
+  }
+
+  restore();
+
+  $effect(() => {
+    window.addEventListener('hashchange', applyUrl);
+    return () => window.removeEventListener('hashchange', applyUrl);
+  });
+
+  // One debounced writer for both sinks: a slider drag must not put sixty
+  // entries in history or sixty writes through localStorage.
+  const WRITE_MS = 400;
+  let writeTimer: ReturnType<typeof setTimeout> | undefined;
+
+  $effect(() => {
+    const condition = conditions.value;
+    const trim = $state.snapshot(race.controls.race);
+    const forecast = $state.snapshot(dock.forecast);
+    const onRace = router.route === 'race';
+    clearTimeout(writeTimer);
+    writeTimer = setTimeout(() => {
+      writeSession({ condition, race: trim, forecast });
+      if (onRace) router.replaceParams(encodeScenario(condition, trim));
+    }, WRITE_MS);
+    return () => clearTimeout(writeTimer);
   });
 
   // A new build is precached. The service worker takes over on the next
@@ -49,8 +103,12 @@
       <Drills />
     {:else if router.route === 'more'}
       <More />
-    {:else if router.route === 'kit'}
-      <Kit />
+    {:else if import.meta.env.DEV && router.route === 'kit'}
+      <!-- Component-demo state with invented numbers: the whole branch, and
+           the chunk it imports, are compiled out of a production build (L-01). -->
+      {#await import('./ui/screens/Kit.svelte') then Kit}
+        <Kit.default />
+      {/await}
     {/if}
   </main>
 

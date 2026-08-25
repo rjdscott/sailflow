@@ -1,13 +1,17 @@
 /**
- * Persisted UI settings: Simple/Advanced mode, theme. localStorage access is
- * wrapped in try/catch — iOS Safari PWAs can throw in private contexts.
+ * Persisted UI settings: Simple/Advanced mode, theme, motion. localStorage
+ * access is wrapped in try/catch — iOS Safari PWAs can throw in private
+ * contexts.
  */
 
 export type Mode = 'simple' | 'advanced';
 export type Theme = 'auto' | 'light' | 'dark';
+/** `system` follows `prefers-reduced-motion`; `on`/`off` override it (L-03). */
+export type Motion = 'system' | 'on' | 'off';
 
 const MODE_KEY = 'sailflow.mode';
 const THEME_KEY = 'sailflow.theme';
+const MOTION_KEY = 'sailflow.motion';
 
 function readStorage(key: string): string | null {
   try {
@@ -33,12 +37,18 @@ function isTheme(v: string | null): v is Theme {
   return v === 'auto' || v === 'light' || v === 'dark';
 }
 
+function isMotion(v: string | null): v is Motion {
+  return v === 'system' || v === 'on' || v === 'off';
+}
+
 const initialMode = readStorage(MODE_KEY);
 const initialTheme = readStorage(THEME_KEY);
+const initialMotion = readStorage(MOTION_KEY);
 
 class Settings {
   mode: Mode = $state(isMode(initialMode) ? initialMode : 'simple');
   theme: Theme = $state(isTheme(initialTheme) ? initialTheme : 'auto');
+  motion: Motion = $state(isMotion(initialMotion) ? initialMotion : 'system');
 
   setMode(mode: Mode): void {
     this.mode = mode;
@@ -48,6 +58,11 @@ class Settings {
   setTheme(theme: Theme): void {
     this.theme = theme;
     writeStorage(THEME_KEY, theme);
+  }
+
+  setMotion(motion: Motion): void {
+    this.motion = motion;
+    writeStorage(MOTION_KEY, motion);
   }
 }
 

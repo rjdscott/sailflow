@@ -6,10 +6,15 @@
     title,
     lock,
     tier,
+    mode = false,
   }: {
     title: string;
     lock?: Snippet;
     tier?: Snippet;
+    /** Show the Simple/Advanced chip. Opt-in: it is a global setting that
+        lives in More, and on a screen it does not change it reads as broken
+        (audit ux-02 M-12). */
+    mode?: boolean;
   } = $props();
 </script>
 
@@ -20,7 +25,7 @@
   </div>
   <div class="right">
     {#if tier}{@render tier()}{/if}
-    <Toggle />
+    {#if mode}<Toggle />{/if}
   </div>
 </header>
 

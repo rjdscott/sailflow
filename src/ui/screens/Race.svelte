@@ -22,6 +22,11 @@
   import Panel from '../disagree/Panel.svelte';
   import { ModelOptimumStore } from '../disagree/store.svelte';
   import { getClient } from '../race/client';
+  import ShortcutsSheet from '../components/ShortcutsSheet.svelte';
+  import { isTypingTarget, keyAction } from '../keys';
+  import { router } from '../router.svelte';
+  import { logStoreUi } from '../log/store.svelte';
+  import { track } from '../../lib/telemetry';
 
   const advanced = $derived(settings.mode === 'advanced');
   const model = new ModelOptimumStore(getClient());
@@ -86,6 +91,7 @@
   function applyOptimum(): void {
     const target = optimum.race;
     if (!target) return;
+    track('race.applyOptimum');
     race.remember();
     from = { ...$state.snapshot(race.controls.race) };
     to = { ...$state.snapshot(target) };
@@ -108,6 +114,33 @@
     applied = null;
     progress.set(1, { duration: 0 });
     race.undo();
+  }
+
+  /**
+   * Hand the trim on screen to the log form and go there. The entry itself is
+   * written on the Log screen, so nothing is saved behind the user's back.
+   */
+  function logTrim(): void {
+    logStoreUi.setDraft({
+      date: new Date().toISOString().slice(0, 10),
+      seaState: conditions.seaState,
+      crewKg: conditions.crewKg,
+      race: { ...$state.snapshot(race.controls.race) },
+    });
+    router.navigate('log');
+  }
+
+  let shortcutsOpen = $state(false);
+
+  /** The whole shortcut table is in `ui/keys.ts`; this is just the wiring. */
+  function onKeydown(e: KeyboardEvent): void {
+    const action = keyAction(e, isTypingTarget(e.target));
+    if (!action) return;
+    if (action.type === 'pointOfSail') race.setPointOfSail(POINTS_OF_SAIL[action.index].id);
+    else if (action.type === 'applyOptimum') {
+      if (canApply) applyOptimum();
+    } else if (action.type === 'undo') undoTrim();
+    else shortcutsOpen = true;
   }
 
   $effect(() => {
@@ -196,6 +229,7 @@
       {#if race.previousRace}
         <button type="button" class="undo" onclick={undoTrim}>Back to my trim</button>
       {/if}
+      <button type="button" class="undo" onclick={logTrim}>Log this trim</button>
       {#if optimum.busy || optimum.stale}
         <span class="hint">Searching…</span>
       {:else if optimum.error}
@@ -234,7 +268,14 @@
   </section>
 {/snippet}
 
-<TopBar title="Race" />
+<svelte:window onkeydown={onKeydown} />
+
+<TopBar title="Race" mode />
+
+<p class="lede">
+  Trim the boat for the wind in front of you and see what it costs: Sailflow solves the same rig the
+  Dock committed, tells you the one move worth making, and shows how much it is worth.
+</p>
 
 <ConditionsStrip />
 
@@ -368,7 +409,17 @@
   </div>
 </div>
 
+<ShortcutsSheet bind:open={shortcutsOpen} />
+
 <style>
+  /* Same lede as the drills list: one line, before the instrument. */
+  .lede {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+    max-width: 68ch;
+  }
+
   .pane[hidden] {
     display: none;
   }

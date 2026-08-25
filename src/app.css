@@ -282,3 +282,28 @@ button.chip {
     padding: var(--space-5);
   }
 }
+
+/* ------------------------------------------------------------------- print */
+
+/* Printing is for the Dock's tuning card (audit ux-02 M-25): the shell, the
+   controls and the sticky bars are screen furniture, and the card renders
+   itself. Anything a screen adds for print opts in with .print-card. */
+@media print {
+  .rail-slot,
+  .tabbar-slot,
+  .screen-head {
+    display: none !important;
+  }
+
+  /* Only a screen that supplies a print card replaces itself with it; the
+     others still print their content rather than a blank page. */
+  body:has(.print-card) .screen,
+  body:has(.print-card) .commit-bar {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+}

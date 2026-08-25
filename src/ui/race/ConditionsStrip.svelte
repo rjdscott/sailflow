@@ -5,6 +5,7 @@
   import Sheet from '../components/Sheet.svelte';
   import Slider from '../components/Slider.svelte';
   import { conditions, PRESETS, SEA_STATES } from '../stores/conditions.svelte';
+  import { rigLock } from '../stores/rigLock.svelte';
   import { nearestPointOfSail, POINTS_OF_SAIL } from './pointOfSail';
   import { race } from './store.svelte';
 
@@ -22,6 +23,16 @@
 
   function stepTws(delta: number): void {
     conditions.twsKt = Math.min(TWS_MAX, Math.max(TWS_MIN, conditions.twsKt + delta));
+  }
+
+  /** What the Dock actually bet on today, if it bet (audit ux-02 M-01/M-07). */
+  const committed = $derived(rigLock.lockedToday ? rigLock.locked?.forecast : undefined);
+
+  function takeForecast(): void {
+    if (!committed) return;
+    conditions.twsKt = Math.round(committed.likelyKt);
+    conditions.seaState = committed.seaState;
+    conditions.crewKg = committed.crewKg;
   }
 </script>
 
@@ -62,6 +73,16 @@
   <span class="chip">{conditions.crewKg.toFixed(0)} kg</span>
   <span class="chip">{conditions.sailset === 'asym' ? 'Gennaker' : 'Jib'}</span>
   <button type="button" class="chip hit-44" onclick={() => (open = true)}>Edit</button>
+  {#if committed}
+    <button
+      type="button"
+      class="chip hit-44"
+      onclick={takeForecast}
+      title="Sail the wind you committed the rig for"
+    >
+      Committed: {committed.minKt.toFixed(0)}–{committed.maxKt.toFixed(0)} kt
+    </button>
+  {/if}
 </div>
 
 <Sheet bind:open title="Conditions">
