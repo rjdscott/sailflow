@@ -2,8 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Condition, ControlState, OptimalResult, SolveResult } from '../../core/types';
 import type { OptimalRequest, TrimmedRequest } from '../../worker/protocol';
 import type { Client } from './client';
-import { BASE_DOCK, BASE_DOWN, bestProbe, DEBOUNCE_MS, gradients, RaceStore } from './store.svelte';
-import { BASE_RACE, conditions } from '../stores/conditions.svelte';
+import {
+  BASE_DOCK,
+  BASE_DOWN,
+  bestProbe,
+  DEBOUNCE_MS,
+  gradients,
+  OBJECTIVE_METRIC,
+  raceObjective,
+  RaceStore,
+} from './store.svelte';
+import { BASE_RACE, conditions, PRESETS } from '../stores/conditions.svelte';
 
 const CONDITION: Condition = { twsKt: 12, twaDeg: 42, seaState: 1, crewKg: 300, sailset: 'jib' };
 
@@ -152,7 +161,9 @@ describe('coach line', () => {
     expect(store.coach?.control).toBe('mainsheet');
     expect(store.coach?.dir).toBe(-1);
     expect(store.coach?.text).toBe('Ease mainsheet one click: +0.06 kt VMG, leech is stalled.');
-    expect(store.chevrons).toEqual({ mainsheet: -1, traveller: 1 });
+    expect(store.chevrons.mainsheet.dir).toBe(-1);
+    expect(store.chevrons.mainsheet.gainKt).toBeCloseTo(0.06, 5);
+    expect(store.chevrons.traveller.dir).toBe(1);
   });
 
   it('does not probe past a control stop', async () => {
@@ -168,29 +179,112 @@ describe('coach line', () => {
 describe('bestProbe', () => {
   it('returns the largest gain above the noise floor', () => {
     const best = bestProbe(4.8, [
-      { control: 'backstay', dir: 1, vmgKt: 4.82 },
-      { control: 'mainsheet', dir: -1, vmgKt: 4.86 },
-      { control: 'traveller', dir: 1, vmgKt: 4.79 },
+      { control: 'backstay', dir: 1, valueKt: 4.82 },
+      { control: 'mainsheet', dir: -1, valueKt: 4.86 },
+      { control: 'traveller', dir: 1, valueKt: 4.79 },
     ]);
     expect(best?.control).toBe('mainsheet');
     expect(best?.gainKt).toBeCloseTo(0.06);
   });
 
   it('is null when every probe is inside the noise floor', () => {
-    expect(bestProbe(4.8, [{ control: 'backstay', dir: 1, vmgKt: 4.803 }])).toBeNull();
+    expect(bestProbe(4.8, [{ control: 'backstay', dir: 1, valueKt: 4.803 }])).toBeNull();
     expect(bestProbe(4.8, [])).toBeNull();
   });
 });
 
 describe('gradients', () => {
-  it('keeps only the better direction per control', () => {
-    expect(
-      gradients(4.8, [
-        { control: 'backstay', dir: 1, vmgKt: 4.9 },
-        { control: 'backstay', dir: -1, vmgKt: 4.85 },
-        { control: 'vang', dir: -1, vmgKt: 4.7 },
-      ]),
-    ).toEqual({ backstay: 1 });
+  it('keeps only the better direction per control, with what it gains', () => {
+    const out = gradients(4.8, [
+      { control: 'backstay', dir: 1, valueKt: 4.9 },
+      { control: 'backstay', dir: -1, valueKt: 4.85 },
+      { control: 'vang', dir: -1, valueKt: 4.7 },
+    ]);
+    expect(Object.keys(out)).toEqual(['backstay']);
+    expect(out.backstay.dir).toBe(1);
+    // M-02: the magnitude used to be computed and dropped on the floor.
+    expect(out.backstay.gainKt).toBeCloseTo(0.1, 6);
+  });
+});
+
+describe('raceObjective', () => {
+  // Mirrors core/solve/optimalTrim: if these drift, Apply optimum and the
+  // coach line start pointing at different numbers.
+  it.each([
+    [{ twaDeg: 40, sailset: 'jib' }, 'vmgUp', 'VMG'],
+    [{ twaDeg: -42, sailset: 'jib' }, 'vmgUp', 'VMG'],
+    [{ twaDeg: 90, sailset: 'jib' }, 'speed', 'boat speed'],
+    [{ twaDeg: 120, sailset: 'jib' }, 'speed', 'boat speed'],
+    [{ twaDeg: 60, sailset: 'asym' }, 'speed', 'boat speed'],
+    [{ twaDeg: 150, sailset: 'asym' }, 'vmgDown', 'VMG'],
+  ] as const)('%o is %s, worded as %s', (over, objective, metric) => {
+    const c = { ...CONDITION, ...over };
+    expect(raceObjective(c)).toBe(objective);
+    expect(OBJECTIVE_METRIC[raceObjective(c)]).toBe(metric);
+  });
+});
+
+describe('coach wording per point of sail', () => {
+  /** VMG likes the traveller; boat speed likes the mainsheet. Whoever wins
+      tells you which objective the probes actually scored. */
+  const splitClient: Client = {
+    request: (req) => {
+      const race = (req as unknown as TrimmedRequest).controls.race;
+      const bsKt = race.mainsheet === 65 ? 6.4 : 6.0;
+      const vmgKt = race.traveller === 25 ? 5.0 : 4.0;
+      return Promise.resolve(result(vmgKt, bsKt)) as never;
+    },
+  };
+
+  it('says boat speed on a reach, and probes boat speed to get there', async () => {
+    const store = new RaceStore(splitClient);
+    store.request(controls(), { ...CONDITION, twaDeg: 90 });
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    expect(store.coach?.control).toBe('mainsheet');
+    expect(store.coach?.text).toContain('kt boat speed');
+  });
+
+  it('says VMG, and scores VMG, inside 90 degrees under the jib', async () => {
+    const store = new RaceStore(splitClient);
+    store.request(controls(), { ...CONDITION, twaDeg: 42 });
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    expect(store.coach?.control).toBe('traveller');
+    expect(store.coach?.text).toContain('kt VMG');
+  });
+});
+
+describe('one-level undo', () => {
+  it('restores every control a preset overwrote, exactly', () => {
+    const store = new RaceStore(scoringClient(() => 5).client);
+    const before = { ...store.controls.race };
+    store.applyPreset(PRESETS[2]); // Heavy: rewrites all eleven
+    expect({ ...store.controls.race }).not.toEqual(before);
+
+    store.undo();
+    expect({ ...store.controls.race }).toEqual(before);
+    expect(store.previousRace).toBeNull();
+  });
+
+  it('is one level deep, and a no-op once spent', () => {
+    const store = new RaceStore(scoringClient(() => 5).client);
+    const base = { ...store.controls.race };
+    store.applyPreset(PRESETS[0]);
+    const light = { ...store.controls.race };
+    store.applyPreset(PRESETS[2]);
+
+    store.undo();
+    expect({ ...store.controls.race }).toEqual(light);
+    store.undo(); // nothing left: Light stands, base is gone
+    expect({ ...store.controls.race }).toEqual(light);
+    expect({ ...store.controls.race }).not.toEqual(base);
+  });
+
+  it('keeps the object identity the sliders bind to', () => {
+    const store = new RaceStore(scoringClient(() => 5).client);
+    const alias = store.controls.race;
+    store.applyPreset(PRESETS[2]);
+    store.undo();
+    expect(store.controls.race).toBe(alias);
   });
 });
 
@@ -204,7 +298,9 @@ describe('coach line downwind', () => {
     expect(store.coach?.control).toBe('mainsheet');
     expect(store.coach?.dir).toBe(-1);
     expect(store.coach?.gainKt).toBeCloseTo(0.2, 5);
-    expect(store.chevrons).toEqual({ mainsheet: -1 });
+    expect(store.coach?.text).toContain('kt VMG');
+    expect(Object.keys(store.chevrons)).toEqual(['mainsheet']);
+    expect(store.chevrons.mainsheet.dir).toBe(-1);
   });
 });
 

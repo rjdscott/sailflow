@@ -37,10 +37,42 @@ export const PROBE_CONTROLS = ['backstay', 'mainsheet', 'traveller', 'jibLead'] 
 /** VMG gain below this is rounding noise at the 0.01 kt we display. */
 export const GAIN_EPS = 0.005;
 
+/**
+ * What "faster" means at this condition. Mirrors `core/solve/optimalTrim`
+ * exactly — VMG to windward under the jib inside 90°, VMG to leeward under
+ * the kite from 90° out, boat speed everywhere else — so the coach line and
+ * the Apply-optimum button can never point at different things.
+ */
+export type Objective = 'vmgUp' | 'vmgDown' | 'speed';
+
+export function raceObjective(c: Condition): Objective {
+  const twa = Math.abs(c.twaDeg);
+  if (twa < 90 && c.sailset === 'jib') return 'vmgUp';
+  if (twa >= 90 && c.sailset === 'asym') return 'vmgDown';
+  return 'speed';
+}
+
+/** The words the coach line puts on that number (audit ux-01 H-05). */
+export const OBJECTIVE_METRIC: Record<Objective, string> = {
+  vmgUp: 'VMG',
+  vmgDown: 'VMG',
+  speed: 'boat speed',
+};
+
+/**
+ * The objective's value for one solve, signed so more is always better:
+ * downwind VMG is negative towards the leeward mark, so it is flipped.
+ */
+export function objectiveKt(objective: Objective, r: SolveResult): number {
+  if (objective === 'speed') return r.bsKt.value;
+  return objective === 'vmgDown' ? -r.vmgKt.value : r.vmgKt.value;
+}
+
 export interface Probe {
   control: string;
   dir: Dir;
-  vmgKt: number;
+  /** The objective's value at the nudged state — VMG or boat speed, per `raceObjective`. */
+  valueKt: number;
 }
 
 export interface Coach {
@@ -54,29 +86,41 @@ export function ids(mode: ControlSpec['mode']): string[] {
   return Object.keys(CONTROLS).filter((id) => CONTROLS[id].mode === mode);
 }
 
-/** Largest VMG gain over the base, or null when nothing beats the noise floor. */
+/** Largest gain over the base, or null when nothing beats the noise floor. */
 export function bestProbe(
-  baseVmgKt: number,
+  baseKt: number,
   probes: Probe[],
   eps = GAIN_EPS,
 ): (Probe & { gainKt: number }) | null {
   let best: (Probe & { gainKt: number }) | null = null;
   for (const p of probes) {
-    const gainKt = p.vmgKt - baseVmgKt;
+    const gainKt = p.valueKt - baseKt;
     if (gainKt > eps && (!best || gainKt > best.gainKt)) best = { ...p, gainKt };
   }
   return best;
 }
 
-/** Per-control chevron direction: which way helps, or 0 for neither. */
-export function gradients(baseVmgKt: number, probes: Probe[], eps = GAIN_EPS): Record<string, Dir> {
-  const out: Record<string, Dir> = {};
-  const gains: Record<string, number> = {};
+/** A chevron is always a gain: the glyph says which way, the number how much. */
+export interface Chevron {
+  dir: Dir;
+  gainKt: number;
+}
+
+/**
+ * Per-control chevron: the better direction and what it buys. The magnitude
+ * used to be computed and thrown away, which left the tooltip with nothing to
+ * say (audit ux-01 M-02).
+ */
+export function gradients(
+  baseKt: number,
+  probes: Probe[],
+  eps = GAIN_EPS,
+): Record<string, Chevron> {
+  const out: Record<string, Chevron> = {};
   for (const p of probes) {
-    const gainKt = p.vmgKt - baseVmgKt;
-    if (gainKt > eps && gainKt > (gains[p.control] ?? eps)) {
-      gains[p.control] = gainKt;
-      out[p.control] = p.dir;
+    const gainKt = p.valueKt - baseKt;
+    if (gainKt > eps && gainKt > (out[p.control]?.gainKt ?? eps)) {
+      out[p.control] = { dir: p.dir, gainKt };
     }
   }
   return out;
@@ -99,7 +143,14 @@ export class RaceStore {
   result: SolveResult | null = $state(null);
   busy = $state(false);
   coach: Coach | null = $state(null);
-  chevrons: Record<string, Dir> = $state({});
+  chevrons: Record<string, Chevron> = $state({});
+  /**
+   * One-level undo for anything that rewrites the whole trim — a preset, or
+   * Apply optimum (audit ux-01 M-11). One level, not a stack: the move being
+   * undone is always the one the user just made, and a stack is a history UI
+   * nobody asked for.
+   */
+  previousRace: RaceControls | null = $state(null);
   /** Advanced mode only: reveals the downwind controls under the C-tier banner. */
   downwind = $state(false);
   error: string | null = $state(null);
@@ -131,7 +182,21 @@ export class RaceStore {
     Object.assign(this.controls.dock, setup ?? BASE_DOCK);
   }
 
+  /** Park the current trim so `undo()` can put it back exactly. */
+  remember(): void {
+    this.previousRace = { ...$state.snapshot(this.controls.race) };
+  }
+
+  /** Restore the remembered trim, every key, exactly. No-op with nothing to undo. */
+  undo(): void {
+    if (!this.previousRace) return;
+    // Mutate in place: the panel's sliders bind to this object.
+    Object.assign(this.controls.race, this.previousRace);
+    this.previousRace = null;
+  }
+
   applyPreset(p: Preset): void {
+    this.remember();
     conditions.apply(p.condition);
     // Mutate in place: the panel's sliders bind to this object.
     Object.assign(this.controls.race, p.race);
@@ -191,7 +256,7 @@ export class RaceStore {
     this.result = result;
     this.busy = false;
     this.error = null;
-    await this.#probe(seq, controls, condition, result.vmgKt.value);
+    await this.#probe(seq, controls, condition, result);
   }
 
   /** Finite differences on the four influential controls, one legal step each way. */
@@ -199,7 +264,7 @@ export class RaceStore {
     seq: number,
     controls: ControlState,
     condition: Condition,
-    baseVmgKt: number,
+    base: SolveResult,
   ): Promise<void> {
     const asked: { control: string; dir: Dir; solve: Promise<SolveResult> }[] = [];
     for (const control of PROBE_CONTROLS) {
@@ -215,20 +280,22 @@ export class RaceStore {
       return; // a failed probe costs the coach line, nothing else
     }
     if (seq !== this.#seq) return;
-    // Downwind VMG is negative (towards the leeward mark); "gain" means more
-    // negative. Flip the sign so bestProbe/gradients read one way (ux-01 H-05).
-    const sign = condition.sailset === 'asym' ? -1 : 1;
+    // One objective for the whole screen (ux-01 H-05): VMG upwind, VMG to
+    // leeward under the kite — negative, so flipped to read one way — and boat
+    // speed on a reach, exactly as `optimalTrim` scores it.
+    const objective = raceObjective(condition);
     const probes: Probe[] = asked.map((a, i) => ({
       control: a.control,
       dir: a.dir,
-      vmgKt: sign * solved[i].vmgKt.value,
+      valueKt: objectiveKt(objective, solved[i]),
     }));
-    baseVmgKt *= sign;
-    const best = bestProbe(baseVmgKt, probes);
+    const baseKt = objectiveKt(objective, base);
+    const best = bestProbe(baseKt, probes);
+    const metric = OBJECTIVE_METRIC[objective];
     this.coach = best
-      ? { ...best, text: coachSentence(best.control, best.dir, best.gainKt) }
+      ? { ...best, text: coachSentence(best.control, best.dir, best.gainKt, metric) }
       : null;
-    this.chevrons = gradients(baseVmgKt, probes);
+    this.chevrons = gradients(baseKt, probes);
   }
 }
 

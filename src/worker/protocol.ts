@@ -3,6 +3,7 @@
  * Every message is plain JSON. Bump PROTOCOL_VERSION on any breaking change
  * and regenerate validation/golden.
  */
+import type { TrimControl } from '../core/solve/optimalTrim';
 import type {
   BoatDefinition,
   Condition,
@@ -16,6 +17,30 @@ import type {
 } from '../core/types';
 
 export const PROTOCOL_VERSION = 1 as const;
+
+/**
+ * The race controls an `optimalTrim` request actually moves — the list the UI
+ * needs to decide which sliders get a ghost tick and which get "no modelled
+ * effect on speed" instead.
+ *
+ * Restated here rather than re-exported from `core/solve/optimalTrim`: the UI
+ * may not import the core (ADR 0003), and a value re-export would drag the
+ * whole solver into the main bundle for the sake of eight strings. The
+ * `satisfies` keeps it honest — `core/solve/optimalTrim.ts` owns the truth,
+ * and renaming or dropping a control there fails the typecheck here.
+ */
+export const TRIM_CONTROLS = [
+  'backstay',
+  'mainsheet',
+  'traveller',
+  'vang',
+  'outhaul',
+  'cunningham',
+  'jibSheet',
+  'jibLead',
+] as const satisfies readonly TrimControl[];
+
+export type { TrimControl };
 
 interface Base {
   protocolVersion: typeof PROTOCOL_VERSION;

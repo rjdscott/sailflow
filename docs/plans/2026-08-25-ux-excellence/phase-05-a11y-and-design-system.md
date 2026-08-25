@@ -126,3 +126,19 @@ at the dock, rule C.9.5."). `Segmented` and `ConfidenceBadge` are unchanged.
 
 `make check` green: docs, lint, svelte-check 0 errors 0 warnings, 634 tests.
 - 2026-08-25 — Merged as PR #30. Emoji swaps in ControlPanel/Dock and Tabs adoption in Race handed to the phase-02 UI PR and the phase-03 latency PR; M-06 to the latency PR. Phase 🟢.
+
+### 2026-08-25 — Race-side adoption, closed from phase 02
+
+The three items phase 05 left for the owners of `race/` and `screens/`:
+
+- **M-16.** `ControlPanel.svelte`'s 🔒 is now `<LockIcon />`, in an inline-flex
+  `.locked-note`. `screens/Dock.svelte:53` is still emoji — a different agent's
+  file this phase.
+- **M-17 picture tabs.** `Race.svelte` swapped its local `<div class="tabs">`
+  block and the matching CSS for
+  `<Tabs tabs={TABS} bind:selected={tab} ariaLabel="Pictures" idPrefix="pic" />`,
+  exactly the drop-in phase 05 described, and added `tabindex="0"` to all three
+  panes so a keyboard user can scroll the drawings.
+- **L-02.** The "?" buttons in `ControlPanel.svelte` use `--line-strong`.
+
+M-06 is still open: it lives in `src/ui/disagree/Panel.svelte`.

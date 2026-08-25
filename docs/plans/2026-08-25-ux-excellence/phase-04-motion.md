@@ -19,8 +19,9 @@ the More-screen toggle. Closes M-15, M-02; owner decision row 26.
       `tweened` or CSS transition on `d` where supported; fall back to
       snapping).
 - [x] Gain chevrons: direction glyphs only, single accent colour, magnitude
-      in the tooltip (M-02). _Magnitude deferred: `gradients()` in the store
-      keeps only the sign, and the store is another phase's file._
+      in the tooltip (M-02). _Magnitude landed 2026-08-25 in phase 02:
+      `gradients()` returns `{ dir, gainKt }` and `ControlPanel.svelte` puts
+      the gain in the chevron's `title`._
 - [x] Replace the full-cell flash with a 120 ms readout fade.
 - [x] Tests: ribbon state → class mapping; reduced-motion switch removes
       animation classes. _Reduced motion is asserted by construction rather
@@ -76,3 +77,13 @@ them stream; toggle reduced motion and confirm stillness.
   `EASE` objects and one media query.
 - `make check` green (625 tests, svelte-check 0 errors).
 - 2026-08-25 — Merged as PR #29. Chevron magnitude tooltip and telltale legend handed to the phase-02 UI PR. Phase 🟢.
+
+### 2026-08-25 — M-02 magnitude, closed from phase 02
+
+`gradients()` (`src/ui/race/store.svelte.ts`) now returns
+`Record<string, { dir, gainKt }>` instead of `Record<string, Dir>` — the gain
+was already computed, it was just being thrown away at the return. The `.chev`
+span in `ControlPanel.svelte` renders it as `title="Up gains 0.06 kt"`, and
+carries `role="img"` with the same string as `aria-label`, because ARIA drops
+a name on a generic span (the audit's own point). Colour is unchanged: one
+`--accent` for both directions.
