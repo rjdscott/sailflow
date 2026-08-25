@@ -372,7 +372,7 @@
              summary row reads inline; the table is a click away. -->
         {@render disagreement(true)}
         <button type="button" class="compare" onclick={() => (disagreeOpen = true)}>
-          Compare in full
+          Full table
         </button>
       {:else}
         <details>
@@ -723,9 +723,10 @@
     /* A strip like the actions band beside it: the summary row and the way in
        to the table, on one line (audit ux-03 H-03). */
     .disagree {
+      position: relative;
       display: flex;
-      align-items: center;
-      gap: var(--space-3);
+      align-items: flex-start;
+      gap: var(--space-1);
       padding: var(--space-2) var(--space-3);
       overflow: hidden;
     }
@@ -733,6 +734,20 @@
     .disagree :global(.panel.compact) {
       flex: 1;
       min-width: 0;
+    }
+
+    /* Shares the verdict's line: the strip is two lines tall — sentence, then
+       the three cells — and a third would squeeze the Rig panel above it. */
+    .disagree :global(.panel.compact .copy.verdict) {
+      padding-right: 88px;
+    }
+
+    .disagree .compare {
+      position: absolute;
+      top: 6px;
+      right: var(--space-2);
+      min-height: 22px;
+      padding: 0 var(--space-2);
     }
 
     .hero-boat {

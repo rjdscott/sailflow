@@ -9,7 +9,18 @@ verifying and troubleshooting, not for triggering one by hand.
 ## Steps
 
 1. Deploys are automatic on every push to `main`, via
-   `.github/workflows/pages.yml`. To trigger one without a push:
+   `.github/workflows/pages.yml`. Nothing reaches `main` without `ci.yml`
+   green on the PR, and that includes the `ui-smoke` job: a production build
+   and the Playwright suite (`pnpm test:ui`) in the pinned
+   `mcr.microsoft.com/playwright:v1.62.1-noble` image, with the 3D hero
+   screenshot baseline under `tests/ui/race-3d.spec.ts-snapshots/`. A
+   baseline that drifts on purpose is regenerated in that same image:
+
+   ```bash
+   docker run --rm --ipc=host -v "$PWD":/w -w /w -e CI=1 \
+     mcr.microsoft.com/playwright:v1.62.1-noble npx playwright test --update-snapshots=all
+   ```
+ To trigger one without a push:
 
    ```bash
    gh workflow run pages.yml
@@ -72,7 +83,7 @@ verifying and troubleshooting, not for triggering one by hand.
 
 ## Last verified
 
-- **Last verified:** 2026-08-25 against a55d993. Step 2's build and grep were
+- **Last verified:** 2026-08-25 against 44212a3 (step 1's CI gate and step 4 re-run after PR #65). Earlier pass, against a55d993: Step 2's build and grep were
   run locally. Steps 3 and 4 were confirmed against the live repo: Pages is
   enabled with source `{"branch":"main","path":"/"}` at
   `https://rjdscott.github.io/sailflow/`, and `gh run list --workflow=pages.yml`

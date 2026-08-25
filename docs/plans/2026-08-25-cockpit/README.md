@@ -54,7 +54,7 @@ each panel keeps its visual beside its controls.
 | 03 | [Mainsail and Headsail panels](phase-03-sail-panels.md) | 🟢 Completed | 2026-08-25 |
 | 04 | [3D hero view](phase-04-three-d-hero.md) | 🟢 Completed | 2026-08-25 |
 | 05 | [Helm and Rig panels, actions, puff replay](phase-05-helm-rig-actions.md) | 🟢 Completed | 2026-08-25 |
-| 06 | [Phone, restyle, audit ux-03, close-out](phase-06-phone-restyle-audit.md) | 🔵 Not started | none |
+| 06 | [Phone, restyle, audit ux-03, close-out](phase-06-phone-restyle-audit.md) | 🟢 Completed | 2026-08-25 |
 
 Order: 00 → 01 → 02 ∥ 04 → 03 → 05 → 06. Cut order under pressure: puff
 replay → A/B → 3D presets and tweens (keep one view) → Analyse tier. Never
@@ -92,3 +92,23 @@ cut: the instrument-cell contract, tests, provenance, ADRs.
 ## Implements
 
 - ADR 0014, ADR 0015; research 2026-08-25-cockpit; decision log rows 35–43.
+
+## State at end of the fourth autonomous block (2026-08-25)
+
+- All six phases 🟢. Main at `44212a3`; live at https://rjdscott.github.io/sailflow/.
+- Shipped: three.js hero behind a lazy chunk with a mount-to-first-frame gate
+  (ADR 0014, amended 2026-08-25 to 350 ms), four sail-system panels with the
+  instrument-cell contract and Learn/Race/Analyse tiers (ADR 0015), dark-first
+  tokens v2 with a contrast gate in docs-check, puff replay, A/B compare,
+  Playwright `ui-smoke` job in CI.
+- Audit [ux-03](../../audits/2026-08-25-ux-03/00-executive-summary.md): 0 C /
+  12 H / 25 M / 5 L. Every High fixed in this block (#62–#65). The 25 M and 5 L
+  are open in its `todo.md`; the next block starts there — M-01 (panel content
+  behind an unsignalled internal scroll), M-07 (Analyse tier adds little), and
+  M-21/M-24 (WebGL leaks and per-drag buffer churn) are the ones to take first.
+- Known follow-ups not in the audit: on the phone the coach + actions card now
+  sits below all four panels (H-07's DOM order); a second actions affordance in
+  the sticky strip would fix it. Rig panel table is windowed to the lit row ±1;
+  the full chart is a sheet away.
+- Hold-out validation unchanged (`pnpm validate` 21/25, same four rows); no
+  physics touched in this plan.

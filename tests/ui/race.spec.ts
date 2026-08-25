@@ -287,7 +287,7 @@ test('the cockpit shows the model-vs-guides summary inline and the table in a sh
   const hidden = await strip.evaluate((el) => el.scrollHeight - el.clientHeight);
   expect(hidden, 'the strip must not clip its own summary').toBeLessThanOrEqual(1);
 
-  await strip.getByRole('button', { name: 'Compare in full' }).click();
+  await strip.getByRole('button', { name: 'Full table' }).click();
   const sheet = page.locator('dialog[open]');
   await expect(sheet.getByText('Target BSP')).toBeVisible();
   await expect(sheet.getByText('Target heel')).toBeVisible();

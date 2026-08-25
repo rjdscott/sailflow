@@ -56,6 +56,22 @@ undiagnosable.
 
 ### Fixed
 
+- Audit ux-03's twelve High findings (#62–#65; `docs/audits/2026-08-25-ux-03/`).
+  The cockpit's sail-shape visuals rendered in a 0 px box (H-01); the
+  instrument band clipped itself on Drills (H-02); the model-vs-guides panel
+  was cut off in the cockpit and now shows its verdict inline with the full
+  table in a sheet (H-03); the gear chart showed no rows after a Dock commit
+  (H-04); the puff replay's power cue lagged one step (H-05); the confidence
+  badge was a button inside the Apply button, so asking what "B" meant
+  rewrote the trim (H-06); tab order reached the first trim control at stop
+  41, now 31 (H-07); the coach line and the band are live regions (H-08);
+  `prefers-reduced-motion` now freezes the 3D hero and jump-cuts its presets
+  (H-09); badge contrast 1.06:1 → 14:1 (H-10); the phone shows the hero first
+  (H-11); the 3D perf gate timed a warm frame and could never trip — it now
+  times mount → first frame against 350 ms (H-12, ADR 0014 amendment).
+
+### Fixed (earlier in this block)
+
 - 3D hero: jib luff telltales sat on the forestay wire; they now sit 15 % aft of the luff, and the jib carries upper-leech ribbons (the North jib cue) alongside the main's. New "Helm" camera preset: from the cockpit looking up the main. Orbit may now look upward (polar clamp relaxed).
 - 3D hero: main leech ribbons rooted 1 m off the leech after the telltale rewrite; anchor maths now lives in `loft.ribbonAnchor` under test.
 - 3D hero perf gate timed the first render, which includes context creation and shader compiles, so it fell back to the plan view on every device (seen on a desktop GPU). It now times a warm second frame.

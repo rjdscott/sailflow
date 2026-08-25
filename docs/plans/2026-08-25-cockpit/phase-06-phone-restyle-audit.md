@@ -11,9 +11,9 @@ findings closed, and the docs say where things stand.
 - [x] **Desktop cockpit grid**: README layout at ≥ 1280 px, duplicated section/rig cards removed, one screen at 1280×720 in Race tier asserted by Playwright.
 - [x] Phone (< 720 px): panels stacked, hero first, sticky panel tabs, instrument band collapsed behind More.
 - [x] Dock, Log, Drills, More restyled to tokens v2: cards, chips, sliders, badges pick up the new tokens with no IA change; `DisagreePanel` uses InstrumentCell for its numbers.
-- [ ] `/audit ux-03` — lenses: novice (Learn tier), expert (Analyse tier), accessibility (contrast, keyboard, reduced motion, screen reader on cells), phone, performance (3D on a throttled CPU). Evidence screenshots. C/H findings fixed in this phase; M/L to `todo.md`.
-- [ ] `CHANGELOG.md` entry; runbooks: `deploy-to-github-pages` (Playwright job), any touched.
-- [ ] Plan README "State at end of the fourth autonomous block"; memory note updated.
+- [x] `/audit ux-03` — lenses: novice (Learn tier), expert (Analyse tier), accessibility (contrast, keyboard, reduced motion, screen reader on cells), phone, performance (3D on a throttled CPU). Evidence screenshots. C/H findings fixed in this phase; M/L to `todo.md`.
+- [x] `CHANGELOG.md` entry; runbooks: `deploy-to-github-pages` (Playwright job), any touched.
+- [x] Plan README "State at end of the fourth autonomous block"; memory note updated.
 - [ ] Pages live-verified desktop 1280×720 (no scroll) and phone; reduced-motion; both themes; keyboard-only trim.
 
 ## Verification
@@ -376,3 +376,6 @@ sentence whenever the coach happened to name the metric. It is scoped to
 
 **Not fixed here.** H-05 (puff replay's power cue one step behind), H-06, H-08,
 H-09, H-10 and every M/L finding are untouched — out of this block's scope.
+
+- 2026-08-25 — Audit ux-03 published (#61): 0 C / 12 H / 25 M / 5 L. All twelve Highs fixed by four parallel worktree agents, merged as #62 (H-05, H-11), #63 (H-06, H-08, H-10), #64 (H-09, H-12; ADR 0014 amendment, `sailflow.hero.budget` test seam so the gate test is deterministic on any host), #65 (H-01–H-04, H-07). M/L stay open in `todo.md`. CHANGELOG, deploy runbook (CI `ui-smoke` gate + baseline regeneration), plan README state section written. Live verification below.
+- 2026-08-25 — Live verification after #65 on the RTX desktop found two follow-ups: the H-03 compact disagreement strip overlapped its three cells in the ~330 px cell (now wraps, stacked with the button); and the H-12 wall-clock gate tripped "3D ran slow" on a tab opened behind another window (no rendering steps, so mount → first frame was hundreds of ms of waiting). Gate now sums `onMount` work plus the first render's own duration; measured cold 315 ms / warm 52 ms on an RTX 4070 Ti, so the budget moved 350 → 800 ms (ADR 0014 amendment updated). `window.__sailFirstFrameMs` exposes the measure on any build.
