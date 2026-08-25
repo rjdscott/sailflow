@@ -1,9 +1,10 @@
 <script lang="ts">
   import TopBar from '../components/TopBar.svelte';
   import Segmented from '../components/Segmented.svelte';
+  import DensityToggle from '../components/DensityToggle.svelte';
   import Toast from '../components/Toast.svelte';
   import Sheet from '../components/Sheet.svelte';
-  import { settings, type Mode, type Motion, type Theme } from '../stores/settings.svelte';
+  import { settings, type Motion, type Theme } from '../stores/settings.svelte';
   import { router } from '../router.svelte';
   import { logStoreEngine } from '../../lib/logStore';
   import { download } from '../../lib/logExport';
@@ -148,20 +149,13 @@
     <section class="card">
       <h2 class="section-title">Settings</h2>
       <div class="setting">
-        <span>Detail</span>
-        <Segmented
-          ariaLabel="Simple or Advanced mode"
-          options={[
-            { value: 'simple', label: 'Simple' },
-            { value: 'advanced', label: 'Advanced' },
-          ]}
-          value={settings.mode}
-          onchange={(v: Mode) => settings.setMode(v)}
-        />
+        <span>Density</span>
+        <DensityToggle />
       </div>
       <p class="note first">
-        Advanced adds the eleven-control panel, the per-wind-speed regret table, the model-vs-guides
-        comparison and the tier-3 drills. It applies everywhere, not just on this screen.
+        Race adds the eleven-control panel, the per-wind-speed regret table, the model-vs-guides
+        comparison and the tier-3 drills; Analyse is Race plus the comparison surfaces still being
+        built. It applies everywhere, not just on this screen.
       </p>
       <div class="setting">
         <span>Theme</span>

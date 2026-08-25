@@ -1,0 +1,196 @@
+<script lang="ts">
+  import type { Tier } from '../../core/types';
+  import ConfidenceBadge from './ConfidenceBadge.svelte';
+  import Sparkline from './Sparkline.svelte';
+
+  /**
+   * The one instrument-cell contract (ADR 0015): label · value · unit · target
+   * bug · trend · tier badge · labelled delta. Every number in the cockpit is
+   * one of these, so a reader learns the layout once.
+   *
+   * The value arrives already formatted — the cell decides nothing about
+   * precision, which belongs with whoever owns the number.
+   */
+  let {
+    label,
+    id,
+    value,
+    unit = '',
+    tier,
+    target,
+    trend,
+    size = 'md',
+    onexplain,
+  }: {
+    label: string;
+    /** Key into the caller's explain copy; stable across label renames. */
+    id: string;
+    value: string;
+    unit?: string;
+    tier?: Tier;
+    /** The optimum, formatted, plus the signed gap and what the gap is against. */
+    target?: { text: string; delta: string; label: string };
+    /** Recent samples, oldest to newest. Under two points draws nothing. */
+    trend?: number[];
+    size?: 'lg' | 'md' | 'sm';
+    onexplain?: (id: string) => void;
+  } = $props();
+</script>
+
+<div class="cell {size}">
+  <span class="section-title">
+    {#if onexplain}
+      <!-- The label is the affordance: a quiet ? on a text button, so the band
+           still reads as numbers rather than as a row of controls. -->
+      <button type="button" class="explain" onclick={() => onexplain?.(id)}>
+        {label}<span aria-hidden="true" class="q">?</span>
+      </button>
+    {:else}
+      <span>{label}</span>
+    {/if}
+    {#if tier}<ConfidenceBadge {tier} />{/if}
+  </span>
+
+  <!-- Re-keying on the text restarts the fade, so a number that did not move
+       does not animate. -->
+  {#key value}
+    <span class="value fade" class:hero-number={size === 'lg'}>
+      {value}{#if unit}<span class="hero-unit">{unit}</span>{/if}
+    </span>
+  {/key}
+
+  {#if target}
+    <!-- Ink, not valence: the gap to the optimum is information, not a score.
+         The words are always in the accessibility tree and visible in the
+         learn tier, where there is room to spell them out. -->
+    <span class="target">
+      target {target.text}
+      <span class="delta-label">Δ {target.label}</span>
+      <span class="delta tabular-nums">{target.delta}</span>
+    </span>
+  {/if}
+
+  {#if trend && trend.length > 1}
+    <span class="trend"><Sparkline points={trend} /></span>
+  {/if}
+</div>
+
+<style>
+  .cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .explain {
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+  }
+
+  .q {
+    margin-left: 3px;
+    color: var(--accent);
+  }
+
+  .value {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--instrument, var(--ink));
+  }
+
+  .cell.md .value {
+    font-size: var(--text-xl);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  .cell.sm .value {
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  /* The hero-number class brings its own colour; the cockpit ink wins. */
+  .value.hero-number {
+    color: var(--instrument, var(--ink));
+  }
+
+  .target {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--space-1);
+    min-width: 0;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  .delta {
+    color: var(--ink-2);
+  }
+
+  /* Named for a screen reader everywhere, spelled out for the eye only where
+     the density tier has room for words. */
+  .delta-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  :global([data-tier='learn']) .delta-label {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  .trend {
+    margin-top: var(--space-1);
+    color: var(--ink-2);
+  }
+
+  /* A small cell has no room for a line, and learn tier is reading the words
+     rather than watching the wiggle. Analyse wants it at every size. */
+  .cell.sm .trend,
+  :global([data-tier='learn']) .trend {
+    display: none;
+  }
+
+  :global([data-tier='analyse']) .cell.sm .trend {
+    display: block;
+  }
+
+  /* One drag changes every metric at once, so a filled highlight strobes the
+     whole panel. A short fade says "this number moved" and gets out of the way. */
+  @media (prefers-reduced-motion: no-preference) {
+    .fade {
+      animation: fade 120ms ease-out;
+    }
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0.3;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+</style>

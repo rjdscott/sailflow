@@ -3,8 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Dark-first (ADR 0015): light is the exception, the bare entry is the
+         default the browser falls through to. -->
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0b0f14" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#121212" />
     <meta
       name="description"
       content="Sailflow is a free J/70 rig-tune and sail-trim trainer: commit a rig at the dock, trim for the wind in front of you, and see what every move costs — with a confidence tier on every number."

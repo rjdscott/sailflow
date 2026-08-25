@@ -1,6 +1,6 @@
 <script lang="ts">
   import './app.css';
-  import { router } from './ui/router.svelte';
+  import { KIT_ENABLED, router } from './ui/router.svelte';
   import { settings } from './ui/stores/settings.svelte';
   import BottomNav from './ui/components/BottomNav.svelte';
   import NavRail from './ui/components/NavRail.svelte';
@@ -19,6 +19,12 @@
     const theme = settings.theme === 'auto' ? undefined : settings.theme;
     if (theme) document.documentElement.setAttribute('data-theme', theme);
     else document.documentElement.removeAttribute('data-theme');
+  });
+
+  // The density tier on <html> alongside data-theme, so CSS can vary spacing
+  // and what it hides per tier without a component reading the store.
+  $effect(() => {
+    document.documentElement.setAttribute('data-tier', settings.mode);
   });
 
   $effect(() => {
@@ -103,9 +109,11 @@
       <Drills />
     {:else if router.route === 'more'}
       <More />
-    {:else if import.meta.env.DEV && router.route === 'kit'}
-      <!-- Component-demo state with invented numbers: the whole branch, and
-           the chunk it imports, are compiled out of a production build (L-01). -->
+    {:else if KIT_ENABLED && router.route === 'kit'}
+      <!-- Component-demo state with invented numbers. Dev always, production
+           only behind `?kit=1` (see KIT_ENABLED in router.svelte.ts), so the
+           layout smoke can reach it. It stays a dynamic import, so a normal
+           production visit never downloads the chunk (L-01). -->
       {#await import('./ui/screens/Kit.svelte') then Kit}
         <Kit.default />
       {/await}

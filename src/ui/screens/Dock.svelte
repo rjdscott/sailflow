@@ -33,7 +33,7 @@
     void logStoreUi.startDraft(dock.commit());
   }
 
-  const advanced = $derived(settings.mode === 'advanced');
+  const advanced = $derived(settings.advanced);
   const score = $derived(dock.score);
   /** The guide's band for the likely wind, so the printed card carries the
       published numbers next to the modelled ones (audit ux-02 M-25). */

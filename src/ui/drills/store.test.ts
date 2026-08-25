@@ -63,7 +63,7 @@ const NOW = new Date('2026-08-25T09:00:00.000Z');
 const now = () => NOW;
 
 beforeEach(() => {
-  settings.mode = 'simple';
+  settings.mode = 'learn';
 });
 afterEach(() => vi.useRealTimers());
 
@@ -189,13 +189,13 @@ describe('DrillStore.next', () => {
     await store.open(visible[visible.length - 1], 1);
     store.next();
     expect(store.template).toBeUndefined();
-    expect(store.endNote).toMatch(/Advanced/);
+    expect(store.endNote).toMatch(/Race/);
   });
 
   it('reaches tier 3 in advanced mode', () => {
     const { client } = fakeClient(keyRace);
     const store = new DrillStore(client, fakeHistory().history, now);
-    settings.mode = 'advanced';
+    settings.mode = 'race';
     expect(store.visible.some((t) => t.tier === 3)).toBe(true);
   });
 });
@@ -225,12 +225,12 @@ describe('DrillStore.visible ordering', () => {
     const { client } = fakeClient(keyRace);
     const store = new DrillStore(client, fakeHistory().history, now);
 
-    settings.mode = 'simple';
+    settings.mode = 'learn';
     const simple = store.visible;
     expect(simple.map((t) => t.tier)).toEqual([...simple.map((t) => t.tier)].sort());
     expect(simple.some((t) => t.tier === 3)).toBe(false);
 
-    settings.mode = 'advanced';
+    settings.mode = 'race';
     const advanced = store.visible;
     expect(advanced.map((t) => t.tier)).toEqual([...advanced.map((t) => t.tier)].sort());
     // Advanced is the same list plus tier 3, in the same relative order.

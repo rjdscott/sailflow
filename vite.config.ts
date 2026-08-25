@@ -27,7 +27,7 @@ export default defineConfig({
         short_name: 'Sailflow',
         description: 'J/70 rig-tune and sail-trim trainer',
         theme_color: '#0057d9',
-        background_color: '#ffffff',
+        background_color: '#121212',
         display: 'standalone',
         start_url: './',
         scope: './',
