@@ -1,9 +1,20 @@
 <script lang="ts">
   import TopBar from '../components/TopBar.svelte';
   import Segmented from '../components/Segmented.svelte';
+  import Toast from '../components/Toast.svelte';
   import { settings, type Theme } from '../stores/settings.svelte';
   import { router } from '../router.svelte';
   import { logStoreEngine } from '../../lib/logStore';
+  import { download } from '../../lib/logExport';
+  import { feedbackUrl } from '../../lib/feedback';
+  import {
+    exportJson,
+    reset as resetTelemetry,
+    snapshot,
+    TELEMETRY_EVENTS,
+    TELEMETRY_LABELS,
+    type TelemetryCounts,
+  } from '../../lib/telemetry';
   import { GUIDE_LABELS, referenceStatus, type GuideId } from '../../lib/reference';
 
   const VERSION = import.meta.env.VITE_APP_VERSION;
@@ -11,6 +22,31 @@
 
   const engine = logStoreEngine();
   const status = referenceStatus();
+
+  let counts = $state<TelemetryCounts | null>(null);
+  let toast = $state('');
+  let toastOpen = $state(false);
+
+  // Reads no reactive state, so this settles once on mount.
+  $effect(() => {
+    void snapshot().then((s) => (counts = s));
+  });
+
+  function say(message: string): void {
+    toast = message;
+    toastOpen = true;
+  }
+
+  async function exportUsage(): Promise<void> {
+    download('sailflow-usage.json', await exportJson(), 'application/json');
+    say('Usage counts saved to your downloads.');
+  }
+
+  async function resetUsage(): Promise<void> {
+    await resetTelemetry();
+    counts = await snapshot();
+    say('Usage counts reset.');
+  }
 </script>
 
 <TopBar title="More" />
@@ -55,7 +91,9 @@
   <div class="col-secondary">
     <section class="card">
       <h2 class="section-title">About</h2>
-      <p class="version tabular-nums">Sailflow v{VERSION}</p>
+      <p class="version tabular-nums">
+        Sailflow v{VERSION} — <a href="{REPO}/CHANGELOG.md">what's new</a>
+      </p>
       <p class="honesty">
         Sailflow implements the documented ORC VPP parametric aero model, plus an explicitly
         invented rig-bend-to-sail-shape sensitivity layer for which there is no public evidence base
@@ -70,14 +108,56 @@
         <li><a href="{REPO}/validation/report.md">Validation report</a></li>
       </ul>
     </section>
+
+    <section class="card">
+      <h2 class="section-title">Improve Sailflow</h2>
+      <p class="note first">
+        What you have used, counted on this device and nowhere else. Sailflow has no server to send
+        it to — nothing here is uploaded, ever.
+      </p>
+      <dl class="rows">
+        {#each TELEMETRY_EVENTS.filter((e) => e !== 'view.kit') as event (event)}
+          <dt>{TELEMETRY_LABELS[event]}</dt>
+          <dd class="tabular-nums">{counts ? counts[event] : '—'}</dd>
+        {/each}
+      </dl>
+      <div class="actions">
+        <button type="button" class="quiet" onclick={exportUsage}>Export usage JSON</button>
+        <button type="button" class="quiet" onclick={resetUsage}>Reset</button>
+      </div>
+      <p class="note">
+        <a href={feedbackUrl({ route: router.route, version: VERSION })} rel="noopener noreferrer">
+          This felt wrong →
+        </a>
+        opens a GitHub issue with the screen and version filled in. You see and edit everything before
+        it is sent; no counters and no personal data are attached.
+      </p>
+    </section>
   </div>
 </div>
+
+<Toast message={toast} bind:open={toastOpen} />
 
 <style>
   .note {
     margin: var(--space-3) 0 0;
     font-size: var(--text-xs);
     color: var(--ink-2);
+  }
+
+  .note.first {
+    margin-block-start: 0;
+    margin-block-end: var(--space-3);
+  }
+
+  .note a {
+    color: var(--accent);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
   }
 
   .rows {
@@ -114,6 +194,10 @@
     margin: 0 0 var(--space-2);
     font-size: var(--text-sm);
     color: var(--ink-2);
+  }
+
+  .version a {
+    color: var(--accent);
   }
 
   .honesty {

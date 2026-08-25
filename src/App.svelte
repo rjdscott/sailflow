@@ -10,11 +10,26 @@
   import Drills from './ui/screens/Drills.svelte';
   import More from './ui/screens/More.svelte';
   import Kit from './ui/screens/Kit.svelte';
+  import Toast from './ui/components/Toast.svelte';
 
   $effect(() => {
     const theme = settings.theme === 'auto' ? undefined : settings.theme;
     if (theme) document.documentElement.setAttribute('data-theme', theme);
     else document.documentElement.removeAttribute('data-theme');
+  });
+
+  // A new build is precached. The service worker takes over on the next
+  // navigation either way (`registerType: 'autoUpdate'`), so this is an
+  // in-app toast with a shortcut, not the blocking confirm() it replaces.
+  let updateReady = $state(false);
+
+  $effect(() => {
+    // PROD-gated so `pnpm dev` skips SW churn; the virtual module only exists
+    // in a real build, hence the dynamic import and the catch.
+    if (!import.meta.env.PROD) return;
+    void import('virtual:pwa-register')
+      .then(({ registerSW }) => registerSW({ onNeedRefresh: () => (updateReady = true) }))
+      .catch((err: unknown) => console.warn('PWA registration failed', err));
   });
 </script>
 
@@ -41,6 +56,13 @@
 
   <div class="tabbar-slot"><BottomNav /></div>
 </div>
+
+<Toast
+  message="A new version of Sailflow is ready."
+  bind:open={updateReady}
+  durationMs={20000}
+  action={{ label: 'Reload', onclick: () => location.reload() }}
+/>
 
 <style>
   .shell {

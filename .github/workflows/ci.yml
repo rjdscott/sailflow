@@ -27,3 +27,49 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: make setup
       - run: make check
+
+  # The polar hold-out gate currently FAILs on known rows (ADR 0007,
+  # validation/report.md), so this job reports rather than blocks: it
+  # regenerates the report on every push and puts the held-out tables and the
+  # gate verdict in the job summary, where a regression is visible in the PR.
+  # Flip continue-on-error off the day the gate is green.
+  validate:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: make setup
+      - run: make validate
+
+      - name: Hold-out table into the job summary
+        if: always()
+        run: |
+          {
+            echo "## Polar hold-out gate"
+            echo
+            awk '
+              /^### TWS .*HELD-OUT/ { p = 1 }
+              /^## Gate/            { p = 1 }
+              /^### TWS .*FIT/      { p = 0 }
+              /^## Model optimum/   { p = 0 }
+              p
+            ' validation/report.md
+            echo
+            echo "Full report: the \`validation-report\` artifact on this run."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-report
+          path: validation/report.md
