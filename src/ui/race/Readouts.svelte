@@ -1,13 +1,15 @@
 <script lang="ts">
   import type { SolveResult, Tier } from '../../core/types';
-  import { fmt } from '../format';
+  import { fmt, round } from '../format';
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
+  import { OPTIMUM_REASON, OPTIMUM_TIER } from './optimum.svelte';
 
   let {
     result,
     twaDeg,
     variant = 'hero',
     busy = false,
+    target,
   }: {
     result: SolveResult;
     twaDeg: number;
@@ -15,6 +17,8 @@
         desktop metrics band, every number the same size. */
     variant?: 'hero' | 'strip';
     busy?: boolean;
+    /** What the solver's optimal trim reaches at this condition, if it has answered. */
+    target?: { bsKt?: number; vmgKt?: number; heelDeg?: number };
   } = $props();
 
   interface Metric {
@@ -22,18 +26,55 @@
     text: string;
     unit: string;
     tier?: Tier;
+    /** Optimum for this metric, already formatted, plus the signed gap to it. */
+    target?: { text: string; delta: string };
+  }
+
+  /**
+   * "target 5.8 (+0.3)". The delta is ink, never red or green: the optimum is
+   * somewhere to steer towards, not a mark you are failing (ux-01 M-02, M-09).
+   */
+  function targetOf(
+    value: number,
+    to: number | undefined,
+    decimals: number,
+  ): Metric['target'] | undefined {
+    if (to === undefined) return undefined;
+    const d = round(to - value, decimals);
+    return {
+      text: fmt(to, decimals),
+      delta: `${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d).toFixed(decimals)}`,
+    };
   }
 
   // Only the solver's own tiered outputs carry a badge. AWA and flat come out
   // of the aero state untiered, so they get none rather than an invented one.
   const big: Metric[] = $derived([
-    { label: 'BSP', text: fmt(result.bsKt.value, 1), unit: 'kt', tier: result.bsKt.tier },
+    {
+      label: 'BSP',
+      text: fmt(result.bsKt.value, 1),
+      unit: 'kt',
+      tier: result.bsKt.tier,
+      target: targetOf(result.bsKt.value, target?.bsKt, 1),
+    },
     { label: 'Height', text: fmt(twaDeg, 0), unit: '°' },
-    { label: 'VMG', text: fmt(result.vmgKt.value, 2), unit: 'kt', tier: result.vmgKt.tier },
+    {
+      label: 'VMG',
+      text: fmt(result.vmgKt.value, 2),
+      unit: 'kt',
+      tier: result.vmgKt.tier,
+      target: targetOf(result.vmgKt.value, target?.vmgKt, 2),
+    },
   ]);
 
   const quiet: Metric[] = $derived([
-    { label: 'Heel', text: fmt(result.heelDeg.value, 0), unit: '°', tier: result.heelDeg.tier },
+    {
+      label: 'Heel',
+      text: fmt(result.heelDeg.value, 0),
+      unit: '°',
+      tier: result.heelDeg.tier,
+      target: targetOf(result.heelDeg.value, target?.heelDeg, 0),
+    },
     {
       label: 'Leeway',
       text: fmt(result.leewayDeg.value, 1),
@@ -58,6 +99,13 @@
         {m.text}{#if m.unit}<span class="hero-unit">{m.unit}</span>{/if}
       </span>
     {/key}
+    {#if m.target}
+      <span class="target">
+        <span aria-hidden="true">·</span> target {m.target.text}
+        <span class="delta tabular-nums">{m.target.delta}</span>
+        <ConfidenceBadge tier={OPTIMUM_TIER} reason={OPTIMUM_REASON} />
+      </span>
+    {/if}
   </div>
 {/snippet}
 
@@ -132,6 +180,20 @@
     font-size: var(--text-md);
     font-weight: 600;
     color: var(--ink);
+  }
+
+  /* Ink, not valence: the gap to the optimum is information, not a score. */
+  .target {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+
+  .delta {
+    color: var(--ink-2);
   }
 
   .stale {

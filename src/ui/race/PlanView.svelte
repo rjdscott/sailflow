@@ -291,6 +291,15 @@
   </figcaption>
 </figure>
 
+<!-- The ribbon colours mean three states, and nothing on screen said which
+     (audit ux-01 M-02's sibling complaint: colour with no legend). A sibling
+     of the figure, not a child: `figcaption` has to stay its last child. -->
+<ul class="legend">
+  <li><span class="swatch streaming"></span>Streaming — flow attached, this is the target</li>
+  <li><span class="swatch lifting"></span>Lifting — entry too high, bear away or ease</li>
+  <li><span class="swatch stalled"></span>Stalled — over-trimmed, the sail is choking</li>
+</ul>
+
 <dl class="mono">
   <div>
     <dt>Main draft</dt>
@@ -327,6 +336,42 @@
     margin-top: var(--space-2);
     font-size: var(--text-xs);
     color: var(--ink-2);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .swatch {
+    width: 12px;
+    height: 4px;
+    border-radius: 2px;
+    flex: none;
+  }
+
+  .swatch.streaming {
+    background: var(--good);
+  }
+
+  .swatch.lifting {
+    background: var(--warn);
+  }
+
+  .swatch.stalled {
+    background: var(--bad);
   }
 
   /* Deck ------------------------------------------------------------------ */

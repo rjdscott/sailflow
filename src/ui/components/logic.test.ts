@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { nextOpen, parseEdit, rovingIndex, TIER_NOTE, valueText } from './logic';
+import {
+  nextOpen,
+  optimumText,
+  parseEdit,
+  rovingIndex,
+  TIER_NOTE,
+  trackPct,
+  valueText,
+} from './logic';
 
 describe('rovingIndex', () => {
   it('moves forward and wraps past the end', () => {
@@ -70,6 +78,41 @@ describe('valueText', () => {
   it('adds a single guide value when only a tick is known', () => {
     expect(valueText(3, 1, 'turns', 4)).toBe('3.0 turns, guide 4.0 turns');
     expect(valueText(3, 1, 'turns', [4, 4])).toBe('3.0 turns, guide 4.0 turns');
+  });
+
+  it('adds the solver optimum, with or without a guide', () => {
+    expect(valueText(70, 0, '%', undefined, 64)).toBe('70 %, optimum 64 %');
+    expect(valueText(70, 0, '%', [60, 75], 64)).toBe('70 %, guide 60–75 %, optimum 64 %');
+  });
+});
+
+describe('trackPct', () => {
+  it('places a value along the trough', () => {
+    expect(trackPct(0, 0, 100)).toBe(0);
+    expect(trackPct(64, 0, 100)).toBe(64);
+    expect(trackPct(100, 0, 100)).toBe(100);
+  });
+
+  it('handles a range that does not start at zero', () => {
+    expect(trackPct(0, -3, 9)).toBe(25);
+    expect(trackPct(3, 1, 11)).toBeCloseTo(20, 10);
+  });
+
+  it('clamps rather than drawing the tick off the end of the track', () => {
+    expect(trackPct(-40, 0, 100)).toBe(0);
+    expect(trackPct(140, 0, 100)).toBe(100);
+  });
+
+  it('does not divide by a zero-width range', () => {
+    expect(trackPct(5, 5, 5)).toBe(0);
+    expect(trackPct(5, 9, 1)).toBe(0);
+  });
+});
+
+describe('optimumText', () => {
+  it('labels the ghost tick', () => {
+    expect(optimumText(64, 0, '%')).toBe('optimum 64 %');
+    expect(optimumText(4.5, 1, 'turns')).toBe('optimum 4.5 turns');
   });
 });
 

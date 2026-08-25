@@ -66,6 +66,11 @@
     {#each PRESETS as p (p.id)}
       <button type="button" onclick={() => race.applyPreset(p)}>{p.label}</button>
     {/each}
+    {#if race.previousRace}
+      <!-- A preset rewrites all eleven controls, six of them off-screen in
+           Simple mode, so the way back has to be one tap (audit ux-01 M-11). -->
+      <button type="button" class="undo" onclick={() => race.undo()}>Back to my trim</button>
+    {/if}
   </div>
   <p class="note">Presets are starting points for the sliders, not tuning-guide settings.</p>
 
@@ -165,6 +170,7 @@
 
   .presets {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-2);
     margin-top: var(--space-2);
   }
@@ -178,6 +184,13 @@
     color: var(--accent);
     font-size: var(--text-sm);
     cursor: pointer;
+  }
+
+  /* Not an accent action: undo is the way back, not the thing to press. */
+  .presets button.undo {
+    flex-basis: 100%;
+    border-color: var(--line-strong);
+    color: var(--ink);
   }
 
   .note {

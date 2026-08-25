@@ -1,12 +1,16 @@
 <script lang="ts">
+  import type { RaceControls } from '../../core/types';
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
+  import LockIcon from '../components/LockIcon.svelte';
   import Sheet from '../components/Sheet.svelte';
   import Slider from '../components/Slider.svelte';
+  import { TRIM_CONTROLS } from '../../worker/protocol';
+  import { optimum } from './optimum.svelte';
   import { EXPLAIN } from '../explain';
   import { conditions } from '../stores/conditions.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
-  import { CONTROLS, race } from './store.svelte';
+  import { CONTROLS, race, type Chevron } from './store.svelte';
 
   // Plain aliases onto the store's reactive proxies: the sliders bind through
   // them, so the store must mutate these objects rather than replace them.
@@ -44,14 +48,36 @@
   function visible(ids: string[]): string[] {
     return advanced ? ids : ids.filter((id) => SIMPLE.includes(id));
   }
+
+  const trimmed = new Set<string>(TRIM_CONTROLS);
+
+  /**
+   * The optimum for one race control, or undefined where there is none to
+   * draw. `mainHalyard`, `jibHalyard` and `inhauler` move draft position and
+   * entry angle, which the shape layer never reads, so the search does not
+   * touch them and a tick there would be a fabricated answer key (audit M-09).
+   */
+  function targetFor(id: string): number | undefined {
+    if (!trimmed.has(id)) return undefined;
+    return optimum.race?.[id as keyof RaceControls];
+  }
+
+  /** ARIA drops a name on a bare span, so the chevron carries a role too. */
+  function chevLabel(chev: Chevron): string {
+    return `${chev.dir > 0 ? 'Up' : 'Down'} gains ${chev.gainKt.toFixed(2)} kt`;
+  }
+
+  /** Said once, plainly, instead of drawing a tick nobody can trust. */
+  const NO_EFFECT = 'No modelled effect on speed — it changes the drawn shape only.';
 </script>
 
 {#snippet row(
   id: string,
   values: Record<string, number>,
-  opts: { locked?: boolean; tier?: 'C'; chevron?: boolean } = {},
+  opts: { locked?: boolean; tier?: 'C'; chevron?: boolean; optimum?: boolean } = {},
 )}
   {@const spec = CONTROLS[id]}
+  {@const chev = race.chevrons[id]}
   <div class="row">
     <div class="grow">
       <Slider
@@ -64,14 +90,17 @@
         decimals={decimals(spec.step)}
         locked={opts.locked}
         tier={opts.tier}
+        target={opts.optimum ? targetFor(id) : undefined}
+        hint={opts.optimum && !trimmed.has(id) ? NO_EFFECT : undefined}
       />
     </div>
     <div class="side">
-      {#if opts.chevron && race.chevrons[id]}
-        <!-- Every chevron rendered is a VMG gain, so the colour is one accent
-             for both directions; only the glyph says which way. -->
-        <span class="chev" aria-label="gain from moving this control">
-          {race.chevrons[id] > 0 ? '▲' : '▼'}
+      {#if opts.chevron && chev}
+        <!-- Every chevron rendered is a gain, so the colour is one accent for
+             both directions; only the glyph says which way, and the title says
+             how much (audit ux-01 M-02). -->
+        <span class="chev" role="img" title={chevLabel(chev)} aria-label={chevLabel(chev)}>
+          {chev.dir > 0 ? '▲' : '▼'}
         </span>
       {/if}
       <button
@@ -93,7 +122,7 @@
       <section class="card">
         <h2 class="section-title">{group.name}</h2>
         {#each ids as id (id)}
-          {@render row(id, raceValues, { chevron: advanced })}
+          {@render row(id, raceValues, { chevron: advanced, optimum: true })}
         {/each}
       </section>
     {/if}
@@ -123,7 +152,7 @@
     <h2 class="section-title">
       Dock setup
       {#if rigLock.lockedToday}
-        <span class="locked-note">🔒 committed for the day</span>
+        <span class="locked-note"><LockIcon /> committed for the day</span>
       {:else}
         <span class="locked-note">not committed, free to explore</span>
       {/if}
@@ -165,7 +194,7 @@
     flex: none;
     width: 36px;
     height: 36px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-strong);
     border-radius: 50%;
     background: var(--bg);
     color: var(--ink-2);
@@ -202,6 +231,9 @@
   }
 
   .locked-note {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
     margin-left: auto;
     font-size: var(--text-xs);
     text-transform: none;

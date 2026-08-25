@@ -1,5 +1,10 @@
 <script lang="ts">
+  import { cubicOut } from 'svelte/easing';
+  import { prefersReducedMotion, Tween } from 'svelte/motion';
+  import type { RaceControls } from '../../core/types';
+  import { TRIM_CONTROLS } from '../../worker/protocol';
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
+  import Tabs from '../components/Tabs.svelte';
   import TopBar from '../components/TopBar.svelte';
   import ConditionsStrip from '../race/ConditionsStrip.svelte';
   import ControlPanel from '../race/ControlPanel.svelte';
@@ -7,7 +12,10 @@
   import Readouts from '../race/Readouts.svelte';
   import RigElevation from '../race/RigElevation.svelte';
   import SailSections from '../race/SailSections.svelte';
-  import { GAIN_EPS, race } from '../race/store.svelte';
+  import { CONTROLS, GAIN_EPS, OBJECTIVE_METRIC, race, raceObjective } from '../race/store.svelte';
+  import { snap } from '../format';
+  import { nearestPointOfSail, POINTS_OF_SAIL } from '../race/pointOfSail';
+  import { optimum, OPTIMUM_REASON, OPTIMUM_TIER } from '../race/optimum.svelte';
   import { conditions } from '../stores/conditions.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
@@ -29,6 +37,73 @@
     // Reading the snapshots tracks every control and condition field.
     race.request($state.snapshot(race.controls), conditions.value);
   });
+
+  $effect(() => {
+    // Same snapshot, but the store keys on condition + dock only, so dragging
+    // a race slider re-runs this effect and then costs nothing.
+    optimum.request($state.snapshot(race.controls), conditions.value);
+  });
+
+  // --- Apply optimum ------------------------------------------------------
+  // One tween of a 0→1 progress scalar; the effect lerps every trim control
+  // off it. Tweening the numbers rather than the sliders means the boat, the
+  // sail sections and the readouts all travel together, and the last frame
+  // lands exactly on the solver's on-grid answer.
+  const APPLY_MS = 400;
+  const progress = new Tween(1, {
+    duration: () => (prefersReducedMotion.current ? 1 : APPLY_MS),
+    easing: cubicOut,
+  });
+  let from: RaceControls | null = null;
+  let to: RaceControls | null = null;
+
+  const optimumTargets = $derived(
+    optimum.result
+      ? {
+          bsKt: optimum.result.result.bsKt.value,
+          vmgKt: optimum.result.result.vmgKt.value,
+          heelDeg: optimum.result.result.heelDeg.value,
+        }
+      : undefined,
+  );
+
+  const canApply = $derived(optimum.race !== null && !optimum.busy && !optimum.stale);
+
+  function applyOptimum(): void {
+    const target = optimum.race;
+    if (!target) return;
+    race.remember();
+    from = { ...$state.snapshot(race.controls.race) };
+    to = { ...$state.snapshot(target) };
+    progress.set(0, { duration: 0 });
+    void progress.set(1);
+  }
+
+  /** Exact, and instant: an undo that eases is an undo you have to wait out. */
+  function undoTrim(): void {
+    from = to = null;
+    progress.set(1, { duration: 0 });
+    race.undo();
+  }
+
+  $effect(() => {
+    const p = progress.current;
+    if (!from || !to) return;
+    for (const c of TRIM_CONTROLS) {
+      const spec = CONTROLS[c];
+      // Snapped every frame: an unsnapped lerp puts the readout on 44 % while
+      // the range input's thumb sits on the legal 45.
+      race.controls.race[c] = snap(from[c] + (to[c] - from[c]) * p, spec.min, spec.max, spec.step);
+    }
+    if (p === 1) from = to = null;
+  });
+
+  /** Which number the coach and the optimum are both chasing, in words. */
+  const objective = $derived(OBJECTIVE_METRIC[raceObjective(conditions.value)]);
+  const pointOfSail = $derived(
+    POINTS_OF_SAIL.find((p) => p.id === nearestPointOfSail(conditions.twaDeg))?.label ??
+      'this angle',
+  );
 
   const TABS = ['Sections', 'Rig', 'Plan'] as const;
   const TAB_KEY = 'sailflow.race.tab.v1';
@@ -84,16 +159,39 @@
         {:else if race.result}
           {settled}
         {:else}
-          Solving&hellip;
+          Solving…
         {/if}
       </p>
+    </div>
+    <div class="actions">
+      <button type="button" class="apply" onclick={applyOptimum} disabled={!canApply}>
+        Apply optimum
+        <ConfidenceBadge tier={OPTIMUM_TIER} reason={OPTIMUM_REASON} />
+      </button>
+      {#if race.previousRace}
+        <button type="button" class="undo" onclick={undoTrim}>Back to my trim</button>
+      {/if}
+      {#if optimum.busy || optimum.stale}
+        <span class="hint">Searching…</span>
+      {:else if optimum.error}
+        <span class="hint">No optimum here: {optimum.error}</span>
+      {:else if optimum.result && optimum.moved.length === 0}
+        <span class="hint">Already there — nothing the model would move.</span>
+      {/if}
     </div>
     <details>
       <summary>Why</summary>
       <p>
-        Sailflow nudges backstay, mainsheet, traveller and jib lead one legal step each way,
-        re-solves, and reports the largest VMG gain. Anything smaller than {GAIN_EPS.toFixed(3)} kt is
-        below the solver's own resolution, so it is not offered as a move.
+        At {pointOfSail} the target is {objective}, the same number
+        <em>Apply optimum</em> maximises. Sailflow nudges backstay, mainsheet, traveller and jib
+        lead one legal step each way, re-solves, and reports the largest gain; anything smaller than {GAIN_EPS.toFixed(
+          3,
+        )} kt is below the solver's own resolution, so it is not offered as a move.
+      </p>
+      <p>
+        <em>Apply optimum</em> runs the same search over every control the shape layer responds to, from
+        where your sliders are now. Halyards and the inhauler are left alone — they move draft position
+        and entry angle, which the model never reads.
       </p>
     </details>
   </section>
@@ -111,32 +209,30 @@
     <!-- Phone and tablet: hero readouts, then one tabbed picture card. -->
     <div class="lg-hide">
       {#if race.result}
-        <Readouts result={race.result} twaDeg={conditions.twaDeg} variant="hero" busy={race.busy} />
+        <Readouts
+          result={race.result}
+          twaDeg={conditions.twaDeg}
+          variant="hero"
+          busy={race.busy}
+          target={optimumTargets}
+        />
       {/if}
     </div>
 
     <section class="card lg-hide">
-      <div class="tabs" role="tablist" aria-label="Pictures">
-        {#each TABS as name, i (name)}
-          <button
-            type="button"
-            role="tab"
-            id="pic-tab-{i}"
-            aria-selected={tab === i}
-            aria-controls="pic-pane-{i}"
-            class:active={tab === i}
-            onclick={() => selectTab(i)}
-          >
-            {name}
-          </button>
-        {/each}
-      </div>
+      <Tabs
+        tabs={TABS}
+        bind:selected={() => tab, (i) => selectTab(i)}
+        ariaLabel="Pictures"
+        idPrefix="pic"
+      />
 
       <div
         class="pane"
         role="tabpanel"
         id="pic-pane-0"
         aria-labelledby="pic-tab-0"
+        tabindex="0"
         hidden={tab !== 0}
       >
         <SailSections main={race.result?.shape.main} jib={race.result?.shape.jib} />
@@ -146,6 +242,7 @@
         role="tabpanel"
         id="pic-pane-1"
         aria-labelledby="pic-tab-1"
+        tabindex="0"
         hidden={tab !== 1}
       >
         {#if race.result}<RigElevation rig={race.result.rig} />{/if}
@@ -155,6 +252,7 @@
         role="tabpanel"
         id="pic-pane-2"
         aria-labelledby="pic-tab-2"
+        tabindex="0"
         hidden={tab !== 2}
       >
         {#if race.result}
@@ -203,6 +301,7 @@
           twaDeg={conditions.twaDeg}
           variant="strip"
           busy={race.busy}
+          target={optimumTargets}
         />
       {/if}
     </div>
@@ -231,31 +330,6 @@
 </div>
 
 <style>
-  .tabs {
-    display: flex;
-    gap: var(--space-1);
-    margin-bottom: var(--space-3);
-    padding-bottom: var(--space-2);
-    border-bottom: 1px solid var(--line);
-  }
-
-  .tabs button {
-    flex: 1;
-    min-height: var(--hit-min);
-    border: none;
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--ink-2);
-    font-size: var(--text-sm);
-    cursor: pointer;
-  }
-
-  .tabs button.active {
-    background: var(--accent);
-    color: var(--on-accent);
-    font-weight: 600;
-  }
-
   .pane[hidden] {
     display: none;
   }
@@ -329,6 +403,50 @@
 
   .insight.busy {
     opacity: 0.7;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+  }
+
+  .apply,
+  .undo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--hit-min);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .apply {
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .apply:disabled {
+    border-color: var(--line-strong);
+    background: transparent;
+    color: var(--ink-2);
+    cursor: default;
+  }
+
+  .undo {
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .hint {
+    font-size: var(--text-xs);
+    color: var(--ink-2);
   }
 
   .insight-head {

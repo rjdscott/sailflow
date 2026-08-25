@@ -26,18 +26,24 @@ describe('coachSentence', () => {
     for (const id of PROBE_CONTROLS) {
       expect(MOVES[id].up.verb).toBeTruthy();
       expect(MOVES[id].down.verb).toBeTruthy();
-      expect(coachSentence(id, 1, 0.1)).toMatch(/\+0\.10 kt VMG/);
-      expect(coachSentence(id, -1, 0.1)).toMatch(/\+0\.10 kt VMG/);
+      expect(coachSentence(id, 1, 0.1, 'VMG')).toMatch(/\+0\.10 kt VMG/);
+      expect(coachSentence(id, -1, 0.1, 'VMG')).toMatch(/\+0\.10 kt VMG/);
     }
   });
 
   it('reads as one imperative sentence at the displayed VMG precision', () => {
-    expect(coachSentence('mainsheet', -1, 0.0612)).toBe(
+    expect(coachSentence('mainsheet', -1, 0.0612, 'VMG')).toBe(
       'Ease mainsheet one click: +0.06 kt VMG, leech is stalled.',
     );
   });
 
+  it('names the metric it was given, so a reach does not claim VMG', () => {
+    expect(coachSentence('mainsheet', -1, 0.0612, 'boat speed')).toBe(
+      'Ease mainsheet one click: +0.06 kt boat speed, leech is stalled.',
+    );
+  });
+
   it('is empty for a control with no phrasing', () => {
-    expect(coachSentence('cunningham', 1, 0.1)).toBe('');
+    expect(coachSentence('cunningham', 1, 0.1, 'VMG')).toBe('');
   });
 });

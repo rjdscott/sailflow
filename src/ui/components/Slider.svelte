@@ -3,7 +3,7 @@
   import { fmt, snap } from '../format';
   import ConfidenceBadge from './ConfidenceBadge.svelte';
   import LockIcon from './LockIcon.svelte';
-  import { parseEdit, valueText } from './logic';
+  import { optimumText, parseEdit, trackPct, valueText } from './logic';
 
   let {
     label,
@@ -13,6 +13,7 @@
     step,
     unit = '',
     tick,
+    target,
     guide,
     locked = false,
     lockReason = 'Committed at the dock, rule C.9.5.',
@@ -28,6 +29,8 @@
     unit?: string;
     /** Single guide value, drawn as a mark on the track. */
     tick?: number;
+    /** Solver optimum, drawn as a ghost marker above the trough. */
+    target?: number;
     /** Guide band [lo, hi], announced as "guide 60–75 %". */
     guide?: [number, number];
     locked?: boolean;
@@ -44,9 +47,10 @@
   let showLockNote = $state(false);
   let pressTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const pct = (v: number): number => ((v - min) / (max - min)) * 100;
-  const tickPct = $derived(tick === undefined ? undefined : pct(tick));
-  const fillPct = $derived(pct(value));
+  const tickPct = $derived(tick === undefined ? undefined : trackPct(tick, min, max));
+  const targetPct = $derived(target === undefined ? undefined : trackPct(target, min, max));
+  const fillPct = $derived(trackPct(value, min, max));
+  const targetLabel = $derived(target === undefined ? '' : optimumText(target, decimals, unit));
 
   /** The band wins over the single tick when both are supplied. */
   const guideText = $derived(guide ?? tick);
@@ -147,7 +151,7 @@
       class="range"
       type="range"
       aria-label={label}
-      aria-valuetext={valueText(value, decimals, unit, guideText)}
+      aria-valuetext={valueText(value, decimals, unit, guideText, target)}
       aria-describedby={describedBy}
       aria-disabled={locked ? 'true' : undefined}
       {min}
@@ -158,6 +162,11 @@
     />
     {#if tickPct !== undefined}
       <div class="tick" style="left: {tickPct}%"></div>
+    {/if}
+    {#if targetPct !== undefined}
+      <!-- Hover gets the title; keyboard and AT get the same words through
+           aria-valuetext, so the ghost tick is never mouse-only. -->
+      <div class="target" style="left: {targetPct}%" title={targetLabel}></div>
     {/if}
     {#if locked}
       <button
@@ -291,6 +300,22 @@
 
   .range[aria-disabled='true'] {
     cursor: not-allowed;
+  }
+
+  /* The optimum is a hollow chevron above the trough, never a second fill:
+     it marks where the solver would put the thumb, and the guide tick below
+     still marks the tuning guide. Different shape, different row, no colour
+     valence — neither is a fault. */
+  .target {
+    position: absolute;
+    top: 50%;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid var(--ink-2);
+    transform: translate(-4px, -15px);
+    pointer-events: none;
   }
 
   .tick {

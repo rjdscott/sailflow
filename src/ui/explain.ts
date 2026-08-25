@@ -74,9 +74,13 @@ export const MOVES: Record<string, Record<'up' | 'down', Move>> = {
   },
 };
 
-/** One imperative sentence: what to move, what it buys, why. */
-export function coachSentence(control: string, dir: Dir, gainKt: number): string {
+/**
+ * One imperative sentence: what to move, what it buys, why. `metric` names
+ * what the number is — "VMG" close-hauled and running, "boat speed" on a
+ * reach, where VMG to a mark you are not fetching means nothing (ux-01 H-05).
+ */
+export function coachSentence(control: string, dir: Dir, gainKt: number, metric: string): string {
   const move = MOVES[control]?.[dir > 0 ? 'up' : 'down'];
   if (!move) return '';
-  return `${move.verb}: +${gainKt.toFixed(2)} kt VMG, ${move.why}.`;
+  return `${move.verb}: +${gainKt.toFixed(2)} kt ${metric}, ${move.why}.`;
 }

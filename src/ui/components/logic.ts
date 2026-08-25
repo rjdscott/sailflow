@@ -49,22 +49,45 @@ export function parseEdit(
 }
 
 /**
+ * Where a value sits on a min–max trough, in percent, clamped to the ends so
+ * an out-of-range target (a stale optimum against a re-specced control) marks
+ * the end of the track rather than floating off it. A zero-width range has no
+ * meaningful position, so it reads 0.
+ */
+export function trackPct(value: number, min: number, max: number): number {
+  if (max <= min) return 0;
+  return Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
+}
+
+/** Ghost-tick label for the solver's optimum: "optimum 64 %". */
+export function optimumText(target: number, decimals: number, unit: string): string {
+  return `optimum ${fmt(target, decimals, unit)}`;
+}
+
+/**
  * Screen-reader text for a slider: the value as the eye reads it, plus the
  * tuning-guide band when there is one — "70 %, guide 60–75 %". A single guide
- * number (the tick) reads "guide 60 %".
+ * number (the tick) reads "guide 60 %". The solver's optimum, when the slider
+ * carries one, is appended so the ghost tick is never hover-only:
+ * "70 %, guide 60–75 %, optimum 64 %".
  */
 export function valueText(
   value: number,
   decimals: number,
   unit: string,
   guide?: number | [number, number],
+  target?: number,
 ): string {
   const shown = fmt(value, decimals, unit);
-  if (guide === undefined) return shown;
-  const [lo, hi] = typeof guide === 'number' ? [guide, guide] : guide;
-  const band =
-    lo === hi ? fmt(lo, decimals, unit) : `${fmt(lo, decimals)}–${fmt(hi, decimals, unit)}`;
-  return `${shown}, guide ${band}`;
+  const parts = [shown];
+  if (guide !== undefined) {
+    const [lo, hi] = typeof guide === 'number' ? [guide, guide] : guide;
+    const band =
+      lo === hi ? fmt(lo, decimals, unit) : `${fmt(lo, decimals)}–${fmt(hi, decimals, unit)}`;
+    parts.push(`guide ${band}`);
+  }
+  if (target !== undefined) parts.push(optimumText(target, decimals, unit));
+  return parts.join(', ');
 }
 
 /**
