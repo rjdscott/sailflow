@@ -132,8 +132,8 @@ test('the puff replay restores the wind it borrowed when it is stopped', async (
 });
 
 /**
- * Phone: the same four panels, stacked, with a sticky strip that is the only
- * way back up the stack that does not cost a flick (phase 06).
+ * Phone: hero first, then the same four panels stacked, with a sticky strip
+ * that is the only way back up the stack that does not cost a flick (phase 06).
  */
 test('the phone stacks the cockpit with no horizontal scroll and a sticky panel strip', async ({
   page,
@@ -145,6 +145,22 @@ test('the phone stacks the cockpit with no horizontal scroll and a sticky panel 
 
   const strip = page.getByRole('navigation', { name: 'Cockpit panels' });
   await expect(strip).toBeVisible();
+
+  // Hero first (plan README, audit ux-03 H-11): on the first screen before any
+  // scroll, and above the instrument band rather than 1045 px under it.
+  const hero = page.locator('.hero-boat');
+  const heroTop = await hero.evaluate((el) => el.getBoundingClientRect().top);
+  expect(heroTop).toBeGreaterThanOrEqual(0);
+  expect(heroTop).toBeLessThan(PHONE.height);
+  await expect(hero).toBeInViewport();
+
+  // …and the tab strip comes right after it, still above the band.
+  const stripTop = await strip.evaluate((el) => el.getBoundingClientRect().top);
+  const barTop = await page
+    .locator('.cockpit > .bar')
+    .evaluate((el) => el.getBoundingClientRect().top);
+  expect(stripTop).toBeGreaterThan(heroTop);
+  expect(barTop).toBeGreaterThan(stripTop);
 
   const overflow = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
