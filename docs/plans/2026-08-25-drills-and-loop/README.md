@@ -25,12 +25,12 @@ gate, local-first instrumentation + feedback link).
 
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
-| 00 | [P0 defects](phase-00-p0-defects.md) | 🟡 In progress | 2026-08-25 |
-| 01 | [Drills engine v2](phase-01-drills-engine-v2.md) | 🔵 Not started | none |
-| 02 | [Drills experience](phase-02-drills-experience.md) | 🔵 Not started | none |
-| 03 | [The loop: Dock → Race → Log](phase-03-the-loop.md) | 🔵 Not started | none |
-| 04 | [Shell: onboarding, URLs, persistence, keyboard](phase-04-shell.md) | 🔵 Not started | none |
-| 05 | [Continuous improvement: gate, instrumentation, feedback](phase-05-continuous-improvement.md) | 🔵 Not started | none |
+| 00 | [P0 defects](phase-00-p0-defects.md) | 🟢 Completed | 2026-08-25 |
+| 01 | [Drills engine v2](phase-01-drills-engine-v2.md) | 🟢 Completed | 2026-08-25 |
+| 02 | [Drills experience](phase-02-drills-experience.md) | 🟢 Completed | 2026-08-25 |
+| 03 | [The loop: Dock → Race → Log](phase-03-the-loop.md) | 🟢 Completed | 2026-08-25 |
+| 04 | [Shell: onboarding, URLs, persistence, keyboard](phase-04-shell.md) | 🟢 Completed | 2026-08-25 |
+| 05 | [Continuous improvement: gate, instrumentation, feedback](phase-05-continuous-improvement.md) | 🟢 Completed | 2026-08-25 |
 
 ## Critical files
 
@@ -54,3 +54,17 @@ gate, local-first instrumentation + feedback link).
 ## Implements
 
 - Audit ux-02 punchlist; ADR 0013; decision log rows 29–30.
+
+## State at end of the third autonomous block (2026-08-25)
+
+All six phases merged as PRs #41–#48. Punchlist: 7 H and 30 of 30 M/L
+closed except M-15 (clicks vs purchase), M-19 (log prefill from Race
+trim: "Log this trim" fills a draft but the form still needs "New entry"),
+M-24 (Race ignores the committed forecast band — chip landed, Race solve
+does not use it), M-28 (downwind model, own plan), L-05 (report only).
+
+Owed by a human: on-device phone pass; the two-day drill spacing walk;
+`pnpm calibrate` re-fit decision (the H-04 agent found a worse basin and
+discarded it). Side findings: the model's optimum is powered-up everywhere
+(over-flattening nearly free), so most drills are "eased too far" faults;
+the polar gate still FAILs 4 of 25 rows, now visible in every CI run.
