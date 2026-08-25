@@ -46,3 +46,5 @@ with minimal disruption.
 | 26 | Cheap 2D motion now (telltale flutter, heel tilt, eased tweens, all honouring reduced-motion); North-Sails-style 3D sail rendering stays Epic 2 (E2-05) | plan phase 04, ADR 0011 |
 | 27 | Owner runs the block autonomously end to end (audit → plan → build → merge → Pages check); stop only for decisions costing more than a day to unwind | this log |
 | 28 | Race mode models sheeting angle vs AWA (luff / stall efficiency, invented, tier B); VPP mode keeps ORC ideal trim so calibration and the polar gate are unaffected | `src/core/shape/sheeting.ts`, plan ux-excellence phase 02 log |
+| 29 | Audit `ux-02` (whole app + drills pedagogy + engagement benchmark): drills answer key fabricated, scoring blind; drills rebuilt as generated fault templates scored in control space (ADR 0013, proposed) | audit ux-02, ADR 0013 |
+| 30 | Continuous improvement without a backend: CI hold-out visibility, local-first instrumentation, prefilled GitHub-issue feedback | plan drills-and-loop phase 05 |
