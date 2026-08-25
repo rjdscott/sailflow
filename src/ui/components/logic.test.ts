@@ -84,6 +84,10 @@ describe('valueText', () => {
     expect(valueText(70, 0, '%', undefined, 64)).toBe('70 %, optimum 64 %');
     expect(valueText(70, 0, '%', [60, 75], 64)).toBe('70 %, guide 60–75 %, optimum 64 %');
   });
+
+  it('names the mark for what it is: the base trim is not a tuning guide', () => {
+    expect(valueText(70, 0, '%', 60, undefined, 'base trim')).toBe('70 %, base trim 60 %');
+  });
 });
 
 describe('trackPct', () => {

@@ -7,7 +7,9 @@
   import Tabs from '../components/Tabs.svelte';
   import TopBar from '../components/TopBar.svelte';
   import ConditionsStrip from '../race/ConditionsStrip.svelte';
-  import ControlPanel from '../race/ControlPanel.svelte';
+  import DownAndDock from '../race/panels/DownAndDock.svelte';
+  import Headsail from '../race/panels/Headsail.svelte';
+  import Mainsail from '../race/panels/Mainsail.svelte';
   import InstrumentBar from '../race/InstrumentBar.svelte';
   import RigElevation from '../race/RigElevation.svelte';
   import SailSections from '../race/SailSections.svelte';
@@ -16,14 +18,14 @@
   import { snap } from '../format';
   import { nearestPointOfSail, POINTS_OF_SAIL } from '../race/pointOfSail';
   import { optimum, OPTIMUM_REASON, OPTIMUM_TIER } from '../race/optimum.svelte';
-  import { conditions } from '../stores/conditions.svelte';
+  import { BASE_RACE, conditions } from '../stores/conditions.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
   import Panel from '../disagree/Panel.svelte';
   import { ModelOptimumStore } from '../disagree/store.svelte';
   import { getClient } from '../race/client';
   import ShortcutsSheet from '../components/ShortcutsSheet.svelte';
-  import { isTypingTarget, keyAction } from '../keys';
+  import { isTypingTarget, keyAction, panelControlsId, type PanelId } from '../keys';
   import { router } from '../router.svelte';
   import { logStoreUi } from '../log/store.svelte';
   import { track } from '../../lib/telemetry';
@@ -130,7 +132,22 @@
     router.navigate('log');
   }
 
+  /** Back to the base trim, leaving the condition alone. Undoable like a preset. */
+  function resetTrim(): void {
+    race.remember();
+    applied = null;
+    Object.assign(race.controls.race, BASE_RACE);
+  }
+
   let shortcutsOpen = $state(false);
+
+  /** `m` / `j`: the first control of a sail panel, wherever it sits on screen. */
+  function focusPanel(panel: PanelId): void {
+    document
+      .getElementById(panelControlsId(panel))
+      ?.querySelector<HTMLInputElement>('input[type="range"]')
+      ?.focus();
+  }
 
   /** The whole shortcut table is in `ui/keys.ts`; this is just the wiring. */
   function onKeydown(e: KeyboardEvent): void {
@@ -140,6 +157,7 @@
     else if (action.type === 'applyOptimum') {
       if (canApply) applyOptimum();
     } else if (action.type === 'undo') undoTrim();
+    else if (action.type === 'focusPanel') focusPanel(action.panel);
     else shortcutsOpen = true;
   }
 
@@ -221,14 +239,46 @@
         {/if}
       </p>
     </div>
+    <!-- Hover or focus any of these and the sliders it would move outline
+         themselves, before it moves them (research §3 principle 24). -->
     <div class="actions">
-      <button type="button" class="apply" onclick={applyOptimum} disabled={!canApply}>
+      <button
+        type="button"
+        class="apply"
+        onclick={applyOptimum}
+        disabled={!canApply}
+        onpointerenter={() => (race.hovering = race.willMove())}
+        onfocus={() => (race.hovering = race.willMove())}
+        onpointerleave={() => (race.hovering = null)}
+        onblur={() => (race.hovering = null)}
+      >
         Apply optimum
         <ConfidenceBadge tier={OPTIMUM_TIER} reason={OPTIMUM_REASON} />
       </button>
       {#if race.previousRace}
-        <button type="button" class="undo" onclick={undoTrim}>Back to my trim</button>
+        <button
+          type="button"
+          class="undo"
+          onclick={undoTrim}
+          onpointerenter={() => (race.hovering = race.willMoveTo(race.previousRace))}
+          onfocus={() => (race.hovering = race.willMoveTo(race.previousRace))}
+          onpointerleave={() => (race.hovering = null)}
+          onblur={() => (race.hovering = null)}
+        >
+          Back to my trim
+        </button>
       {/if}
+      <button
+        type="button"
+        class="undo"
+        onclick={resetTrim}
+        onpointerenter={() => (race.hovering = race.willReset())}
+        onfocus={() => (race.hovering = race.willReset())}
+        onpointerleave={() => (race.hovering = null)}
+        onblur={() => (race.hovering = null)}
+      >
+        Base trim
+      </button>
       <button type="button" class="undo" onclick={logTrim}>Log this trim</button>
       {#if optimum.busy || optimum.stale}
         <span class="hint">Searching…</span>
@@ -382,7 +432,9 @@
 
     <div class="coach-md">{@render insight()}</div>
 
-    <ControlPanel />
+    <Mainsail result={race.result} />
+    <Headsail result={race.result} flying={conditions.sailset === 'jib'} />
+    <DownAndDock />
 
     {#if advanced}
       <section class="card">

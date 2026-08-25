@@ -22,6 +22,7 @@ import { snap } from '../format';
 import { History } from '../instruments/history';
 import { BASE_RACE, conditions, type Preset } from '../stores/conditions.svelte';
 import { getClient, type Client } from './client';
+import { optimum } from './optimum.svelte';
 import { POINTS_OF_SAIL } from './pointOfSail';
 
 export const CONTROLS = boatJson.controls as Record<string, ControlSpec>;
@@ -170,6 +171,13 @@ export class RaceStore {
   /** Advanced mode only: reveals the downwind controls under the C-tier banner. */
   downwind = $state(false);
   error: string | null = $state(null);
+  /**
+   * Controls a pending action would move, while its button is hovered or
+   * focused, or null. The panels read it and outline those sliders — the
+   * consequence of a whole-trim action is previewed before it happens
+   * (research §3 principle 24, Factorio's reset hover).
+   */
+  hovering: string[] | null = $state(null);
   /** Point-of-sail chip waiting on its VMG-optimal angle, or null. */
   pointOfSailBusy: string | null = $state(null);
   /** Last chip tapped and the angle it landed on; the strip keeps that chip
@@ -200,6 +208,31 @@ export class RaceStore {
    */
   syncDock(setup: DockControls | null): void {
     Object.assign(this.controls.dock, setup ?? BASE_DOCK);
+  }
+
+  /**
+   * Race controls whose value would change if the trim were set to `target`,
+   * in `CONTROLS` order. Null target (no optimum yet, nothing to undo to)
+   * moves nothing.
+   */
+  willMoveTo(target: RaceControls | null): string[] {
+    if (!target) return [];
+    return ids('race').filter(
+      (id) => this.controls.race[id as keyof RaceControls] !== target[id as keyof RaceControls],
+    );
+  }
+
+  /**
+   * What Apply optimum would move: the search's own list, so the highlight
+   * and the "moved" summary after the apply can never disagree.
+   */
+  willMove(): string[] {
+    return optimum.moved;
+  }
+
+  /** What a reset to the base trim would move. */
+  willReset(): string[] {
+    return this.willMoveTo(BASE_RACE);
   }
 
   /** Park the current trim so `undo()` can put it back exactly. */
