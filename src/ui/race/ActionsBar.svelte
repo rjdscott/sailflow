@@ -49,19 +49,25 @@
 </script>
 
 <div class="actions">
-  <button
-    type="button"
-    class="apply"
-    onclick={onapply}
-    disabled={!canApply}
-    onpointerenter={() => preview(race.willMove())}
-    onfocus={() => preview(race.willMove())}
-    onpointerleave={() => preview(null)}
-    onblur={() => preview(null)}
-  >
-    Apply optimum
+  <!-- The tier badge is a sibling of the button, not a child of it: nested
+       inside, asking what "B" meant applied the optimum (audit ux-03 H-06).
+       The wrapper carries the accent pill so the pair still looks like one
+       button, the way `.side` sits on the A/B button beside it. -->
+  <span class="apply-wrap" class:off={!canApply}>
+    <button
+      type="button"
+      class="apply"
+      onclick={onapply}
+      disabled={!canApply}
+      onpointerenter={() => preview(race.willMove())}
+      onfocus={() => preview(race.willMove())}
+      onpointerleave={() => preview(null)}
+      onblur={() => preview(null)}
+    >
+      Apply optimum
+    </button>
     <ConfidenceBadge tier={OPTIMUM_TIER} reason={OPTIMUM_REASON} />
-  </button>
+  </span>
 
   <!-- A/B: the compare that keeps both trims, unlike the undo beside it. -->
   <button
@@ -144,6 +150,7 @@
     gap: var(--space-2) var(--space-3);
   }
 
+  .apply-wrap,
   .apply,
   .ab,
   .ghost {
@@ -158,17 +165,32 @@
     cursor: pointer;
   }
 
-  .apply {
+  /* The pill is the wrapper's; the button inside it is transparent, so the
+     badge beside it sits on the same accent fill it used to sit on. */
+  .apply-wrap {
+    /* No left padding of its own: the button owns it, so the whole left half
+       of the pill still presses Apply rather than being dead wrapper. */
+    padding-left: 0;
     border: 1px solid var(--accent);
     background: var(--accent);
     color: var(--on-accent);
   }
 
-  .apply:disabled,
+  .apply {
+    border: none;
+    background: none;
+    color: inherit;
+  }
+
+  .apply-wrap.off,
   .ab:disabled {
     border-color: var(--line-strong);
     background: transparent;
     color: var(--ink-2);
+    cursor: default;
+  }
+
+  .apply:disabled {
     cursor: default;
   }
 
@@ -229,9 +251,18 @@
       gap: var(--space-2);
     }
 
-    .apply,
+    .apply-wrap,
     .ab,
     .ghost {
+      min-height: 32px;
+      padding: 0 var(--space-2);
+    }
+
+    .apply-wrap {
+      padding-left: 0;
+    }
+
+    .apply {
       min-height: 32px;
       padding: 0 var(--space-2);
     }
