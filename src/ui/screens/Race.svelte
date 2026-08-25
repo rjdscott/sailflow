@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
   import TopBar from '../components/TopBar.svelte';
   import ConditionsStrip from '../race/ConditionsStrip.svelte';
   import ControlPanel from '../race/ControlPanel.svelte';
@@ -9,6 +10,7 @@
   import { GAIN_EPS, race } from '../race/store.svelte';
   import { conditions } from '../stores/conditions.svelte';
   import { settings } from '../stores/settings.svelte';
+  import { rigLock } from '../stores/rigLock.svelte';
   import Panel from '../disagree/Panel.svelte';
   import { ModelOptimumStore } from '../disagree/store.svelte';
   import { getClient } from '../race/client';
@@ -17,6 +19,10 @@
   const model = new ModelOptimumStore(getClient());
   $effect(() => {
     if (advanced) model.request(conditions.twsKt, conditions.seaState, conditions.crewKg);
+  });
+
+  $effect(() => {
+    race.syncDock(rigLock.lockedToday ? rigLock.locked!.setup : null);
   });
 
   $effect(() => {
@@ -153,6 +159,7 @@
             Solver error: {race.error}
           {:else if race.coach}
             {race.coach.text}
+            {#if race.result}<ConfidenceBadge tier={race.result.vmgKt.tier} />{/if}
           {:else if race.result}
             {settled}
           {:else}
@@ -255,10 +262,11 @@
     }
   }
 
+  /* ponytail: static, not sticky. Sticky in a flex column slid over the
+     slider rows beneath it (audit ux-01 H-02). Pin the whole primary column
+     instead if the readouts must stay in view. */
   .metrics-dock {
-    position: sticky;
-    top: var(--space-4);
-    z-index: 2;
+    position: static;
   }
 
   .insight {
@@ -291,13 +299,8 @@
   }
 
   details summary {
-    min-height: 32px;
-    display: flex;
-    align-items: center;
     font-size: var(--text-sm);
     font-weight: 600;
-    color: var(--ink-2);
-    cursor: pointer;
   }
 
   details p {

@@ -390,10 +390,6 @@
   }
 
   summary {
-    min-height: var(--hit-min);
-    display: flex;
-    align-items: center;
-    cursor: pointer;
     color: var(--ink-2);
   }
 

@@ -193,3 +193,29 @@ describe('gradients', () => {
     ).toEqual({ backstay: 1 });
   });
 });
+
+describe('coach line downwind', () => {
+  it('treats a more negative VMG as the gain when the asym is up', async () => {
+    // Downwind VMG is negative; easing the mainsheet makes it more so.
+    const { client } = scoringClient((r) => (r.mainsheet === 65 ? -3.2 : -3.0));
+    const store = new RaceStore(client);
+    store.request(controls(), { ...CONDITION, twaDeg: 150, sailset: 'asym' });
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    expect(store.coach?.control).toBe('mainsheet');
+    expect(store.coach?.dir).toBe(-1);
+    expect(store.coach?.gainKt).toBeCloseTo(0.2, 5);
+    expect(store.chevrons).toEqual({ mainsheet: -1 });
+  });
+});
+
+describe('RaceStore.syncDock', () => {
+  it('copies the committed rig into the same dock object the sliders bind to', () => {
+    const store = new RaceStore({ request: vi.fn() } as unknown as Client);
+    const dock = store.controls.dock;
+    store.syncDock({ upperTurns: 3, lowerTurns: -2, forestayMm: 30 });
+    expect(store.controls.dock).toBe(dock);
+    expect(dock).toEqual({ upperTurns: 3, lowerTurns: -2, forestayMm: 30 });
+    store.syncDock(null);
+    expect(dock).toEqual(BASE_DOCK);
+  });
+});

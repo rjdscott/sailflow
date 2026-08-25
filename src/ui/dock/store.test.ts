@@ -121,7 +121,25 @@ describe('DockStore.suggest', () => {
     await promise;
     expect(dock.suggestion?.best.setup).toEqual(calls[0].setups[4]);
     expect(dock.suggestion?.tied).toHaveLength(1);
+    expect(dock.searching).toBe(false);
+  });
+
+  it('a rescore during a search neither shows Searching… nor drops the result', async () => {
+    const { client, calls, pending } = fakeClient();
+    const dock = new DockStore(client);
+    const search = dock.suggest();
+    expect(dock.searching).toBe(true);
     expect(dock.busy).toBe(false);
+    dock.rescore();
+    vi.advanceTimersByTime(1000);
+    expect(calls).toHaveLength(2);
+    expect(dock.busy).toBe(true);
+    expect(dock.searching).toBe(true);
+    pending[1]([makeScore(calls[1].setups[0], 2)]);
+    pending[0](calls[0].setups.map((s, i) => makeScore(s, i === 4 ? 1 : 10 + i)));
+    await search;
+    expect(dock.suggestion?.best.setup).toEqual(calls[0].setups[4]);
+    expect(dock.searching).toBe(false);
   });
 
   it('applying a suggestion updates the setup and re-scores it', () => {

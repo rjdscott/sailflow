@@ -4,6 +4,7 @@
   import Slider from '../components/Slider.svelte';
   import { EXPLAIN } from '../explain';
   import { settings } from '../stores/settings.svelte';
+  import { rigLock } from '../stores/rigLock.svelte';
   import { CONTROLS, race } from './store.svelte';
 
   // Plain aliases onto the store's reactive proxies: the sliders bind through
@@ -118,10 +119,14 @@
   <section class="card">
     <h2 class="section-title">
       Dock setup
-      <span class="locked-note">🔒 committed for the day</span>
+      {#if rigLock.lockedToday}
+        <span class="locked-note">🔒 committed for the day</span>
+      {:else}
+        <span class="locked-note">not committed, free to explore</span>
+      {/if}
     </h2>
     {#each DOCK_IDS as id (id)}
-      {@render row(id, dockValues, { locked: true })}
+      {@render row(id, dockValues, { locked: rigLock.lockedToday })}
     {/each}
   </section>
 </div>

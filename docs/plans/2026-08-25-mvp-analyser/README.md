@@ -81,3 +81,11 @@ work (ASSUMPTIONS.md "honestly weak")?
 **Next epic candidates (from this run):** optimise real race controls in
 VPP mode so dock setups have a wind-dependent channel; finer Fn resistance
 table; asymmetric angle model; downwind heel; sail-section layout.
+
+### Second block (2026-08-25, afternoon)
+
+Owner's follow-up is planned in
+[`2026-08-25-ux-excellence`](../2026-08-25-ux-excellence/), driven by audit
+[`ux-01`](../../audits/2026-08-25-ux-01/). The audit found the Dock→Race rig
+handoff ticked in phase 05 was never wired (C-01); fixed in that plan's
+phase 00.

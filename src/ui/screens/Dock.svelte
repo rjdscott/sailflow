@@ -65,7 +65,7 @@
 
     <SuggestButton
       suggestion={dock.suggestion}
-      busy={dock.busy}
+      busy={dock.searching}
       onsuggest={() => void dock.suggest()}
       onapply={(s) => dock.apply(s)}
     />
@@ -78,7 +78,7 @@
             <thead>
               <tr>
                 <th scope="col">TWS</th>
-                <th scope="col">Regret</th>
+                <th scope="col">Slower by</th>
                 <th scope="col">Best setup</th>
               </tr>
             </thead>
@@ -86,7 +86,7 @@
               {#each score.perTws as p, i (i)}
                 <tr>
                   <td>{fmt(p.twsKt, 0, 'kt')}</td>
-                  <td>−{fmt(p.regretSPerMile, 1)} s/mi</td>
+                  <td>{fmt(p.regretSPerMile, 1)} s/mi</td>
                   <td>
                     {signed(p.optimum.upperTurns)} / {signed(p.optimum.lowerTurns)} / {fmt(
                       p.optimum.forestayMm,

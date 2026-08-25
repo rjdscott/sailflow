@@ -118,6 +118,15 @@ export class RaceStore {
     this.#timer = setTimeout(() => void this.#solve(controls, condition), DEBOUNCE_MS);
   }
 
+  /**
+   * Race solves the rig the Dock committed (rule C.9.5). Mutates in place:
+   * ControlPanel's sliders alias this object. With no commit today the base
+   * tune stays and the three controls are free to explore.
+   */
+  syncDock(setup: DockControls | null): void {
+    Object.assign(this.controls.dock, setup ?? BASE_DOCK);
+  }
+
   applyPreset(p: Preset): void {
     conditions.apply(p.condition);
     // Mutate in place: the panel's sliders bind to this object.
@@ -167,11 +176,15 @@ export class RaceStore {
       return; // a failed probe costs the coach line, nothing else
     }
     if (seq !== this.#seq) return;
+    // Downwind VMG is negative (towards the leeward mark); "gain" means more
+    // negative. Flip the sign so bestProbe/gradients read one way (ux-01 H-05).
+    const sign = condition.sailset === 'asym' ? -1 : 1;
     const probes: Probe[] = asked.map((a, i) => ({
       control: a.control,
       dir: a.dir,
-      vmgKt: solved[i].vmgKt.value,
+      vmgKt: sign * solved[i].vmgKt.value,
     }));
+    baseVmgKt *= sign;
     const best = bestProbe(baseVmgKt, probes);
     this.coach = best
       ? { ...best, text: coachSentence(best.control, best.dir, best.gainKt) }
