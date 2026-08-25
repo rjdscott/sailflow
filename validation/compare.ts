@@ -60,9 +60,9 @@ export const TOL_VMG_TWA_DEG = 2;
 /** Held-out 60/90/120 rows: 5 % on boat speed (tier B). */
 export const TOL_ANGLE_BS_FRAC = 0.05;
 
-/** TWS the calibration never sees. Everything else is fitted (ADR 0007). */
+/** TWS the calibration never sees. Everything else is fitted (ADR 0012). */
 export const HELD_OUT_TWS: readonly number[] = [8, 14];
-/** Fixed-TWA rows in the gate, at every TWS. */
+/** The printed fixed-TWA rows. Gated at the held-out TWS only (ADR 0012). */
 export const GATE_ANGLES: readonly number[] = [60, 90, 120];
 
 /**

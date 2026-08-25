@@ -149,15 +149,19 @@ export function deck(scale: number): Deck {
 // Sheeting angles
 //
 // prov: assumed. The solver returns flying shape, not sheet loads, so these
-// are a linear reading of the two controls that move each spar — enough for
-// the picture to answer a slider the way the boat does, not a trim model.
+// are a quadratic reading of the two controls that move each spar — quadratic
+// in the sheet so the last of the ease opens the spar much faster than the
+// first, linear in the traveller and the lead. Enough for the picture to
+// answer a slider the way the boat does, not a trim model.
 // ---------------------------------------------------------------------------
 
 /**
  * Boom angle off the centreline, degrees. Easing the sheet opens it.
- * ponytail: tops out near 39° at full ease and full traveller, so the running
- * boom draws further inboard than it flies. Upwind and reaching are right;
- * swap in a real sheet-load model if downwind trim ever earns the picture.
+ * ponytail: fully eased the boom reaches the 90° clamp with the traveller
+ * centred, and 83° with it all the way to windward — a run draws about right,
+ * and the clamp rather than the formula is what stops it. Upwind and reaching
+ * are the part that is actually shaped; swap in a real sheet-load model if
+ * downwind trim ever earns the picture.
  */
 export function boomAngle(mainsheet: number, traveller: number): number {
   // Traveller + = up to windward (matches shape/flying.ts and the coach copy),
@@ -211,7 +215,9 @@ export function leechRibbon(awaDeg: number, boomDeg: number, twistDeg: number, a
 
 /** Jib sheeting angle off the centreline, degrees. Lead aft opens it. */
 export function jibSheetAngle(jibLead: number, jibSheet: number): number {
-  // prov: assumed; sheet term sized so 30 % of sheet travel is ~7° of sheeting angle
+  // prov: assumed; sheet term sized so the first 30 % of sheet travel off
+  // fully-trimmed is ~4° of sheeting angle (it is quadratic, so the next 30 %
+  // is worth more than the first)
   // Same formula as src/core/shape/sheeting.ts; keep them identical.
   const eased = 100 - jibSheet;
   return clamp(4 + jibLead * 0.35 + 0.0045 * eased * eased, 2, 90);

@@ -13,7 +13,7 @@
     "test": "vitest run",
     "calibrate": "tsx calibration/fit.ts",
     "golden": "tsx calibration/golden.ts",
-    "validate": "vitest run --config vitest.polar.config.ts; tsx validation/report.ts",
+    "validate": "vitest run --config vitest.polar.config.ts; s=$?; tsx validation/report.ts; exit $s",
     "test:ui": "pnpm build && playwright test",
     "test:ui:update": "pnpm build && playwright test --update-snapshots"
   },
