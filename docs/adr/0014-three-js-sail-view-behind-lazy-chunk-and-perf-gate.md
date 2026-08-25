@@ -88,3 +88,4 @@ continuous render loop.
 - Research: [03-webgl-sail-rendering](../research/2026-08-25-cockpit/03-webgl-sail-rendering.md).
 - Plan: [2026-08-25-cockpit](../plans/2026-08-25-cockpit/) phase 04.
 - Decision log rows 40.
+- Measured 2026-08-25: three chunk 139.4 KB gzip, entry chunk unchanged at 101.5 KB gzip (baseline 100.2 KB, +1.3 KB of hero glue; `scripts/bundle_check.mjs`).

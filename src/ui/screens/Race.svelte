@@ -8,10 +8,10 @@
   import TopBar from '../components/TopBar.svelte';
   import ConditionsStrip from '../race/ConditionsStrip.svelte';
   import ControlPanel from '../race/ControlPanel.svelte';
-  import PlanView from '../race/PlanView.svelte';
   import InstrumentBar from '../race/InstrumentBar.svelte';
   import RigElevation from '../race/RigElevation.svelte';
   import SailSections from '../race/SailSections.svelte';
+  import SailHero from '../three/SailHero.svelte';
   import { CONTROLS, GAIN_EPS, OBJECTIVE_METRIC, race, raceObjective } from '../race/store.svelte';
   import { snap } from '../format';
   import { nearestPointOfSail, POINTS_OF_SAIL } from '../race/pointOfSail';
@@ -337,12 +337,7 @@
         hidden={tab !== 2}
       >
         {#if race.result}
-          <PlanView
-            aero={race.result.aero}
-            heelDeg={race.result.heelDeg.value}
-            twaDeg={conditions.twaDeg}
-            jib={race.result.shape.jib}
-          />
+          <SailHero result={race.result} twaDeg={conditions.twaDeg} />
         {/if}
       </div>
     </section>
@@ -352,12 +347,7 @@
       <section class="card hero-boat">
         <h2 class="section-title">The boat</h2>
         {#if race.result}
-          <PlanView
-            aero={race.result.aero}
-            heelDeg={race.result.heelDeg.value}
-            twaDeg={conditions.twaDeg}
-            jib={race.result.shape.jib}
-          />
+          <SailHero result={race.result} twaDeg={conditions.twaDeg} />
         {/if}
       </section>
 
