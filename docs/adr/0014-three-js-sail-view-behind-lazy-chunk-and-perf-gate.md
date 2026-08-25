@@ -82,6 +82,45 @@ default path.
 gate fails on the owner's phone, or Epic 2 time-domain work needs a
 continuous render loop.
 
+### Consequences — 2026-08-25 amendment: the gate's budget is 350 ms, measured from mount
+
+The Decision above is unchanged and stands. What follows corrects a number in
+it, and what that number measures, after audit ux-03 found the control inert
+(H-12, `docs/audits/2026-08-25-ux-03/04-performance-3d.md`, landing on a
+separate branch).
+
+The 50 ms in the Decision was three frames at 60 Hz, but the implementation
+applied it to the **second** render — a warm context, where `renderer.render`
+is GPU command submission and costs ~1 ms on any device. It therefore passed at
+every CPU throttle rate up to 20×, the 2D fallback was unreachable, and the
+revisit trigger above could never fire.
+
+The gate now measures wall-clock from `onMount` to the first presented frame,
+which is the quantity the ADR meant: geometry build, context creation, shader
+compilation and upload. Re-measured in `mcr.microsoft.com/playwright:v1.62.1-noble`
+at 1440×900 and 390×844 — 61–65 ms unthrottled, 137 ms in a 2-core container
+(the CI worst case), 115–119 ms at 4× CPU, 272–279 ms at 10×, 605–609 ms at
+20×. **The budget is 350 ms** (`src/ui/three/SailHero.svelte`): it sits in the
+gap between the 10× class, which still renders acceptably, and the 20× stand-in
+for a low-end Android that the fallback exists for, with ~2.6× headroom over
+the slowest fast-path measurement so no desktop and no CI runner trips it. Full
+table in
+[plan phase 06](../plans/2026-08-25-cockpit/phase-06-phone-restyle-audit.md).
+
+Amended rather than superseded, deliberately: the choice this ADR records — 3D
+behind a lazy chunk and a first-frame gate, 2D otherwise — is unchanged and
+still correct. Only the threshold and the quantity it is applied to moved,
+which is a calibration against measurement, not a fork. A new ADR would say the
+same thing as this one with one number different.
+
+Also closed in the same change: the Consequences' `prefers-reduced-motion`
+commitment was never wired to the media query, so it only held for the
+non-default `motion = 'off'` setting
+(H-09, `docs/audits/2026-08-25-ux-03/02-accessibility.md`). Both halves —
+frozen telltales and jump-cut presets — are now driven by
+`prefersReducedMotion` on the `'system'` default, with a Playwright case that
+runs with the setting unset.
+
 ## Related
 
 - Supersedes [ADR 0011](0011-two-d-svg-and-canvas-only-for-epic-1.md).
