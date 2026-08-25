@@ -32,6 +32,17 @@ async function heroDrawn(page: Page): Promise<void> {
   await expect(page.locator('.hero-boat canvas, .hero-boat svg[role="img"]').first()).toBeVisible();
 }
 
+/**
+ * Every band the grid sizes off has stopped growing: the hero has drawn, and
+ * the optimum has landed, which is what puts the "to optimum" line under three
+ * instrument cells and settles the bar's height. Measure after this, or you
+ * measure a layout that is one solve out of date.
+ */
+async function settled(page: Page): Promise<void> {
+  await heroDrawn(page);
+  await expect(page.getByRole('button', { name: /Apply optimum/ })).toBeEnabled();
+}
+
 for (const viewport of VIEWPORTS) {
   test(`race fits ${viewport.width}x${viewport.height} with no scroll in either axis`, async ({
     page,
@@ -174,13 +185,188 @@ test('the phone instrument band keeps four readings and hides the rest behind Mo
   await page.setViewportSize(PHONE);
   await page.goto('/#/race');
 
+  // The readings, not the whole band: the verdict sentence names the metric it
+  // is about, so a bare text match on the band is two elements whenever the
+  // coach happens to say "VMG".
   const bar = page.locator('.bar');
-  await expect(bar.getByText('BSP')).toBeVisible();
-  await expect(bar.getByText('%POLAR')).toBeVisible();
-  await expect(bar.getByText('VMG')).toBeVisible();
-  await expect(bar.getByText('HEEL')).toBeVisible();
-  await expect(bar.getByText('TWA')).toBeHidden();
+  const readings = bar.locator('.cells, .gauges');
+  await expect(readings.getByText('BSP')).toBeVisible();
+  await expect(readings.getByText('%POLAR')).toBeVisible();
+  await expect(readings.getByText('VMG')).toBeVisible();
+  await expect(readings.getByText('HEEL')).toBeVisible();
+  await expect(readings.getByText('TWA')).toBeHidden();
 
   await bar.getByRole('button', { name: 'More' }).click();
-  await expect(bar.getByText('TWA')).toBeVisible();
+  await expect(readings.getByText('TWA')).toBeVisible();
+});
+
+/**
+ * ux-03 H-01. `.panel > .grid` scrolls itself in the cockpit, and an auto row
+ * track inside an overflow container resolved the visual's row to zero: every
+ * sail-shape drawing rendered in a 0 px box while its SVG children measured
+ * full size, so every test that queried the SVG passed. Measure the box.
+ */
+for (const viewport of VIEWPORTS) {
+  test(`every cockpit panel draws its sail shape at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    await raceTier(page);
+    await page.setViewportSize(viewport);
+    await page.goto('/#/race');
+    await heroDrawn(page);
+
+    for (const panel of ['.p-main', '.p-jib', '.p-rig']) {
+      const box = await page.locator(`${panel} .visual`).boundingBox();
+      expect(box?.height ?? 0, `${panel} .visual should be a real box`).toBeGreaterThan(100);
+    }
+  });
+}
+
+/**
+ * ux-03 H-02. The band switched to its one-line desktop layout on a viewport
+ * query, but on Drills it is mounted in the ~500 px secondary column, where
+ * that layout threw the verdict and two gauges outside its own
+ * `overflow: hidden`. It sizes off its own container now.
+ */
+test('the instrument band stays inside its column on Drills at desktop widths', async ({
+  page,
+}) => {
+  await raceTier(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/drills');
+  await page.locator('button.drill').first().click();
+
+  const bar = page.locator('section.bar');
+  await expect(bar).toBeVisible();
+  await expect(bar.locator('.verdict')).toBeVisible();
+
+  const clipped = await bar.evaluate((el) => {
+    const right = el.getBoundingClientRect().right;
+    return [...el.querySelectorAll<HTMLElement>('.cells, .gauges, .verdict')]
+      .filter((child) => child.getBoundingClientRect().right > right + 1)
+      .map((child) => child.className);
+  });
+  expect(clipped, 'no band child may spill past the band').toEqual([]);
+  expect(await bar.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+});
+
+/**
+ * ux-03 H-03. The full comparison is ~1250 px tall and the cockpit's bottom
+ * band is ~160: 87 % of it was clipped away with no scrollbar, so the app
+ * asserted a disagreement and withheld every number and delta. The summary is
+ * inline, the table is in the sheet, and both are reachable.
+ */
+test('the cockpit shows the model-vs-guides summary inline and the table in a sheet', async ({
+  page,
+}) => {
+  await raceTier(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/race');
+  await settled(page);
+
+  const strip = page.locator('.disagree');
+  await expect(strip.locator('.panel.compact')).toBeVisible();
+  // The summary row itself, not just the sentence about it.
+  await expect(strip.getByText('Uppers')).toBeVisible();
+  const hidden = await strip.evaluate((el) => el.scrollHeight - el.clientHeight);
+  expect(hidden, 'the strip must not clip its own summary').toBeLessThanOrEqual(1);
+
+  await strip.getByRole('button', { name: 'Compare in full' }).click();
+  const sheet = page.locator('dialog[open]');
+  await expect(sheet.getByText('Target BSP')).toBeVisible();
+  await expect(sheet.getByText('Target heel')).toBeVisible();
+});
+
+/**
+ * The day's tune, committed. Seeded rather than driven through the Dock: this
+ * test is about what the Rig panel does with a lock, not how one is made.
+ */
+async function committedRig(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem(
+        'sailflow.rigLock.v1',
+        JSON.stringify({
+          setup: { upperTurns: 0, lowerTurns: 0, forestayMm: 0 },
+          committedAt: new Date().toISOString(),
+          forecast: { minKt: 8, likelyKt: 10, maxKt: 12, seaState: 'moderate', crewKg: 300 },
+        }),
+      );
+    } catch {
+      // ignore: storage disabled — the panel stays uncommitted and this fails loudly
+    }
+  });
+}
+
+/**
+ * ux-03 H-04. Committed, the Rig panel is the gear chart with your row lit —
+ * and it rendered the header row and none of the seven data rows, 546 px of
+ * them hidden in an overlay scroller with no scrollbar. Show the lit band and
+ * its neighbours; the whole chart is one click away.
+ */
+test('the committed Rig panel shows the lit gear-chart row, not a header over nothing', async ({
+  page,
+}) => {
+  await raceTier(page);
+  await committedRig(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/race');
+  await settled(page);
+
+  // The sheet's copy of the chart also lives inside `.p-rig`; this is the one
+  // in the panel body.
+  const panel = page.locator('.p-rig');
+  const lit = panel.locator('.gear.windowed tr.here');
+  await expect(lit).toBeVisible();
+
+  // In view means inside the panel's own scroll box, not merely in the DOM.
+  const inside = await lit.evaluate((row) => {
+    const box = row.getBoundingClientRect();
+    const scroller = row.closest('.grid')!.getBoundingClientRect();
+    return box.top >= scroller.top - 1 && box.bottom <= scroller.bottom + 1;
+  });
+  expect(inside, 'the lit row must be in view without scrolling the panel').toBe(true);
+
+  const rows = await panel.locator('.gear.windowed tbody tr:visible').count();
+  expect(rows).toBeGreaterThanOrEqual(2);
+
+  await panel.getByRole('button', { name: /Full chart/ }).click();
+  const sheet = page.locator('dialog[open]');
+  expect(await sheet.locator('.gear tbody tr:visible').count()).toBeGreaterThan(rows);
+});
+
+/**
+ * ux-03 H-07, WCAG 2.4.3. The actions card was emitted before the hero and all
+ * four panels, so a keyboard met the three whole-trim buttons — and then the
+ * hero's camera chips — before the first slider, at tab stop 41.
+ */
+test('a keyboard reaches a trim control before the whole-trim actions', async ({ page }) => {
+  await raceTier(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/race');
+  await heroDrawn(page);
+
+  // The audit measured the first trim control at stop 41, behind Apply optimum,
+  // Base trim, Log this trim and the hero's camera chips. It is stop 31 now, so
+  // 40 is a walk that must reach it — and must not pass an action on the way.
+  const STOPS = 40;
+  let firstTrim = -1;
+  const actionsBefore: number[] = [];
+  for (let i = 0; i < STOPS && firstTrim < 0; i++) {
+    await page.keyboard.press('Tab');
+    const where = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el) return '';
+      if (el.closest('.p-main, .p-jib, .p-helm, .p-rig') && el.matches('input[type="range"]'))
+        return 'trim';
+      return el.closest('.insight') ? 'action' : '';
+    });
+    if (where === 'action') actionsBefore.push(i);
+    if (where === 'trim') firstTrim = i;
+  }
+
+  expect(firstTrim, `a trim slider must be reachable within ${STOPS} tabs`).toBeGreaterThanOrEqual(
+    0,
+  );
+  expect(actionsBefore, 'no whole-trim action may come before the first trim control').toEqual([]);
 });

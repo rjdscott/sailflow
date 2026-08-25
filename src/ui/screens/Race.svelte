@@ -34,6 +34,7 @@
   import Panel from '../disagree/Panel.svelte';
   import { ModelOptimumStore } from '../disagree/store.svelte';
   import { getClient } from '../race/client';
+  import Sheet from '../components/Sheet.svelte';
   import ShortcutsSheet from '../components/ShortcutsSheet.svelte';
   import { isTypingTarget, keyAction, panelControlsId, panelSection, type PanelId } from '../keys';
   import { router } from '../router.svelte';
@@ -172,6 +173,22 @@
 
   let shortcutsOpen = $state(false);
 
+  // The cockpit grid caps itself to the viewport, so the disagreement panel's
+  // cell is short and clipped there and full-height everywhere else. No CSS
+  // turns a table into a sheet, so the breakpoint is read here (audit ux-03
+  // H-03), the same shape DrillView uses for its score sheet.
+  let cockpit = $state(false);
+  let disagreeOpen = $state(false);
+  $effect(() => {
+    const mq = window.matchMedia('(min-width: 1280px)');
+    const sync = (): void => {
+      cockpit = mq.matches;
+    };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  });
+
   /**
    * `m` / `j` / `h` / `r`: bring a panel into view and put the caret on its
    * first slider. Rig has no slider once the day's tune is committed — it is
@@ -254,8 +271,30 @@
     {/if}
   </div>
 
+  <!-- Phone only: the four panels are a scroll apart, so they get a tab strip
+       that also says which one you are in. -->
+  <PanelTabs />
+
+  <section class="card hero-boat">
+    {#if race.result}
+      <SailHero result={race.result} twaDeg={conditions.twaDeg} />
+    {/if}
+  </section>
+
+  <div class="p-main"><Mainsail result={race.result} /></div>
+  <div class="p-jib">
+    <Headsail result={race.result} flying={conditions.sailset === 'jib'} />
+  </div>
+  <div class="p-helm"><Helm result={race.result} /></div>
+  <div class="p-rig"><Rig result={race.result} /></div>
+
   <!-- The coach line and everything that rewrites the whole trim, in one
-       card. Every button in it previews the sliders it would move (phase 05). -->
+       card. Every button in it previews the sliders it would move (phase 05).
+
+       Last in the DOM, bottom of the grid: the three whole-trim buttons used to
+       be emitted before every panel, so a keyboard met them — and then the hero
+       camera chips — before the first slider, at tab stop 41 (audit ux-03
+       H-07). The grid areas keep it exactly where it was on screen. -->
   <section class="card insight" class:busy={race.busy}>
     <div class="insight-head">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" class="icon">
@@ -321,40 +360,44 @@
     </details>
   </section>
 
-  <!-- Phone only: the four panels are a scroll apart, so they get a tab strip
-       that also says which one you are in. -->
-  <PanelTabs />
-
-  <section class="card hero-boat">
-    {#if race.result}
-      <SailHero result={race.result} twaDeg={conditions.twaDeg} />
-    {/if}
-  </section>
-
-  <div class="p-main"><Mainsail result={race.result} /></div>
-  <div class="p-jib">
-    <Headsail result={race.result} flying={conditions.sailset === 'jib'} />
-  </div>
-  <div class="p-helm"><Helm result={race.result} /></div>
-  <div class="p-rig"><Rig result={race.result} /></div>
-
   {#if advanced}
     <section class="card disagree">
-      <details>
-        <summary>Model vs tuning guides</summary>
-        <Panel
-          twsKt={conditions.twsKt}
-          seaState={conditions.seaState}
-          crewKg={conditions.crewKg}
-          modelOptimum={model.optimum}
-          busy={model.busy}
-          stale={model.stale}
-          error={model.error}
-        />
-      </details>
+      {#if cockpit}
+        <!-- In the cockpit grid this is a short bottom-band cell with
+             `overflow: hidden`, and the full comparison is 1257 px tall: 87 %
+             of it was unreachable, so the app asserted a disagreement and
+             withheld both numbers and the delta (audit ux-03 H-03). The
+             summary row reads inline; the table is a click away. -->
+        {@render disagreement(true)}
+        <button type="button" class="compare" onclick={() => (disagreeOpen = true)}>
+          Compare in full
+        </button>
+      {:else}
+        <details>
+          <summary>Model vs tuning guides</summary>
+          {@render disagreement(false)}
+        </details>
+      {/if}
     </section>
   {/if}
 </div>
+
+{#snippet disagreement(compact: boolean)}
+  <Panel
+    twsKt={conditions.twsKt}
+    seaState={conditions.seaState}
+    crewKg={conditions.crewKg}
+    modelOptimum={model.optimum}
+    busy={model.busy}
+    stale={model.stale}
+    error={model.error}
+    {compact}
+  />
+{/snippet}
+
+<Sheet bind:open={disagreeOpen} title="Model vs tuning guides">
+  {#if disagreeOpen}{@render disagreement(false)}{/if}
+</Sheet>
 
 <ShortcutsSheet bind:open={shortcutsOpen} />
 
@@ -443,6 +486,20 @@
   details summary {
     font-size: var(--text-sm);
     font-weight: 600;
+  }
+
+  /* Only ever rendered inside the cockpit grid, so it wears the cockpit's
+     control height rather than the phone's 44 px hit target. */
+  .compare {
+    flex: none;
+    min-height: 28px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink-2);
+    font-size: var(--text-xs);
+    cursor: pointer;
   }
 
   details p {
@@ -540,7 +597,7 @@
       /* The hero row takes what the viewport leaves, never under 300 px;
          the Helm/Rig row gets the rest and scrolls inside. prov: assumed
          floors — a 3D sail under 300 px is a thumbnail, not an instrument. */
-      grid-template-rows: auto auto minmax(300px, 1fr) minmax(150px, 0.55fr) auto;
+      grid-template-rows: auto auto minmax(300px, 1fr) minmax(150px, 0.7fr) auto;
       grid-template-areas:
         'head head head'
         'bar bar bar'
@@ -585,7 +642,8 @@
       min-height: 0;
     }
 
-    .head :global(.segmented button) {
+    .head :global(.segmented button),
+    .p-rig :global(.segmented button) {
       min-height: 28px;
     }
 
@@ -610,9 +668,19 @@
       font-size: var(--text-sm);
     }
 
+    /* A strip like the actions band beside it: the summary row and the way in
+       to the table, on one line (audit ux-03 H-03). */
     .disagree {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
       padding: var(--space-2) var(--space-3);
       overflow: hidden;
+    }
+
+    .disagree :global(.panel.compact) {
+      flex: 1;
+      min-width: 0;
     }
 
     .hero-boat {
@@ -660,10 +728,18 @@
 
     /* A picture that grew with its panel would push the controls out of the
        scroll box; these are glance cues, so they are capped.
-       prov: assumed 220 px — two section stacks side by side stay legible. */
+       prov: assumed 220 px — two section stacks side by side stay legible.
+
+       The floor is not decoration: `.panel > .grid` above is `overflow-y: auto`,
+       and an auto row track inside an overflow container resolves the visual's
+       row to zero, so every sail-shape drawing rendered in a 0 px box with its
+       full-size SVG children clipped away (audit ux-03 H-01). 140 px is the
+       measured floor that restores all three.
+       prov: assumed 140 px — refuter-verified in ux-03 H-01. */
     .p-main :global(.visual),
     .p-jib :global(.visual),
     .p-rig :global(.visual) {
+      min-height: 140px;
       max-height: 220px;
       overflow: hidden;
     }
