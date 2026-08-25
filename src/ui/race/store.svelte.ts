@@ -30,16 +30,19 @@ export const CONTROLS = boatJson.controls as Record<string, ControlSpec>;
 /** Class rule C.9.5(a): standing rigging is committed at the dock, so race mode shows it locked. */
 export const BASE_DOCK: DockControls = { upperTurns: 0, lowerTurns: 0, forestayMm: 0 };
 /**
- * Sprit fully out and the halyard at the masthead: on a J/70 the pole is
- * either all the way out or the kite is not up, and the hoist is two-blocked
- * before the sheet is touched. Tack line and sheet mid-range, to be trimmed.
- * prov: assumed — class practice, sailmaker guides (research 2026-08-25-spinnaker).
+ * The four gennaker controls the screen starts from, read from
+ * `data/boats/j70.json` `baseRaceDown` the same way `BASE_RACE` reads
+ * `baseRace`. Sprit fully out and the halyard at the masthead: on a J/70 the
+ * pole is either all the way out or the kite is not up, and the hoist is
+ * two-blocked before the sheet is touched. Tack line and sheet mid-range, to
+ * be trimmed. Provenance is in the boat file, one entry per control, which is
+ * why these are not literals here any more.
  */
 export const BASE_DOWN: DownControls = {
-  kiteHalyard: 100,
-  tackLine: 50,
-  kiteSheet: 50,
-  sprit: 100,
+  kiteHalyard: boatJson.baseRaceDown.kiteHalyard,
+  tackLine: boatJson.baseRaceDown.tackLine,
+  kiteSheet: boatJson.baseRaceDown.kiteSheet,
+  sprit: boatJson.baseRaceDown.sprit,
 };
 
 export const DEBOUNCE_MS = 80;

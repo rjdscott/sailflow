@@ -1,8 +1,10 @@
 /**
- * The hold-out gate (ADR 0007).
+ * The hold-out gate: ADR 0007's tolerances over ADR 0012's split.
  *
- * Held-out TWS 8 and 14 VMG rows: boat speed within 3 %, VMG angle within 2°.
- * The 60/90/120° rows at every TWS: boat speed within 5 %.
+ * Every row at the held-out wind speeds TWS 8 and 14 (ADR 0012 superseded
+ * ADR 0007's split by angle). VMG rows: boat speed within 3 %, VMG angle
+ * within 2°. The 60/90/120° rows at those two wind speeds: boat speed
+ * within 5 %.
  *
  * These tolerances are frozen in ADR 0007. Do not loosen them here; a failure
  * is the harness working. Fix the model, or supersede the ADR.

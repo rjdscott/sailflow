@@ -420,7 +420,7 @@
   /**
    * The kite's curl cue sits on the luff itself, not a hand aft of it: it
    * reads the free edge, which is the edge that curls. prov: assumed 6 % of
-   * chord (the first grid column clear of the edge) and five heights, so it
+   * chord (the first grid column clear of the edge) and four heights, so it
    * reads as a column of ribbons up the luff rather than three loose specks.
    */
   const CURL_RIBBON_CHORD = 0.06;

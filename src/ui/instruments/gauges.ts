@@ -114,12 +114,18 @@ export interface HeelBand {
  * angle per wind band; the anchors below are those angles at the middle of
  * each band, interpolated linearly between them so a number does not jump at
  * a band edge.
+ *
+ * Every number here is `prov: research 2026-08-25-cockpit doc 01 item 10
+ * (North Sails J/70 upwind trim tips + big-breeze tips)`, which is where the
+ * two source URLs and the published figures live. The old tag named the
+ * article directly and resolved to nothing: `PROVENANCE.md`'s Sources table
+ * indexes the data files under `data/`, not the research corpus.
  */
 const HEEL_ANCHORS = [
-  [6, 8], // prov: North Sails J/70 upwind trim tips (2026-08-25) — super-light, <= 6 kt
-  [10.5, 12], // prov: North Sails J/70 upwind trim tips (2026-08-25) — powered up, 7-14 kt
-  [16.5, 14], // prov: North Sails J/70 upwind trim tips (2026-08-25) — max heel, 15-18 kt
-  [22, 15.5], // prov: North Sails J/70 upwind trim tips (2026-08-25) — big breeze/chop > 18 kt, 14-17 deg, centre 15.5
+  [6, 8], // prov: research 2026-08-25-cockpit doc 01 item 10 — super-light, <= 6 kt
+  [10.5, 12], // prov: research 2026-08-25-cockpit doc 01 item 10 — powered up, 7-14 kt
+  [16.5, 14], // prov: research 2026-08-25-cockpit doc 01 item 10 — max heel, 15-18 kt
+  [22, 15.5], // prov: research 2026-08-25-cockpit doc 01 item 10 — big breeze/chop > 18 kt, 14-17 deg, centre 15.5
 ] as const satisfies readonly (readonly [number, number])[];
 
 /**
@@ -127,7 +133,7 @@ const HEEL_ANCHORS = [
  * breeze (14–17°), so that spread is read off the source and applied to every
  * band, rather than a tolerance being invented per band.
  */
-const HEEL_HALF_BAND = 1.5; // prov: North Sails J/70 upwind trim tips (2026-08-25)
+const HEEL_HALF_BAND = 1.5; // prov: research 2026-08-25-cockpit doc 01 item 10
 
 function lerpAnchors(pts: readonly (readonly [number, number])[], x: number): number {
   const last = pts[pts.length - 1];
