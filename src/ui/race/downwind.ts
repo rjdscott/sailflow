@@ -22,10 +22,13 @@ export const KITE_CUE =
   'Ease until the luff curls, then trim — sheet is the whole trim; everything else is set around it.';
 
 /**
- * Why the four sliders move the picture and nothing else. ORC Table 5.7 gives
- * the spinnaker `bk(β) = 1` at every angle and a mainsail factor of 1: the VPP
- * carries no main-shadow term at all, which is the mechanism the sprit and the
- * tack line exist to fight (research 01 §ORC, ADR 0017).
+ * Why the four sliders move the picture and nothing else. ORC §5.6.3 — not
+ * Table 5.7 — is the one line that matters: it sets the spinnaker's
+ * blanketing factor `bk(β) = 1` at every angle. The mainsail's `fm` is 0 for
+ * sloops and the jib's is 0 for a non-overlapping jib, so for a J/70 the VPP
+ * carries no main-shadow term anywhere — which is exactly the mechanism the
+ * sprit and the tack line exist to fight (research 2026-08-25-spinnaker doc
+ * 01 §2.6, ADR 0017).
  */
 export const DIRECTION_ONLY =
   'Direction only: these four move the drawn sail, not the numbers — the VPP has no main-shadow term, so the sprit and tack line act on a mechanism the solver does not contain.';
