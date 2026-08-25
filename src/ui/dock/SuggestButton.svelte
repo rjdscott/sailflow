@@ -39,14 +39,16 @@
   {#if suggestion}
     <ol class="results">
       {#each suggestion.top as s, i (i)}
+        <!-- The tier badge sits beside the row, not inside it: nested in the
+             button, a press meant to ask what "B" meant applied the setup and
+             changed a number the sailor then turns on the rig (ux-03 H-06). -->
         <li>
           <button type="button" class="pick" disabled={locked} onclick={() => onapply(s.setup)}>
             <span class="setup tabular-nums">{describeSetup(s.setup)}</span>
-            <span class="regret tabular-nums">
-              {fmt(s.expectedRegretSPerMile.value, 1, 's/mi')}
-              <ConfidenceBadge tier={s.expectedRegretSPerMile.tier} />
-            </span>
+            <span class="regret tabular-nums">{fmt(s.expectedRegretSPerMile.value, 1, 's/mi')}</span
+            >
           </button>
+          <ConfidenceBadge tier={s.expectedRegretSPerMile.tier} />
         </li>
       {/each}
     </ol>
@@ -87,12 +89,19 @@
     padding: 0;
   }
 
+  .results li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
   .results li + li {
     border-top: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
   }
 
   .pick {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: var(--space-3);
