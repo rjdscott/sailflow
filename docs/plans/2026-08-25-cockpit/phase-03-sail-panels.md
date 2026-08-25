@@ -16,6 +16,8 @@ and `ControlPanel` is retired.
 - [ ] `keys.ts`: `m` / `j` focus first control of Mainsail / Headsail; `ShortcutsSheet` updated; tests.
 - [ ] a11y: every control 44 px hit, labelled; panels are `<section aria-labelledby>`.
 
+- [ ] Carried from phase 02: `leechStallFrac` only reaches 0–0.11 upwind with the lift-loss e-fold as its scale, so the 50–70 % band is unreachable; rescale the meter on the leech twist range (see ASSUMPTIONS) so the band is meaningful upwind, with tests at base trim (inside band) and hard-sheeted (above). `jibLeechStripe` reads −0.6 at base trim: calibrate the spreader offset so base trim sits at stripe 1 (20"), ASSUMPTIONS row updated.
+
 ## Verification
 
 ```sh
