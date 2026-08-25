@@ -162,7 +162,9 @@ export function deck(scale: number): Deck {
 export function boomAngle(mainsheet: number, traveller: number): number {
   // Traveller + = up to windward (matches shape/flying.ts and the coach copy),
   // which pulls the boom towards the centreline. prov: assumed gains
-  return clamp(6 + (100 - mainsheet) * 0.25 - traveller * 0.08, 2, 90);
+  // Same formula as src/core/shape/sheeting.ts; keep them identical.
+  const eased = 100 - mainsheet;
+  return clamp(6 + 0.0085 * eased * eased - traveller * 0.08, 2, 90);
 }
 
 // ---------------------------------------------------------------------------
@@ -210,7 +212,9 @@ export function leechRibbon(awaDeg: number, boomDeg: number, twistDeg: number, a
 /** Jib sheeting angle off the centreline, degrees. Lead aft opens it. */
 export function jibSheetAngle(jibLead: number, jibSheet: number): number {
   // prov: assumed; sheet term sized so 30 % of sheet travel is ~7° of sheeting angle
-  return clamp(4 + jibLead * 0.35 + (100 - jibSheet) * 0.22, 2, 90);
+  // Same formula as src/core/shape/sheeting.ts; keep them identical.
+  const eased = 100 - jibSheet;
+  return clamp(4 + jibLead * 0.35 + 0.0045 * eased * eased, 2, 90);
 }
 
 // ---------------------------------------------------------------------------

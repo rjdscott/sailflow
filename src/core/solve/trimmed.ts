@@ -13,6 +13,7 @@ import type {
 import { rigState } from '../rig/state';
 import { flyingShape } from '../shape/flying';
 import { shapeToOrc } from '../shape/toOrc';
+import { boomAngle, jibSheetAngle } from '../shape/sheeting';
 import { geometryFor, solveEquilibrium } from './equilibrium';
 import { tierFor, tiered } from './tierFor';
 import type { AeroGeometry } from '../aero/orc/forces';
@@ -37,7 +38,23 @@ export function trimmed(
     reef: orc.reef,
     twistEffDeg: orc.twistEffDeg,
   };
-  const eq = solveEquilibrium(boat, { condition, tune, deltas: orc.deltas }, geom);
+  // VPP mode (flatOverride given) assumes ideal sheeting, as ORC does. Race
+  // mode reads the sheets: an eased or pinned sail costs lift (shape/sheeting.ts).
+  const r = controls.race;
+  const sheeting =
+    flatOverride === undefined
+      ? {
+          main: {
+            sheetDeg: boomAngle(r.mainsheet, r.traveller),
+            twistDeg: shape.main?.threeQuarter.twistDeg ?? 0,
+          },
+          jib: {
+            sheetDeg: jibSheetAngle(r.jibLead, r.jibSheet),
+            twistDeg: shape.jib?.threeQuarter.twistDeg ?? 0,
+          },
+        }
+      : undefined;
+  const eq = solveEquilibrium(boat, { condition, tune, deltas: orc.deltas, sheeting }, geom);
   const ctx = { sailset: condition.sailset, twsKt: condition.twsKt, deltas: orc.deltas };
   const vmg = eq.bsKt * Math.cos((condition.twaDeg * Math.PI) / 180);
   return {

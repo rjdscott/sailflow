@@ -108,6 +108,8 @@ export interface AeroInput {
   tune: OrcTune;
   /** Optional shape-layer deltas; zero when absent. */
   deltas?: ShapeDeltas;
+  /** Race mode only: per-sail sheeting angle + twist. Absent = ideal trim (VPP). */
+  sheeting?: Partial<Record<SailId, { sheetDeg: number; twistDeg: number }>>;
 }
 
 /**

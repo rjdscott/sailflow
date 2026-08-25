@@ -1,8 +1,8 @@
 # Validation report
 
-- **Generated:** 2026-08-24 17:21:38 UTC
-- **Commit:** `d14c71c`
-- **Boat:** `j70` — geometry hash `3e0f6256`
+- **Generated:** 2026-08-25 01:53:57 UTC
+- **Commit:** `fac5333`
+- **Boat:** `j70` — geometry hash `c31fb449`
 - **Calibration:** hash `ab97c1e7` — 18 fitted parameter(s)
 - **Replay condition:** sea state 1, crew 340 kg, dock rig at the guide base, race trim optimised (prov: assumed — the Speed Guide prints neither).
 
@@ -110,7 +110,7 @@ For each North tuning-guide band, the dock setup the model picks at the band mid
 | 6-8 kt | 7 | -2 | -1 | 6 | 0 | 0 mm | |
 | 8-10 kt | 9 | 0 | 0 | 6 | 0 | 0 mm | calibrated here |
 | 10-12 kt | 11 | 2 | 1 | 6 | 0 | 0 mm | |
-| 12-16 kt | 14 | 4 | 2 | 6 | 0 | 0 mm | calibrated here |
+| 12-16 kt | 14 | 4 | 2 | 2 | -2 | 0 mm | calibrated here |
 | 16-20 kt | 18 | 6 | 3 | 4 | -2 | 30 mm | |
 | 20+ kt | 22 | 6 | 5 | 2 | -2 | 30 mm | |
 
