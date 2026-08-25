@@ -20,7 +20,7 @@ Priority: **P0** ship-blocker, **P1** before public release, **P2** soon,
 - [x] **M-05** (P1, S) Model-vs-guides shows "n/a" while loading and "These disagree." unconditionally — `busy && !optimum → 'solving…'`, render `model.error`, derive the headline sentence, hold the "calibrated here" chip.
 - [x] **M-07** (P1, S) Applying a suggestion moves the locked sliders, leaving two rigs on one screen — guard `DockStore.apply()` on `rigLock.lockedToday` and disable the `.pick` buttons.
 - [x] **M-08** (P1, S) Slider readout is a dead tab stop, long-press only, blur-empty zeroes the value — add `onclick` to edit, focus the input, bail on empty/non-finite, `Escape` to cancel, `hit-44`.
-- [ ] **M-09** (P1, L) No optimise-to-target on Race, no target beside BSP/VMG — ghost ticks on the sliders showing the VPP optimum plus an "Apply" button, all tier-badged; **blocked**: `optimal.ts:51-58` optimises backstay only, so ship only real solver output until the Epic 2 multi-control optimiser lands.
+- [x] **M-09** (P1, L) No optimise-to-target on Race, no target beside BSP/VMG — ghost ticks on the sliders showing the VPP optimum plus an "Apply" button, all tier-badged; **blocked**: `optimal.ts:51-58` optimises backstay only, so ship only real solver output until the Epic 2 multi-control optimiser lands.
 - [x] **M-10** (P1, S) Telltales hidden on the third tab and off by default on phone — default the picture tab to Plan, add a streaming/lifting/stalled legend that survives reduced motion.
 - [x] **M-13** (P1, S) Tier badges are title-only and wear the interactive colour — make the badge a button opening `Sheet`, restyle tiers neutrally, keep `--accent` for pressable things.
 - [x] **M-15** (P1, M) Only motion is a full-cell flash; shapes snap — telltale flutter, heel tilt and eased tweens on `--dur`/`--ease` tokens, all respecting `prefers-reduced-motion`; replace the flash with an underline.
@@ -30,8 +30,8 @@ Priority: **P0** ship-blocker, **P1** before public release, **P2** soon,
 
 - [x] **M-02** (P2, S) Gain chevrons use red/green as direction, colouring the recommended move as a fault — one colour for both glyphs, thread the magnitude out of `gradients()` into a directional label (updates `store.test.ts:155`).
 - [x] **M-04** (P2, S) Phone coach line sits a full screen down — render an `lg-hide` copy of the insight card under `<ConditionsStrip />`.
-- [ ] **M-06** (P2, S) Guide deltas painted in the error colour, no legend — neutral magnitude encoding at `Panel.svelte:364-377`, name the subject ("model +0.3"), add a noise-threshold key.
-- [ ] **M-11** (P2, S) Presets overwrite all eleven sliders with no undo — split condition from trim, or stash the previous controls and offer Undo via the existing `Toast`.
+- [x] **M-06** (P2, S) Guide deltas painted in the error colour, no legend — neutral magnitude encoding at `Panel.svelte:364-377`, name the subject ("model +0.3"), add a noise-threshold key.
+- [x] **M-11** (P2, S) Presets overwrite all eleven sliders with no undo — split condition from trim, or stash the previous controls and offer Undo via the existing `Toast`.
 - [ ] **M-12** (P2, M) Simple mode hides sliders but keeps every hard concept — show only BSP/Height/VMG, collapse the section table, single Boat view.
 - [x] **M-14** (P2, S) Dock columns missing `.stack`, so cards butt into one grey slab — add `stack` at `Dock.svelte:59` and `:117`.
 - [x] **M-16** (P2, S) Emoji padlocks ignore the theme tokens — one stroked 16 px `currentColor` padlock in `--ink-2`.

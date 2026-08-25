@@ -217,3 +217,4 @@ target, badge reads B; undo returns every slider.
   `MOVES` copy in `explain.ts`, which is still upwind-register ("losing
   height", "choking the slot") whatever the objective. That is a copy task,
   not a wiring one, and was not in this slice.
+- 2026-08-25 — UI merged as PR #33 (core as #28). Mid-phone budget still unmeasured; desktop descent ≈15 ms. Phase 🟢 on desktop evidence.
