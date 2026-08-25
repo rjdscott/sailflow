@@ -4,8 +4,15 @@ Free parameters and assumed values, their current numbers, and how each was
 chosen. Where calibration fits a value, the fit residual and hold-out
 residual are recorded here by `calibration/fit.ts`.
 
-The rig-bend-to-sail-shape sensitivity layer (`src/core/aero/shape`) is
-invented for this app: sign-correct by construction and tested for it,
+What is gated: `scripts/prov_check.py` requires a `prov:` tag beside every
+numeric literal in `src/core`, and `scripts/provenance.mjs --check` regenerates
+the tables below the generated marker from `data/boats/j70.json`. The
+hand-written bullets in this file and the `prov:` tags in `src/ui` are
+honour-code — audit docs-consistency-01 found several drifted (H-04, H-05,
+M-26–M-28) and fixed them; widening the checker is on its punchlist (H-14).
+
+The rig-bend-to-sail-shape layer (`src/core/shape`, applied to the ORC baseline
+through `src/core/aero/shape`) is invented for this app: sign-correct by construction and tested for it,
 magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
 ## Where the model is honestly weak (2026-08-25 fit)
@@ -39,8 +46,6 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   one wind band, so flattening paid at every wind speed and the model's own
   optimum inverted the guides (audit ux-02 H-04). `flat` still measures from
   the base setup, as ORC §5.1.3 defines it.
-- **Drill medals**: gold ≤ 1 %, silver ≤ 3 %, bronze ≤ 6 % VMG loss
-  (`src/lib/drills.ts`, assumed).
 - **Drill medals** (schema v2, ADR 0013): decided on distance to the answer
   key in legal control steps — gold 0, silver ≤ 2, bronze ≤ 5 — with the v1
   VMG-loss bands (≤ 1 / 3 / 6 %) kept as a second gate, so a trim on the key's
@@ -56,11 +61,18 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 - **Drill spacing**: SM-2 ease/interval recurrence (Woźniak 1990) with an
   assumed medal → quality map (gold 5, silver 4, bronze 3, no medal 1, minus
   one for a revealed hint) — `src/lib/spacing.ts`.
-- **Dock forecast pmf**: triangular on a 1-kt grid with a 5 % floor (ADR 0009, assumed).
+- **Dock forecast pmf**: triangular on a 1-kt grid with a floor of 5 % of the
+  peak weight before normalisation (≈1 % probability after it, so the range
+  ends count but lightly; `src/core/solve/dock.ts`, ADR 0009, assumed —
+  audit docs-consistency-01 M-05: whether 5 % probability was meant is an
+  open owner decision).
 - **Plan-view drawing** (`src/ui/race/boat.ts`, presentation only, not in the
-  solver): mast step at 0.45·LOA; boom angle ≈ 6° + (100 − mainsheet)·0.25° +
-  traveller·0.08°; jib sheeting angle ≈ 7° + jibLead·0.4° + (100 − jibSheet)·0.15°.
-  Sign-correct, magnitude assumed; the figcaption says so.
+  solver): mast step at 0.45·LOA; boom angle = clamp(6° + 0.0085·(100 − mainsheet)²
+  − traveller·0.08°, 2°, 90°) — quadratic so 70 % sheet is ~12° and 0 % reaches
+  90°, and the traveller *subtracts* (up to windward closes the boom); jib
+  sheeting angle = clamp(4° + jibLead·0.35° + 0.0045·(100 − jibSheet)², 2°, 90°).
+  The same two formulas live in `src/core/shape/sheeting.ts` and are pinned
+  equal by test. Sign-correct, magnitude assumed; the figcaption says so.
 - **3D hero loft: head and foot sections** (`src/ui/three/loft.ts`,
   presentation only, not in the solver). The solver reports flying shape at the
   quarter, half and three-quarter heights only, and the two ends it does not
@@ -79,25 +91,21 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     half-to-three-quarter ramp. All assumed. 0.6 keeps the head visibly flatter
     than the ¾ section without collapsing it to a plane; nothing published
     gives a J/70 head camber.
-- **3D hero: first-frame budget** 50 ms (`FIRST_FRAME_BUDGET_MS`,
-  `src/ui/three/SailHero.svelte`). Assumed, and committed in ADR 0014: over it,
-  the 2D plan view keeps the hero slot. Three frames at 60 Hz is the most a
-  picture may cost before it reads as a stall on the screen you drag sliders
-  on. Not a measurement — no phone was profiled. `?freeze=1` exempts the view
-  so the CI screenshot is deterministic under software rendering.
+- **3D hero: first-frame budget** 800 ms (`FIRST_FRAME_BUDGET_MS`,
+  `src/ui/three/SailHero.svelte`). Assumed but measurement-anchored, per
+  ADR 0014's 2026-08-25 amendment: the work of mount plus the first render
+  (excluding any wait for a rendering step), over it the 2D plan view keeps
+  the hero slot. Measured 60–137 ms unthrottled to 605–609 ms at 20× CPU
+  under SwiftShader, and 315 ms cold / 52 ms warm on an RTX 4070 Ti. The
+  Decision's original 50 ms (three frames at 60 Hz) timed a warm second
+  render and never tripped (ux-03 H-12). `?freeze=1` exempts the view so
+  the CI screenshot is deterministic under software rendering.
 - **3D hero: forestay sag direction** `SAG_FORWARD_FRACTION` = 0.35
   (`src/ui/three/rig3d.ts`). Assumed. Sag is jib-load driven and bows the stay
   forward as well as to leeward; only the two directions are claimed, not the
   split. Illustrative hull stations, spar radii and scene colours in
-  `src/ui/three/{hull,rig3d,SailView3D}.svelte` are drawing furniture, tagged
+  `src/ui/three/{hull.ts,rig3d.ts,SailView3D.svelte}` are drawing furniture, tagged
   `prov: assumed` at each literal, and the caption labels the hull illustrative.
-- **3D hero: gennaker luff bow direction** `LUFF_FORWARD_FRACTION` = 0.6
-  (`src/ui/three/kite.ts`). Assumed. How far the free luff bows forward, as a
-  fraction of how far it bows to leeward. Higher than the forestay's 0.35
-  above because a forestay is held at both ends and a luff flown off a sprit
-  is not; only the two directions are claimed, not the split. It was itself
-  called `SAG_FORWARD_FRACTION` until 2026-08-26 — two exported constants,
-  one name, two values, one row between them.
 - **Gennaker flying shape** (`src/core/shape/flying.ts` `asymShape`, tier C).
   Camber, draft position and twist by height are **derived** from Deparday's
   full-scale J/80 photogrammetry at AWA 124°, a running angle (`F1` Table 3.1;
@@ -141,12 +149,10 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     never longer" is claimed; the head chord is zero, the parabola's own answer.
   - **Tack**: on the bowsprit at `sprit`% of `bowspritOuterMm` (1.495 m,
     published, Class Rules C.9.4), `TACK_MIN_M` = 0.05 m above it strapped
-    down, rising by `TACK_TRAVEL_M` = 0.3 m eased — **inside the J/70 band**.
-    The J/70-specific figures span 0–12 in (0–0.30 m) across four North and
+    down, rising by `TACK_TRAVEL_M` = 0.6 m eased. **Assumed and known wide**:
+    the J/70-specific figures span 0–12 in (0–0.30 m) across four North and
     Doyle sources and disagree among themselves; the sportboat literature
-    reaches 18 in, but this is a J/70. Doc 04 §2.4's narrowing is applied
-    (0.6 m → 0.3 m); showing the source spread as a band in the panel rather
-    than one number is the half of that recommendation still outstanding.
+    reaches 18 in. Narrowing it and showing the band is doc 04 §2.4, not done.
   - **Head**: masthead at `kiteHalyard` = 100, dropping `HALYARD_DROP_M` =
     1.2 m at 0. **Assumed, and the sources contradict it**: "ease the halyard
     6–12 inches" could not be sourced to any sailmaker publication, and North
@@ -157,8 +163,11 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     (10.800 m, published), so the surplus over the tack-to-head distance bows
     it; magnitude inverts `L ≈ c(1 + 8/3·(d/c)²)`. **Derived, and
     corroborated** — within **3 %** of the exact circular-arc sagitta at every
-    control state (doc 02 §3.1). `SAG_MAX_FRACTION` = 0.3 of the luff is still
-    assumed and does almost no work; the arc bound is looser nearly everywhere.
+    control state (doc 02 §3.1). `SAG_MAX_FRACTION` = 0.3 of the luff (3.24 m)
+    is still assumed and does no work: it is looser than the parabola bow at
+    every control state (2.46 m at the default trim, 3.00 m at the slackest),
+    so it never binds. Doc 04 §2.3 proposes the circular-arc bound instead,
+    which is derived rather than assumed; not done.
   - **Leech bulge** (`leechBulgeProfile`, `chordForArc`): the leech stands
     out to leeward and forward of the straight head→clew line by
     `LEECH_BULGE_MIN_M` = 0.4 m trimmed, plus `LEECH_BULGE_TRAVEL_M` = 0.7 m
@@ -188,10 +197,14 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     picks a point on it (doc 02 §6, doc 04 §2.2). It replaces `tack +
     chordDir(sheet) × KITE_CHORDS.foot`, under which the drawn leech carried
     **25–40 % more cloth than the sail has** (11.0–12.4 m against 8.800 m).
-    Two consequences, both tested: head-to-clew *is* the published leech, and
-    **easing the sheet lifts the clew** — ~0.3 m per 10°, ~1.1 m across the
-    app's 25°–60° band, against Deparday's measured 1.4 m of clew rise from
-    AWA 64° to 141°. Two independent routes to about the same number.
+    Two consequences, both tested: the *cloth path* head-to-clew is the
+    published leech (the straight chord is shorter by the bulge's arc
+    surplus, 8.75 m trimmed to 8.44 m eased — see Leech bulge above), and
+    **easing the sheet lifts the clew** — ~0.4 m per 10°, ~1.4 m across the
+    app's 25°–60° band since the bulge shortens the chord (1.1 m before it),
+    against Deparday's measured 1.4 m of clew rise from AWA 64° to 141°. Two
+    independent routes to about the same number. Doc 02 §6's own circle gives
+    1.08 m over 25°–60°; its quoted 1.28 m is the 63° height in its table.
   - **Sheeting angle**: `SHEET_TRIM_DEG` = 25° to `SHEET_EASE_DEG` = 60°.
     **Assumed**, but now a choice of *arc* on a derived circle rather than an
     invented clew distance; both sit inside the circle's achievable 18°–89°.
@@ -361,7 +374,7 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 | `baseRace.vang` | 30 | see baseRace.backstay |
 | `baseRaceDown.kiteHalyard` | 100 | the four gennaker controls the race screen starts from, on the same 0-100 scale as baseRace, moved here from a literal in src/ui/race/store.svelte.ts so they carry provenance like every other datum. Halyard two-blocked at the masthead before the sheet is touched: North and Westaway both say the hoist should always be full (research 2026-08-25-spinnaker doc 04 section 2.5), so 100 is the honest default |
 | `baseRaceDown.kiteSheet` | 50 | kite sheet mid-range, to be trimmed to the curl. Tier C cue, not a solve: core/solve/optimalTrim does not solve the downwind sheet. See baseRaceDown.kiteHalyard |
-| `baseRaceDown.mainsheet` | 15 | the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, mid the 60-80 degree band of research 2026-08-25-spinnaker doc 03 sections 2.1 (T3) and 2.2 (T2). Tier C cue, not a solve: see core/solve/optimalTrim notSolved |
+| `baseRaceDown.mainsheet` | 15 | the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, inside the 60-87 degree band the solver's own downwind descent reaches between 135 and 165 degrees TWA (plan 2026-08-25-desktop-kite phase 04 log, app-convention); research 2026-08-25-spinnaker doc 03 section 2.1 (T3) supplies only the qualitative cue, out past the corner of the boat. Tier C cue, not a solve: see core/solve/optimalTrim notSolved |
 | `baseRaceDown.sprit` | 100 | sprit fully out. On a J/70 the pole is either all the way out or the kite is not up, so 100 is class practice rather than a chosen midpoint. See baseRaceDown.kiteHalyard |
 | `baseRaceDown.tackLine` | 50 | tack line mid-range, a trim control the sailor is expected to move rather than a setting: the J/70 sources disagree between two-block-it and ease 4-12 in (research 2026-08-25-spinnaker doc 03 section 4, doc 04 section 2.4), so the app starts in the middle of the band instead of picking a side. See baseRaceDown.kiteHalyard |
 | `controls.forestayMm.max` | 40 | see controls.forestayMm.min |

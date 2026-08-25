@@ -60,6 +60,13 @@ magnitude; it is tested for sign only.
 sailmaker design-suite output) becomes available, or ORC publishes a
 shape-aware sail model.
 
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+"`prov:` tags on every literal" is enforced by `scripts/prov_check.py` for
+`src/core` only; `src/ui/three`, `src/ui/race` and `src/ui/instruments` carry
+tags by hand and `ASSUMPTIONS.md`'s prose is honour code. Widening the checker
+is on audit docs-consistency-01's punchlist (H-14).
+
 ## Related
 
 - Research: [01-adversarial-review §1, 2, 4](../research/2026-08-25-sailing-sim-landscape/01-adversarial-review.md)

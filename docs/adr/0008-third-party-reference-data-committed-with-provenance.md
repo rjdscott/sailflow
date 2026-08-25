@@ -55,6 +55,13 @@ challenge from a publisher.
 **Revisit when:** a publisher objects, or a publisher grants explicit
 permission (then record it here and drop the caveat).
 
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+The tuning-guide importer from option B was **not built** (H-18): the only
+import path in the app is the tuning-log JSON. Deferred indefinitely — a
+stale or withdrawn guide revision leaves users with "not loaded" and no
+in-app recovery until it exists.
+
 ## Related
 
 - Research: [01-adversarial-review §5–6](../research/2026-08-25-sailing-sim-landscape/01-adversarial-review.md), decision-log row 9

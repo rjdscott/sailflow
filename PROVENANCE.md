@@ -19,9 +19,9 @@ between editions, and in one case did so without saying it had.
 **Table numbering by edition.** The 2026 edition inserted a new Table 5.1 (RS
 percentages) and a new Table 5.7 (roller-furling jib deltas), pushing the
 spinnaker tables down by two. Every `orcTable` label in `data/boats/j70.json`
-is **2023 numbering**; the main (`5.1`) and jib (`5.4`) labels also renumber in
-2026, by how much is not recorded here because it was not read off the 2026
-document.
+is **2023 numbering**; by the same insertion points the main (`5.1`) and jib
+(`5.4`) become 5.2 and 5.5 in 2026 — inferred from the insertions, not read off
+the 2026 document.
 
 | Sail | 2023 / 2024 | 2026 |
 | --- | --- | --- |
@@ -66,6 +66,12 @@ leaving 0.42 in place let the solver de-power downwind past what the VPP
 permits. The mixed edition is the honest trade and is flagged in the constant's
 own docblock.
 
+**Research-corpus source ids.** `prov:` tags in `src/**` that cite `F*`, `T*`
+or `S*` resolve against the research workspace they name, not against the
+Sources table below: `F*`/`T*` in
+`docs/research/2026-08-25-spinnaker/README.md`, `S*` in
+`docs/research/2026-08-25-cockpit/02-j70-trim-mental-model.md`.
+
 <!-- generated: do not edit below this line -->
 
 ## Sources
@@ -97,7 +103,7 @@ own docblock.
 | `baseRace.vang` | 30 | assumed | `app-convention` | see baseRace.backstay |
 | `baseRaceDown.kiteHalyard` | 100 | assumed | `app-convention` | the four gennaker controls the race screen starts from, on the same 0-100 scale as baseRace, moved here from a literal in src/ui/race/store.svelte.ts so they carry provenance like every other datum. Halyard two-blocked at the masthead before the sheet is touched: North and Westaway both say the hoist should always be full (research 2026-08-25-spinnaker doc 04 section 2.5), so 100 is the honest default |
 | `baseRaceDown.kiteSheet` | 50 | assumed | `app-convention` | kite sheet mid-range, to be trimmed to the curl. Tier C cue, not a solve: core/solve/optimalTrim does not solve the downwind sheet. See baseRaceDown.kiteHalyard |
-| `baseRaceDown.mainsheet` | 15 | assumed | `app-convention` | the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, mid the 60-80 degree band of research 2026-08-25-spinnaker doc 03 sections 2.1 (T3) and 2.2 (T2). Tier C cue, not a solve: see core/solve/optimalTrim notSolved |
+| `baseRaceDown.mainsheet` | 15 | assumed | `app-convention` | the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, inside the 60-87 degree band the solver's own downwind descent reaches between 135 and 165 degrees TWA (plan 2026-08-25-desktop-kite phase 04 log, app-convention); research 2026-08-25-spinnaker doc 03 section 2.1 (T3) supplies only the qualitative cue, out past the corner of the boat. Tier C cue, not a solve: see core/solve/optimalTrim notSolved |
 | `baseRaceDown.sprit` | 100 | assumed | `app-convention` | sprit fully out. On a J/70 the pole is either all the way out or the kite is not up, so 100 is class practice rather than a chosen midpoint. See baseRaceDown.kiteHalyard |
 | `baseRaceDown.tackLine` | 50 | assumed | `app-convention` | tack line mid-range, a trim control the sailor is expected to move rather than a setting: the J/70 sources disagree between two-block-it and ease 4-12 in (research 2026-08-25-spinnaker doc 03 section 4, doc 04 section 2.4), so the app starts in the middle of the band instead of picking a side. See baseRaceDown.kiteHalyard |
 | `controls.backstay.max` | 100 | derived | `app-convention` | app control range; 0-100% travel |

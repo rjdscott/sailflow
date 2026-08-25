@@ -285,7 +285,8 @@ button.chip {
 
 /* ----------------------------------------------------------------- cockpit */
 
-/* The Race cockpit is height-capped to one screen from 1280 px (ADR 0015),
+/* The Race cockpit sizes to its content from 1280 px (ADR 0016; the one-screen
+   cap of ADR 0015 is gone),
    and every 44 px of thumb padding it inherits from the phone comes out of
    the hero. Inside `.cockpit`, and only there, the chip rows and the shared
    chips are drawn at mouse size — the 44 px hit area survives on anything

@@ -15,6 +15,35 @@ undiagnosable.
 
 ### Changed
 
+- **First load −31 %** (#78, ux-03 M-23): `PROVENANCE.md`, `ASSUMPTIONS.md`
+  and the validation report load when their sheet opens on More; More, Log
+  and Drills are dynamic imports; `scripts/bundle_check.mjs` now sums every
+  first-load chunk.
+
+### Fixed
+
+- **The kite's head opens as the sheet eases** (#80): the drawn leech bulges to
+  leeward on a profile peaking at ~63 % height instead of running straight
+  into the masthead, which closed every upper section.
+- **The 3D perf gate measures work, not the clock** (#66): mount plus the
+  first render, so a tab opened behind another window is not judged slow for
+  having been hidden; budget 800 ms after a cold desktop GPU measured 315 ms.
+  The compact model-vs-guides strip wraps its cells.
+- Audit docs-consistency-01 (#81, #82, #83): the shipped validation report now
+  gates ADR 0012's ten held-out rows (it scored the superseded 25-row set);
+  `pnpm validate` propagates its exit code; the golden corpus fails rather
+  than skips on a boat-hash mismatch; doc drift across ADRs, plans,
+  `ASSUMPTIONS.md`, `PROVENANCE.md` and runbooks corrected; `TACK_TRAVEL_M`
+  0.6 → 0.3 m per the research.
+
+## [0.2.0] — 2026-08-26
+
+Everything from #41 to #80: drills v2 and the closed loop, the cockpit with
+the three.js hero, the desktop layout, the gennaker and the downwind
+corrections. The sections below were written as the work landed.
+
+### Changed
+
 - **The cockpit sizes to its content and fills the screen** (ADR 0016, #70,
   #72). No panel scrolls inside itself any more; the page scrolls when the
   window is short. From 1600 px the side panels keep two columns and the
@@ -37,7 +66,7 @@ undiagnosable.
 ### Fixed
 
 - **The mainsail eases with the point of sail, and the optimum says what it
-  does not solve.** Hoisting the kite — a point-of-sail chip or a scenario
+  does not solve** (#79). Hoisting the kite — a point-of-sail chip or a scenario
   link naming `set=asym` with no trim of its own — eases the mainsheet to
   `baseRaceDown.mainsheet`, the boom out past the corner of the boat at about
   67° (tier C cue, research `2026-08-25-spinnaker` doc 03; undoable). The plan
@@ -75,9 +104,9 @@ undiagnosable.
 - **Race is the cockpit grid now** (ADR 0015). From 1280 px: a conditions rail
   beside the title, the instrument band on one line across the top, then
   Mainsail | 3D hero | Headsail, Helm & conditions | Rig beneath, and the
-  coach line with every whole-trim action along the bottom. The grid is capped
-  to the viewport and each panel scrolls its own body, so the primary screen
-  does not scroll at 1280×720 or 1440×900 — asserted by Playwright at both.
+  coach line with every whole-trim action along the bottom. (This block first
+  capped the grid to the viewport with each panel scrolling its own body;
+  ADR 0016 reversed that later in the same release — see the top entry.)
   1024–1279 puts the hero and the instruments left, the panels right; 720–1023
   stacks the hero over 2-up panels. The duplicate "Sail sections" and "Rig
   elevation" cards are gone: each sail's section stack lives in its own panel
@@ -109,13 +138,15 @@ undiagnosable.
   `prefers-reduced-motion` now freezes the 3D hero and jump-cuts its presets
   (H-09); badge contrast 1.06:1 → 14:1 (H-10); the phone shows the hero first
   (H-11); the 3D perf gate timed a warm frame and could never trip — it now
-  times mount → first frame against 350 ms (H-12, ADR 0014 amendment).
+  measures the mount plus the first render against 800 ms (H-12, ADR 0014
+  amendment; the 350 ms first picked was raised after a cold desktop GPU
+  measured 315 ms, #66).
 
-### Fixed (earlier in this block)
+### Fixed — earlier in the same block, some superseded above
 
 - 3D hero: jib luff telltales sat on the forestay wire; they now sit 15 % aft of the luff, and the jib carries upper-leech ribbons (the North jib cue) alongside the main's. New "Helm" camera preset: from the cockpit looking up the main. Orbit may now look upward (polar clamp relaxed).
 - 3D hero: main leech ribbons rooted 1 m off the leech after the telltale rewrite; anchor maths now lives in `loft.ribbonAnchor` under test.
-- 3D hero perf gate timed the first render, which includes context creation and shader compiles, so it fell back to the plan view on every device (seen on a desktop GPU). It now times a warm second frame.
+- 3D hero perf gate timed the first render, which includes context creation and shader compiles, so it fell back to the plan view on every device (seen on a desktop GPU). It then timed a warm second frame — which ux-03 H-12 found could never trip; superseded by the 800 ms work-based gate above.
 - Default theme is dark (ADR 0015 dark-first); Auto and Light remain selectable on More.
 
 ### Added

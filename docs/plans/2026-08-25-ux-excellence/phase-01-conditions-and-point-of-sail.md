@@ -18,7 +18,7 @@ Closes M-01, M-21, M-22; owner decision row 25.
       broad reach / run, jib otherwise).
 - [x] TWS chip becomes a stepper (±1 kt) inline; sea state and crew stay in
       the sheet.
-- [ ] Wind arrows in `PlanView` scale with TWS (M-21).
+- [x] Wind arrows in `PlanView` scale with TWS (M-21).
 - [x] Simple mode + Run/Broad reach: show the kite controls (M-22) or a
       one-line explainer why downwind is direction-only.
 - [x] Store tests for chip → condition mapping; UI test that the Run chip

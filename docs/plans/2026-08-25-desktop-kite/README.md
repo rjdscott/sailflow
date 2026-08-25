@@ -1,7 +1,10 @@
 # Desktop fit and the kite: a cockpit that fills a real screen and sails downwind
 
-**Goal:** on a 1920×1080 monitor the whole cockpit is on screen with nothing
-hidden; on a 14" laptop (1536×864) the primary controls are in the first
+- **Status:** 🟢 Completed
+
+**Goal:** on a 1920×1080 monitor the cockpit is one short scroll with nothing
+hidden and the hero ≥ 480 px (the original "whole cockpit on screen" was
+measured at 1522–1539 px and retired — ADR 0016 amendment 2026-08-26); on a 14" laptop (1536×864) the primary controls are in the first
 viewport and one scroll reaches the rest; and under Broad reach / Run the
 gennaker is drawn, answers its four controls, and has its own panel.
 
@@ -69,16 +72,14 @@ spinnaker physics and the shape and trimming best practices").
 
 ## State at end of the fifth autonomous block (2026-08-25)
 
-- All phases 🟢. Main at
-  `1be7c2e` after #68–#76.
+- All phases 🟢. Main at `e9a0f7d` after #68–#80; follow-ups #78 (first load
+  −31 %), #79 (downwind mainsheet ease, `notSolved`), #80 (kite leech bulge)
+  are logged in phase 04.
 - Live: desktop cockpit fills the screen with no internal scroll; gennaker
   drawn and trimmable from its own panel; solver spinnaker floor per ORC.
-- Next block, in order: (1) downwind mainsail trim — at 150° TWA the boom
-  still sits at the upwind sheet mapping's angle; the optimum and the drawn
-  boom need a downwind ease (research doc 03 gives the numbers);
-  (2) ux-03 M-23 — `ASSUMPTIONS.md`/`PROVENANCE.md` are imported `?raw` into
-  first load and now cost ~10 KB gzip; lazy-load them behind the More
-  disclosure; (3) `TACK_TRAVEL_M` (0.6 m vs the class 0–0.30 m band) and
-  `HALYARD_DROP_M` per `ASSUMPTIONS.md`; (4) ORC downwind flat/reef coupling
-  and the ~21.5° spinnaker heel ceiling (research doc 01 §2.4);
-  (5) the remaining ux-03 Mediums.
+- Next block, in order: (1) audit docs-consistency-01's owner decisions
+  (pctPolar tier under the kite, dock regret tier, pmf floor, `T*` reference)
+  and its P2 items (plan-view leech bulge, contrast rows); (2) `HALYARD_DROP_M`
+  per `ASSUMPTIONS.md` (`TACK_TRAVEL_M` went to 0.3 m in the audit's
+  remediation); (3) ORC downwind flat/reef coupling and the ~21.5° spinnaker
+  heel ceiling (research doc 01 §2.4); (4) the remaining ux-03 Mediums.

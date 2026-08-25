@@ -70,6 +70,13 @@ optimum that a sailmaker would dispute (H-04); the disagreement panel's
 **Revisit when:** the time-domain loop (E2-02) lands, or when the shape
 layer starts reading draft position and entry angle.
 
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+The `best`-score migration lives in `src/lib/drillHistory.ts` (into
+IndexedDB), not `src/lib/drills.ts`, which holds the schema (L-07). `beatsKey`
+in `drills.ts` awards gold for matching or beating the key regardless of
+control distance — an escape hatch the Decision does not mention (L-04).
+
 ## Related
 
 Audit ux-02 `01-drills.md`; plan

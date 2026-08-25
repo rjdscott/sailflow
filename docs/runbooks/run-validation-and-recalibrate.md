@@ -52,4 +52,4 @@ before opening the PR. Also when a new polar or tuning-guide revision lands.
 - Golden replay skipping with "run pnpm golden": the boat or calibration hash
   changed; regenerate deliberately, never by accident.
 
-- **Last verified:** 2026-08-25 against 4d50e8f
+- **Last verified:** 2026-08-26 against e9a0f7d (commands re-run in audit docs-consistency-01; step 3's `pnpm golden` after a boat-data change is exactly what #79 skipped — the golden test now fails rather than skips on a boat-hash mismatch). Earlier pass 2026-08-25 against 4d50e8f.

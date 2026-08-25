@@ -136,7 +136,8 @@ pipeline, and the `make check` gate.
 
 ## Last verified
 
-- **Last verified:** 2026-08-07 against 6ced8b9. Steps 3 to 6 were executed
+- **Last verified:** 2026-08-07 against 6ced8b9 (template repo; not a commit in this repository — kept as the template's own stamp, see the owner decision in the mvp-analyser plan).
+- Detail: Steps 3 to 6 were executed
   end to end against a real clone stripped to tier 0, and both documented
   failure modes reproduced. Step 7's payload was corrected on 2026-08-08 after
   the shipped version returned 422; steps 1 and 2 are still written from the

@@ -57,6 +57,13 @@ means rewriting every screen, roughly a week at MVP size.
 to hand-write, or the UI grows past ~30 components and store coupling becomes
 the main source of bugs.
 
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+`src/ui` holds 54 components (2026-08-26), past the "~30" in the revisit
+trigger; the second condition — store coupling as the main source of bugs —
+is not evidenced (ux-01–03 found none), so the trigger has not fired. Read it
+by the coupling condition alone (L-08).
+
 ## Related
 
 - Research: [2026-08-25 landscape, §Web tech](../research/2026-08-25-sailing-sim-landscape/02-market-and-physics.md)

@@ -14,8 +14,8 @@ to `prov: published` / `derived` wherever the research supplies a source.
 ## Tasks
 
 - [x] `src/ui/three/kite.ts`: luff-bow direction as a function of apparent wind angle (leeward at reaching angles, rotating to windward past the measured crossover — doc 02 table), magnitude kept (within 3 % of the arc).
-- [x] Clew from the leech/foot circle (leech 8800, foot 5700 published) with the sheet ease lifting it (doc 02: ~1.3–1.4 m over the range); the head→clew leech stays the straight line phase 02's fix introduced; leech cloth length within 2 % of published.
-- [x] `src/core/shape/flying.ts` `asymShape`: camber/draft position/twist by height re-based on the measured values (doc 02 §camber, doc 04 (a)); this is `src/core` — tier stays C, `pnpm validate` must be unchanged (the flying shape does not feed the aero tables; assert that in the progress log with the before/after report diff).
+- [x] Clew from the leech/foot circle (leech 8800, foot 5700 published) with the sheet ease lifting it (doc 02 §6's circle: ~1.1 m over 25°–60°; the shipped kite ~1.4 m since #80's bulge shortens the chord); the head→clew leech was straight in this phase and bulges since #80; leech cloth length within 3 % of published.
+- [x] `src/core/shape/flying.ts` `asymShape`: camber/draft position/twist by height re-based on the measured values (doc 02 §2 (a)–(c), doc 04 §3); this is `src/core` — tier stays C. `pnpm validate` re-run and the report diff recorded: `asymShape` reaches the coefficients via `shape/toOrc.ts`'s reference shapes, so it *can* move the numbers (it moved asym rows ≤ 0.12 %; see the log).
 - [x] Curl cue: onset stays the tier-C sheet threshold; the animation starts at ¾ height and folds to windward per doc 02.
 - [x] `ASSUMPTIONS.md` rows updated: every constant that gained a source is re-tagged; the ones still assumed say so.
 - [x] Tests updated/added in `kite.test.ts` (luff side flips with AWA; clew on the circle; clew rises with ease; leech length) and `flying.test.ts` if it exists.
@@ -23,7 +23,7 @@ to `prov: published` / `derived` wherever the research supplies a source.
 
 ## Verification
 
-`make check`; `pnpm test:ui`; `pnpm validate` unchanged.
+`make check`; `pnpm test:ui`; `pnpm validate` before/after diffed in the log (hold-out verdict unchanged).
 
 ## Artifacts
 
@@ -53,8 +53,10 @@ of `docs/research/2026-08-25-spinnaker`.
 | `core/shape/flying.ts` | `DRAFT_MAX` | 0.25 | 0.32 | **derived**, the 15–32 % measured camber band |
 | `core/shape/flying.ts` | `ASYM_TWIST_F` | `[0.5, 0.8, 1.0]` | unchanged | **assumed**; doc 02 §2 says it approximates the measured ramp |
 
-**The flying shape did move the solver — flagged, not tuned.** Doc 04 §3 says
-the flying shape does not feed the aero tables. It does not feed them
+**The flying shape did move the solver — flagged, not tuned.** This phase's
+own prior assumption was that the flying shape does not feed the aero tables
+(audit docs-consistency-01 H-19: an earlier version of this entry attributed
+that to doc 04 §3, which says no such thing). It does not feed them
 *directly*, but it does reach the numbers through `shape/toOrc.ts`, which
 measures mean draft against `referenceShapes()` — the same shape at the base
 state. Changing the asym constants therefore shifts the denominator of the

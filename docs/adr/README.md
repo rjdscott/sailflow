@@ -39,7 +39,7 @@ line. Don't hand-edit.
 <!-- index:start -->
 | # | Title | Status |
 |---|-------|--------|
-| [0001](0001-tiered-docs-scaffold-with-machine-enforcement.md) | Tiered docs scaffold with machine enforcement | Accepted |
+| [0001](0001-tiered-docs-scaffold-with-machine-enforcement.md) | Tiered docs scaffold with machine enforcement | Accepted; the branch-protection consequence superseded by [0002](0002-branch-rules-stay-honour-code.md) |
 | [0002](0002-branch-rules-stay-honour-code.md) | Branch rules stay honour code | Accepted |
 | [0003](0003-ui-talks-to-physics-only-through-a-typed-worker-protocol.md) | The UI talks to the physics core only through a typed worker protocol | Accepted |
 | [0004](0004-typescript-solver-now-rust-engine-at-multiplayer.md) | TypeScript solver now; a Rust engine only when multiplayer or heavier aero demands it | Accepted |
@@ -49,11 +49,11 @@ line. Don't hand-edit.
 | [0008](0008-third-party-reference-data-committed-with-provenance.md) | Third-party reference data is committed to the repo with inline provenance | Accepted |
 | [0009](0009-dock-mode-score-is-expected-regret-over-a-forecast-distribution.md) | Dock-mode score is expected regret in seconds per mile over a forecast distribution | Accepted |
 | [0010](0010-persistence-behind-a-log-store-interface-localstorage-then-indexeddb.md) | Persistence behind a LogStore interface: localStorage now, IndexedDB when the schema settles | Accepted |
-| [0011](0011-two-d-svg-and-canvas-only-for-epic-1.md) | 2D SVG and Canvas only for Epic 1; no WebGL until measured | Superseded by [0014](0014-three-js-sail-view-behind-lazy-chunk-and-perf-gate.md) |
+| [0011](0011-two-d-svg-and-canvas-only-for-epic-1.md) | 2D SVG and Canvas only for Epic 1; no WebGL until measured | Superseded by [0014](0014-three-js-sail-view-behind-lazy-chunk-and-perf-gate.md) (Race hero only; sections, rig elevation and plan view stay SVG) |
 | [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) | The calibration hold-out is split by wind speed, not by sailing angle | Accepted |
 | [0013](0013-drills-generated-from-fault-templates-scored-in-control-space.md) | Drills generated from fault templates, scored in control space | Accepted |
-| [0014](0014-three-js-sail-view-behind-lazy-chunk-and-perf-gate.md) | A three.js 3D sail and rig view, lazily loaded behind a performance gate with the 2D view as fallback | Accepted |
+| [0014](0014-three-js-sail-view-behind-lazy-chunk-and-perf-gate.md) | A three.js 3D sail and rig view, lazily loaded behind a performance gate with the 2D view as fallback | Accepted; first-frame budget amended 2026-08-25 (50 ms → 800 ms, measured from mount) |
 | [0015](0015-cockpit-panels-by-sail-system-with-density-tiers.md) | Race mode is a cockpit of task-named sail-system panels, one instrument-cell contract, and three density tiers | Accepted; one-screen clause superseded by [0016](0016-cockpit-sizes-to-content-page-scrolls.md) |
-| [0016](0016-cockpit-sizes-to-content-page-scrolls.md) | The cockpit sizes to its content and the page scrolls; no panel scrolls inside itself | Accepted |
-| [0017](0017-kite-drawn-from-downwind-controls-as-tier-c-geometry.md) | The gennaker is drawn from the downwind controls by a UI-side, tier-C geometry mapping, not by the solver | Accepted |
+| [0016](0016-cockpit-sizes-to-content-page-scrolls.md) | The cockpit sizes to its content and the page scrolls; no panel scrolls inside itself | Accepted; the "1920×1080 holds the whole cockpit" target amended 2026-08-26 |
+| [0017](0017-kite-drawn-from-downwind-controls-as-tier-c-geometry.md) | The gennaker is drawn from the downwind controls by a UI-side, tier-C geometry mapping, not by the solver | Accepted; luff direction, leech and core scope amended 2026-08-26 |
 <!-- index:end -->

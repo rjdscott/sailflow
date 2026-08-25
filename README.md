@@ -15,8 +15,15 @@ confidence tier: **A** (a number), **B** (direction + a band), or **C**
 (direction only, no magnitude). This is a decision-rehearsal tool for tuning
 and trim choices, not a wind tunnel.
 
-Status: **Epic 1 phases 00–07 merged; phase 08 (PWA, polish, docs) in progress.** The polar hold-out gate currently **fails on 2 of 10 held-out rows**; see [`validation/report.md`](validation/report.md) and `ASSUMPTIONS.md` "Where the model is honestly weak". Build plan:
-[`docs/plans/2026-08-25-mvp-analyser/`](docs/plans/2026-08-25-mvp-analyser/).
+Live at **https://rjdscott.github.io/sailflow/**.
+
+Status (2026-08-26): Epic 1 shipped (#1–#40), then drills v2 and the closed
+loop (#41–#49), the cockpit with a three.js hero (#50–#67), the desktop layout
+and the gennaker (#68–#80). The polar hold-out gate (ADR 0012: every row at
+TWS 8 and 14) currently **fails 2 of its 10 held-out rows** — TWS 14 `jib vmgUp`
+and `asym vmgDn`; see [`validation/report.md`](validation/report.md) and
+`ASSUMPTIONS.md` "Where the model is honestly weak". Plans and status:
+[`docs/plans/README.md`](docs/plans/README.md).
 
 Two epics are in scope after the MVP analyser (Epic 1): Epic 2 is a
 quasi-static time-domain simulation; Epic 3 is a Rust engine with

@@ -1,6 +1,6 @@
 # 0014. A three.js 3D sail and rig view, lazily loaded behind a performance gate with the 2D view as fallback
 
-- **Status:** Accepted
+- **Status:** Accepted; first-frame budget amended 2026-08-25 (50 ms → 800 ms, measured from mount)
 - **Date:** 2026-08-25
 
 ## Context
@@ -82,7 +82,7 @@ default path.
 gate fails on the owner's phone, or Epic 2 time-domain work needs a
 continuous render loop.
 
-### Consequences — 2026-08-25 amendment: the gate's budget is 350 ms, measured from mount
+### Consequences — 2026-08-25 amendment: the gate's budget is 800 ms, measured as mount plus first-render work
 
 The Decision above is unchanged and stands. What follows corrects a number in
 it, and what that number measures, after audit ux-03 found the control inert
@@ -134,4 +134,4 @@ runs with the setting unset.
 - Research: [03-webgl-sail-rendering](../research/2026-08-25-cockpit/03-webgl-sail-rendering.md).
 - Plan: [2026-08-25-cockpit](../plans/2026-08-25-cockpit/) phase 04.
 - Decision log rows 40.
-- Measured 2026-08-25: three chunk 139.4 KB gzip, entry chunk unchanged at 101.5 KB gzip (baseline 100.2 KB, +1.3 KB of hero glue; `scripts/bundle_check.mjs`).
+- Measured 2026-08-25: three chunk 139.4 KB gzip, entry chunk 102.5 KB gzip (baseline 100.2 KB, +2.3 KB of hero glue per `scripts/bundle_baseline.json`; an earlier version of this line said 101.5 / +1.3). Since #78 the gate sums every chunk `index.html` names — first load 92.7 KB baseline, three chunk 139.0 KB on 2026-08-26 — against a deliberately raisable baseline with a 2 KB tolerance, not an unchanged absolute (M-14).
