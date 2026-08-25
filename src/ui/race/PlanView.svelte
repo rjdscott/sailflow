@@ -85,12 +85,14 @@
   const jibSheet = Tween.of(() => jibSheetAngle(ctl.jibLead, ctl.jibSheet), EASE);
   const boomDeg = $derived(boom.current);
   const jibDeg = $derived(jibSheet.current);
+  // Under the gennaker the jib is furled: no jib outline, ghost or telltales.
+  const jibUp = $derived(conditions.sailset === 'jib');
 
   const boomTip = $derived(clewAt(MAST, boomDeg, D.boomPx, side));
   const jibClew = $derived(clewAt(TACK, jibDeg, D.jibFootPx, side));
 
   const mainSail = $derived(main ? sailPath(MAST, boomTip, main.half, side) : '');
-  const jibSail = $derived(jib ? sailPath(TACK, jibClew, jib.half, side) : '');
+  const jibSail = $derived(jib && jibUp ? sailPath(TACK, jibClew, jib.half, side) : '');
 
   /** The ¾-height section, shorter in chord and twisted open: twist, in plan. */
   function ghost(tack: Pt, deg: number, len: number, s: SailShape): string {
@@ -100,7 +102,9 @@
   const mainGhost = $derived(
     main ? ghost(MAST, boomDeg, D.boomPx * DIMS.headChord.main, main) : '',
   );
-  const jibGhost = $derived(jib ? ghost(TACK, jibDeg, D.jibFootPx * DIMS.headChord.jib, jib) : '');
+  const jibGhost = $derived(
+    jib && jibUp ? ghost(TACK, jibDeg, D.jibFootPx * DIMS.headChord.jib, jib) : '',
+  );
 
   // Both arrows carry the true wind's strength: the apparent arrow says where
   // the wind is, not how hard it blows, so two lengths would read as two winds.
@@ -121,7 +125,7 @@
   // Jib luff telltales at ¼ ½ ¾ and the head: local AoA = AWA − sheeting angle
   // − twist at that height, read against the sail's entry angle.
   const telltales: { at: number; p: Pt; state: Ribbon }[] = $derived(
-    jib
+    jib && jibUp
       ? sailPoints(TACK, jibClew, jib.half, side, 4)
           .slice(1)
           .map((p, i) => {

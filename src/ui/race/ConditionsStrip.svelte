@@ -14,7 +14,11 @@
   let open = $state(false);
 
   const seaLabel = $derived(SEA_STATES[conditions.seaState].label);
-  const active = $derived(nearestPointOfSail(conditions.twaDeg));
+  const active = $derived(
+    race.pointOfSail?.twaDeg === conditions.twaDeg
+      ? race.pointOfSail.id
+      : nearestPointOfSail(conditions.twaDeg),
+  );
 
   function stepTws(delta: number): void {
     conditions.twsKt = Math.min(TWS_MAX, Math.max(TWS_MIN, conditions.twsKt + delta));

@@ -355,6 +355,18 @@ describe('RaceStore.setPointOfSail', () => {
     expect(store.pointOfSailBusy).toBeNull();
   });
 
+  it('keeps the tapped chip active at the angle its solve returned', async () => {
+    const { client, calls } = deferredClient();
+    const store = new RaceStore(client);
+    store.setPointOfSail('run');
+    expect(store.pointOfSail).toEqual({ id: 'run', twaDeg: 165 });
+    calls[0].resolve(optimum(148.7) as never);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(conditions.twaDeg).toBe(149);
+    expect(store.pointOfSail).toEqual({ id: 'run', twaDeg: 149 });
+  });
+
   it('drops an optimum that lands after a newer chip tap', async () => {
     const { client, calls } = optimalClient();
     const store = new RaceStore(client);
