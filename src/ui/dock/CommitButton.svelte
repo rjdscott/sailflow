@@ -1,8 +1,9 @@
 <script lang="ts">
+  import type { DockControls } from '../../core/types';
   import { rigLock } from '../stores/rigLock.svelte';
-  import { describeSetup } from './logic';
+  import { describeSetup, shortSetup } from './logic';
 
-  let { oncommit }: { oncommit: () => void } = $props();
+  let { setup, oncommit }: { setup: DockControls; oncommit: () => void } = $props();
 
   /** Two-tap: the first tap arms, the second unlocks. No modal to mis-tap. */
   let armed = $state(false);
@@ -41,7 +42,9 @@
 {:else}
   <section class="card">
     <h2 class="section-title">Commit</h2>
-    <button type="button" class="commit" onclick={oncommit}>Commit for today</button>
+    <button type="button" class="commit tabular-nums" onclick={oncommit}>
+      Commit {shortSetup(setup)} for today
+    </button>
     <p class="note">Locks the rig for the day and starts a log entry.</p>
   </section>
 {/if}

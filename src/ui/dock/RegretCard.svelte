@@ -4,7 +4,17 @@
   import { fmt } from '../format';
   import { sparklinePath, sparklineTicks } from './logic';
 
-  let { score, busy = false }: { score: DockScore | null; busy?: boolean } = $props();
+  let {
+    score,
+    busy = false,
+    busyNote = 'Scoring…',
+  }: {
+    score: DockScore | null;
+    busy?: boolean;
+    /** What the solve is chewing on. The worker answers once, with no progress
+        messages, so this states the size of the job rather than a fraction. */
+    busyNote?: string;
+  } = $props();
 
   /** User units for the plot box; the SVG scales to the card via viewBox. */
   const W = 240;
@@ -93,7 +103,7 @@
       is the price of committing once, not a mistake.
     </p>
   {:else}
-    <p class="explain">{busy ? 'Scoring…' : 'No score yet.'}</p>
+    <p class="explain">{busy ? busyNote : 'No score yet.'}</p>
   {/if}
 </section>
 

@@ -64,6 +64,36 @@ export async function computeModelOptimum(
   };
 }
 
+/**
+ * Half a turn: below this the model cannot tell two rigs apart, so a gap this
+ * small is noise rather than a disagreement (`Panel` styles and headlines off
+ * the same number).
+ */
+export const NOISE = 0.5;
+
+/** What a Model cell has to show. `none` is a real "no value", not a wait. */
+export type CellState = 'value' | 'solving' | 'none';
+
+export function cellState(value: number | null | undefined, busy: boolean): CellState {
+  if (value !== null && value !== undefined) return 'value';
+  return busy ? 'solving' : 'none';
+}
+
+/**
+ * The panel's headline. It may not claim a disagreement it has not computed,
+ * so "disagree" needs at least one delta outside the noise band.
+ */
+export function verdict(
+  hasOptimum: boolean,
+  busy: boolean,
+  deltas: (number | null)[],
+): 'comparing' | 'unknown' | 'agree' | 'disagree' {
+  if (!hasOptimum) return busy ? 'comparing' : 'unknown';
+  const real = deltas.filter((d): d is number => d !== null);
+  if (real.length === 0) return 'unknown'; // an optimum, but no guide number to compare it with
+  return real.some((d) => Math.abs(d) > NOISE) ? 'disagree' : 'agree';
+}
+
 const DEBOUNCE_MS = 400;
 
 /**
@@ -81,6 +111,11 @@ export class ModelOptimumStore {
 
   constructor(client: Client) {
     this.#client = client;
+  }
+
+  /** A result is on screen but a newer solve is in flight: it is last condition's. */
+  get stale(): boolean {
+    return this.busy && this.optimum !== null;
   }
 
   request(twsKt: number, seaState: SeaState, crewKg: number): void {
