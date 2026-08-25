@@ -53,5 +53,7 @@ line. Don't hand-edit.
 | [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) | The calibration hold-out is split by wind speed, not by sailing angle | Accepted |
 | [0013](0013-drills-generated-from-fault-templates-scored-in-control-space.md) | Drills generated from fault templates, scored in control space | Accepted |
 | [0014](0014-three-js-sail-view-behind-lazy-chunk-and-perf-gate.md) | A three.js 3D sail and rig view, lazily loaded behind a performance gate with the 2D view as fallback | Accepted |
-| [0015](0015-cockpit-panels-by-sail-system-with-density-tiers.md) | Race mode is a cockpit of task-named sail-system panels, one instrument-cell contract, and three density tiers | Accepted |
+| [0015](0015-cockpit-panels-by-sail-system-with-density-tiers.md) | Race mode is a cockpit of task-named sail-system panels, one instrument-cell contract, and three density tiers | Accepted; one-screen clause superseded by [0016](0016-cockpit-sizes-to-content-page-scrolls.md) |
+| [0016](0016-cockpit-sizes-to-content-page-scrolls.md) | The cockpit sizes to its content and the page scrolls; no panel scrolls inside itself | Accepted |
+| [0017](0017-kite-drawn-from-downwind-controls-as-tier-c-geometry.md) | The gennaker is drawn from the downwind controls by a UI-side, tier-C geometry mapping, not by the solver | Accepted |
 <!-- index:end -->

@@ -1,6 +1,6 @@
 # 0015. Race mode is a cockpit of task-named sail-system panels, one instrument-cell contract, and three density tiers
 
-- **Status:** Accepted
+- **Status:** Accepted; one-screen clause superseded by [0016](0016-cockpit-sizes-to-content-page-scrolls.md)
 - **Date:** 2026-08-25
 
 ## Context
