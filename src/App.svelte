@@ -49,6 +49,10 @@
   function applyUrl(): void {
     if (router.route !== 'race') return;
     const { condition, race: trim } = decodeScenario(router.params);
+    // A link that names the kite but carries no `r=` has specified the sail
+    // plan and not the trim, so it lands on the trim for that sail plan rather
+    // than on a beat's mainsheet with a spinnaker up (`race.hoistKite`).
+    if (condition.sailset === 'asym' && conditions.sailset !== 'asym' && !trim) race.hoistKite();
     Object.assign(conditions, condition);
     if (trim) Object.assign(race.controls.race, trim);
   }

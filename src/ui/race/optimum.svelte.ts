@@ -37,6 +37,16 @@ export const OPTIMUM_DEBOUNCE_MS = 300;
  */
 export const OPTIMUM_TIER: Tier = 'B';
 
+/**
+ * What a row says instead of a tick when the search declined to solve it.
+ * Under the kite that is the mainsheet: the model has no boom-angle gradient
+ * worth the name past 150° AWA, so the honest answer is the sailmakers' cue,
+ * at tier C, rather than a number dressed up as a solve
+ * (`core/solve/optimalTrim`, `notSolved`).
+ */
+export const NOT_SOLVED_HINT =
+  'Not solved under the kite — tier C cue: ease until the boom is out past the corner of the boat, leech bearing on the leeward shroud, and let the vang own the twist.';
+
 /** What the target ticks and the Apply badge say when you press them. */
 export const OPTIMUM_REASON =
   'Searched from where your sliders are and from the base tune: a local optimum on the control grid, a direction and a band, not a value to dial in.';
@@ -74,6 +84,11 @@ export class OptimumStore {
   /** Controls the search actually moved, in `TRIM_CONTROLS` order. */
   get moved(): string[] {
     return this.result?.moved ?? [];
+  }
+
+  /** Controls the search declined to solve: no tick, `NOT_SOLVED_HINT` instead. */
+  get notSolved(): string[] {
+    return this.result?.notSolved ?? [];
   }
 
   /** Call with plain snapshots, not proxies. No-op when the key has not moved. */

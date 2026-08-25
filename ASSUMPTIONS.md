@@ -340,6 +340,7 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 | `baseRace.outhaul` | 50 | see baseRace.backstay |
 | `baseRace.traveller` | 0 | see baseRace.backstay |
 | `baseRace.vang` | 30 | see baseRace.backstay |
+| `baseRaceDown.mainsheet` | 15 | the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, mid the 60-80 degree band of research 2026-08-25-spinnaker doc 03 sections 2.1 (T3) and 2.2 (T2). Tier C cue, not a solve: see core/solve/optimalTrim notSolved |
 | `controls.forestayMm.max` | 40 | see controls.forestayMm.min |
 | `controls.forestayMm.min` | 0 | range not published in Class Rules; app convention for a workable forestay length adjustment sweep |
 | `controls.forestayMm.step` | 2 | see controls.forestayMm.min |

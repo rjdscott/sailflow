@@ -68,6 +68,9 @@ import { trimmed } from './trimmed';
  * `mainHalyard` and `jibHalyard` (draft *position* only) and `inhauler`
  * (entry angle only). Those three change the drawn sail section and nothing
  * else, so they get no tick.
+ *
+ * `mainsheet` is here but is dropped from the search under the kite; see
+ * `notSolved` below.
  */
 export const TRIM_CONTROLS = [
   'backstay',
@@ -139,8 +142,34 @@ export function optimalTrim(
   // Under the kite the jib carries no shape, so its controls cannot move the
   // solve and must not be reported as moved.
   const held = new Set(opts.fixed ?? []);
+  /**
+   * Under the kite the mainsheet is a cue, not a solve, and the search says so
+   * instead of handing back the trim it was given as if it were an answer.
+   *
+   * The sheet's only route into a downwind solve is `sheetingEffect`'s
+   * multiplier on the main's CLmax, and past ~150° AWA the ORC main makes
+   * almost no lift (research `2026-08-25-spinnaker` doc 01 §2.6: for a sloop
+   * there is no downwind blanketing anywhere in the model, and the deep-angle
+   * collapse lives in the coefficient tables); the stall-drag term is switched
+   * off past 90° AWA on purpose, because past there drag is drive. So the
+   * descent has no boom-angle gradient worth the name out here — what it
+   * actually climbs is leech twist, and it labels the result "mainsheet".
+   * Measured (2026-08-25): from 165° out, and at 165°/20 kt, that handed back
+   * mainsheet 100 with vang 100 — the boom pinned on the centreline on a dead
+   * run — for 0.006 kt.
+   *
+   * The answer is a cue with provenance, not a number this model found:
+   * `baseRaceDown.mainsheet`, eased until the boom is out past the corner of
+   * the boat. It is not written into `race` — the reported `result` stays
+   * exactly the solve at the reported `race` — so a caller draws no target
+   * here and says the cue in words instead.
+   */
+  const notSolved = TRIM_CONTROLS.filter(
+    (c) => condition.sailset === 'asym' && c === 'mainsheet' && !held.has(c),
+  );
+  const skip = new Set<string>(notSolved);
   const active = TRIM_CONTROLS.filter(
-    (c) => (condition.sailset === 'jib' || !c.startsWith('jib')) && !held.has(c),
+    (c) => (condition.sailset === 'jib' || !c.startsWith('jib')) && !held.has(c) && !skip.has(c),
   );
 
   const start = { ...controls.race };
@@ -205,6 +234,7 @@ export function optimalTrim(
     // Measured against the trim on screen, not against the winning seed:
     // this is the list of things Apply would move.
     moved: active.filter((c) => won.race[c] !== start[c]),
+    notSolved,
     iters,
   };
 }

@@ -133,6 +133,7 @@ const stubOptimalTrim: OptimalTrimResult = {
   race: stubOptimal.race,
   result: stubSolve,
   moved: ['backstay', 'mainsheet'],
+  notSolved: [],
   iters: 96,
 };
 
