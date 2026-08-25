@@ -83,6 +83,7 @@ export function solveEquilibrium(
   geom: Record<SailId, AeroGeometry> = geometryFor(boat),
 ): Equilibrium {
   const c = input.condition;
+  assertFiniteCondition(c);
   const sign = c.twaDeg < 0 ? -1 : 1;
   const weightN = boat.hull.dispKg * G;
   const scale: [number, number, number] = [weightN * 0.05, weightN * 0.05, weightN * 0.05]; // prov: assumed, residual normalisation ~5% of displacement weight so Newton's tolerance is unitless
@@ -157,6 +158,20 @@ export function solveEquilibrium(
     iters,
     converged: best.converged,
   };
+}
+
+/**
+ * Reject a non-finite condition up front instead of letting NaN reach the
+ * residual, where Newton would bail on iteration 1 of every seed and the
+ * caller would get the seed table value back with `converged: false` — a
+ * silent wrong answer. Same contract as SciPy `root` / MATLAB `fsolve`:
+ * bad inputs raise, they do not "not converge".
+ */
+function assertFiniteCondition(c: Condition): void {
+  const bad = (['twsKt', 'twaDeg', 'seaState', 'crewKg'] as const).filter(
+    (k) => !Number.isFinite(c[k]),
+  );
+  if (bad.length) throw new Error(`solveEquilibrium: non-finite condition ${bad.join(', ')}`);
 }
 
 function clamp(v: number, lo: number, hi: number): number {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { BoatDefinition, DockControls } from '../types';
+import type { BoatDefinition, Condition, DockControls } from '../types';
 import j70 from '../../../data/boats/j70.json';
 import { baseDock, baseRace } from '../shape/base';
 import { hikeFraction, seedFor, solveEquilibrium } from './equilibrium';
@@ -66,6 +66,14 @@ describe('equilibrium', () => {
 });
 
 describe('trimmed', () => {
+  it('throws on a non-finite condition instead of returning the seed unconverged', () => {
+    const c = { twsKt: 12, twaDeg: 150, sailset: 'asym', seaState: 0 } as unknown as Condition;
+    expect(() => trimmed(boat, { dock: baseDock(), race: baseRace() }, c)).toThrow(/crewKg/);
+    expect(() =>
+      trimmed(boat, { dock: baseDock(), race: baseRace() }, { ...c, crewKg: NaN }),
+    ).toThrow(/crewKg/);
+  });
+
   it('returns tiers per ADR 0006 upwind under jib', () => {
     const r = trimmed(boat, { dock: baseDock(), race: baseRace() }, up);
     expect(r.bsKt.tier).toBe('A');
