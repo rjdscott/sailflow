@@ -15,6 +15,34 @@ undiagnosable.
 
 ### Changed
 
+- **The cockpit sizes to its content and fills the screen** (ADR 0016, #70,
+  #72). No panel scrolls inside itself any more; the page scrolls when the
+  window is short. From 1600 px the side panels keep two columns and the
+  hero takes the rest (768 × 1112 px at 1920 × 1080, with the actions strip
+  above the fold); a 14" laptop gets a full-width hero band over 2 × 2
+  panels. Control names in full, longer tracks, bigger gauges. Camera presets
+  fit the rig to the slot's vertical field of view, so the masthead is never
+  cropped.
+- **Spinnaker mode is deployed** (ADR 0017, #69, #71, #74, #76). Under Broad
+  reach and Run the gennaker is drawn in the 3D hero, the plan view and its
+  own section stack from the four downwind controls; the Headsail slot
+  becomes the Gennaker panel (sheet, tack line, halyard, bowsprit, luff-curl
+  cue, playbook line by wind band) and Helm loses its Kite section. The
+  drawn shape follows the measured research
+  (`docs/research/2026-08-25-spinnaker/`): luff to windward at deep apparent
+  angles, clew pinned by the published leech and foot, camber and twist by
+  height from photogrammetry — tier C, direction only, and the panel says
+  why (the VPP has no main-shadow term).
+
+### Fixed
+
+- Spinnaker `flatmin` is 0.53 per ORC (the 0.42 upwind floor was applied to
+  every sailset); asym ORC table label 5.7; the ORC VPP edition pinned in
+  `PROVENANCE.md` with the 2026 coefficient change recorded (#75). Hold-out
+  gate unchanged.
+
+### Changed
+
 - **Dock, Log, Drills and More wear the cockpit** (ADR 0015), with no change
   to what is on which screen. Every card sits on the raised `--surface-2` the
   Race panels use; the Dock's expected regret, the two ends of the forecast
