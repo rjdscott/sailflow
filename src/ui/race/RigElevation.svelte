@@ -1,107 +1,171 @@
 <script lang="ts">
-  import boat from '../../../data/boats/j70.json';
-  import type { RigState } from '../../core/types';
-  import { EXAGGERATION, mastPoints, polyline, sagPath } from './geometry';
+  import { cubicOut } from 'svelte/easing';
+  import { prefersReducedMotion, Tween } from 'svelte/motion';
+  import j70 from '../../../data/boats/j70.json';
+  import type { BoatDefinition, RigState } from '../../core/types';
+  import { EXAGGERATION, polyline } from './geometry';
+  import { rigLayout, VIEW } from './rigLayout';
+  import { conditions } from '../stores/conditions.svelte';
 
   let { rig }: { rig: RigState } = $props();
 
-  // Side view, bow to the left: +x aft, +y down. The mast fills MAST_PX, which
-  // fixes the millimetre scale every other dimension is drawn at. The viewBox
-  // is 240×260 and everything below lands inside it at any rig state, so the
-  // drawing scales with the card and never clips.
-  const VIEW = { w: 240, h: 260 };
-  const MAST_PX = 200;
-  const DECK_Y = 232;
-  const MAST_X = 128;
-  const mmPerPx = (boat.rig.mastLenM * 1000) / MAST_PX;
-  const jPx = (boat.rig.jM * 1000) / mmPerPx;
-  const boomPx = boat.rig.boomOuterMm / mmPerPx;
-  const spritPx = boat.rig.bowspritOuterMm / mmPerPx;
-  const forestayTopPx = (boat.rig.iM * 1000) / mmPerPx;
+  const boat = j70 as unknown as BoatDefinition;
 
-  const BOOM_Y = DECK_Y - 24;
-  const bowX = MAST_X - jPx;
+  // Everything geometric lives in rigLayout.ts, so this file is only ink:
+  // which stroke, which label, what the caption says. The layout is drawn to
+  // scale off the class dimensions — I, J, P, E, the girth tables, the boom
+  // and bowsprit outer points — and rigLayout.test.ts holds it to them.
+  //
+  // The numbers behind the drawing are tweened, not the path strings: a Bezier
+  // `d` cannot be CSS-transitioned, so the mast, sails and wires are rebuilt
+  // each frame from the eased rig state. prov: assumed 250 ms, matching the
+  // plan view and the sections. 1 ms rather than 0 under reduced motion: the
+  // same kill switch as tokens.css, and it keeps the first frame off a zero
+  // divide inside Tween.
+  const EASE = {
+    duration: () => (prefersReducedMotion.current ? 1 : 250),
+    easing: cubicOut,
+  };
+  const eased = Tween.of(() => rig, EASE);
 
-  const pts = $derived(
-    mastPoints(rig, MAST_PX, mmPerPx).map((p) => ({ x: MAST_X + p.x, y: DECK_Y - MAST_PX + p.y })),
-  );
-  const mast = $derived(polyline(pts));
-  const tip = $derived(pts[pts.length - 1] ?? { x: MAST_X, y: DECK_Y - MAST_PX });
-  const top = $derived({
-    x: MAST_X + (rig.rakeMm * (forestayTopPx / MAST_PX)) / mmPerPx,
-    y: DECK_Y - forestayTopPx,
-  });
-  const forestay = $derived(sagPath(top, { x: bowX, y: DECK_Y }, rig.sagMm, mmPerPx));
-  const maxBend = $derived(Math.max(...rig.bendMm.map(Math.abs)));
-  const mainOutline = $derived(
-    `M ${tip.x.toFixed(1)} ${tip.y.toFixed(1)} L ${(MAST_X + boomPx).toFixed(1)} ${BOOM_Y - 6} L ${MAST_X} ${BOOM_Y} Z`,
-  );
-  const jibOutline = $derived(
-    `M ${top.x.toFixed(1)} ${top.y.toFixed(1)} L ${bowX.toFixed(1)} ${DECK_Y} L ${MAST_X} ${DECK_Y - 14} Z`,
+  /** Under the gennaker the headsail is furled and the sprit is out (C.9.4(b)). */
+  const jibUp = $derived(conditions.sailset === 'jib');
+  const L = $derived(rigLayout(boat, eased.current, { jibUp, spritOut: !jibUp }));
+
+  /** Reported off the solve, never off the mid-tween shape. */
+  const bendMm = $derived(Math.max(...rig.bendMm.map(Math.abs)));
+
+  let dims = $state(true);
+
+  const label = $derived(
+    `Rig side elevation, bow to the left, drawn to the J/70 class dimensions. ` +
+      `Mast bend ${bendMm.toFixed(0)} millimetres and forestay sag ${rig.sagMm.toFixed(0)} ` +
+      `millimetres are drawn ${EXAGGERATION} times life size; mast rake ` +
+      `${rig.rakeMm.toFixed(0)} millimetres is drawn true.`,
   );
 </script>
 
 <figure>
-  <svg viewBox="0 0 {VIEW.w} {VIEW.h}" role="img" aria-label="Rig elevation, bow to the left">
+  <svg viewBox="0 0 {VIEW.w} {VIEW.h}" role="img" aria-label={label}>
     <defs>
       <marker
         id="rig-arrow"
         viewBox="0 0 8 8"
         refX="7"
         refY="4"
-        markerWidth="6"
-        markerHeight="6"
+        markerWidth="5"
+        markerHeight="5"
         orient="auto"
       >
         <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--ink-2)" />
       </marker>
     </defs>
 
-    <!-- Reference geometry: an upright mast and the deck the rig sits on. -->
-    <line class="ref" x1={MAST_X} y1={DECK_Y} x2={MAST_X} y2={DECK_Y - MAST_PX} />
-    <path class="sail" d={jibOutline} />
-    <path class="sail" d={mainOutline} />
+    <!-- Water, hull and sheer: the datum every height is measured from. -->
+    <line class="water" x1="0" y1={L.waterY} x2={VIEW.w} y2={L.waterY} />
+    <path class="hull" d={L.hullPath} />
+    <line class="sheer" x1={L.sheer[0].x} y1={L.sheer[0].y} x2={L.sheer[1].x} y2={L.sheer[1].y} />
 
-    <path class="wire" d={forestay} />
-    <path class="mast" d={mast} />
-    <line class="boom" x1={MAST_X} y1={BOOM_Y} x2={MAST_X + boomPx} y2={BOOM_Y - 6} />
+    <!-- Plumb mast: the reference rake is measured against. -->
+    <line class="ghost" x1={L.heel.x} y1={L.heel.y} x2={L.plumbTip.x} y2={L.plumbTip.y} />
 
-    <path class="hull" d="M 30 {DECK_Y} L 212 {DECK_Y} L 198 250 L 62 250 Z" />
-    <line class="boom" x1={bowX} y1={DECK_Y} x2={bowX - spritPx} y2={DECK_Y - 2} />
+    <!-- Sails behind the spars, so the rig reads over them. -->
+    {#if L.jib.path}
+      <path class="sail jib" d={L.jib.path} />
+      <path class="leech" d={polyline(L.jib.leech)} />
+    {/if}
+    <path class="sail main" d={L.main.path} />
+    <path class="leech" d={polyline(L.main.leech)} />
 
-    <!-- Rake: masthead offset from upright, drawn to scale. -->
+    <!-- ¼ ½ ¾ girths, the same three heights the sections card draws. -->
+    {#each [...L.main.girths, ...L.jib.girths] as g, i (i)}
+      <line class="girth" x1={g.luff.x} y1={g.luff.y} x2={g.leech.x} y2={g.leech.y} />
+    {/each}
+    {#each L.main.girths as g (g.label)}
+      <text class="mark" x={g.leech.x + 4} y={g.leech.y + 4}>{g.label}</text>
+    {/each}
+
+    <!-- Standing rigging: forestay bowed by sag, backstay masthead to transom. -->
+    <path class="wire" d={L.forestayPath} />
+    <line
+      class="wire"
+      x1={L.backstay[0].x}
+      y1={L.backstay[0].y}
+      x2={L.backstay[1].x}
+      y2={L.backstay[1].y}
+    />
+
+    <!-- Spars. -->
+    <path class="mast" d={polyline(L.mast)} />
+    <line class="spar" x1={L.gooseneck.x} y1={L.gooseneck.y} x2={L.boomTip.x} y2={L.boomTip.y} />
+    <line
+      class="spar"
+      x1={L.spreaderRoot.x}
+      y1={L.spreaderRoot.y}
+      x2={L.spreaderTip.x}
+      y2={L.spreaderTip.y}
+    />
+    {#if !jibUp}
+      <line class="spar" x1={L.stem.x} y1={L.stem.y} x2={L.spritTip.x} y2={L.spritTip.y} />
+    {/if}
+
+    <circle class="node" cx={L.hounds.x} cy={L.hounds.y} r="2.5" />
+    <circle class="node" cx={L.spreaderRoot.x} cy={L.spreaderRoot.y} r="2" />
+
+    <!-- Rake: masthead offset from plumb, to scale. -->
+    <line class="rake" x1={L.plumbTip.x} y1={L.rakeY} x2={L.tip.x} y2={L.rakeY} />
     <line
       class="rake"
-      x1={MAST_X}
-      y1={DECK_Y - MAST_PX - 12}
-      x2={tip.x}
-      y2={DECK_Y - MAST_PX - 12}
+      x1={L.tip.x}
+      y1={L.rakeY}
+      x2={L.tip.x}
+      y2={L.tip.y}
       marker-end="url(#rig-arrow)"
     />
-    <circle class="tipdot" cx={tip.x} cy={tip.y} r="3" />
+
+    {#if dims}
+      <g class="dim">
+        {#each L.dims as d (d.label)}
+          <line x1={d.from.x} y1={d.from.y} x2={d.to.x} y2={d.to.y} />
+          {#if d.vertical}
+            <!-- Leaders back to the mast: a bar in the margin says nothing
+                 about which two heights it spans without them. -->
+            <line class="lead" x1={d.from.x} y1={d.from.y} x2={L.heel.x} y2={d.from.y} />
+            <line class="lead" x1={d.to.x} y1={d.to.y} x2={L.heel.x} y2={d.to.y} />
+            <line x1={d.from.x - 3} y1={d.from.y} x2={d.from.x + 3} y2={d.from.y} />
+            <line x1={d.to.x - 3} y1={d.to.y} x2={d.to.x + 3} y2={d.to.y} />
+          {:else}
+            <line x1={d.from.x} y1={d.from.y - 3} x2={d.from.x} y2={d.from.y + 3} />
+            <line x1={d.to.x} y1={d.to.y - 3} x2={d.to.x} y2={d.to.y + 3} />
+          {/if}
+          <text x={d.at.x} y={d.at.y}>{d.label}</text>
+        {/each}
+      </g>
+    {/if}
   </svg>
 
+  <dl class="mono">
+    <div>
+      <dt>Bend</dt>
+      <dd>{bendMm.toFixed(0)} mm <span class="badge">×{EXAGGERATION}</span></dd>
+    </div>
+    <div>
+      <dt>Sag</dt>
+      <dd>{rig.sagMm.toFixed(0)} mm <span class="badge">×{EXAGGERATION}</span></dd>
+    </div>
+    <div>
+      <dt>Rake</dt>
+      <dd>{rig.rakeMm.toFixed(0)} mm</dd>
+    </div>
+    <button type="button" class="chip hit-44" aria-pressed={dims} onclick={() => (dims = !dims)}
+      >dims</button
+    >
+  </dl>
+
   <figcaption>
-    Side elevation, bow left. Mast bend and forestay sag are drawn at <span class="badge"
-      >×{EXAGGERATION}</span
-    >; rake is to scale. Sail outlines are indicative.
+    Bow left, to scale. Bend and sag ×{EXAGGERATION}, rake true.
   </figcaption>
 </figure>
-
-<dl class="mono">
-  <div>
-    <dt>Bend</dt>
-    <dd>{maxBend.toFixed(0)} mm</dd>
-  </div>
-  <div>
-    <dt>Sag</dt>
-    <dd>{rig.sagMm.toFixed(0)} mm</dd>
-  </div>
-  <div>
-    <dt>Rake</dt>
-    <dd>{rig.rakeMm.toFixed(0)} mm</dd>
-  </div>
-</dl>
 
 <style>
   figure {
@@ -112,7 +176,9 @@
     display: block;
     width: 100%;
     height: auto;
-    max-height: 340px;
+    /* The rig is ~9 m tall and ~8 m long, so the drawing is near square. The
+       cap keeps this card the height of the sections card beside it. */
+    max-height: 200px;
     margin-inline: auto;
   }
 
@@ -127,27 +193,28 @@
     padding: 0 var(--space-1);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    color: var(--ink);
+    color: var(--ink-2);
     font-variant-numeric: tabular-nums;
   }
 
   .mast {
     fill: none;
     stroke: var(--ink);
-    stroke-width: 4;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .spar {
+    stroke: var(--ink);
+    stroke-width: 2.5;
     stroke-linecap: round;
   }
 
   .wire {
     fill: none;
     stroke: var(--accent);
-    stroke-width: 2;
-  }
-
-  .boom {
-    stroke: var(--ink);
-    stroke-width: 3;
-    stroke-linecap: round;
+    stroke-width: 1.5;
   }
 
   .hull {
@@ -155,13 +222,49 @@
     stroke: none;
   }
 
+  .sheer {
+    stroke: var(--ink);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .water {
+    stroke: var(--line);
+    stroke-width: 1;
+  }
+
   .sail {
-    fill: var(--muted);
-    fill-opacity: 0.5;
+    fill: var(--ink);
+    fill-opacity: 0.14;
     stroke: none;
   }
 
-  .ref {
+  /* The jib sits over the main in this projection, so it goes lighter. */
+  .sail.jib {
+    fill: var(--accent);
+    fill-opacity: 0.1;
+  }
+
+  .leech {
+    fill: none;
+    stroke: var(--ink-2);
+    stroke-width: 1;
+  }
+
+  .girth {
+    stroke: var(--ink-2);
+    stroke-width: 0.75;
+    stroke-dasharray: 2 2;
+  }
+
+  /* Font sizes are viewBox units, and the card scales the drawing down to
+     about 0.7: these are chosen so the labels land near 9-10 CSS px there. */
+  .mark {
+    fill: var(--ink-2);
+    font-size: 14px;
+  }
+
+  .ghost {
     stroke: var(--muted);
     stroke-width: 1.5;
     stroke-dasharray: 4 4;
@@ -169,25 +272,46 @@
 
   .rake {
     stroke: var(--ink-2);
-    stroke-width: 1.5;
+    stroke-width: 1;
   }
 
-  .tipdot {
+  .node {
     fill: var(--accent);
+  }
+
+  .dim line {
+    stroke: var(--ink-2);
+    stroke-width: 0.75;
+  }
+
+  .dim line.lead {
+    stroke: var(--line);
+    stroke-width: 0.5;
+  }
+
+  .dim text {
+    fill: var(--ink-2);
+    font-size: 16px;
+    font-weight: 600;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    paint-order: stroke;
+    stroke: var(--surface);
+    stroke-width: 3;
   }
 
   dl {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-4);
-    margin: var(--space-3) 0 0;
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--line);
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-xs);
   }
 
   dl div {
     display: flex;
-    gap: var(--space-2);
+    gap: var(--space-1);
   }
 
   dt {
@@ -197,5 +321,18 @@
   dd {
     margin: 0;
     color: var(--ink);
+  }
+
+  /* A compact overlay toggle, not a primary control: the 44 px hit area comes
+     from .hit-44's pseudo-element, so the row stays one line tall. */
+  .chip {
+    height: 24px;
+    padding: 0 var(--space-2);
+    font-size: var(--text-xs);
+  }
+
+  .chip[aria-pressed='false'] {
+    color: var(--ink-2);
+    opacity: 0.7;
   }
 </style>

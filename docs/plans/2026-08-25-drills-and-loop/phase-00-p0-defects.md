@@ -208,3 +208,82 @@ evidence. `make check` green (730 tests).
     light-air template was re-authored off backstay onto controls the model
     can separate. The physics investigation remains open.
   - Not touched by this pass: H-05, H-06, H-07 (Log form and Race optimum).
+### Rig elevation
+
+**2026-08-25** — Owner feedback: "the rig elevation image looks wrong too."
+Rebuilt it as a real side elevation drawn to scale from `data/boats/j70.json`.
+
+**What was wrong.** The old drawing was not a rig, it was three shapes: an
+unlabelled mast arc over a grey rectangle, a generic triangle for the main, a
+thin line for the jib. Concretely — no deck or waterline, so no datum any
+height was measured from; the mast drawn at `mastLenM` but the hounds, the
+gooseneck and the spreaders drawn nowhere; the forestay landing at a bow point
+picked from J alone with no stem or hull under it; no backstay, no sprit; the
+mainsail a straight-sided triangle from the mast tip to a boom drawn 24 px
+above the deck (no relation to P or E); the jib a single stroke from the
+masthead to the bow, ignoring the luff, LP and girth tables; and no I/J/P/E
+labels, so nothing on the card told you what it was to scale against. Bend,
+sag and rake were the only honest parts.
+
+**What each element is sourced from now.** All geometry moved into
+`src/ui/race/rigLayout.ts` (pure, unit-tested); `RigElevation.svelte` is only
+ink and labels.
+
+| Element | Source |
+|---|---|
+| Mast, 11 stations | `rig.mastLenM` (assumed, PROVENANCE.md); stepped on deck per Class Rules D.1.1(e) mast compression post |
+| Hounds | `rig.iM` above the sheer — ORC cert RIG IG 8.000 |
+| Forestay base / stem | `rig.jM` forward of the mast — ORC cert RIG J 2.340 |
+| Transom (backstay base) | `hull.loaM − rig.jM`, the same reduction `src/core/geometry/rig.ts` `backstayGeometry` uses |
+| Gooseneck | derived: `mastLenM − pM` = 0.526 m, assuming the mainsail upper limit mark is at the masthead |
+| Boom | `rig.boomOuterMm` = E — Class Rules C.9.3(a) 2876 mm |
+| Bowsprit | `rig.bowspritOuterMm` — Class Rules C.9.4(a) 1495 mm; drawn extended only under the gennaker (C.9.4(b)(1)) |
+| Spreader | `rig.spreaderZM/spreaderLenM/sweepDeg` (all assumed), foreshortened to `len·sin(sweep)` in side view |
+| Mainsail | luff on the bent mast over P; leech through the Class Rules G.3.4 girths (top/upper/¾/½/¼) to the boom outer point |
+| Headsail | luff on the sagged forestay (G.4.3 luff 8000 mm = I); leech through the G.4.3 girths; clew on the sheer at LP off the luff |
+| Bend / sag | `SolveResult.rig.bendMm[11]` and `sagMm`, both ×5 (`EXAGGERATION`), factor shown on the card |
+| Rake | `rig.rakeMm`, drawn true against a plumb ghost, never exaggerated |
+
+**What the JSON and the class rules lack, and had to be assumed.**
+
+- **Freeboard.** Neither `hull` nor the class rules carry one. Drawn at 0.75 m,
+  the `aero.hbiM` default in `src/core/aero/orc/forces.ts` ("base of I above
+  water"). j70.json's *calibrated* `aero.hbiM` of 1.4 was deliberately not
+  used: it is an aero fit, not a hull dimension.
+- **Mast step height.** Class Rules C.9.2(a) "MAST — DIMENSIONS" is a pointer
+  to the manufacturing specification, not a table; the ORC certificate
+  publishes only I/J/P/E. The mast is drawn stepped at the sheer on the
+  strength of D.1.1(e) (mast compression post), so its full `mastLenM` stands
+  above the deck.
+- **Gooseneck height.** Not published anywhere. Derived as `mastLenM − pM`,
+  which assumes the mainsail's upper limit mark sits at the masthead.
+- **Headsail foot length.** Not published. The clew is placed on the sheer at
+  the LP perpendicular distance from the luff — the J/70 headsail is a
+  deck-sweeper (G.4.3 allows 30 mm of foot irregularity on a sail that must
+  furl) — which fixes it exactly and yields a ~2.55 m foot.
+- **Forefoot.** 0.25 m tuck aft of the stem, drawing only. Nothing physical
+  reads it.
+- **Leech girth positions.** ERS leech points (¾ of the leech from the clew,
+  etc.) are mapped to the same fraction along the luff, since the luff and
+  leech differ by ~4 %. An approximation, flagged in `rigLayout.ts`.
+
+**Tests.** `src/ui/race/rigLayout.test.ts`, 11 cases: I/J/P/E drawn at the JSON
+ratios through one shared scale; hounds at I and transom at LOA; sprit only
+under gennaker; 11 mast stations ordered partners → tip; rake to scale and
+never exaggerated; bend exaggerated ×5 and carrying the mainsail luff with it;
+sag bowing the jib luff; girths at the class widths; and nothing leaving the
+viewBox across a bend/sag/rake envelope that contains the whole reachable
+solver range (±250 mm bend, 150 mm sag, 300 mm rake, against the solver's
+134/70/152 over every corner of the j70.json dock and backstay ranges).
+
+**Known trade-off.** The card lands ~350 px tall on desktop rather than the
+~300 px asked for. The rig is ~9.3 m by ~8.4 m, so the drawing is near square;
+capping the SVG below ~200 px made the I/J/P/E and ¼/½/¾ labels illegible. The
+`dims` chip turns the dimension overlay off for anyone who wants the drawing
+alone. Dropping to 300 px means dropping the labels.
+
+**Boundary note.** The viewBox test cannot call `rigState` — eslint
+`no-restricted-imports` limits `src/ui` to `src/core/types` — so it sweeps a
+stated envelope instead of the solver's own output. If a calibration change
+pushes bend, sag or rake past that envelope, widen it and re-check the
+margins.

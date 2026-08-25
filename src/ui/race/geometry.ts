@@ -89,6 +89,17 @@ export function polyline(pts: Pt[]): string {
  * Forestay as a sagging quadratic. The curve's midpoint sits halfway to the
  * control point, so the control offset is twice the sag we want to show.
  */
+export function sagControl(
+  top: Pt,
+  bow: Pt,
+  sagMm: number,
+  mmPerPx: number,
+  exaggeration = EXAGGERATION,
+): Pt {
+  const d = (sagMm * exaggeration) / mmPerPx;
+  return { x: (top.x + bow.x) / 2 + 2 * d, y: (top.y + bow.y) / 2 };
+}
+
 export function sagPath(
   top: Pt,
   bow: Pt,
@@ -96,10 +107,32 @@ export function sagPath(
   mmPerPx: number,
   exaggeration = EXAGGERATION,
 ): string {
-  const d = (sagMm * exaggeration) / mmPerPx;
-  const cx = (top.x + bow.x) / 2 + 2 * d;
-  const cy = (top.y + bow.y) / 2;
-  return `M ${top.x.toFixed(2)} ${top.y.toFixed(2)} Q ${cx.toFixed(2)} ${cy.toFixed(2)} ${bow.x.toFixed(2)} ${bow.y.toFixed(2)}`;
+  const c = sagControl(top, bow, sagMm, mmPerPx, exaggeration);
+  return `M ${top.x.toFixed(2)} ${top.y.toFixed(2)} Q ${c.x.toFixed(2)} ${c.y.toFixed(2)} ${bow.x.toFixed(2)} ${bow.y.toFixed(2)}`;
+}
+
+/**
+ * The same sagging curve as `sagPath`, sampled. The jib luff rides the
+ * forestay, so its girths have to be measured off the sagged line, not a
+ * straight one.
+ */
+export function sagPoints(
+  top: Pt,
+  bow: Pt,
+  sagMm: number,
+  mmPerPx: number,
+  n = 12,
+  exaggeration = EXAGGERATION,
+): Pt[] {
+  const c = sagControl(top, bow, sagMm, mmPerPx, exaggeration);
+  return Array.from({ length: n + 1 }, (_, i) => {
+    const t = i / n;
+    const u = 1 - t;
+    return {
+      x: u * u * top.x + 2 * u * t * c.x + t * t * bow.x,
+      y: u * u * top.y + 2 * u * t * c.y + t * t * bow.y,
+    };
+  });
 }
 
 export type TelltaleState = 'streaming' | 'lifting' | 'stalled';
