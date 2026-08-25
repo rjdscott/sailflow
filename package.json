@@ -11,7 +11,7 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:ui": "playwright test",
+    "test:ui": "pnpm build && playwright test",
     "calibrate": "tsx calibration/fit.ts",
     "golden": "tsx calibration/golden.ts",
     "validate": "vitest run --config vitest.polar.config.ts; tsx validation/report.ts"
