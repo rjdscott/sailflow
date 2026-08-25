@@ -16,11 +16,12 @@ import type {
   RaceControls,
   SolveResult,
 } from '../../core/types';
-import type { TrimmedRequest } from '../../worker/protocol';
+import type { OptimalRequest, TrimmedRequest } from '../../worker/protocol';
 import { coachSentence, type Dir } from '../explain';
 import { snap } from '../format';
 import { BASE_RACE, conditions, type Preset } from '../stores/conditions.svelte';
 import { getClient, type Client } from './client';
+import { POINTS_OF_SAIL } from './pointOfSail';
 
 export const CONTROLS = boatJson.controls as Record<string, ControlSpec>;
 
@@ -102,10 +103,13 @@ export class RaceStore {
   /** Advanced mode only: reveals the downwind controls under the C-tier banner. */
   downwind = $state(false);
   error: string | null = $state(null);
+  /** Point-of-sail chip waiting on its VMG-optimal angle, or null. */
+  pointOfSailBusy: string | null = $state(null);
 
   #client: Client;
   #timer: ReturnType<typeof setTimeout> | undefined;
   #seq = 0;
+  #posSeq = 0;
 
   constructor(client: Client = getClient()) {
     this.#client = client;
@@ -131,6 +135,41 @@ export class RaceStore {
     conditions.apply(p.condition);
     // Mutate in place: the panel's sliders bind to this object.
     Object.assign(this.controls.race, p.race);
+  }
+
+  /**
+   * Point-of-sail chip: sailset and angle in one tap. The reaches are fixed
+   * angles and land immediately; Close-hauled and Run show their nominal angle,
+   * then adopt the VMG optimum for the current wind and committed rig when the
+   * solve answers. Stale answers are dropped, so tapping twice keeps the second.
+   */
+  setPointOfSail(id: string): void {
+    const p = POINTS_OF_SAIL.find((x) => x.id === id);
+    if (!p) return;
+    const seq = ++this.#posSeq;
+    conditions.sailset = p.sailset;
+    conditions.twaDeg = p.twaDeg;
+    if (!p.optimal) {
+      this.pointOfSailBusy = null;
+      return;
+    }
+    this.pointOfSailBusy = id;
+    this.#client
+      .request<OptimalRequest>({
+        type: 'optimal',
+        dock: { ...this.controls.dock },
+        condition: conditions.value,
+        optimiseTwa: true,
+      })
+      .then((r) => {
+        if (seq !== this.#posSeq) return;
+        conditions.twaDeg = Math.round(Math.abs(r.twaDeg));
+        this.pointOfSailBusy = null;
+      })
+      .catch(() => {
+        // No optimum: the nominal angle stands, which is already on screen.
+        if (seq === this.#posSeq) this.pointOfSailBusy = null;
+      });
   }
 
   #trimmed(controls: ControlState, condition: Condition): Promise<SolveResult> {

@@ -5,15 +5,54 @@
   import Sheet from '../components/Sheet.svelte';
   import Slider from '../components/Slider.svelte';
   import { conditions, PRESETS, SEA_STATES } from '../stores/conditions.svelte';
+  import { nearestPointOfSail, POINTS_OF_SAIL } from './pointOfSail';
   import { race } from './store.svelte';
+
+  const TWS_MIN = 2;
+  const TWS_MAX = 30;
 
   let open = $state(false);
 
   const seaLabel = $derived(SEA_STATES[conditions.seaState].label);
+  const active = $derived(nearestPointOfSail(conditions.twaDeg));
+
+  function stepTws(delta: number): void {
+    conditions.twsKt = Math.min(TWS_MAX, Math.max(TWS_MIN, conditions.twsKt + delta));
+  }
 </script>
 
+<div class="chip-row" aria-label="Point of sail">
+  {#each POINTS_OF_SAIL as p (p.id)}
+    <button
+      type="button"
+      class="chip hit-44"
+      aria-pressed={active === p.id}
+      aria-busy={race.pointOfSailBusy === p.id}
+      onclick={() => race.setPointOfSail(p.id)}
+    >
+      {p.label}{#if race.pointOfSailBusy === p.id}<span class="busy">…</span>{/if}
+    </button>
+  {/each}
+</div>
+
 <div class="chip-row" aria-label="Conditions">
-  <span class="chip">{conditions.twsKt.toFixed(0)} kt</span>
+  <span class="chip stepper">
+    <button
+      type="button"
+      class="step"
+      aria-label="Wind speed down one knot"
+      onclick={() => stepTws(-1)}
+      disabled={conditions.twsKt <= TWS_MIN}>−</button
+    >
+    <span class="tws">{conditions.twsKt.toFixed(0)} kt</span>
+    <button
+      type="button"
+      class="step"
+      aria-label="Wind speed up one knot"
+      onclick={() => stepTws(1)}
+      disabled={conditions.twsKt >= TWS_MAX}>+</button
+    >
+  </span>
   <span class="chip">{conditions.twaDeg.toFixed(0)}° TWA</span>
   <span class="chip">{seaLabel}</span>
   <span class="chip">{conditions.crewKg.toFixed(0)} kg</span>
@@ -83,6 +122,47 @@
 </Sheet>
 
 <style>
+  /* The point-of-sail row is the primary angle control; the sheet's TWA slider
+     stays for fine work. At 390 px the five chips wrap to two rows. */
+  button.chip[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .busy {
+    margin-left: var(--space-1);
+  }
+
+  /* One-tap wind speed. 44 px buttons make the pill taller than a plain chip. */
+  .stepper {
+    height: auto;
+    min-height: var(--hit-min);
+    padding: 0;
+    gap: 0;
+  }
+
+  .step {
+    width: var(--hit-min);
+    min-height: var(--hit-min);
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent);
+    font-size: var(--text-md);
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .step:disabled {
+    color: var(--muted);
+    cursor: default;
+  }
+
+  .tws {
+    min-width: 4ch;
+    text-align: center;
+  }
+
   .presets {
     display: flex;
     gap: var(--space-2);
