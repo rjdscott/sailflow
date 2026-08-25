@@ -99,9 +99,10 @@
     color: var(--ink-2);
   }
 
+  /* The outline is the chip: --line is 1.3:1 and vanishes (audit ux-01 L-02). */
   .chip {
     padding: 2px var(--space-2);
-    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    border: 1px solid var(--line-strong);
     border-radius: 999px;
     font-size: var(--text-xs);
     color: var(--ink-2);

@@ -131,19 +131,23 @@
     gap: var(--space-2);
   }
 
+  /* The Slider's stepper, to the pixel: same 44 px square, same --line-strong
+     outline, so the two steppers on this card are one control language. */
   .stepper button {
-    min-width: var(--hit-min);
-    min-height: var(--hit-min);
-    border: 1px solid var(--ink-2);
+    width: var(--hit-min);
+    height: var(--hit-min);
+    border: 1px solid var(--line-strong);
     border-radius: var(--radius);
-    background: var(--bg);
+    background: transparent;
     color: var(--ink);
     font-size: var(--text-lg);
+    line-height: 1;
     cursor: pointer;
   }
 
   .stepper button:disabled {
-    opacity: 0.4;
+    color: var(--muted);
+    border-color: var(--line);
     cursor: default;
   }
 

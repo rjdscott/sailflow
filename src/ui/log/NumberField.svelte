@@ -44,9 +44,9 @@
     width: 100%;
     min-height: var(--hit-min);
     padding: var(--space-2);
-    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    border: 1px solid var(--line-strong);
     border-radius: var(--radius);
-    background: var(--bg);
+    background: var(--surface-2);
     color: var(--ink);
     font-size: var(--text-md);
   }

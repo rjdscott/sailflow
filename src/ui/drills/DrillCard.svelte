@@ -48,22 +48,27 @@
         <span class="dot" class:on={n <= template.tier}></span>
       {/each}
     </span>
-    <span class="mastery" aria-label={masteryLabel}>
-      <span class="dots" aria-hidden="true">
-        {#each [1, 2, 3] as n (n)}
-          <span class="dot mastery-dot" class:on={n <= mastery}></span>
-        {/each}
-      </span>
-      <span class="tries tabular-nums" aria-hidden="true">
-        {best ? `${best.attempts}×` : '—'}
-      </span>
+    <span class="badges">
+      {#if due}<span class="chip due">Due</span>{/if}
+      <!-- The confidence tier, drawn like ConfidenceBadge's C — the component
+           itself is a button, and this card already is one. -->
+      {#if template.cTier}<span class="tier-c" aria-label="Confidence C: direction only">C</span
+        >{/if}
     </span>
   </span>
+
   <span class="title">{template.title}</span>
-  <span class="meta tabular-nums">
-    {condition}
-    {#if due}<span class="ctier">due</span>{/if}
-    {#if template.cTier}<span class="ctier">C</span>{/if}
+  <span class="meta tabular-nums">{condition}</span>
+
+  <span class="chip medal" aria-label={masteryLabel}>
+    <span class="dots" aria-hidden="true">
+      {#each [1, 2, 3] as n (n)}
+        <span class="dot mastery-dot" class:on={n <= mastery}></span>
+      {/each}
+    </span>
+    <span class="tabular-nums" aria-hidden="true">
+      {best ? `${MEDAL_LABEL[best.medal]} · ${best.attempts}×` : 'Not attempted'}
+    </span>
   </span>
 </button>
 
@@ -84,6 +89,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-2);
+    min-height: 24px;
+  }
+
+  .badges {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
   }
 
   .dots {
@@ -95,7 +108,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    border: 1px solid var(--ink-2);
+    border: 1px solid var(--line-strong);
   }
 
   .dot.on {
@@ -103,22 +116,11 @@
     border-color: var(--accent);
   }
 
-  .mastery {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-  }
-
   /* Tier dots say what the drill is; mastery dots say how you have done on it,
      so they are a different colour rather than a second row of the same mark. */
   .mastery-dot.on {
     background: var(--good);
     border-color: var(--good);
-  }
-
-  .tries {
-    font-size: var(--text-xs);
-    color: var(--ink-2);
   }
 
   .title {
@@ -134,9 +136,40 @@
     color: var(--ink-2);
   }
 
-  .ctier {
-    border: 1px dashed var(--ink-2);
-    border-radius: var(--radius);
+  /* Chips, not loose text: same pill the conditions rail uses, so the drill
+     list reads as the same instrument as the cockpit. */
+  .chip {
+    background: transparent;
+  }
+
+  .medal {
+    justify-self: start;
+    gap: var(--space-2);
+    height: 28px;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  .due {
+    height: 24px;
+    padding: 0 var(--space-2);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
+  .tier-c {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
     padding: 0 var(--space-1);
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius);
+    color: var(--ink-2);
+    font-size: var(--text-xs);
+    font-weight: 600;
   }
 </style>

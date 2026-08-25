@@ -13,6 +13,25 @@ undiagnosable.
 
 ## [Unreleased]
 
+### Changed
+
+- **Dock, Log, Drills and More wear the cockpit** (ADR 0015), with no change
+  to what is on which screen. Every card sits on the raised `--surface-2` the
+  Race panels use; the Dock's expected regret, the two ends of the forecast
+  band and its worst case, the drill score sheet's "off optimum" and "VMG
+  lost", and More's drill streak all render through the one instrument-cell
+  contract, each with its tier badge and a delta that names what it is
+  measured against. The Dock's regret card waits with the instrument bar's
+  1 px sweep instead of fading the number you are waiting for. The
+  model-vs-guides panel drops its column-header row — every cell names its own
+  source, so three sources of numbers wrap to one column on a phone — and
+  still shows Δ = model − guide in plain ink, picking no winner.
+- The nav rail and phone tab bar are real links (`<a href="#/dock">`) with
+  `aria-current="page"`, and the tab bar gained the rail's 3 px accent
+  indicator so the current tab is not colour alone. Toasts are raised cockpit
+  panels rather than an inverted white slab, and committing a rig now raises
+  one.
+
 ### Fixed
 
 - 3D hero: jib luff telltales sat on the forestay wire; they now sit 15 % aft of the luff, and the jib carries upper-leech ribbons (the North jib cue) alongside the main's. New "Helm" camera preset: from the cockpit looking up the main. Orbit may now look upward (polar clamp relaxed).

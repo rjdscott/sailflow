@@ -1,13 +1,13 @@
 <script lang="ts">
   import type { DockScore } from '../../core/types';
-  import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
+  import InstrumentCell from '../components/InstrumentCell.svelte';
   import { fmt } from '../format';
   import { sparklinePath, sparklineTicks } from './logic';
 
   let {
     score,
     busy = false,
-    busyNote = 'Scoring\u2026',
+    busyNote = 'Scoring…',
     progress = null,
     provisional = false,
   }: {
@@ -23,7 +23,7 @@
 
   /* A real fraction beats naming the size of the job, so it replaces it. */
   const scoringNote = $derived(
-    progress ? `Scoring ${progress.done} / ${progress.total}\u2026` : busyNote,
+    progress ? `Scoring ${progress.done} / ${progress.total}…` : busyNote,
   );
 
   /** User units for the plot box; the SVG scales to the card via viewBox. */
@@ -33,25 +33,38 @@
 
   const path = $derived(score ? sparklinePath(score.perTws, W, H) : '');
   const ticks = $derived(score ? sparklineTicks(score.perTws, W) : []);
+
+  /** The one reference every end of the band is read against (principle 15). */
+  const expected = $derived(score ? score.expectedRegretSPerMile.value : 0);
+
+  function gapToExpected(v: number): { text: string; delta: string; label: string } {
+    const d = v - expected;
+    return {
+      text: `${fmt(expected, 1)} s/mi`,
+      delta: `${d > 0 ? '+' : d < 0 ? '−' : ''}${fmt(Math.abs(d), 1)}`,
+      label: 'to expected',
+    };
+  }
 </script>
 
-<section class="card" class:busy aria-busy={busy}>
+<section class="card regret" class:busy aria-busy={busy}>
+  <!-- Same 1 px indeterminate sweep as the instrument bar: a solve in flight
+       never moves anything on the page (phase 06, copied deliberately — a
+       shared component for four lines of CSS is not worth the indirection). -->
+  {#if busy}<span class="progress" aria-hidden="true"></span>{/if}
+
   <h2 class="section-title">Expected regret</h2>
 
   {#if score}
-    <div class="hero">
-      <p class="hero-number">
-        {fmt(score.expectedRegretSPerMile.value, 1)}<span class="unit">s/mi</span>
-      </p>
-      <!-- A number that can only rise is not an A, whatever the full solve
-           will grade it (audit ux-02 M-11). -->
-      <ConfidenceBadge
-        tier={provisional ? 'B' : score.expectedRegretSPerMile.tier}
-        reason={provisional
-          ? 'Provisional: measured against five reference setups so far, so this number can only rise.'
-          : undefined}
-      />
-    </div>
+    <InstrumentCell
+      label="Expected regret"
+      id="expectedRegret"
+      size="lg"
+      unit="s/mi"
+      value={fmt(expected, 1)}
+      tier={provisional ? 'B' : score.expectedRegretSPerMile.tier}
+    />
+
     {#if provisional}
       <p class="note">
         Provisional &mdash; measured against five reference setups so far, so it can only rise.
@@ -70,23 +83,35 @@
       </p>
     {/if}
 
+    <!-- The two ends of the forecast band and its argmax, on the same cell
+         contract as the cockpit: label, value, unit, and a delta that names
+         what it is measured against. -->
     <div class="ends">
-      <div class="mini">
-        <span class="mini-label tabular-nums">at {fmt(score.atMin.twsKt, 0, 'kt')}</span>
-        <span class="mini-value tabular-nums">{fmt(score.atMin.regretSPerMile, 1)} s/mi slower</span
-        >
-      </div>
-      <div class="mini">
-        <span class="mini-label tabular-nums">at {fmt(score.atMax.twsKt, 0, 'kt')}</span>
-        <span class="mini-value tabular-nums">{fmt(score.atMax.regretSPerMile, 1)} s/mi slower</span
-        >
-      </div>
+      <InstrumentCell
+        label="At {fmt(score.atMin.twsKt, 0)} kt"
+        id="regretAtMin"
+        size="sm"
+        unit="s/mi"
+        value={fmt(score.atMin.regretSPerMile, 1)}
+        target={gapToExpected(score.atMin.regretSPerMile)}
+      />
+      <InstrumentCell
+        label="At {fmt(score.atMax.twsKt, 0)} kt"
+        id="regretAtMax"
+        size="sm"
+        unit="s/mi"
+        value={fmt(score.atMax.regretSPerMile, 1)}
+        target={gapToExpected(score.atMax.regretSPerMile)}
+      />
+      <InstrumentCell
+        label="Worst, at {fmt(score.worst.twsKt, 0)} kt"
+        id="regretWorst"
+        size="sm"
+        unit="s/mi"
+        value={fmt(score.worst.regretSPerMile, 1)}
+        target={gapToExpected(score.worst.regretSPerMile)}
+      />
     </div>
-
-    <p class="worst tabular-nums">
-      Worst case {fmt(score.worst.twsKt, 0, 'kt')}: {fmt(score.worst.regretSPerMile, 1)} s/mi slower than
-      a rig tuned for it
-    </p>
 
     {#if path}
       <svg
@@ -134,66 +159,46 @@
 </section>
 
 <style>
-  .card.busy {
-    opacity: 0.6;
-  }
-
-  .hero {
+  .regret {
+    position: relative;
+    overflow: hidden;
     display: flex;
-    align-items: baseline;
+    flex-direction: column;
     gap: var(--space-2);
   }
 
-  .hero-number {
+  /* Was a 40 % opacity fade over the whole card, which put the number it was
+     waiting on below 4.5:1. The sweep says "in flight" instead. */
+  .regret.busy .ends {
+    opacity: 0.75;
+  }
+
+  .band,
+  .note,
+  .explain {
     margin: 0;
-  }
-
-  .band {
-    margin: var(--space-1) 0 0;
     font-size: var(--text-xs);
     color: var(--ink-2);
   }
 
-  .note {
-    margin: var(--space-1) 0 0;
-    font-size: var(--text-xs);
-    color: var(--ink-2);
+  .explain {
+    font-size: var(--text-sm);
   }
 
   .ends {
-    display: flex;
-    gap: var(--space-6);
-    flex-wrap: wrap;
-    margin-block-start: var(--space-3);
-  }
-
-  .mini {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  .mini-label {
-    font-size: var(--text-xs);
-    color: var(--ink-2);
-  }
-
-  .mini-value {
-    font-size: var(--text-md);
-    color: var(--ink);
-  }
-
-  .worst {
-    margin: var(--space-3) 0 0;
-    font-size: var(--text-sm);
-    color: var(--warn);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: var(--space-3) var(--space-4);
+    margin-block-start: var(--space-2);
+    padding-block-start: var(--space-3);
+    border-top: 1px solid var(--line);
   }
 
   .spark {
     display: block;
     width: 100%;
     height: 84px;
-    margin-block-start: var(--space-3);
+    margin-block-start: var(--space-2);
     overflow: visible;
   }
 
@@ -202,7 +207,7 @@
   }
 
   .baseline {
-    stroke: var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    stroke: var(--line-strong);
     stroke-width: 1;
     vector-effect: non-scaling-stroke;
   }
@@ -221,5 +226,26 @@
     position: absolute;
     top: 0;
     white-space: nowrap;
+  }
+
+  .progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    background-size: 40% 100%;
+    background-repeat: no-repeat;
+    animation: sweep 1.1s linear infinite;
+  }
+
+  @keyframes sweep {
+    from {
+      background-position: -40% 0;
+    }
+    to {
+      background-position: 140% 0;
+    }
   }
 </style>

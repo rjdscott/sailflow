@@ -268,7 +268,7 @@
 
 <TopBar title="Log" />
 
-<div class="screen">
+<div class="screen log-screen">
   <div class="col-primary">
     <div class="toolbar">
       <button type="button" class="new" onclick={openNew}>New entry</button>
@@ -328,10 +328,10 @@
                 {#if draft}<span class="pill">{draft}</span>{/if}
                 {entry.date} · {entry.venue || 'Unnamed venue'}
               </span>
-              <span class="entry-line tabular-nums">{windLine(entry)}</span>
+              <span class="entry-wind tabular-nums">{windLine(entry)}</span>
               {#if delta}<span class="entry-line tabular-nums">{delta}</span>{/if}
               <span class="entry-line tabular-nums">{describeSetup(entry.dock)}</span>
-              {#if outcome}<span class="entry-line">{outcome}</span>{/if}
+              {#if outcome}<span class="outcome chip">{outcome}</span>{/if}
               {#if entry.notes}<span class="entry-notes">{entry.notes}</span>{/if}
             </button>
           </li>
@@ -396,6 +396,12 @@
 <Toast bind:open={toastOpen} message={toastMessage} />
 
 <style>
+  /* Cockpit panels, not flat cards (ADR 0015): one rule reaches the entry
+     rows and the editor card alike. */
+  .log-screen :global(.card) {
+    background: var(--surface-2);
+  }
+
   .toolbar {
     display: flex;
     align-items: center;
@@ -419,7 +425,7 @@
   .backup summary {
     display: flex;
     align-items: center;
-    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    border: 1px solid var(--line-strong);
     color: var(--ink-2);
   }
 
@@ -438,7 +444,7 @@
   }
 
   .quiet {
-    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    border: 1px solid var(--line-strong);
     background: transparent;
     color: var(--ink-2);
   }
@@ -532,6 +538,24 @@
     font-weight: 600;
   }
 
+  /* The wind is what you scan the list for, so it is the row's instrument
+     line: one step up in size, tabular, full ink. */
+  .entry-wind {
+    font-size: var(--text-sm);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  /* Result as a chip, not a fourth grey line: it is the row's one outcome. */
+  .outcome {
+    justify-self: start;
+    height: 24px;
+    margin-block-start: var(--space-1);
+    padding: 0 var(--space-2);
+    font-size: var(--text-xs);
+    background: transparent;
+  }
+
   .entry-line,
   .entry-notes {
     font-size: var(--text-xs);
@@ -577,14 +601,17 @@
     min-height: var(--hit-min);
   }
 
+  /* Fields sit on --surface-2 with a --line-strong outline: the outline is
+     what carries the field boundary at 3:1 (WCAG 1.4.11), so the fill can
+     match the panel instead of punching a hole in it. */
   .field input,
   .field textarea {
     width: 100%;
     min-height: var(--hit-min);
     padding: var(--space-2);
-    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    border: 1px solid var(--line-strong);
     border-radius: var(--radius);
-    background: var(--bg);
+    background: var(--surface-2);
     color: var(--ink);
     font-size: var(--text-md);
   }

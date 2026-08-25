@@ -4,6 +4,7 @@
   import DensityToggle from '../components/DensityToggle.svelte';
   import Toast from '../components/Toast.svelte';
   import Sheet from '../components/Sheet.svelte';
+  import InstrumentCell from '../components/InstrumentCell.svelte';
   import { settings, type Motion, type Theme } from '../stores/settings.svelte';
   import { router } from '../router.svelte';
   import { logStoreEngine } from '../../lib/logStore';
@@ -115,7 +116,7 @@
 
 <TopBar title="More" />
 
-<div class="screen">
+<div class="screen more-screen">
   <div class="col-primary">
     <section class="card">
       <h2 class="section-title">About</h2>
@@ -223,17 +224,24 @@
     </section>
     <section class="card">
       <h2 class="section-title">Drill progress</h2>
-      <dl class="rows">
-        <dt>Streak</dt>
-        <dd class="tabular-nums">
-          {drills.streak}
-          {drills.streak === 1 ? 'day' : 'days'}
-        </dd>
-        <dt>Drills attempted</dt>
-        <dd class="tabular-nums">
-          {Object.keys(drills.best).length} of {drills.templates.length}
-        </dd>
-      </dl>
+      <!-- Two numbers, on the same cell contract as the cockpit (ADR 0015):
+           the streak reads as an instrument here as it does on the drill card. -->
+      <div class="cells">
+        <InstrumentCell
+          label="Streak"
+          id="drillStreak"
+          size="sm"
+          value={String(drills.streak)}
+          unit={drills.streak === 1 ? 'day' : 'days'}
+        />
+        <InstrumentCell
+          label="Drills attempted"
+          id="drillsAttempted"
+          size="sm"
+          value={String(Object.keys(drills.best).length)}
+          unit="of {drills.templates.length}"
+        />
+      </div>
       <p class="note first">
         Every attempt, the medals, the streak and the spaced-repetition schedule live in this
         browser only. Nothing is uploaded and nothing follows you to another device — clearing site
@@ -296,18 +304,34 @@
 <Toast message={toast} bind:open={toastOpen} />
 
 <style>
+  /* Cockpit panels, not flat cards (ADR 0015): the settings groups are the
+     same raised surface as the Race panels. */
+  .more-screen :global(.card) {
+    background: var(--surface-2);
+  }
+
+  .cells {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-3) var(--space-4);
+  }
+
   .lead {
     margin: 0 0 var(--space-3);
     font-size: var(--text-md);
     color: var(--ink);
   }
 
+  /* Density, theme and motion are the same kind of choice: one row shape,
+     one right edge, wrapping rather than overflowing on a phone (research
+     §3 principle 19, fixed positions). */
   .setting {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-3);
+    min-height: var(--hit-min);
     padding-block: var(--space-2);
     font-size: var(--text-sm);
   }
@@ -407,7 +431,7 @@
     min-height: var(--hit-min);
     margin-block-start: var(--space-2);
     padding: 0 var(--space-3);
-    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    border: 1px solid var(--line-strong);
     border-radius: var(--radius);
     background: transparent;
     color: var(--ink-2);
@@ -448,11 +472,13 @@
     min-height: var(--hit-min);
   }
 
+  /* The provenance links are links, so they wear the one interactive colour
+     rather than reading as disabled body text. */
   .links a {
     display: inline-flex;
     align-items: center;
     min-height: var(--hit-min);
-    color: var(--ink-2);
+    color: var(--accent);
     white-space: nowrap;
   }
 </style>
