@@ -208,10 +208,13 @@ export const CURL_EASE_THRESHOLD = 0.55;
 /**
  * How far forward the luff bows, as a fraction of how far it bows to leeward.
  * prov: assumed 0.6. A free luff flies out ahead of the boat as well as to
- * leeward — further forward than the forestay's `SAG_FORWARD_FRACTION` (0.35),
- * because nothing holds it. Only the two directions are claimed, not the split.
+ * leeward — further forward than the forestay's own forward fraction
+ * (`SAG_FORWARD_FRACTION` = 0.35 in `rig3d.ts`), because a forestay is held at
+ * both ends and a free luff is not. Only the two directions are claimed, not
+ * the split. Named for the luff, not "sag", so it cannot be confused with the
+ * forestay constant again: the two shared a name and disagreed on value.
  */
-export const SAG_FORWARD_FRACTION = 0.6;
+export const LUFF_FORWARD_FRACTION = 0.6;
 
 /**
  * Cap on the luff bow, as a fraction of the sail's luff length.
@@ -412,7 +415,7 @@ export function kiteGeometry(
   // Direction, not magnitude: `norm` is applied before `d`, so the bow is the
   // same distance at every apparent wind angle and only swings from leeward
   // (reaching) through straight ahead (the crossover) to windward (running).
-  const bow = scaled(norm([SAG_FORWARD_FRACTION, 0, lee(side) * luffLateral(awaDeg)]), d);
+  const bow = scaled(norm([LUFF_FORWARD_FRACTION, 0, lee(side) * luffLateral(awaDeg)]), d);
   // A quadratic's midpoint sits halfway to its control point, so the control
   // offset is twice the bow we want to see.
   const ctrl = add(lerp3(tack, head, 0.5), scaled(bow, 2));

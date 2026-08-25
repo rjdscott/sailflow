@@ -91,6 +91,13 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   split. Illustrative hull stations, spar radii and scene colours in
   `src/ui/three/{hull,rig3d,SailView3D}.svelte` are drawing furniture, tagged
   `prov: assumed` at each literal, and the caption labels the hull illustrative.
+- **3D hero: gennaker luff bow direction** `LUFF_FORWARD_FRACTION` = 0.6
+  (`src/ui/three/kite.ts`). Assumed. How far the free luff bows forward, as a
+  fraction of how far it bows to leeward. Higher than the forestay's 0.35
+  above because a forestay is held at both ends and a luff flown off a sprit
+  is not; only the two directions are claimed, not the split. It was itself
+  called `SAG_FORWARD_FRACTION` until 2026-08-26 — two exported constants,
+  one name, two values, one row between them.
 - **Gennaker flying shape** (`src/core/shape/flying.ts` `asymShape`, tier C).
   Camber, draft position and twist by height are **derived** from Deparday's
   full-scale J/80 photogrammetry at AWA 124°, a running angle (`F1` Table 3.1;
