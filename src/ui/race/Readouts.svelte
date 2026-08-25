@@ -51,10 +51,10 @@
       {m.label}
       {#if m.tier}<ConfidenceBadge tier={m.tier} />{/if}
     </span>
-    <!-- Re-keying on the text restarts the highlight, so a metric that did not
-         move does not flash. -->
+    <!-- Re-keying on the text restarts the fade, so a metric that did not move
+         does not animate. -->
     {#key m.text}
-      <span class="value flash" class:hero-number={size === 'lg'} class:small={size === 'sm'}>
+      <span class="value fade" class:hero-number={size === 'lg'} class:small={size === 'sm'}>
         {m.text}{#if m.unit}<span class="hero-unit">{m.unit}</span>{/if}
       </span>
     {/key}
@@ -167,19 +167,20 @@
     }
   }
 
+  /* One drag changes every metric at once, so a filled highlight strobes the
+     whole card. A short fade says "this number moved" and gets out of the way. */
   @media (prefers-reduced-motion: no-preference) {
-    .flash {
-      animation: flash 400ms ease-out;
+    .fade {
+      animation: fade 120ms ease-out;
     }
   }
 
-  @keyframes flash {
-    0%,
-    37% {
-      background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+  @keyframes fade {
+    from {
+      opacity: 0.3;
     }
-    100% {
-      background-color: transparent;
+    to {
+      opacity: 1;
     }
   }
 </style>

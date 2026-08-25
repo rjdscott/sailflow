@@ -68,11 +68,9 @@
     </div>
     <div class="side">
       {#if opts.chevron && race.chevrons[id]}
-        <span
-          class="chev"
-          class:up={race.chevrons[id] > 0}
-          aria-label="gain from moving this control"
-        >
+        <!-- Every chevron rendered is a VMG gain, so the colour is one accent
+             for both directions; only the glyph says which way. -->
+        <span class="chev" aria-label="gain from moving this control">
           {race.chevrons[id] > 0 ? '▲' : '▼'}
         </span>
       {/if}
@@ -177,12 +175,8 @@
   }
 
   .chev {
-    color: var(--bad);
+    color: var(--accent);
     font-size: var(--text-xs);
-  }
-
-  .chev.up {
-    color: var(--good);
   }
 
   .banner {

@@ -214,6 +214,26 @@ export function jibSheetAngle(jibLead: number, jibSheet: number): number {
 }
 
 // ---------------------------------------------------------------------------
+// Heel, in plan
+// ---------------------------------------------------------------------------
+
+/**
+ * Cap on the drawn heel, degrees. prov: assumed — a plan view has no third
+ * axis, so tilting the boat is a metaphor; past this the rotation stops
+ * reading as heel and starts reading as a change of heading.
+ */
+export const MAX_DRAWN_HEEL = 25;
+
+/**
+ * Rotation applied to the drawn boat, degrees clockwise. The deck tips away
+ * from the wind, so the sign is the tack's — same convention as the heel
+ * inset. Magnitude is capped at `MAX_DRAWN_HEEL`.
+ */
+export function drawnHeel(heelDeg: number, side: Side): number {
+  return -side * clamp(heelDeg, -MAX_DRAWN_HEEL, MAX_DRAWN_HEEL);
+}
+
+// ---------------------------------------------------------------------------
 // Sails
 // ---------------------------------------------------------------------------
 
@@ -292,6 +312,15 @@ export interface Ring {
   len: number;
   /** Tag offset along the ring, signed: the two arrows tag opposite sides. */
   tagOff: number;
+}
+
+/**
+ * Arrow length in px, linear in true wind speed. prov: assumed — 4–25 kt is
+ * the app's wind range, and 12–30 px is what the viewBox has room for at dead
+ * downwind, where the arrow runs from the ring toward the bottom edge.
+ */
+export function arrowLength(twsKt: number, lo = 12, hi = 30): number {
+  return lo + clamp((twsKt - 4) / 21, 0, 1) * (hi - lo);
 }
 
 export interface Arrow {
