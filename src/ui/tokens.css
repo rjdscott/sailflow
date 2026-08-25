@@ -31,8 +31,13 @@
    --surface-2    a panel raised off a card: one step further from --bg
    --range-1/2/3  the qualitative bands behind a bullet gauge — one hue, three
                   intensities, being 40% / 25% / 10% of --ink mixed into
-                  --surface. Literal hex, not color-mix(), so the contrast
-                  checker can parse them
+                  --surface. Decorative backdrop, deliberately NOT in the 3:1
+                  gate (audit docs-consistency-01 M-11, decided 2026-08-26):
+                  the meaning is carried by the marker and the printed value,
+                  both gated, and three bands that each cleared 3:1 on
+                  --surface would be three near-identical greys. Literal hex
+                  rather than color-mix() so the palettes stay diffable by
+                  eye, not because a rule reads them
    --hull         deck fill in the plan view: one step off --surface, so the
                   boat lifts off the card it is drawn on */
 

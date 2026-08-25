@@ -114,12 +114,25 @@
       ? kiteGeometry(race.controls.down, BARE_SPAR, side, aero.awaDeg)
       : undefined,
   );
-  /** Luff sampled tack to head, then the leech to the clew and the foot home. */
+  /**
+   * Luff sampled tack to head, leech sampled head to clew, then the foot home.
+   * Both edges are sampled because both edges bow, and they bow independently
+   * (#80): the luff on its own parabola, the leech on `leechBulgeProfile`. One
+   * straight `L` to the clew drew a different sail from the 3D hero's, which
+   * is the disagreement the shared projection exists to prevent (audit
+   * docs-consistency-01 M-25b). `leechAt` takes a world height and pins both
+   * of its own ends, so walking the clew→head height span linearly walks the
+   * leech end to end.
+   */
   const kiteSail = $derived.by(() => {
     if (!kite) return '';
     const at = (p: Pt): string => `${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
     const luff = Array.from({ length: 9 }, (_, i) => toPlan(kite.spine(i / 8)));
-    return `M ${luff.map(at).join(' L ')} L ${at(toPlan(kite.clew))} Z`;
+    const [headY, clewY] = [kite.head[1], kite.clew[1]];
+    const leech = Array.from({ length: 9 }, (_, i) =>
+      toPlan(kite.leechAt(headY + ((clewY - headY) * i) / 8)),
+    ).slice(1); // i = 0 is the head, already the last luff point
+    return `M ${[...luff, ...leech].map(at).join(' L ')} Z`;
   });
 
   /** The ¾-height section, shorter in chord and twisted open: twist, in plan. */

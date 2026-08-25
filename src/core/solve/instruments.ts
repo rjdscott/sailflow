@@ -8,8 +8,11 @@
  * Three of the four are tier C: direction only. They are re-expressions of
  * the invented sheeting and flying-shape layers in the units a sailor reads,
  * not new physics, so they inherit those layers' confidence and add no
- * accuracy of their own. `pctPolar` is the exception — inside the printed
- * grid it is a ratio of two tier-A numbers.
+ * accuracy of their own. `pctPolar` is the exception, but only as far as its
+ * numerator allows: it is tier A when the target is inside the printed grid
+ * *and* the boat speed it divides is itself tier A, and otherwise the lower
+ * of the two (audit docs-consistency-01 M-07). Under the kite that is B; off
+ * the grid, or outside the polar's TWS range, C.
  *
  * Pure and deterministic: no DOM, no `Math.random`, no `Date`.
  */
@@ -26,7 +29,7 @@ import type {
 import { boomAngle, jibSheetAngle, sheetingDeviation, TWIST_TO_AOA } from '../shape/sheeting';
 import { polarTarget } from '../reference/polar';
 import { interp1 } from '../math';
-import { tiered } from './tierFor';
+import { lowerTier, tiered } from './tierFor';
 
 const DEG = Math.PI / 180;
 
@@ -191,6 +194,8 @@ export interface InstrumentState {
   aero: AeroState;
   shape: Partial<Record<SailId, SailShape>>;
   bsKt: number;
+  /** The tier `bsKt` carries — `pctPolar` can never beat its own numerator. */
+  bsTier: Tier;
   heelDeg: number;
 }
 
@@ -216,7 +221,7 @@ export function instrumentsFor(
 
   const target = polarTarget(condition.twsKt, condition.twaDeg, condition.sailset);
   const pct = target.bsKt > 0 ? (state.bsKt / target.bsKt) * 100 : 0;
-  const pctTier: Tier = target.inGrid ? 'A' : 'C';
+  const pctTier: Tier = lowerTier(target.inGrid ? 'A' : 'C', state.bsTier);
 
   const jib = shape.jib;
   return {
@@ -230,6 +235,11 @@ export function instrumentsFor(
         }
       : {}),
     helmLoad: tiered(helmLoad(aero.fxN, aero.ceHeightM, state.heelDeg), 'C'),
-    pctPolar: { ...tiered(pct, pctTier), band: [pct - PCT_POLAR_BAND, pct + PCT_POLAR_BAND] },
+    // Tier A gets no band: `tiered()` withholds one, and the ±3 interpolation
+    // slack only applies where the ratio is not a clean read off the table.
+    pctPolar: {
+      ...tiered(pct, pctTier),
+      ...(pctTier === 'A' ? {} : { band: [pct - PCT_POLAR_BAND, pct + PCT_POLAR_BAND] }),
+    },
   };
 }

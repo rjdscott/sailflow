@@ -146,6 +146,33 @@ describe('dock scoring', () => {
     for (const r of regrets) expect(r).toBeGreaterThanOrEqual(0);
     expect(scores[0].perTws).toHaveLength(1);
   });
+  /**
+   * The score is tier B by design, not by accident of the wind range: half of
+   * every lap time is a downwind leg the model does not fit (M-06). Tier A
+   * would print without a band, which is the claim that must not be made.
+   */
+  it('scores a 6–20 kt jib forecast tier B, with a band', () => {
+    const setups = [baseDock()];
+    const [score] = scoreDockSetups(
+      boat,
+      setups,
+      { minKt: 6, likelyKt: 12, maxKt: 20, seaState: 1, crewKg: 300 },
+      setups,
+    );
+    const r = score.expectedRegretSPerMile;
+    expect(r.tier).toBe('B');
+    expect(r.band).toEqual([r.value - Math.abs(r.value) * 0.2, r.value + Math.abs(r.value) * 0.2]);
+  });
+  it('still drops to tier C above the polar range', () => {
+    const setups = [baseDock()];
+    const [score] = scoreDockSetups(
+      boat,
+      setups,
+      { minKt: 20, likelyKt: 22, maxKt: 24, seaState: 1, crewKg: 300 },
+      setups,
+    );
+    expect(score.expectedRegretSPerMile.tier).toBe('C');
+  });
 });
 
 describe('optimal at a fixed angle', () => {

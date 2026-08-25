@@ -656,6 +656,11 @@ describe('17. helm load rises as the crew comes off the rail', () => {
  * on this reading is a guard against a regression in the lookup or the solve,
  * which is what an invariant can honestly claim here — not a re-statement of
  * a gate this model does not pass on these rows.
+ *
+ * The tier asserted is the sail's, not a flat A: `pctPolar` takes the lower
+ * of the grid tier and the tier of the boat speed it divides, so a fit row
+ * under the kite reads B (audit docs-consistency-01 M-07). Every row here is
+ * inside the printed grid, which is what a C would disprove.
  */
 describe('18. pctPolar on the calibration fit rows', () => {
   const polar = loadPolar();
@@ -664,7 +669,7 @@ describe('18. pctPolar on the calibration fit rows', () => {
   } else {
     const fitTws = polar.twsKt.filter((t) => !HELD_OUT_TWS.includes(t));
     for (const tws of fitTws) {
-      it(`TWS ${tws}: every fitted row reads 100 ± 10 % of polar, tier A`, () => {
+      it(`TWS ${tws}: every fitted row reads 100 ± 10 % of polar, in grid`, () => {
         const rows = [...vmgRows(polar, tws), ...angleRows(polar, tws)];
         expect(rows.length, 'no fitted rows at this TWS').toBeGreaterThan(0);
         for (const row of rows) {
@@ -683,7 +688,7 @@ describe('18. pctPolar on the calibration fit rows', () => {
           );
           const p = r.instruments.pctPolar;
           const label = `${row.sail} ${row.kind} ${row.twaDeg}° -> ${p.value.toFixed(1)} %`;
-          expect(p.tier, label).toBe('A');
+          expect(p.tier, label).toBe(row.sail === 'jib' ? 'A' : 'B');
           expect(Math.abs(p.value - 100), label).toBeLessThanOrEqual(10);
         }
       });

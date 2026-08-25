@@ -31,8 +31,11 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   shape-derived `flat`, so a dock setup enters only as a small coefficient
   perturbation and the setup ranking is nearly wind-independent. Stage 4 could
   not separate the North 8–10 and 12–16 kt bands; all six rig/shape knobs sit
-  on their bounds. Dock-mode regrets are therefore small and tier-B in
-  practice until race controls are optimised through the shape layer.
+  on their bounds. Dock-mode regrets are therefore small, and the score is
+  **tier B, by design** (decided 2026-08-26, audit docs-consistency-01 M-06):
+  the regret sums an upwind leg the model fits and a downwind leg it does
+  not, so it is capped at B in `dock.ts` however good the upwind half is.
+  Above 20 kt it is tier C, as `tierFor` already says.
 - `hydro.heelDragK` fitted at ~2× the value `hydro/resistance.ts` assumes;
   `aero.hbiM` pinned at its 1.4 m upper bound (the fit wanted more heeling
   arm). Both are the fit compensating for missing physics, not measurements.
@@ -63,9 +66,10 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   one for a revealed hint) — `src/lib/spacing.ts`.
 - **Dock forecast pmf**: triangular on a 1-kt grid with a floor of 5 % of the
   peak weight before normalisation (≈1 % probability after it, so the range
-  ends count but lightly; `src/core/solve/dock.ts`, ADR 0009, assumed —
-  audit docs-consistency-01 M-05: whether 5 % probability was meant is an
-  open owner decision).
+  ends count but lightly; `src/core/solve/dock.ts`, ADR 0009, assumed).
+  Decided 2026-08-26 (audit docs-consistency-01 M-05): kept as coded — the
+  floor is there so the ends never vanish, not so they carry 5 % of the
+  weight.
 - **Plan-view drawing** (`src/ui/race/boat.ts`, presentation only, not in the
   solver): mast step at 0.45·LOA; boom angle = clamp(6° + 0.0085·(100 − mainsheet)²
   − traveller·0.08°, 2°, 90°) — quadratic so 70 % sheet is ~12° and 0 % reaches
@@ -307,8 +311,14 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 - **`pctPolar` band** ±3 percentage points, assumed: the slack in
   interpolating a table printed 2 kt apart. It is not a claim about the
   model's accuracy — `validation/report.md` records fit-row boat-speed
-  residuals up to 10.8 % — and the value is tier A only inside the printed
-  TWS range and TWA grid for the sail being carried, tier C outside it.
+  residuals up to 10.8 %. **Tier (decided 2026-08-26, audit
+  docs-consistency-01 M-07):** the ratio takes the *lower* of the grid tier
+  (A inside the printed TWA grid for the sail being carried, C outside it)
+  and the tier of the boat speed it divides (`tierFor('bs')`), so it can
+  never read more confident than its own numerator — tier A under the jib
+  inside the polar's 6–20 kt range, tier B under the kite, tier C off the
+  grid or outside that range. The band is drawn only when the tier is B or C;
+  a tier-A `pctPolar` carries no band, as `tiered()` does everywhere else.
 - **Verdict thresholds** (`src/ui/race/verdict.ts`, presentation only):
   stall > 0.7 reads stalled, < 0.3 upwind reads under-trimmed, stripe < 0.5
   reads hooked, |helm| > 1.2 reads heavy, and a gap under 0.02 kt reads on
