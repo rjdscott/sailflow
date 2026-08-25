@@ -17,12 +17,18 @@ export class DockStore {
   setup: DockControls = $state({ upperTurns: 0, lowerTurns: 0, forestayMm: 0 });
   scores: DockScore[] | null = $state.raw(null);
   suggestion: Suggestion | null = $state.raw(null);
+  /** Scoring the current setup. */
   busy: boolean = $state(false);
+  /** Searching the candidate grid. Separate from `busy`: a slider nudge must
+      not cancel a search, and the Suggest button must not read "Searching…"
+      while a rescore runs (audit ux-01 H-03). */
+  searching: boolean = $state(false);
   error: string | null = $state.raw(null);
 
   private client: Client;
-  /** Monotonic request id; a response whose id is not current is dropped. */
+  /** Monotonic request ids; a response whose id is not current is dropped. */
   private seq = 0;
+  private searchSeq = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private listeners: ((lock: RigLock) => void)[] = [];
 
@@ -61,17 +67,17 @@ export class DockStore {
 
   /** Score the candidate grid and keep the lowest expected regret + tie band. */
   async suggest(): Promise<void> {
-    const id = ++this.seq;
-    this.busy = true;
+    const id = ++this.searchSeq;
+    this.searching = true;
     try {
       const scores = await this.request(candidateSetups());
-      if (id !== this.seq) return; // stale
+      if (id !== this.searchSeq) return; // stale
       this.suggestion = pickBest(scores);
       this.error = null;
     } catch (e) {
-      if (id === this.seq) this.error = e instanceof Error ? e.message : String(e);
+      if (id === this.searchSeq) this.error = e instanceof Error ? e.message : String(e);
     } finally {
-      if (id === this.seq) this.busy = false;
+      if (id === this.searchSeq) this.searching = false;
     }
   }
 

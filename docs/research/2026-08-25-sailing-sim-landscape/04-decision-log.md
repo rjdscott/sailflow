@@ -40,3 +40,8 @@ with minimal disruption.
 | 20 | `dockScore` protocol gained optional `candidates`; lap times memoised per boat | `src/worker/protocol.ts`, `src/core/solve/dock.ts` |
 | 21 | Worker client JSON-round-trips every request (reactive proxies otherwise fail structured clone) | `src/worker/client.ts` |
 | 22 | Third-party data policy applied to the ORC polar as well as the tuning guides (assumption flagged to owner) | ADR 0008 |
+| 23 | Second autonomous block, 2026-08-25: UX audit first, then punchlist, then owner features (optimise, point-of-sail chips, motion). Scope Race + Dock, both personas judged equally | audit `ux-01`, plan `2026-08-25-ux-excellence` |
+| 24 | Optimise on Race = ghost ticks marking the VPP optimum on every slider **plus** an Apply button; never silent, always tier-badged | plan phase 02 |
+| 25 | Point-of-sail chips: Close-hauled and Run resolve to the VPP-optimal VMG angle at the current TWS; Close reach / Beam reach / Broad reach fixed at 60 / 90 / 135 | plan phase 01 |
+| 26 | Cheap 2D motion now (telltale flutter, heel tilt, eased tweens, all honouring reduced-motion); North-Sails-style 3D sail rendering stays Epic 2 (E2-05) | plan phase 04, ADR 0011 |
+| 27 | Owner runs the block autonomously end to end (audit → plan → build → merge → Pages check); stop only for decisions costing more than a day to unwind | this log |
