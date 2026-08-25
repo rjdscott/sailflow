@@ -93,7 +93,11 @@ export function sheetingDeviation(
   const aoa = awaDeg - s.sheetDeg - TWIST_TO_AOA * Math.max(0, s.twistDeg);
   // Ideal AoA is unreachable when the boom cannot go out far enough (deep
   // running); that is real, not a penalty for good trim, so cap the ideal at
-  // what a 90° boom can give.
+  // what a 90° boom can give. This cap *is* the eased downwind reference:
+  // past ~106° AWA it, not `opt`, sets the target, so a boom in the 60-87°
+  // band reads as the least-deviated trim available and a boom pinned near
+  // the centreline reads as the over-trimmed one. Nothing here demotes a
+  // tier — `tierFor` sees `shape/toOrc.ts`'s deltas, never this layer.
   const target = Math.max(opt, awaDeg - 90); // prov: geometry, a boom cannot pass 90° off the centreline
   return { devDeg: aoa - target, bandDeg, luffScaleDeg, stallScaleDeg, stallDragPerDeg };
 }

@@ -49,6 +49,22 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   one wind band, so flattening paid at every wind speed and the model's own
   optimum inverted the guides (audit ux-02 H-04). `flat` still measures from
   the base setup, as ORC §5.1.3 defines it.
+- **The shape datum is per sail set** (`shape/base.ts` `baseRaceDown()`,
+  assumed). The deltas in `shape/toOrc.ts` claim to be "relative to the
+  guide's base setup", and under the kite that setup is not a beat's
+  mainsheet: the downwind reference is `baseRace()` with the mainsheet at
+  `baseRaceDown.mainsheet` (15 %, boom ≈ 67°, out past the corner of the
+  boat). Only the mainsheet differs; every other control keeps the upwind
+  base, because no other one has a published downwind setting to move it to.
+  Measured against the upwind datum instead, the app's own downwind default
+  read ≈ 2.2° of invented twist deviation — `shapeInfluence` 0.135 against a
+  `SHAPE_DEMOTE_THRESHOLD` of 0.08 — so boat speed and `pctPolar` were demoted
+  to tier C on a screen the sailor had not touched. The demote rule (ADR 0006)
+  was right; its reference was wrong downwind. `solve/optimal.ts` seeds its
+  downwind rows from the same datum so a VPP row is not scored as one whole
+  sheet ease of deviation. This is a datum, not a claim about speed: the
+  mainsheet is still `notSolved` under the kite (`solve/optimalTrim.ts`), and
+  a main genuinely pinned near the centreline on a run still demotes.
 - **Drill medals** (schema v2, ADR 0013): decided on distance to the answer
   key in legal control steps — gold 0, silver ≤ 2, bronze ≤ 5 — with the v1
   VMG-loss bands (≤ 1 / 3 / 6 %) kept as a second gate, so a trim on the key's
@@ -384,7 +400,7 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 | `baseRace.vang` | 30 | see baseRace.backstay |
 | `baseRaceDown.kiteHalyard` | 100 | the four gennaker controls the race screen starts from, on the same 0-100 scale as baseRace, moved here from a literal in src/ui/race/store.svelte.ts so they carry provenance like every other datum. Halyard two-blocked at the masthead before the sheet is touched: North and Westaway both say the hoist should always be full (research 2026-08-25-spinnaker doc 04 section 2.5), so 100 is the honest default |
 | `baseRaceDown.kiteSheet` | 50 | kite sheet mid-range, to be trimmed to the curl. Tier C cue, not a solve: core/solve/optimalTrim does not solve the downwind sheet. See baseRaceDown.kiteHalyard |
-| `baseRaceDown.mainsheet` | 15 | the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, inside the 60-87 degree band the solver's own downwind descent reaches between 135 and 165 degrees TWA (plan 2026-08-25-desktop-kite phase 04 log, app-convention); research 2026-08-25-spinnaker doc 03 section 2.1 (T3) supplies only the qualitative cue, out past the corner of the boat. Tier C cue, not a solve: see core/solve/optimalTrim notSolved |
+| `baseRaceDown.mainsheet` | 15 | the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, inside the 60-87 degree band the solver's own downwind descent reaches between 135 and 165 degrees TWA (plan 2026-08-25-desktop-kite phase 04 log, app-convention); research 2026-08-25-spinnaker doc 03 section 2.1 (T3) supplies only the qualitative cue, out past the corner of the boat. Tier C cue, not a solve: see core/solve/optimalTrim notSolved. Also the downwind shape datum: core/shape/base.ts baseRaceDown() measures the toOrc deltas from this mainsheet under the kite, so the correct ease is zero deviation instead of enough shapeInfluence to demote the downwind default to tier C (ASSUMPTIONS.md) |
 | `baseRaceDown.sprit` | 100 | sprit fully out. On a J/70 the pole is either all the way out or the kite is not up, so 100 is class practice rather than a chosen midpoint. See baseRaceDown.kiteHalyard |
 | `baseRaceDown.tackLine` | 50 | tack line mid-range, a trim control the sailor is expected to move rather than a setting: the J/70 sources disagree between two-block-it and ease 4-12 in (research 2026-08-25-spinnaker doc 03 section 4, doc 04 section 2.4), so the app starts in the middle of the band instead of picking a side. See baseRaceDown.kiteHalyard |
 | `controls.forestayMm.max` | 40 | see controls.forestayMm.min |

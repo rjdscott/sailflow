@@ -80,7 +80,7 @@ export function shapeToOrc(
   twsKt?: number,
 ): ShapeToOrcResult {
   const carried = (Object.keys(shapes) as SailId[]).filter((s) => shapes[s]);
-  const ref = referenceShapes(boat, carried);
+  const ref = referenceShapes(boat, carried, sailset);
 
   const draft = meanDraft(shapes);
   const refDraft = meanDraft(ref);
@@ -122,10 +122,6 @@ export function shapeToOrc(
     dCEh: -knob(boat, 'shape.dCehPerDeg', 0.004) * dTwistDeg, // prov: assumed, fractional per degree
     dTwistDeg,
   };
-
-  // sailset is part of the contract and picks which reference is carried by
-  // the caller; nothing else here varies with it yet.
-  void sailset;
 
   return { flat, reef, twistEffDeg, deltas };
 }

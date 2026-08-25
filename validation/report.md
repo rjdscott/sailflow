@@ -1,7 +1,7 @@
 # Validation report
 
-- **Generated:** 2026-08-25 23:14:25 UTC
-- **Boat:** `j70` — geometry hash `3e958aa9`
+- **Generated:** 2026-08-25 23:40:47 UTC
+- **Boat:** `j70` — geometry hash `3527bccc`
 - **Calibration:** hash `ab97c1e7` — 18 fitted parameter(s)
 - **Replay condition:** sea state 1, crew 340 kg, dock rig at the guide base, race trim optimised (prov: assumed — the Speed Guide prints neither).
 
@@ -68,7 +68,7 @@ VMG rows are solved with the TWA optimised; 60/90/120° rows are solved at the p
 | row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | vmgUp jib | 5.95 | 6.30 | 5.9 % | 37.1 | 38.4 | 1.3° | 21.5 | 21.5 | — | fit residual |
-| vmgDn asym | 6.73 | 6.46 | 4.1 % | 174.0 | 169.2 | 4.8° | 11.7 | 0.6 | — | fit residual |
+| vmgDn asym | 6.73 | 6.37 | 5.3 % | 174.0 | 170.1 | 3.9° | 11.7 | 0.6 | — | fit residual |
 | 60° jib | 7.05 | 7.25 | 2.9 % | 60.0 | 60.0 | — | 23.5 | 19.9 | — | fit residual |
 | 90° jib | 7.91 | 7.70 | 2.7 % | 90.0 | 90.0 | — | 14.0 | 7.8 | — | fit residual |
 | 120° jib | 6.92 | 7.06 | 2.1 % | 120.0 | 120.0 | — | 3.0 | 3.2 | — | fit residual |
@@ -78,7 +78,7 @@ VMG rows are solved with the TWA optimised; 60/90/120° rows are solved at the p
 | row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | vmgUp jib | 5.94 | 6.31 | 6.3 % | 38.3 | 37.3 | 1.0° | 24.2 | 24.5 | — | fit residual |
-| vmgDn asym | 11.53 | 12.46 | 8.1 % | 137.1 | 137.8 | 0.7° | 19.0 | 9.5 | — | fit residual |
+| vmgDn asym | 11.53 | 12.48 | 8.3 % | 137.1 | 137.7 | 0.6° | 19.0 | 9.5 | — | fit residual |
 | 60° jib | 7.13 | 7.60 | 6.5 % | 60.0 | 60.0 | — | 24.9 | 26.8 | — | fit residual |
 | 90° jib | 8.66 | 8.72 | 0.6 % | 90.0 | 90.0 | — | 24.1 | 15.5 | — | fit residual |
 | 120° jib | 7.88 | 7.77 | 1.4 % | 120.0 | 120.0 | — | 4.3 | 4.8 | — | fit residual |
