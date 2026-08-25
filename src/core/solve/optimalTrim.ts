@@ -95,6 +95,13 @@ export interface OptimalTrimOptions {
    * left them, because a seed must not rewrite trim the model never reads.
    */
   seeds?: RaceControls[];
+  /**
+   * Controls the descent may not touch, held at their incoming value. Drills
+   * need this: the answer key must be the best trim reachable with only the
+   * drill's *free* controls, not the best trim of a boat the learner is not
+   * sailing (audit ux-02 H-01). Unknown names are ignored.
+   */
+  fixed?: readonly string[];
 }
 
 /**
@@ -131,7 +138,10 @@ export function optimalTrim(
 
   // Under the kite the jib carries no shape, so its controls cannot move the
   // solve and must not be reported as moved.
-  const active = TRIM_CONTROLS.filter((c) => condition.sailset === 'jib' || !c.startsWith('jib'));
+  const held = new Set(opts.fixed ?? []);
+  const active = TRIM_CONTROLS.filter(
+    (c) => (condition.sailset === 'jib' || !c.startsWith('jib')) && !held.has(c),
+  );
 
   const start = { ...controls.race };
   for (const c of active) start[c] = snap(boat.controls[c], start[c]);

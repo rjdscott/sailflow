@@ -41,6 +41,21 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   the base setup, as ORC §5.1.3 defines it.
 - **Drill medals**: gold ≤ 1 %, silver ≤ 3 %, bronze ≤ 6 % VMG loss
   (`src/lib/drills.ts`, assumed).
+- **Drill medals** (schema v2, ADR 0013): decided on distance to the answer
+  key in legal control steps — gold 0, silver ≤ 2, bronze ≤ 5 — with the v1
+  VMG-loss bands (≤ 1 / 3 / 6 %) kept as a second gate, so a trim on the key's
+  shape but measurably slow drops a band (`src/lib/drills.ts`, assumed).
+  Matching or beating the key's objective is gold whatever the distance: the
+  key is a local optimum reached from the drill's own start.
+- **Drill validity**: a generated start must converge and lose ≥ 3 % against
+  its own answer key, else the generator walks to the next seed
+  (`START_LOSS_MIN_PCT`, `src/lib/drills.ts`, assumed — twice the gold loss
+  gate and above the held-out upwind VMG error). Fault magnitudes in
+  `data/drills/j70-templates.json` are assumed and gated by that test; each
+  template's base trim is the model's own optimum at its condition.
+- **Drill spacing**: SM-2 ease/interval recurrence (Woźniak 1990) with an
+  assumed medal → quality map (gold 5, silver 4, bronze 3, no medal 1, minus
+  one for a revealed hint) — `src/lib/spacing.ts`.
 - **Dock forecast pmf**: triangular on a 1-kt grid with a 5 % floor (ADR 0009, assumed).
 - **Plan-view drawing** (`src/ui/race/boat.ts`, presentation only, not in the
   solver): mast step at 0.45·LOA; boom angle ≈ 6° + (100 − mainsheet)·0.25° +

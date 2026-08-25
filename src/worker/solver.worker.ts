@@ -50,7 +50,7 @@ export function handle(req: Request, emit: (r: Response) => void = () => {}): Re
         return {
           ...base,
           type: 'ok',
-          result: optimalTrim(need(), req.controls, req.condition, {}, geom!),
+          result: optimalTrim(need(), req.controls, req.condition, { fixed: req.fixed }, geom!),
         };
       case 'dockScore':
         return {

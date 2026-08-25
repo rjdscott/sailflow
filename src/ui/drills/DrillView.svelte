@@ -5,14 +5,14 @@
   import { RACE_KEYS, type Drill } from '../../lib/drills';
   import { drills } from './store.svelte';
   import { fmt, SEA_LABELS } from '../format';
-  import type { ControlSpec, DownControls, RaceControls } from '../../core/types';
+  import type { ControlSpec, RaceControls } from '../../core/types';
   import j70 from '../../../data/boats/j70.json';
 
   let { drill, onback }: { drill: Drill; onback: () => void } = $props();
 
   const SPECS = j70.controls as Record<string, ControlSpec>;
 
-  const lockedKeys = $derived(RACE_KEYS.filter((k) => !drill.free.includes(k)));
+  const lockedKeys = $derived(RACE_KEYS.filter((k) => !(drill.free as string[]).includes(k)));
 
   const condition = $derived(
     [
@@ -26,7 +26,6 @@
   // Live solve: any control move re-requests `trimmed`, debounced in the store.
   $effect(() => {
     void $state.snapshot(drills.controls);
-    if (drills.down) void $state.snapshot(drills.down);
     drills.solve();
   });
 
@@ -36,10 +35,6 @@
 
   function raceValue(key: keyof RaceControls): number {
     return drills.controls[key];
-  }
-
-  function downValue(key: keyof DownControls): number {
-    return drills.down?.[key] ?? 0;
   }
 </script>
 
@@ -94,12 +89,19 @@
     <section class="card">
       <h3 class="section-title">Coach</h3>
       <p class="brief">{drill.brief}</p>
-      <p class="quiet">{drill.hint}</p>
+      <!-- The hint names the moves and their order, so showing it up front
+           replaces retrieval with recognition (audit ux-02 M-02). Opening it
+           is recorded and costs a grade in the spacing schedule. -->
+      <details class="hint" ontoggle={(e) => e.currentTarget.open && drills.revealHint()}>
+        <summary>Stuck? Show a hint</summary>
+        <p class="quiet">{drill.hint}</p>
+      </details>
     </section>
 
     {#if drills.score}
       <ScoreSheet
         score={drills.score}
+        stale={drills.scoreStale}
         cTier={drill.cTier}
         ontryagain={() => drills.reset()}
         onnext={() => drills.next()}
@@ -122,22 +124,6 @@
           decimals={spec(key).step < 1 ? 1 : 0}
         />
       {/each}
-      {#each drill.freeDown ?? [] as key (key)}
-        <Slider
-          label={spec(key).label}
-          bind:value={
-            () => downValue(key),
-            (v: number) => {
-              if (drills.down) drills.down[key] = v;
-            }
-          }
-          min={spec(key).min}
-          max={spec(key).max}
-          step={spec(key).step}
-          unit={spec(key).unit}
-          decimals={0}
-        />
-      {/each}
 
       <details class="locked">
         <summary>Locked for this drill ({lockedKeys.length})</summary>
@@ -153,7 +139,7 @@
         </ul>
       </details>
 
-      {#if !drills.score}
+      {#if !drills.score || drills.scoreStale}
         <button
           type="button"
           class="check"
@@ -224,9 +210,18 @@
     color: var(--ink-2);
   }
 
+  .hint,
   .locked {
     font-size: var(--text-sm);
     color: var(--ink-2);
+  }
+
+  .hint summary {
+    min-height: var(--hit-min);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: var(--accent);
   }
 
   .locked summary {

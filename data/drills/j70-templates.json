@@ -1,0 +1,475 @@
+[
+  {
+    "id": "t1-06-light-air-power",
+    "tier": 1,
+    "title": "Light air: the rig has been depowered",
+    "brief": "Six to eight knots and the boat is set up for a breeze that never arrived: the main is eased well past the point where the leech loads and the car is down by the shroud. There is no drive in the rig at all.",
+    "hint": "Load the leech before you chase pointing: sheet first, then bring the car back up to keep the boom near the centreline.",
+    "objective": "vmg",
+    "conditions": {
+      "twsKt": [6, 8],
+      "twaDeg": "optimal",
+      "seaState": [0, 1],
+      "sailset": "jib",
+      "crewKg": 280
+    },
+    "dock": {
+      "upperTurns": -2,
+      "lowerTurns": -1,
+      "forestayMm": 20
+    },
+    "base": {
+      "backstay": 35,
+      "mainsheet": 80,
+      "traveller": 20,
+      "cunningham": 0,
+      "outhaul": 40,
+      "vang": 0,
+      "jibSheet": 60,
+      "jibLead": 5,
+      "inhauler": 40,
+      "mainHalyard": 45,
+      "jibHalyard": 45
+    },
+    "faults": [
+      {
+        "control": "mainsheet",
+        "steps": [5, 8],
+        "sign": -1
+      },
+      {
+        "control": "traveller",
+        "steps": [8, 14],
+        "sign": -1
+      }
+    ],
+    "free": ["mainsheet", "traveller"],
+    "prov": "Condition and dock tune carried over from the v1 drill t1-flat-06-backstay. Base trim is the model's own optimum at 6-8 kt on this dock tune (`optimalTrim`, measured 2026-08-25), not a hand-written guess; fault magnitudes assumed and gated at START_LOSS_MIN_PCT by src/lib/drills.test.ts. The v1 drill taught light-air backstay; the model cannot separate backstay settings here (audit ux-02 H-04), so the drill was re-authored onto the two controls it does feel."
+  },
+  {
+    "id": "t1-08-chop-jib",
+    "tier": 1,
+    "title": "Chop: the jib is doing nothing",
+    "brief": "A short chop with the jib sheet eased and the lead at the back of the track. The slot is wide open at the top, the headsail is carrying no load, and the boat is sliding sideways out of every wave.",
+    "hint": "Close the leech from the top down: lead forward first, then trim the sheet until the upper telltale just streams.",
+    "objective": "vmg",
+    "conditions": {
+      "twsKt": [7, 9],
+      "twaDeg": "optimal",
+      "seaState": [2, 3],
+      "sailset": "jib",
+      "crewKg": 280
+    },
+    "dock": {
+      "upperTurns": -1,
+      "lowerTurns": -0.5,
+      "forestayMm": 20
+    },
+    "base": {
+      "backstay": 30,
+      "mainsheet": 75,
+      "traveller": 25,
+      "cunningham": 0,
+      "outhaul": 50,
+      "vang": 0,
+      "jibSheet": 55,
+      "jibLead": 5,
+      "inhauler": 35,
+      "mainHalyard": 50,
+      "jibHalyard": 55
+    },
+    "faults": [
+      {
+        "control": "jibSheet",
+        "steps": [3, 6],
+        "sign": -1
+      },
+      {
+        "control": "jibLead",
+        "steps": [3, 5],
+        "sign": 1
+      }
+    ],
+    "free": ["jibSheet", "jibLead"],
+    "prov": "Condition and dock tune carried over from the v1 drill t1-chop-08-twist. Base trim is the model's optimum at 7-9 kt on this dock tune (`optimalTrim`, measured 2026-08-25). The v1 drill was free on mainsheet and traveller; those two move VMG by well under the medal band here (audit ux-02 H-03), so it was re-authored onto the jib. Fault magnitudes assumed, gated by the start-loss test."
+  },
+  {
+    "id": "t1-20-survival",
+    "tier": 1,
+    "title": "Survival upwind: get the boat on its feet",
+    "brief": "Twenty knots, the car is above centre, the backstay is soft and the main has been dumped to stop the boat rounding up. It is over-heeled, the rudder is loaded and none of it is making the boat go forwards.",
+    "hint": "Flatten the rig before you ease anything: backstay on, car down, then sheet to heel angle rather than to feel.",
+    "objective": "vmg",
+    "conditions": {
+      "twsKt": [18, 20],
+      "twaDeg": "optimal",
+      "seaState": [3],
+      "sailset": "jib",
+      "crewKg": 280
+    },
+    "dock": {
+      "upperTurns": 5,
+      "lowerTurns": 2.5,
+      "forestayMm": 6
+    },
+    "base": {
+      "backstay": 60,
+      "mainsheet": 80,
+      "traveller": -20,
+      "cunningham": 80,
+      "outhaul": 70,
+      "vang": 20,
+      "jibSheet": 60,
+      "jibLead": 8,
+      "inhauler": 0,
+      "mainHalyard": 90,
+      "jibHalyard": 85
+    },
+    "faults": [
+      {
+        "control": "backstay",
+        "steps": [10, 14],
+        "sign": -1
+      },
+      {
+        "control": "traveller",
+        "steps": [8, 12],
+        "sign": 1
+      },
+      {
+        "control": "mainsheet",
+        "steps": [5, 7],
+        "sign": -1
+      }
+    ],
+    "free": ["backstay", "traveller", "mainsheet"],
+    "prov": "Condition and dock tune carried over from the v1 drill t1-20-survival. Base trim is the model's optimum at 18-20 kt on this dock tune (`optimalTrim`, measured 2026-08-25); fault magnitudes assumed, gated by the start-loss test."
+  },
+  {
+    "id": "t2-10-slot",
+    "tier": 2,
+    "title": "Ten knots: the slot is open and the main is soft",
+    "brief": "Full power conditions with both sheets eased and the jib lead aft. Nothing is stalled, nothing is loaded, and the boat is a quarter of a knot slow with no obvious symptom to point at.",
+    "hint": "Headsail first — lead, then sheet — and only then load the main leech back up.",
+    "objective": "vmg",
+    "conditions": {
+      "twsKt": [9, 11],
+      "twaDeg": "optimal",
+      "seaState": [1, 2],
+      "sailset": "jib",
+      "crewKg": 280
+    },
+    "dock": {
+      "upperTurns": 0,
+      "lowerTurns": 0,
+      "forestayMm": 16
+    },
+    "base": {
+      "backstay": 25,
+      "mainsheet": 80,
+      "traveller": 0,
+      "cunningham": 5,
+      "outhaul": 50,
+      "vang": 0,
+      "jibSheet": 60,
+      "jibLead": 6,
+      "inhauler": 35,
+      "mainHalyard": 55,
+      "jibHalyard": 60
+    },
+    "faults": [
+      {
+        "control": "jibSheet",
+        "steps": [5, 9],
+        "sign": -1
+      },
+      {
+        "control": "jibLead",
+        "steps": [2, 4],
+        "sign": 1
+      },
+      {
+        "control": "mainsheet",
+        "steps": [3, 6],
+        "sign": -1
+      }
+    ],
+    "free": ["jibSheet", "jibLead", "mainsheet"],
+    "prov": "Condition and dock tune carried over from the v1 drill t2-10-jib-lead-aft. Base trim is the model's optimum at 9-11 kt on this dock tune (`optimalTrim`, measured 2026-08-25); fault magnitudes assumed, gated by the start-loss test."
+  },
+  {
+    "id": "t2-14-over-depowered",
+    "tier": 2,
+    "title": "Over-depowered in the middle of the range",
+    "brief": "Fourteen knots, flat water, and the crew has depowered as if it were twenty: backstay cranked on, car dropped below centre and the main eased. The boat is upright, comfortable and slow.",
+    "hint": "Give the power back in the order you took it away: sheet, then car, then backstay — and stop as soon as the heel comes back.",
+    "objective": "vmg",
+    "conditions": {
+      "twsKt": [13, 15],
+      "twaDeg": "optimal",
+      "seaState": [0, 1],
+      "sailset": "jib",
+      "crewKg": 280
+    },
+    "dock": {
+      "upperTurns": 2,
+      "lowerTurns": 1,
+      "forestayMm": 12
+    },
+    "base": {
+      "backstay": 50,
+      "mainsheet": 80,
+      "traveller": 5,
+      "cunningham": 20,
+      "outhaul": 60,
+      "vang": 0,
+      "jibSheet": 60,
+      "jibLead": 5,
+      "inhauler": 25,
+      "mainHalyard": 70,
+      "jibHalyard": 70
+    },
+    "faults": [
+      {
+        "control": "backstay",
+        "steps": [8, 10],
+        "sign": 1
+      },
+      {
+        "control": "traveller",
+        "steps": [8, 12],
+        "sign": -1
+      },
+      {
+        "control": "mainsheet",
+        "steps": [4, 7],
+        "sign": -1
+      }
+    ],
+    "free": ["backstay", "traveller", "mainsheet"],
+    "prov": "Condition and dock tune carried over from the v1 drill t2-flat-14-depower, with the drill inverted: the model's optimum at 13-15 kt on this dock tune is a powered-up rig (`optimalTrim`, measured 2026-08-25), so over-depowering is the fault. Cunningham dropped from the free list — the shape layer only reads it at the everything-on corner (audit ux-02 H-03). Fault magnitudes assumed, gated by the start-loss test. The tuning guides ask for more backstay here than the model does; the score sheet says so rather than resolving it."
+  },
+  {
+    "id": "t2-16-flat-and-open",
+    "tier": 2,
+    "title": "Sixteen knots: flattened to nothing",
+    "brief": "The bottom of the main is stretched flat along the boom, the backstay is at the stop and the jib has been eased to keep the boat on its feet. The rig has no drive left and the boat is bouncing rather than driving through the chop.",
+    "hint": "Put the depth back low down first — outhaul, then backstay — and load the jib leech again once the boat stops stalling.",
+    "objective": "vmg",
+    "conditions": {
+      "twsKt": [15, 17],
+      "twaDeg": "optimal",
+      "seaState": [2, 3],
+      "sailset": "jib",
+      "crewKg": 280
+    },
+    "dock": {
+      "upperTurns": 3,
+      "lowerTurns": 1.5,
+      "forestayMm": 10
+    },
+    "base": {
+      "backstay": 50,
+      "mainsheet": 80,
+      "traveller": 0,
+      "cunningham": 45,
+      "outhaul": 60,
+      "vang": 0,
+      "jibSheet": 60,
+      "jibLead": 5,
+      "inhauler": 20,
+      "mainHalyard": 75,
+      "jibHalyard": 75
+    },
+    "faults": [
+      {
+        "control": "outhaul",
+        "steps": [6, 8],
+        "sign": 1
+      },
+      {
+        "control": "backstay",
+        "steps": [8, 10],
+        "sign": 1
+      },
+      {
+        "control": "jibSheet",
+        "steps": [5, 8],
+        "sign": -1
+      }
+    ],
+    "free": ["outhaul", "backstay", "jibSheet"],
+    "prov": "Condition and dock tune carried over from the v1 drill t2-chop-16-vang-outhaul. Base trim is the model's optimum at 15-17 kt on this dock tune (`optimalTrim`, measured 2026-08-25). The vang was dropped from the free list: its whole range is worth 0.2 % VMG in this model (audit ux-02 H-03). Fault magnitudes assumed, gated by the start-loss test."
+  },
+  {
+    "id": "t2-12-car-and-lead",
+    "tier": 2,
+    "title": "Twelve knots: low mode by accident",
+    "brief": "The car is well below centre, the jib lead is aft and the main is soft — a deliberate footing setup, except nobody chose it. The boat feels fine on the speedo and is going nowhere up the course.",
+    "hint": "VMG, not boat speed: bring the car up and the lead forward until the boat starts climbing, then re-load the main.",
+    "objective": "vmg",
+    "conditions": {
+      "twsKt": [11, 13],
+      "twaDeg": "optimal",
+      "seaState": [1, 2],
+      "sailset": "jib",
+      "crewKg": 280
+    },
+    "dock": {
+      "upperTurns": 1,
+      "lowerTurns": 0.5,
+      "forestayMm": 14
+    },
+    "base": {
+      "backstay": 45,
+      "mainsheet": 80,
+      "traveller": 0,
+      "cunningham": 20,
+      "outhaul": 55,
+      "vang": 0,
+      "jibSheet": 60,
+      "jibLead": 4,
+      "inhauler": 30,
+      "mainHalyard": 60,
+      "jibHalyard": 60
+    },
+    "faults": [
+      {
+        "control": "traveller",
+        "steps": [8, 12],
+        "sign": -1
+      },
+      {
+        "control": "jibLead",
+        "steps": [3, 5],
+        "sign": 1
+      },
+      {
+        "control": "mainsheet",
+        "steps": [4, 7],
+        "sign": -1
+      }
+    ],
+    "free": ["traveller", "jibLead", "mainsheet"],
+    "prov": "Re-authored replacement for the v1 drill t3-12-halyards-draft, which was unwinnable: its free controls were both halyards and the cunningham, none of which the shape layer reads (audit ux-02 H-03). Same condition and dock tune; base trim is the model's optimum at 11-13 kt (`optimalTrim`, measured 2026-08-25), fault magnitudes assumed and gated by the start-loss test."
+  },
+  {
+    "id": "t3-09-fine-slot",
+    "tier": 3,
+    "title": "Smooth water: four controls, one shape",
+    "brief": "Nine knots and glassy, the mode where height pays and every control interacts with every other. Both sheets are eased, the lead is aft and the car is down: four errors that each look small and together cost a boat length a minute.",
+    "hint": "Work the headsail before the main, and the traveller before the sheet. Small moves — the boat tells you within two waves.",
+    "objective": "vmg",
+    "conditions": {
+      "twsKt": [8, 10],
+      "twaDeg": "optimal",
+      "seaState": [0, 1],
+      "sailset": "jib",
+      "crewKg": 280
+    },
+    "dock": {
+      "upperTurns": -1,
+      "lowerTurns": 0,
+      "forestayMm": 18
+    },
+    "base": {
+      "backstay": 30,
+      "mainsheet": 80,
+      "traveller": 20,
+      "cunningham": 0,
+      "outhaul": 45,
+      "vang": 0,
+      "jibSheet": 60,
+      "jibLead": 6,
+      "inhauler": 0,
+      "mainHalyard": 50,
+      "jibHalyard": 55
+    },
+    "faults": [
+      {
+        "control": "jibSheet",
+        "steps": [4, 8],
+        "sign": -1
+      },
+      {
+        "control": "jibLead",
+        "steps": [2, 4],
+        "sign": 1
+      },
+      {
+        "control": "mainsheet",
+        "steps": [3, 6],
+        "sign": -1
+      },
+      {
+        "control": "traveller",
+        "steps": [6, 10],
+        "sign": -1
+      }
+    ],
+    "free": ["jibSheet", "jibLead", "mainsheet", "traveller"],
+    "prov": "Re-authored replacement for the v1 drill t3-09-inhauler-pointing: the inhauler moves the drawn entry angle only and is worth exactly 0.00 kt in this model (audit ux-02 H-03), so the drill is now about the four controls the solver does feel. Same condition and dock tune; base trim is the model's optimum at 8-10 kt (`optimalTrim`, measured 2026-08-25), fault magnitudes assumed and gated by the start-loss test."
+  },
+  {
+    "id": "t3-18-whole-rig",
+    "tier": 3,
+    "title": "Eighteen knots: the whole rig at once",
+    "brief": "Near the top of the range with five controls wrong at the same time — backstay at the stop, car dropped, both sheets eased and the foot stretched flat. Everything you know about depowering, applied one setting too far.",
+    "hint": "Heel angle is the control variable, not sheet load. Set the boat's attitude first with car and sheet, then fine-tune the depth.",
+    "objective": "vmg",
+    "conditions": {
+      "twsKt": [17, 19],
+      "twaDeg": "optimal",
+      "seaState": [2, 3],
+      "sailset": "jib",
+      "crewKg": 280
+    },
+    "dock": {
+      "upperTurns": 4,
+      "lowerTurns": 2,
+      "forestayMm": 8
+    },
+    "base": {
+      "backstay": 55,
+      "mainsheet": 80,
+      "traveller": -10,
+      "cunningham": 60,
+      "outhaul": 65,
+      "vang": 5,
+      "jibSheet": 65,
+      "jibLead": 7,
+      "inhauler": 10,
+      "mainHalyard": 80,
+      "jibHalyard": 80
+    },
+    "faults": [
+      {
+        "control": "backstay",
+        "steps": [6, 9],
+        "sign": 1
+      },
+      {
+        "control": "traveller",
+        "steps": [8, 12],
+        "sign": -1
+      },
+      {
+        "control": "mainsheet",
+        "steps": [4, 7],
+        "sign": -1
+      },
+      {
+        "control": "outhaul",
+        "steps": [5, 7],
+        "sign": 1
+      },
+      {
+        "control": "jibSheet",
+        "steps": [4, 7],
+        "sign": -1
+      }
+    ],
+    "free": ["backstay", "mainsheet", "traveller", "outhaul", "jibSheet"],
+    "prov": "Condition and dock tune carried over from the v1 drill t3-18-bow-down. Base trim is the model's optimum at 17-19 kt on this dock tune (`optimalTrim`, measured 2026-08-25); cunningham and vang dropped from the free list (audit ux-02 H-03). Fault magnitudes assumed, gated by the start-loss test."
+  }
+]

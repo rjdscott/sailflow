@@ -3,11 +3,14 @@
 
   let {
     score,
+    stale = false,
     cTier = false,
     ontryagain,
     onnext,
   }: {
     score: DrillScore;
+    /** The trim moved after this score was taken: still shown, marked stale. */
+    stale?: boolean;
     cTier?: boolean;
     ontryagain: () => void;
     onnext: () => void;
@@ -20,6 +23,11 @@
     none: { glyph: '·', label: 'No medal' },
   };
 
+  function steps(n: number): string {
+    const r = Math.round(n);
+    return `${r} ${r === 1 ? 'click' : 'clicks'}`;
+  }
+
   function clicks(steps: number): string {
     const sign = steps > 0 ? '+' : '−';
     const n = Math.abs(steps);
@@ -27,20 +35,32 @@
   }
 </script>
 
-<section class="card sheet">
+<section class="card sheet" class:stale>
   <div class="head">
     <span class="glyph" aria-hidden="true">{MEDAL[score.medal].glyph}</span>
     <div>
-      <p class="medal">{MEDAL[score.medal].label}</p>
-      <p class="loss tabular-nums">{score.lossPct.toFixed(1)} % VMG lost</p>
+      <p class="medal">{stale ? 'Re-check' : MEDAL[score.medal].label}</p>
+      <p class="loss tabular-nums">
+        {steps(score.distanceSteps)} off the optimum · {score.lossPct.toFixed(1)} % VMG lost
+      </p>
     </div>
   </div>
+
+  {#if stale}
+    <p class="quiet">You have moved a control since this score. Press Check again.</p>
+  {:else if score.isBest}
+    <p class="quiet">Closest you have been on this drill.</p>
+  {/if}
 
   {#if cTier}
     <p class="note">
       Tier C: the model gives the direction here, not the number. Treat the loss figure as a
       ranking, not a measurement.
     </p>
+  {/if}
+
+  {#if score.guideNote}
+    <p class="note">{score.guideNote}</p>
   {/if}
 
   <p class="coach">{score.coach}</p>
@@ -82,8 +102,20 @@
   .medal,
   .loss,
   .coach,
-  .note {
+  .note,
+  .quiet {
     margin: 0;
+  }
+
+  /* Stale: the numbers still belong to the trim they were taken on, so they
+     stay legible — dimmed, not hidden (audit ux-02 M-06). */
+  .sheet.stale {
+    opacity: 0.65;
+  }
+
+  .quiet {
+    font-size: var(--text-xs);
+    color: var(--ink-2);
   }
 
   .medal {
