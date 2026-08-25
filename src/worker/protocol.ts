@@ -11,6 +11,7 @@ import type {
   DockScore,
   Forecast,
   OptimalResult,
+  OptimalTrimResult,
   SolveResult,
 } from '../core/types';
 
@@ -42,6 +43,17 @@ export interface OptimalRequest extends Base {
   optimiseTwa: boolean;
 }
 
+/**
+ * Race mode: the best legal trim reachable from `controls` by moving the
+ * race controls the shape layer responds to (`core/solve/optimalTrim`).
+ * Additive in protocol v1: older clients simply never send it.
+ */
+export interface OptimalTrimRequest extends Base {
+  type: 'optimalTrim';
+  controls: ControlState;
+  condition: Condition;
+}
+
 export interface DockScoreRequest extends Base {
   type: 'dockScore';
   setups: DockControls[];
@@ -50,7 +62,8 @@ export interface DockScoreRequest extends Base {
   candidates?: DockControls[];
 }
 
-export type Request = LoadBoatRequest | TrimmedRequest | OptimalRequest | DockScoreRequest;
+export type Request =
+  LoadBoatRequest | TrimmedRequest | OptimalRequest | OptimalTrimRequest | DockScoreRequest;
 
 export interface OkResponse<T> extends Base {
   type: 'ok';
@@ -66,6 +79,7 @@ export type Response =
   | OkResponse<null>
   | OkResponse<SolveResult>
   | OkResponse<OptimalResult>
+  | OkResponse<OptimalTrimResult>
   | OkResponse<DockScore[]>
   | ErrorResponse;
 
@@ -75,6 +89,8 @@ export type ResultOf<R extends Request> = R extends LoadBoatRequest
     ? SolveResult
     : R extends OptimalRequest
       ? OptimalResult
-      : R extends DockScoreRequest
-        ? DockScore[]
-        : never;
+      : R extends OptimalTrimRequest
+        ? OptimalTrimResult
+        : R extends DockScoreRequest
+          ? DockScore[]
+          : never;

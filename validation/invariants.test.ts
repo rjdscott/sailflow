@@ -1,5 +1,6 @@
 /**
- * The twelve solver invariants (plan phase 02).
+ * The thirteen solver invariants (12 from the MVP plan phase 02; 13 added
+ * with the per-control trim optimum, ux-excellence phase 02).
  *
  * These are statements about signs, symmetry and monotonicity, not about
  * magnitudes: they must hold with an empty `calibration` block and still hold
@@ -26,6 +27,7 @@ import { geometryFor, solveEquilibrium } from '../src/core/solve/equilibrium';
 import { optimal } from '../src/core/solve/optimal';
 import { scoreDockSetups } from '../src/core/solve/dock';
 import { trimmed } from '../src/core/solve/trimmed';
+import { TRIM_CONTROLS, optimalTrim, snap } from '../src/core/solve/optimalTrim';
 import { boat } from './compare';
 import j70 from '../data/boats/j70.json';
 
@@ -430,6 +432,66 @@ describe('12. boat validator', () => {
     });
     expect(p.some((m) => m.startsWith('calibration.'))).toBe(true);
   });
+});
+
+// ---------------------------------------------------------------------------
+// 13. Per-control trim optimum
+// ---------------------------------------------------------------------------
+
+describe('13. per-control trim optimum', () => {
+  /** Deliberately bad trim: over-flat, over-vanged, sheets eased, lead aft. */
+  const mistrim: RaceControls = {
+    ...baseRace(),
+    backstay: 90,
+    mainsheet: 20,
+    traveller: -60,
+    vang: 90,
+    outhaul: 100,
+    jibSheet: 20,
+    jibLead: 10,
+  };
+
+  /** The objective optimalTrim claims to maximise, read off a solve. */
+  const objective = (c: Condition, r: { vmgKt: { value: number }; bsKt: { value: number } }) => {
+    const twa = Math.abs(c.twaDeg);
+    if (twa < 90 && c.sailset === 'jib') return r.vmgKt.value;
+    if (twa >= 90 && c.sailset === 'asym') return -r.vmgKt.value;
+    return r.bsKt.value;
+  };
+
+  for (const c of [cond(10, 42), cond(16, 38), cond(10, 90), cond(14, 150, 'asym')]) {
+    it(`TWS ${c.twsKt} TWA ${c.twaDeg}: never worse than the start, on the grid, mirror-symmetric`, () => {
+      const start = trimmed(boat, controls(baseDock(), mistrim), c, GEOM);
+      const o = optimalTrim(boat, controls(baseDock(), mistrim), c, {}, GEOM);
+
+      // Never worse than where it started, and the reported solve is the
+      // solve at the reported controls.
+      expect(objective(c, o.result)).toBeGreaterThanOrEqual(objective(c, start));
+      expect(o.result.bsKt.value).toBeCloseTo(
+        trimmed(boat, controls(baseDock(), o.race), c, GEOM).bsKt.value,
+        12,
+      );
+
+      // Every control legal, and only the trim controls touched.
+      for (const k of Object.keys(o.race) as (keyof RaceControls)[]) {
+        expect(o.race[k]).toBe(snap(boat.controls[k], o.race[k]));
+        if (!(TRIM_CONTROLS as readonly string[]).includes(k)) expect(o.race[k]).toBe(mistrim[k]);
+      }
+
+      // Same answer on the other tack.
+      const p = optimalTrim(
+        boat,
+        controls(baseDock(), mistrim),
+        { ...c, twaDeg: -c.twaDeg },
+        {},
+        GEOM,
+      );
+      expect(p.race).toEqual(o.race);
+
+      // Deterministic, and a fixed point of itself when it converged early.
+      expect(optimalTrim(boat, controls(baseDock(), mistrim), c, {}, GEOM)).toEqual(o);
+    });
+  }
 });
 
 // Type-level guard: the boat file really is a BoatDefinition.

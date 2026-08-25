@@ -9,7 +9,7 @@ nothing here writes a knob (ADR 0007).
 | File | What it is |
 |------|------------|
 | `compare.ts` | Shared plumbing: boat + polar loading, the ADR 0007 tolerances, the boat/calibration hashes, and `compareRow()` — one polar row replayed through the solver. |
-| `invariants.test.ts` | The twelve solver invariants. Statements about signs, symmetry and monotonicity, never magnitudes, so they hold both before and after calibration. |
+| `invariants.test.ts` | The thirteen solver invariants. Statements about signs, symmetry and monotonicity, never magnitudes, so they hold both before and after calibration. |
 | `polar.test.ts` | The hold-out gate. Fails until calibration lands; that is correct. |
 | `golden.test.ts` | Replays `golden/*.json` and asserts nothing moved. |
 | `report.ts` | Writes `report.md`: polar comparison, gate verdict, model-vs-guide dock settings, honest weaknesses. |

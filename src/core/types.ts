@@ -253,6 +253,19 @@ export interface OptimalResult extends SolveResult {
   race: RaceControls;
 }
 
+/**
+ * Result of the per-control trim search (`solve/optimalTrim.ts`): the best
+ * legal trim reachable from a starting state, and the solve at it.
+ */
+export interface OptimalTrimResult {
+  race: RaceControls;
+  result: SolveResult;
+  /** Race controls whose value changed, in `TRIM_CONTROLS` order. */
+  moved: string[];
+  /** `trimmed()` evaluations spent — the cost measure for the UI's budget. */
+  iters: number;
+}
+
 export interface DockRegret {
   twsKt: number;
   /** Seconds per mile of windward-leeward lost to the locked rig. */
