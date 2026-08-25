@@ -96,9 +96,31 @@
    * has the whole band and this button is not there at all.
    */
   let more = $state(false);
+
+  /**
+   * One announcement per settled solve (audit ux-03 H-08). Everything on this
+   * screen changes silently otherwise: `o`, a point-of-sail key and a puff
+   * replay all move focus nowhere, so a screen-reader user was never told the
+   * model had answered.
+   *
+   * Debounced, and skipped while a solve is in flight: a slider drag re-solves
+   * sixty times, and a live region that reads every frame is noise rather than
+   * a status. The three numbers are the ones the whole screen is for.
+   */
+  const ANNOUNCE_MS = 700;
+  let announce = $state('');
+  $effect(() => {
+    if (busy) return;
+    const text =
+      `${fmt(result.bsKt.value, 1)} knots boat speed, ` +
+      `${fmt(result.instruments.pctPolar.value, 0)} percent of polar, ` +
+      `VMG ${fmt(result.vmgKt.value, 2)} knots.`;
+    const timer = setTimeout(() => (announce = text), ANNOUNCE_MS);
+    return () => clearTimeout(timer);
+  });
 </script>
 
-<section class="card bar" class:more class:stale={!result.converged} aria-live="off">
+<section class="card bar" class:more class:stale={!result.converged}>
   {#if busy}<span class="progress" aria-hidden="true"></span>{/if}
 
   <div class="cells">
@@ -204,6 +226,10 @@
   </div>
 
   <p class="verdict">{line}</p>
+
+  <!-- Read out, not drawn: the cells beside it already show these three, and
+       announcing each one as it lands would talk over the drag. -->
+  <p class="sr-only" role="status">{announce}</p>
 
   <Sheet bind:open={sheetOpen} title={explaining ? (TITLES[explaining] ?? '') : ''}>
     <p class="explainer">{explaining ? READOUT_EXPLAIN[explaining] : ''}</p>

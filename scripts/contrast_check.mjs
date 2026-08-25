@@ -15,6 +15,8 @@
  *   4.5:1  --on-accent on --accent
  *   3:1    --line-strong, --muted, --accent, --bug, --focus, --good, --warn,
  *          --bad on --bg / --surface / --surface-2
+ *   3:1    --surface, --surface-2 on --accent (the confidence badge's own fill,
+ *          sitting on the accent Apply button)
  */
 
 import { readFileSync } from 'node:fs';
@@ -65,6 +67,20 @@ const RULES = [
   ...['--line-strong', '--muted', '--accent', '--bug', '--focus', '--good', '--warn', '--bad'].map(
     (fg) => [fg, SURFACES, 3],
   ),
+  /* The confidence badge paints its own surface rather than inheriting one, so
+     its letter is --ink on --surface / --surface-2 — both already gated above.
+     What is not gated anywhere else is the badge sitting *on* the accent Apply
+     button: its fill has to stay a visible chip against --accent, or the tier
+     is a smudge again (audit ux-03 H-10, which measured 1.06:1 when the badge
+     was transparent and composited onto the button).
+
+     Deliberately not a row: `--ink` on `--muted`, which the audit asked for.
+     --muted must also clear 3:1 on --surface-2, and no grey satisfies both —
+     4.5:1 against --ink forces --muted below #6a6a70, which is 2.89:1 on
+     --surface-2. That impossibility is why tier A moved off --muted rather
+     than the token being retuned. */
+  ['--surface', ['--accent'], 3],
+  ['--surface-2', ['--accent'], 3],
 ];
 
 const css = readFileSync(TOKENS, 'utf-8');

@@ -268,7 +268,9 @@
           stroke-linejoin="round"
         />
       </svg>
-      <p class="line">
+      <!-- The one sentence that changes on every solve, so it is the screen's
+           status message (audit ux-03 H-08). -->
+      <p class="line" role="status">
         {#if race.error}
           Solver error: {race.error}
         {:else if race.coach}

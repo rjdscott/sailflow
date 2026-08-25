@@ -177,3 +177,58 @@ plan view's svg read it, so the swap between them still moves nothing.
   concurrent half of this phase; audit ux-03 and the plan README state
   section are still open.
 - **2026-08-25 — grid rebalanced after a live look.** At a 715 px viewport the agent's equal-ish rows left the 3D stage 112 px tall and every panel with a horizontal scrollbar. Now: hero row `minmax(300px, 1fr)`, Helm/Rig row `minmax(150px, 0.55fr)`, panel bodies clip horizontally, the hero caption is visually hidden in the cockpit; and below 800 px viewport height the page scrolls with a fixed 360 px hero row instead of a one-screen lock (prov: assumed threshold). Playwright asserts one-screen only at ≥ 800 px tall and a ≥ 250 px hero below it. Measured: 1388×715 → page 1421 px, hero 296 px; 1468×815 → one screen, hero 236 px.
+
+### 2026-08-25 — audit ux-03 H-06 / H-08 / H-10: badge nesting, live regions, badge contrast
+
+Three High accessibility findings from `docs/audits/2026-08-25-ux-03/02-accessibility.md`.
+
+**H-06 — nested interactive.** `ConfidenceBadge` is a `<button>`, and both call
+sites wrapped it in another button, so asking what the tier meant applied the
+thing being qualified: five sliders on Race, a rig setup on Dock. Fixed at both
+call sites by making the badge a *sibling* rather than a child. `ActionsBar`
+moves the accent pill onto a new `.apply-wrap` span and leaves the button
+transparent inside it, so the badge still sits on the accent fill and the strip
+looks unchanged; `SuggestButton`'s `<li>` becomes the flex row and `.pick`
+takes `flex: 1`. The badge keeps its popover, which the audit's other option
+(`interactive={false}` + `aria-describedby`) would have cost, and a click on
+the tier letter no longer reaches the button's handler at all.
+
+**H-08 — no live regions.** `role="status"` on the coach line
+(`Race.svelte:273`) — it already carries the state-shaped sentence, so every
+solve now announces. Plus one `.sr-only` `role="status"` in `InstrumentBar`
+summarising BSP / %POLAR / VMG, debounced 700 ms and skipped while `busy`, so a
+sixty-solve drag announces once at the end instead of per tick. The section's
+`aria-live="off"` went with it: a runtime no-op that read as an intentional
+opt-out and would have confused the next reader of a live region three lines
+below it.
+
+**H-10 — badge contrast.** Every tier now paints an explicit background instead
+of compositing onto whatever it was dropped on: A on `--surface-2`, B and C on
+`--surface`, all three with `--ink` and a `--line-strong` edge. That takes the
+tier-B letter on the Apply button from 1.06:1 to 14.2:1 dark / 17.0:1 light and
+tier A from 3.49:1 to 12.7:1. On a card the look is unchanged — `--surface` *is*
+the card, so B and C still read as outlines and A as the filled pill.
+
+**Deviation from the audit's fix.** It asked for two `contrast_check.mjs` rows,
+one of them `--ink` on `--muted` at 4.5:1. That row is unsatisfiable: `--muted`
+must also clear 3:1 on `--surface-2`, and 4.5:1 against `--ink` forces it below
+`#6a6a70`, which is 2.89:1 on `--surface-2`. No grey satisfies both, which is
+the real reason tier A had to leave `--muted` rather than the token being
+retuned. The rows added instead gate the badge's own fill against the button it
+sits on — `--surface` and `--surface-2` on `--accent` at 3:1 (5.66 / 5.07 in
+light, 7.86 / 7.01 in dark) — with the impossibility written into the script so
+the next reader does not re-derive it.
+
+**Tests.** `tests/ui/a11y.spec.ts`: a Race-wide `button button, button a, a
+button, button input` scan at 0, a click on the Apply pill's badge that opens
+the popover and leaves the mainsheet slider where it was (then a click on the
+button that does move it), and `role="status"` on both the coach line and the
+instrument summary. The contrast rows are H-10's test.
+
+**Gates.** `make check` green (docs-check, contrast_check all pairs pass, 10
+pytest, eslint + prettier clean, svelte-check 1031 files 0 errors, vitest 70
+files / 1108 tests). `pnpm test:ui` 15 passed — the 3D baseline still matches,
+so no snapshot regeneration was needed.
+
+**Not done.** H-07 (tab order), H-09 (`prefers-reduced-motion` in the 3D hero),
+M-13, M-14, L-02 and L-03 from the same finding doc are untouched.
