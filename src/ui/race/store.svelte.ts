@@ -156,6 +156,10 @@ export class RaceStore {
   error: string | null = $state(null);
   /** Point-of-sail chip waiting on its VMG-optimal angle, or null. */
   pointOfSailBusy: string | null = $state(null);
+  /** Last chip tapped and the angle it landed on; the strip keeps that chip
+      active while the TWA still matches, so Run stays Run after its solve
+      answers 149° (which the bands would call Broad reach). */
+  pointOfSail: { id: string; twaDeg: number } | null = $state(null);
 
   #client: Client;
   #timer: ReturnType<typeof setTimeout> | undefined;
@@ -214,6 +218,7 @@ export class RaceStore {
     const seq = ++this.#posSeq;
     conditions.sailset = p.sailset;
     conditions.twaDeg = p.twaDeg;
+    this.pointOfSail = { id, twaDeg: p.twaDeg };
     if (!p.optimal) {
       this.pointOfSailBusy = null;
       return;
@@ -229,6 +234,7 @@ export class RaceStore {
       .then((r) => {
         if (seq !== this.#posSeq) return;
         conditions.twaDeg = Math.round(Math.abs(r.twaDeg));
+        this.pointOfSail = { id, twaDeg: conditions.twaDeg };
         this.pointOfSailBusy = null;
       })
       .catch(() => {
