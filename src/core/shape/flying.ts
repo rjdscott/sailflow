@@ -21,8 +21,9 @@
  *         jib halyard up -> draft position forward
  *         jib lead aft   -> twist up, foot depth down
  *         inhauler up    -> entry angle shifted narrower
- *   asym  coarse constants; DownControls are not part of FlyingShapeFn's
- *         input, so the kite shape does not respond to kite trim yet.
+ *   asym  constants, re-based on measured flying shapes (see `asymShape`);
+ *         DownControls are not part of FlyingShapeFn's input, so the kite
+ *         shape still does not respond to kite trim.
  */
 import type {
   BoatDefinition,
@@ -39,7 +40,14 @@ const DEG = 180 / Math.PI;
 
 /** Physical clamps. prov: assumed, the range soft sails actually fly in. */
 const DRAFT_MIN = 0.05;
-const DRAFT_MAX = 0.25;
+/**
+ * prov: derived — Deparday's full-scale J/80 photogrammetry measures flying
+ * camber from 15 % to 32 % of chord across height and apparent wind angle
+ * (research `2026-08-25-spinnaker` doc 02 §2, `F1` Table 3.1), so a ceiling of
+ * 0.25 truncated the sail the app draws downwind. The upwind sails are
+ * nowhere near it: the main tops out around 0.12 and the jib around 0.17.
+ */
+const DRAFT_MAX = 0.32; // prov: derived, `F1` Table 3.1 measured camber band 15-32 %
 const DRAFT_POS_MIN = 0.3; // prov: assumed, chordwise draft-position clamp range
 const DRAFT_POS_MAX = 0.6;
 const TWIST_MIN = 0;
@@ -54,8 +62,31 @@ const MAIN_OUTHAUL_F = [1.0, 0.4, 0.1];
 const JIB_DRAFT_F = [1.0, 0.95, 0.75]; // prov: assumed; sails flatten toward the head (per-height multiplier)
 const JIB_LEAD_F = [1.0, 0.3, 0.0];
 const TWIST_F = [0.3, 0.65, 1.0];
-const ASYM_DRAFT_F = [1.0, 1.0, 0.85]; // prov: assumed; per-height multiplier, asym flattens toward the head
-const ASYM_TWIST_F = [0.5, 0.8, 1.0];
+/**
+ * Per-height multipliers on `shape.asymDraft`, giving 30 % / 24 % / 19 % of
+ * chord at the quarter, half and three-quarter heights. prov: derived from
+ * `F1` Table 3.1 at AWA 124° (research doc 02 §2, doc 04 §3), by dimensionless
+ * transfer from the J/80 — the transfer is the inference, which is why this is
+ * `derived` and not `published`. The old `[1.0, 1.0, 0.85]` on a 0.17 base was
+ * about 40 % too flat and had the wrong profile: the measured sail is fullest
+ * low and flattens steadily toward the head, not flat-then-taper.
+ */
+const ASYM_DRAFT_F = [1.0, 0.8, 0.633]; // prov: derived, `F1` Table 3.1 at AWA 124°
+/**
+ * Chordwise draft position by height. prov: derived from the same table: 46 %
+ * at 1/6–2/6, 48 % at 3/6, 49 % at 4/6 and 67 % at 5/6, read at the three
+ * reporting heights. It replaces a single 0.45 at every height, which was a
+ * good value low down and badly wrong up high. The measured 61–67 % sits at
+ * 5/6 height, above the top reporting station, so `DRAFT_POS_MAX` = 0.6 does
+ * not truncate anything the solver reports.
+ */
+const ASYM_DRAFT_POS = [0.46, 0.48, 0.58]; // prov: derived, `F1` Table 3.1 at AWA 124°
+/**
+ * prov: assumed. Twist rises near-linearly from the foot to half height then
+ * flattens, which these approximate — research doc 02 §2 says so explicitly of
+ * this array.
+ */
+const ASYM_TWIST_F = [0.5, 0.8, 1.0]; // prov: assumed; foot-to-half ramp then flat, per doc 02 §2
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v));
@@ -161,15 +192,31 @@ function jibShape(boat: BoatDefinition, rig: RigState, race: RaceControls): Sail
   );
 }
 
+/**
+ * The kite's flying shape: constants, but measured ones.
+ *
+ * Every number here is read off Deparday's full-scale J/80 photogrammetry at a
+ * *running* apparent wind angle — 124° of the four he measured — because the
+ * J/70's downwind optimum sits at 142–174° TWA and that is where the sail is
+ * actually used (research `2026-08-25-spinnaker` doc 02 §2, doc 04 §3).
+ * `prov: derived`, not `published`: the J/80 is the J/70's sprit-tacked
+ * sister and the shape parameters are dimensionless, but transferring them is
+ * still an inference. Tier stays C.
+ *
+ * ponytail: still constants. FlyingShapeFn takes RaceControls, which carries
+ * no kite trim, so there is nothing here to respond to. The *available*
+ * upgrade is not the sheet — nobody has measured kite shape against sheet
+ * position — it is apparent wind angle, which the solver already knows and
+ * which camber, draft and twist are all strongly dependent on (doc 02 §2).
+ * Wire that up when `FlyingShapeFn` can see the condition.
+ */
 function asymShape(boat: BoatDefinition): SailShape {
-  // ponytail: constants. FlyingShapeFn takes RaceControls, which carries no
-  // kite trim, so there is nothing here to respond to. Wire the kite up when
-  // DownControls reach this signature.
-  const draft = knob(boat, 'shape.asymDraft', 0.17); // prov: assumed, deep running sail
-  const draftPos = knob(boat, 'shape.asymDraftPos', 0.45); // prov: assumed
-  const twist = knob(boat, 'shape.asymTwistBase', 12); // prov: assumed, degrees at the head
+  const draft = knob(boat, 'shape.asymDraft', 0.3); // prov: derived, F1 Table 3.1 at AWA 124°, quarter height
+  const twist = knob(boat, 'shape.asymTwistBase', 26); // prov: derived, F1 Fig 3.3 foot-to-top twist at AWA 124°
   return shapeOf(
-    HEIGHTS.map((_, i) => section(draft * ASYM_DRAFT_F[i], draftPos, twist * ASYM_TWIST_F[i])),
+    HEIGHTS.map((_, i) =>
+      section(draft * ASYM_DRAFT_F[i], ASYM_DRAFT_POS[i], twist * ASYM_TWIST_F[i]),
+    ),
   );
 }
 

@@ -49,7 +49,14 @@
    */
   const curl = $derived(
     race.controls.down
-      ? kiteGeometry(race.controls.down, BARE_SPAR, tackSide(conditions.twaDeg)).curl
+      ? kiteGeometry(
+          race.controls.down,
+          BARE_SPAR,
+          tackSide(conditions.twaDeg),
+          // The luff's side depends on the apparent wind; before the first
+          // solve lands, the true angle is the nearest thing to hand.
+          result?.aero.awaDeg ?? Math.abs(conditions.twaDeg),
+        ).curl
       : false,
   );
 

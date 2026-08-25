@@ -111,7 +111,7 @@
   const asym = $derived(race.result?.shape.asym);
   const kite = $derived(
     !jibUp && asym && race.controls.down
-      ? kiteGeometry(race.controls.down, BARE_SPAR, side)
+      ? kiteGeometry(race.controls.down, BARE_SPAR, side, aero.awaDeg)
       : undefined,
   );
   /** Luff sampled tack to head, then the leech to the clew and the foot home. */
@@ -372,10 +372,13 @@
   </p>
   {#if kite}
     <p>
-      The gennaker's outline is drawn from the four downwind controls, not solved: the sprit and
-      tack line put the tack, the halyard sets how much the free luff sags, and the sheet swings the
-      clew. A dashed outline means the sheet is eased past the assumed curl threshold. Direction
-      only (ADR 0017).
+      The gennaker's outline is drawn, not solved: the sprit and tack line put the tack, the halyard
+      sets how much the free luff sags, and the sheet swings the clew around the circle the
+      published leech and foot pin it to. Which side the luff bows to follows the apparent wind
+      angle — leeward on a reach, across the centreline to windward when running, as two full-scale
+      measurement programmes found it. A dashed outline means the sheet is eased past the curl
+      threshold, which is still assumed: nobody has measured curl onset against sheet position (ADR
+      0017).
     </p>
   {/if}
 

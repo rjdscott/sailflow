@@ -7,26 +7,31 @@
  * **Tier C, and it is a drawing, not physics.** The solver switches its aero
  * tables under `sailset = 'asym'` but `shape.asym` is a set of constants and
  * `DownControls` reach no number in it (`core/shape/flying.ts`). So the sheet,
- * tack line, halyard and sprit move the *picture* here, direction only: every
- * constant is `prov: assumed` with a row in `ASSUMPTIONS.md`, and none of them
- * is claimed to be a measurement. What is claimed is the direction of each
- * control and the sign conventions, which `kite.test.ts` holds.
+ * tack line, halyard and sprit move the *picture* here, direction only.
+ *
+ * What is *not* assumed any more, after research `2026-08-25-spinnaker`
+ * (doc 02, doc 04 §2): the clew is pinned by the published leech and foot
+ * lengths rather than swung on an invented chord, and the luff bows to
+ * leeward or to windward according to the apparent wind angle, which two
+ * full-scale measurement programmes agree on. Each constant below carries the
+ * tag it has earned — `published`, `derived` or `assumed` — and the rows in
+ * `ASSUMPTIONS.md` say which is which. What is claimed is still the direction
+ * of each control and the sign conventions, which `kite.test.ts` holds.
  *
  * Frame, signs and datums are `conventions.ts` — the same ones the jib uses,
  * so the two sails cannot disagree about which way is leeward.
  *
  * The luff is the one thing that makes this sail different from the other two:
  * it is a free edge, not a stay. There is more cloth in it than the straight
- * line from tack to head, so it *has* to bow, and it bows to leeward and
- * forward. That surplus — the sail's luff length less the tack-to-head
- * distance — is the whole of the sag model.
+ * line from tack to head, so it *has* to bow. That surplus — the sail's luff
+ * length less the tack-to-head distance — is the whole of the sag magnitude;
+ * `luffLateral` is the whole of its direction.
  */
 import boat from '../../../data/boats/j70.json';
 import type { DownControls } from '../../core/types';
 import {
   add,
   along,
-  chordDir,
   DEG2RAD,
   lee,
   lerp3,
@@ -45,6 +50,15 @@ const SPRIT_M = boat.rig.bowspritOuterMm / 1000;
 const MAST_LEN_M = boat.rig.mastLenM;
 /** Luff length, m. prov: Class Rules / ORC sail definition, `sails.asym`. */
 const LUFF_M = asym.luffMm / 1000;
+/**
+ * Leech and foot, m. prov: published — J/70 Class Rules G.5.3, carried in
+ * `sails.asym`. These two are not decoration: together with the head and the
+ * tack they *pin the clew to a circle* (`clewOnCircle`), which is where the
+ * sheet then chooses a point. Before research doc 02 §6 the drawn leech
+ * carried 25–40 % more cloth than the sail has.
+ */
+const LEECH_M = asym.leechMm / 1000;
+const FOOT_M = asym.footMm / 1000;
 
 // ---------------------------------------------------------------------------
 // Chords
@@ -116,12 +130,61 @@ export const HALYARD_DROP_M = 1.2;
 
 /**
  * Sheeting angle off the centreline at full trim and full ease, degrees.
- * prov: assumed 25 → 60. Trimmed, the clew is aft and inboard; eased, it
- * swings forward and outboard. Both are monotone in the sheet across this
- * range, which is the claim `kite.test.ts` holds — the numbers are not.
+ * prov: assumed 25 → 60, but now only as a *band*: the clew's distance from
+ * the tack and from the head is no longer a choice at all (`clewOnCircle`),
+ * so these two pick an arc on a derived circle rather than inventing a clew
+ * position. Both endpoints sit inside the circle's achievable 18°–89°
+ * (research doc 04 §2.2). Trimmed, the clew is aft, inboard and low; eased, it
+ * swings forward, outboard and *up*. All three are monotone in the sheet
+ * across this range, which is the claim `kite.test.ts` holds.
  */
 export const SHEET_TRIM_DEG = 25;
 export const SHEET_EASE_DEG = 60;
+
+/**
+ * The apparent wind angles at which the luff was measured wholly to leeward
+ * and wholly to windward, degrees. prov: published — research
+ * `2026-08-25-spinnaker` doc 02 §3.2, from two independent full-scale
+ * programmes. Deparday's J/80 (`F1`): at AWA 64° "the whole luff is on the
+ * leeward side of the boat"; "for deeper AWA, the spinnaker has a more rounded
+ * shape with the luff rotating to the windward side", the deepest run measured
+ * being 141°. Motta et al. (`F2`) see the same crossing: "as the AWA is
+ * increased, the luff moves more to windward, towards and across the
+ * centreline".
+ */
+export const LUFF_LEEWARD_AWA_DEG = 64;
+export const LUFF_WINDWARD_AWA_DEG = 141;
+
+/**
+ * Where the luff crosses the centreline, degrees: the midpoint of the two
+ * measured endpoints, 102.5°. prov: derived from those two published angles,
+ * and it lands inside the 100–120° band research doc 04 §2.1 proposes.
+ * Nothing measures the crossing more tightly than "between 64° and 124°"
+ * (doc 04 row 29), so the *linear ramp* either side of it — and the assumption
+ * that the windward excursion is as large as the leeward one — stay assumed.
+ */
+export const LUFF_CROSSOVER_AWA_DEG = (LUFF_LEEWARD_AWA_DEG + LUFF_WINDWARD_AWA_DEG) / 2;
+
+/**
+ * Athwartships direction and share of the luff bow at an apparent wind angle:
+ * +1 fully to leeward, -1 fully to windward, linear between the measured
+ * endpoints and clamped outside them.
+ *
+ * The J/70's own downwind optimum is 142–174° TWA, which is entirely inside
+ * the windward-luff regime — so before this the app drew the luff on the wrong
+ * side of the boat at exactly the angles the gennaker is used at, while
+ * shipping a coaching cue about rotating the sail to weather that the picture
+ * contradicted (research doc 04 §2.1).
+ *
+ * The *magnitude* of the bow is untouched by this: `kiteGeometry` normalises
+ * the direction and then scales it by the arc-length surplus, so at the
+ * crossover the luff bows the same distance, straight ahead of the boat.
+ */
+export function luffLateral(awaDeg: number): number {
+  const span = LUFF_WINDWARD_AWA_DEG - LUFF_LEEWARD_AWA_DEG;
+  const t = (Math.abs(awaDeg) - LUFF_LEEWARD_AWA_DEG) / span;
+  return Math.min(1, Math.max(-1, 1 - 2 * t));
+}
 
 /**
  * Ease past which the luff curls, as a fraction of sheet travel.
@@ -175,14 +238,52 @@ export const BARE_SPAR: KiteRig = {
   masthead: [0, MAST_LEN_M, 0],
 };
 
+/**
+ * The clew, for a rig and a sheeting angle.
+ *
+ * The clew is not a free parameter and never was. The leech and the foot are
+ * published dimensions, so the clew sits where a sphere of radius `LEECH_M`
+ * about the head meets a sphere of radius `FOOT_M` about the tack — a circle.
+ * The sheet chooses a *point on that circle*; it does not choose the clew's
+ * distance from anything (research doc 02 §6, doc 04 §2.2). prov: derived.
+ *
+ * The parametrisation is the sheeting angle the rest of the app already
+ * speaks: `thetaRad` unsigned off the centreline, measured in plan from the
+ * tack, so the clew's offset from the tack is `[-r·cos θ, dy, lee·r·sin θ]`.
+ * Two conditions — that offset is `FOOT_M` long, and its projection on the
+ * tack→head axis is fixed by the two radii — leave a quadratic in `r` with one
+ * root aft and to leeward. No root finder, and it reproduces doc 02 §6's
+ * solved table to the centimetre.
+ *
+ * The visible consequence, and the reason this is worth the algebra: **easing
+ * the sheet lifts the clew**, ~0.3 m per 10° of ease. The old construction
+ * held it at the tack's height at every setting, because `chordDir` has no
+ * vertical component.
+ */
+export function clewOnCircle(tack: Vec3, head: Vec3, thetaRad: number, side: Side): Vec3 {
+  const v = sub(head, tack);
+  const L = Math.hypot(...v) || 1;
+  const u = scaled(v, 1 / L);
+  // Where the circle's plane cuts the tack→head axis, measured from the tack.
+  const a = (L * L + FOOT_M * FOOT_M - LEECH_M * LEECH_M) / (2 * L);
+  const s = lee(side);
+  const A = -u[0] * Math.cos(thetaRad) + s * u[2] * Math.sin(thetaRad);
+  const uy = u[1] || 1e-9;
+  const disc = FOOT_M * FOOT_M * (uy * uy + A * A) - a * a;
+  // `disc` is positive for every reachable rig state; the guard only keeps a
+  // degenerate spar (head on top of the tack) from emitting NaN.
+  const r = disc > 0 ? (a * A + uy * Math.sqrt(disc)) / (uy * uy + A * A) : 0;
+  return add(tack, [-r * Math.cos(thetaRad), (a - A * r) / uy, s * r * Math.sin(thetaRad)]);
+}
+
 export interface KiteGeometry {
   /** On the bowsprit, `tackLine` above it. */
   tack: Vec3;
   /** On the mast, at the masthead when the halyard is home. */
   head: Vec3;
-  /** Foot chord's aft end — the loft's foot row, last column. */
+  /** On the leech/foot circle, at the sheet's angle around it. */
   clew: Vec3;
-  /** Luff, tack (h = 0) to head (h = 1), bowed to leeward and forward. */
+  /** Luff, tack (h = 0) to head (h = 1), bowed by `luffLateral(awaDeg)`. */
   spine: Spine;
   chords: SailChords;
   /** Sheeting angle off the centreline, radians, unsigned: `buildSail`'s base. */
@@ -200,14 +301,24 @@ export interface KiteGeometry {
 const pct = (v: number): number => Math.min(1, Math.max(0, v / 100));
 
 /**
- * The drawn kite for one set of downwind controls.
+ * The drawn kite for one set of downwind controls at one apparent wind angle.
+ *
+ * `awaDeg` is the solver's own `aero.awaDeg` (sign is ignored — the luff
+ * rotates the same way on either tack). It is not the control-to-physics link
+ * ADR 0017 refused: it is a solver *output* steering a drawing, and the
+ * direction it steers is measured (`luffLateral`).
  *
  * ponytail: the camber and draft position are not in here. They come off
  * `shape.asym` through `loft.ts:sectionStack(shape, KITE_CHORDS)` at the call
  * site, which is where the main and jib get theirs — passing the shape in
  * would only be an argument this function ignored.
  */
-export function kiteGeometry(down: DownControls, rig: KiteRig, side: Side): KiteGeometry {
+export function kiteGeometry(
+  down: DownControls,
+  rig: KiteRig,
+  side: Side,
+  awaDeg: number,
+): KiteGeometry {
   const tack: Vec3 = [
     STEM_X + SPRIT_M * pct(down.sprit),
     TACK_MIN_M + TACK_TRAVEL_M * (1 - pct(down.tackLine)),
@@ -225,7 +336,10 @@ export function kiteGeometry(down: DownControls, rig: KiteRig, side: Side): Kite
   const c = Math.hypot(...chordVec) || 1;
   const slack = Math.max(0, LUFF_M - c);
   const d = Math.min(SAG_MAX_FRACTION * LUFF_M, Math.sqrt((3 * c * slack) / 8));
-  const bow = scaled(norm([SAG_FORWARD_FRACTION, 0, lee(side)]), d);
+  // Direction, not magnitude: `norm` is applied before `d`, so the bow is the
+  // same distance at every apparent wind angle and only swings from leeward
+  // (reaching) through straight ahead (the crossover) to windward (running).
+  const bow = scaled(norm([SAG_FORWARD_FRACTION, 0, lee(side) * luffLateral(awaDeg)]), d);
   // A quadratic's midpoint sits halfway to its control point, so the control
   // offset is twice the bow we want to see.
   const ctrl = add(lerp3(tack, head, 0.5), scaled(bow, 2));
@@ -237,7 +351,7 @@ export function kiteGeometry(down: DownControls, rig: KiteRig, side: Side): Kite
 
   const ease = 1 - pct(down.kiteSheet);
   const sheetRad = (SHEET_TRIM_DEG + ease * (SHEET_EASE_DEG - SHEET_TRIM_DEG)) * DEG2RAD;
-  const clew = add(tack, scaled(chordDir(sheetRad, side), KITE_CHORDS.foot));
+  const clew = clewOnCircle(tack, head, sheetRad, side);
 
   // The leech is a straight line from head to clew — a gennaker's leech is
   // held by the sheet and stands nearly straight, while the luff is the free
@@ -245,6 +359,12 @@ export function kiteGeometry(down: DownControls, rig: KiteRig, side: Side): Kite
   // carried the luff's bow into the leech too, and the sail read as a banana
   // from astern. Each section here spans from the bowed luff to the leech
   // point at the same height, so the loft's chord and twist follow the line.
+  //
+  // Now that the clew is on the leech/foot circle it no longer sits at exactly
+  // the tack's height: trimmed it hangs a little below, eased it climbs above.
+  // The clamp is what handles the second case — the sections between the two
+  // heights all end at the clew — and it is why the foot row's outboard end is
+  // on the leech line rather than on the clew itself.
   const leechAt = (y: number): Vec3 => {
     const t = Math.min(1, Math.max(0, (y - clew[1]) / (head[1] - clew[1] || 1)));
     return lerp3(clew, head, t);
