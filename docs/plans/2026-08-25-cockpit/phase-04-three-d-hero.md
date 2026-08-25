@@ -135,3 +135,4 @@ image.
   changes appearance is a maintenance tax.
 
 - **2026-08-25 — merged onto main after phase 02.** Entry baseline rebased 104,940 → 110,701 B gzip: the growth is phase 02's InstrumentBar, instruments and polar data (merged after the baseline was taken), not the hero — the entry chunk still contains no `WebGLRenderer`. Merge conflicts: ci.yml (Playwright image has no make → `pnpm install`), playwright.config.ts (took phase 04's port 4318 / no reuse), Race.svelte imports.
+- **2026-08-25 — live check found the gate failing on an RTX 4070.** `onready` reported mount→first render (context + shader compile, ~100 ms anywhere); now reports the render time of a warm second frame. Theme default switched to dark (the live site rendered light on a light-OS machine, contradicting ADR 0015). PR #55.

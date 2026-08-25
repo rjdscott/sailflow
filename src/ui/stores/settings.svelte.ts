@@ -72,7 +72,7 @@ const initialMotion = readStorage(MOTION_KEY);
 
 class Settings {
   mode: Mode = $state(readMode());
-  theme: Theme = $state(isTheme(initialTheme) ? initialTheme : 'auto');
+  theme: Theme = $state(isTheme(initialTheme) ? initialTheme : 'dark'); // dark-first, ADR 0015
   motion: Motion = $state(isMotion(initialMotion) ? initialMotion : 'system');
 
   /**
