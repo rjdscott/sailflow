@@ -92,6 +92,7 @@ export type ShapeToOrcFn = (
   shapes: Partial<Record<SailId, SailShape>>,
   race: RaceControls,
   sailset: SailSet,
+  twsKt?: number,
 ) => ShapeToOrcResult;
 
 // ---------------------------------------------------------------------------

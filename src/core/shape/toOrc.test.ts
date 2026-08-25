@@ -4,7 +4,7 @@ import type { ShapeToOrcFn } from '../internal';
 import { rigState } from '../rig/state';
 import { flyingShape } from './flying';
 import { baseDock, baseRace } from './base';
-import { shapeToOrc } from './toOrc';
+import { shapeToOrc, targetDraftMul } from './toOrc';
 import j70 from '../../../data/boats/j70.json';
 
 const boat = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // module tests run on default knobs;
@@ -183,6 +183,74 @@ describe('deltas', () => {
       expect(Math.abs(d.dCEh)).toBeLessThan(0.2);
       expect(Math.abs(d.dTwistDeg)).toBeLessThan(20);
     }
+  });
+});
+
+describe('the target draft moves with the wind', () => {
+  const REF_KT = 12; // shape.draftTargetRefKt default
+
+  it('wants a deeper sail below the reference band and a flatter one above', () => {
+    expect(targetDraftMul(boat, 6)).toBeGreaterThan(1);
+    expect(targetDraftMul(boat, REF_KT)).toBe(1);
+    expect(targetDraftMul(boat, 20)).toBeLessThan(1);
+  });
+
+  it('is monotone in TWS and stays inside the span clamp', () => {
+    let prev = Infinity;
+    for (let tws = 2; tws <= 40; tws += 2) {
+      const m = targetDraftMul(boat, tws);
+      expect(m, `target multiplier at ${tws} kt`).toBeLessThanOrEqual(prev);
+      expect(m).toBeGreaterThanOrEqual(0.75);
+      expect(m).toBeLessThanOrEqual(1.25);
+      prev = m;
+    }
+  });
+
+  /**
+   * The H-04 statement: from a full light-air trim, flattening the sails costs
+   * CLmax at 6 kt. With one wind-independent datum it paid, because the base
+   * trim is flatter than anything a 6 kt sail wants.
+   */
+  it('makes the backstay cost CLmax at 6 kt from a full light-air trim', () => {
+    const light: Partial<RaceControls> = { outhaul: 25, vang: 0, jibLead: 4, cunningham: 0 };
+    const { shapes: full, race: fullRace } = shapesAt({ ...light, backstay: 0 });
+    const { shapes: flat, race: flatRace } = shapesAt({ ...light, backstay: 80 });
+    const a = shapeToOrc(boat, full, fullRace, 'jib', 6).deltas.dCLmax;
+    const b = shapeToOrc(boat, flat, flatRace, 'jib', 6).deltas.dCLmax;
+    expect(b).toBeLessThan(a);
+  });
+
+  it('makes the backstay buy CLmax at 20 kt from that same trim', () => {
+    const light: Partial<RaceControls> = { outhaul: 25, vang: 0, jibLead: 4, cunningham: 0 };
+    const { shapes: full, race: fullRace } = shapesAt({ ...light, backstay: 0 });
+    const { shapes: flat, race: flatRace } = shapesAt({ ...light, backstay: 80 });
+    const a = shapeToOrc(boat, full, fullRace, 'jib', 20).deltas.dCLmax;
+    const b = shapeToOrc(boat, flat, flatRace, 'jib', 20).deltas.dCLmax;
+    expect(b).toBeGreaterThan(a);
+  });
+
+  it('leaves flat alone: only the CLmax and CD0 penalties see the wind', () => {
+    const { shapes, race } = shapesAt({ backstay: 70 });
+    const light = shapeToOrc(boat, shapes, race, 'jib', 6);
+    const heavy = shapeToOrc(boat, shapes, race, 'jib', 20);
+    expect(light.flat).toBe(heavy.flat);
+    expect(light.deltas.dTwistDeg).toBe(heavy.deltas.dTwistDeg);
+    expect(light.deltas.dCLmax).not.toBe(heavy.deltas.dCLmax);
+  });
+
+  it('shape.draftTargetPerKt 0 restores the wind-independent datum', () => {
+    const off = { ...boat, calibration: { 'shape.draftTargetPerKt': 0 } };
+    const { shapes, race } = shapesAt({ backstay: 70 });
+    expect(shapeToOrc(off, shapes, race, 'jib', 6).deltas).toEqual(
+      shapeToOrc(off, shapes, race, 'jib', 20).deltas,
+    );
+  });
+
+  it('omitting twsKt is the same as scoring at the reference band', () => {
+    const { shapes, race } = shapesAt({ backstay: 70 });
+    expect(shapeToOrc(boat, shapes, race, 'jib')).toEqual(
+      shapeToOrc(boat, shapes, race, 'jib', REF_KT),
+    );
   });
 });
 

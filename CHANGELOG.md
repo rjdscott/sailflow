@@ -33,6 +33,15 @@ undiagnosable.
 - The PWA "new version available" prompt is an in-app toast with a Reload
   action instead of a native `confirm()`.
 
+### Fixed
+
+- Light-air backstay direction (ux-02 H-04): the shape layer measured its
+  CLmax/CD0 penalties against a single wind-independent datum, so the model
+  wanted backstay on in 6 kt and too little in 20 kt. The target draft is now
+  wind-dependent (`shape.draftTargetPerKt`, `prov: assumed`, direction only),
+  which puts the model's backstay at 0 % in 6 kt and 65 % in 20 kt against the
+  guides' 25 % and 90 %. The hold-out gate is unchanged at 21/25.
+
 ## [0.1.0] — 2026-08-25
 
 Epic 1: a steady-state J/70 VPP analyser — Dock mode, Race mode, disagreement

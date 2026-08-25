@@ -32,7 +32,7 @@ export function trimmed(
   const rig = rigState(boat, controls.dock, controls.race.backstay);
   const shape: Partial<Record<SailId, SailShape>> = {};
   for (const s of SAILS_OF[condition.sailset]) shape[s] = flyingShape(boat, rig, controls.race, s);
-  const orc = shapeToOrc(boat, shape, controls.race, condition.sailset);
+  const orc = shapeToOrc(boat, shape, controls.race, condition.sailset, condition.twsKt);
   const tune = {
     flat: flatOverride ?? orc.flat,
     reef: orc.reef,

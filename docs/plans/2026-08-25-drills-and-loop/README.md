@@ -25,7 +25,7 @@ gate, local-first instrumentation + feedback link).
 
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
-| 00 | [P0 defects](phase-00-p0-defects.md) | 🔵 Not started | none |
+| 00 | [P0 defects](phase-00-p0-defects.md) | 🟡 In progress | 2026-08-25 |
 | 01 | [Drills engine v2](phase-01-drills-engine-v2.md) | 🔵 Not started | none |
 | 02 | [Drills experience](phase-02-drills-experience.md) | 🔵 Not started | none |
 | 03 | [The loop: Dock → Race → Log](phase-03-the-loop.md) | 🔵 Not started | none |
