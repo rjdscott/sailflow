@@ -201,6 +201,11 @@ export function signed(value: number, decimals = 1, unit = ''): string {
   return `${value < 0 ? '-' : '+'}${s}`;
 }
 
+/** "+2.0 / +1.0 / 15 mm" — uppers / lowers / forestay, for tight spots. */
+export function shortSetup(s: DockControls): string {
+  return `${signed(s.upperTurns)} / ${signed(s.lowerTurns)} / ${fmt(s.forestayMm, 0, 'mm')}`;
+}
+
 /** "uppers +2.0 · lowers +1.0 · forestay 15 mm" */
 export function describeSetup(s: DockControls): string {
   return [

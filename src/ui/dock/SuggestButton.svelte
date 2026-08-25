@@ -7,11 +7,17 @@
   let {
     suggestion,
     busy = false,
+    locked = false,
+    needsUnlock = false,
     onsuggest,
     onapply,
   }: {
     suggestion: Suggestion | null;
     busy?: boolean;
+    /** Rig committed for today: the setups still show, applying one does not. */
+    locked?: boolean;
+    /** An apply was refused because of the lock (`DockStore.needsUnlock`). */
+    needsUnlock?: boolean;
     onsuggest: () => void;
     onapply: (setup: DockControls) => void;
   } = $props();
@@ -24,11 +30,17 @@
     {busy ? 'Searching…' : 'Suggest a setup'}
   </button>
 
+  {#if locked || needsUnlock}
+    <p class="tie" role={needsUnlock ? 'alert' : undefined}>
+      Unlock first: the rig is committed for today, so a suggestion cannot be applied to it.
+    </p>
+  {/if}
+
   {#if suggestion}
     <ol class="results">
       {#each suggestion.top as s, i (i)}
         <li>
-          <button type="button" class="pick" onclick={() => onapply(s.setup)}>
+          <button type="button" class="pick" disabled={locked} onclick={() => onapply(s.setup)}>
             <span class="setup tabular-nums">{describeSetup(s.setup)}</span>
             <span class="regret tabular-nums">
               {fmt(s.expectedRegretSPerMile.value, 1, 's/mi')}
@@ -92,6 +104,11 @@
     font-size: var(--text-sm);
     text-align: start;
     cursor: pointer;
+  }
+
+  .pick:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 
   /* 12 px keeps "uppers +2.0 · lowers +1.0 · forestay 15 mm" on one line

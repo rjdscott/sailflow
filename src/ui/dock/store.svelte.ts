@@ -12,6 +12,13 @@ import { rigLock, type RigLock } from '../stores/rigLock.svelte';
 /** Long enough that dragging a slider is one solve, short enough to feel live. */
 export const SCORE_DEBOUNCE_MS = 300;
 
+/**
+ * How long an armed commit stays armed on the phone bar. Long enough to read
+ * the setup in the label, short enough that a pocket tap minutes later cannot
+ * land on a live confirm (audit ux-01 M-03).
+ */
+export const COMMIT_ARM_MS = 4000;
+
 export class DockStore {
   forecast: Forecast = $state({ minKt: 8, likelyKt: 12, maxKt: 16, seaState: 1, crewKg: 300 });
   setup: DockControls = $state({ upperTurns: 0, lowerTurns: 0, forestayMm: 0 });
@@ -24,12 +31,17 @@ export class DockStore {
       while a rescore runs (audit ux-01 H-03). */
   searching: boolean = $state(false);
   error: string | null = $state.raw(null);
+  /** The phone commit bar is armed and the next tap commits. */
+  armed: boolean = $state(false);
+  /** `apply()` refused because the rig is locked; the Suggest card says so. */
+  needsUnlock: boolean = $state(false);
 
   private client: Client;
   /** Monotonic request ids; a response whose id is not current is dropped. */
   private seq = 0;
   private searchSeq = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
+  private armTimer: ReturnType<typeof setTimeout> | undefined;
   private listeners: ((lock: RigLock) => void)[] = [];
 
   constructor(client: Client = getClient()) {
@@ -90,13 +102,36 @@ export class DockStore {
     });
   }
 
+  /**
+   * Refuses while the rig is locked for the day rather than unlocking behind
+   * the user's back: unlock is the C.9.5-violating direction, so it stays a
+   * deliberate two-tap in `CommitButton` (audit ux-01 M-07).
+   */
   apply(setup: DockControls): void {
+    if (rigLock.lockedToday) {
+      this.needsUnlock = true;
+      return;
+    }
+    this.needsUnlock = false;
     this.setup = { ...setup };
     this.rescore();
   }
 
+  /** First tap arms, a second within `COMMIT_ARM_MS` commits. */
+  arm(): void {
+    clearTimeout(this.armTimer);
+    this.armed = true;
+    this.armTimer = setTimeout(() => (this.armed = false), COMMIT_ARM_MS);
+  }
+
+  disarm(): void {
+    clearTimeout(this.armTimer);
+    this.armed = false;
+  }
+
   /** Lock the rig for the day and tell anyone who asked (e.g. the log draft). */
   commit(): RigLock {
+    this.disarm();
     const lock = rigLock.commit($state.snapshot(this.setup), $state.snapshot(this.forecast));
     for (const fn of this.listeners) fn(lock);
     return lock;

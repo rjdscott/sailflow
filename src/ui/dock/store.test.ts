@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DockControls, DockScore } from '../../core/types';
 import type { Request, ResultOf } from '../../worker/protocol';
 import type { Client } from './client';
-import { DockStore, SCORE_DEBOUNCE_MS } from './store.svelte';
+import { COMMIT_ARM_MS, DockStore, SCORE_DEBOUNCE_MS } from './store.svelte';
 import { candidateSetups } from './logic';
+import { rigLock } from '../stores/rigLock.svelte';
 
 function makeScore(setup: DockControls, expected: number): DockScore {
   const r = { twsKt: 10, regretSPerMile: expected, optimum: setup };
@@ -37,7 +38,11 @@ async function flush(): Promise<void> {
   for (let i = 0; i < 5; i++) await Promise.resolve();
 }
 
-beforeEach(() => vi.useFakeTimers());
+beforeEach(() => {
+  vi.useFakeTimers();
+  // The lock is a module singleton; every test starts from an unlocked rig.
+  rigLock.unlock('test reset');
+});
 afterEach(() => vi.useRealTimers());
 
 describe('DockStore.rescore', () => {
@@ -147,8 +152,72 @@ describe('DockStore.suggest', () => {
     const dock = new DockStore(client);
     dock.apply({ upperTurns: 4, lowerTurns: 2, forestayMm: 16 });
     expect(dock.setup).toEqual({ upperTurns: 4, lowerTurns: 2, forestayMm: 16 });
+    expect(dock.needsUnlock).toBe(false);
     vi.advanceTimersByTime(SCORE_DEBOUNCE_MS);
     expect(calls[0].setups).toEqual([{ upperTurns: 4, lowerTurns: 2, forestayMm: 16 }]);
+  });
+
+  it('refuses to move the rig while it is locked for today (M-07)', () => {
+    const { client, calls } = fakeClient();
+    const dock = new DockStore(client);
+    dock.commit();
+    const committed = { ...dock.setup };
+
+    dock.apply({ upperTurns: 4, lowerTurns: 2, forestayMm: 16 });
+
+    expect(dock.setup).toEqual(committed);
+    expect(dock.needsUnlock).toBe(true);
+    vi.advanceTimersByTime(SCORE_DEBOUNCE_MS);
+    expect(calls).toHaveLength(0);
+
+    // Unlocking clears the refusal on the next apply.
+    rigLock.unlock('test');
+    dock.apply({ upperTurns: 4, lowerTurns: 2, forestayMm: 16 });
+    expect(dock.needsUnlock).toBe(false);
+    expect(dock.setup.upperTurns).toBe(4);
+  });
+});
+
+describe('DockStore commit arming', () => {
+  it('arms on the first tap and disarms itself after the window', () => {
+    const dock = new DockStore(fakeClient().client);
+    expect(dock.armed).toBe(false);
+
+    dock.arm();
+    expect(dock.armed).toBe(true);
+    vi.advanceTimersByTime(COMMIT_ARM_MS - 1);
+    expect(dock.armed).toBe(true);
+    vi.advanceTimersByTime(1);
+    expect(dock.armed).toBe(false);
+  });
+
+  it('a second arm restarts the window rather than shortening it', () => {
+    const dock = new DockStore(fakeClient().client);
+    dock.arm();
+    vi.advanceTimersByTime(COMMIT_ARM_MS - 1);
+    dock.arm();
+    vi.advanceTimersByTime(COMMIT_ARM_MS - 1);
+    expect(dock.armed).toBe(true);
+  });
+
+  it('committing disarms, so the expiry cannot fire on a fresh arming', () => {
+    const dock = new DockStore(fakeClient().client);
+    dock.arm();
+    dock.commit();
+    expect(dock.armed).toBe(false);
+
+    dock.arm();
+    vi.advanceTimersByTime(COMMIT_ARM_MS - 1);
+    expect(dock.armed).toBe(true);
+  });
+
+  it('disarm cancels an arming outright', () => {
+    const dock = new DockStore(fakeClient().client);
+    dock.arm();
+    dock.disarm();
+    expect(dock.armed).toBe(false);
+    vi.advanceTimersByTime(COMMIT_ARM_MS);
+    expect(dock.armed).toBe(false);
   });
 });
 

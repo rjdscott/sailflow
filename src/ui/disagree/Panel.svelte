@@ -22,7 +22,7 @@
   } from '../../lib/divergenceLog';
   import { fmt } from '../format';
   import type { SeaState } from '../../core/types';
-  import type { ModelOptimum } from './store.svelte';
+  import { cellState, NOISE, verdict, type ModelOptimum } from './store.svelte';
 
   let {
     twsKt,
@@ -30,12 +30,17 @@
     crewKg,
     modelOptimum,
     busy = false,
+    stale = false,
+    error = null,
   }: {
     twsKt: number;
     seaState: SeaState;
     crewKg: number;
     modelOptimum: ModelOptimum | null;
     busy?: boolean;
+    /** Numbers are on screen but a newer solve is in flight. */
+    stale?: boolean;
+    error?: string | null;
   } = $props();
 
   const recs = $derived(
@@ -93,8 +98,25 @@
   function deltaClass(d: number | null): string {
     if (d === null) return '';
     const a = Math.abs(d);
-    return a <= 0.5 ? 'muted' : a <= 1 ? 'warn' : 'bad';
+    return a <= NOISE ? 'muted' : a <= 1 ? 'warn' : 'bad';
   }
+
+  /** Every model-vs-guide gap on the table, so the headline can be derived. */
+  const deltas = $derived(
+    modelOptimum
+      ? recs.flatMap(({ rec }) =>
+          rec
+            ? [
+                delta(modelOptimum.dock.upperTurns, rec.uppersTurns),
+                delta(modelOptimum.dock.lowerTurns, rec.lowersTurns),
+                delta(modelOptimum.bsKt.value, rec.targets.bsKt),
+                delta(modelOptimum.heelDeg.value, rec.targets.heelDeg),
+              ]
+            : [],
+        )
+      : [],
+  );
+  const headline = $derived(verdict(modelOptimum !== null, busy, deltas));
 
   function signed(d: number, decimals: number, unit: string): string {
     return `${d > 0 ? '+' : ''}${fmt(d, decimals, unit)}`;
@@ -118,20 +140,56 @@
   };
 </script>
 
-<section class="panel card" aria-busy={busy}>
+{#snippet skeleton()}
+  <span class="skel" aria-hidden="true"></span>
+  <span class="visually-hidden">solving</span>
+{/snippet}
+
+{#snippet noValue(why: string)}
+  <span class="missing" title={why}>&mdash;<span class="visually-hidden"> {why}</span> </span>
+{/snippet}
+
+{#snippet modelCell(value: number | null, text: string)}
+  {@const state = cellState(value, busy)}
+  <span class="cell tabular-nums" role="cell">
+    {#if state === 'value'}
+      {text}
+    {:else if state === 'solving'}
+      {@render skeleton()}
+    {:else}
+      {@render noValue('the model has no value here')}
+    {/if}
+  </span>
+{/snippet}
+
+<section class="panel card" class:stale aria-busy={busy}>
   <header>
     <h2 class="section-title">Model vs guides</h2>
-    {#if calibrated}
+    <!-- The chip claims the model is calibrated *here*; it waits for the model. -->
+    {#if calibrated && modelOptimum}
       <span class="chip" title="The model was fitted to North's base settings in this band."
         >calibrated here</span
       >
     {/if}
+    {#if stale}<span class="updating">updating&hellip;</span>{/if}
   </header>
 
-  <p class="copy">
-    These disagree. The model is calibrated to North at 8&ndash;10 and 12&ndash;16 kt (marked);
-    elsewhere the gap is information.
-  </p>
+  {#if error}
+    <p class="copy err" role="alert">The model could not be solved: {error}</p>
+  {:else if headline === 'comparing'}
+    <p class="copy">Comparing the model with the guides&hellip;</p>
+  {:else if headline === 'unknown'}
+    <p class="copy">Nothing to compare yet for this condition.</p>
+  {:else if headline === 'disagree'}
+    <p class="copy">
+      These disagree. The model is calibrated to North at 8&ndash;10 and 12&ndash;16 kt (marked);
+      elsewhere the gap is information.
+    </p>
+  {:else}
+    <p class="copy">
+      Model and guides agree within the noise: no gap is larger than {NOISE} in the units shown.
+    </p>
+  {/if}
 
   <div class="grid" role="table" aria-label="Model versus tuning guides">
     <div class="row head" role="row">
@@ -149,9 +207,7 @@
     )}
       <div class="row" role="row">
         <span class="rowlabel" role="rowheader">{label}</span>
-        <span class="cell tabular-nums" role="cell">
-          {modelValue === null ? 'n/a' : fmt(modelValue, 1)}
-        </span>
+        {@render modelCell(modelValue, modelValue === null ? '' : fmt(modelValue, 1))}
         {#each recs as { id, rec } (id)}
           <span class="cell tabular-nums" role="cell">
             {#if !rec}
@@ -159,7 +215,10 @@
             {:else}
               {@const v = pick(rec)}
               {@const d = delta(modelValue, v)}
-              {v === null ? 'n/a' : fmt(v, 1)}
+              {#if v === null}{@render noValue('no published value in this guide')}{:else}{fmt(
+                  v,
+                  1,
+                )}{/if}
               {#if d !== null}
                 <span class="delta {deltaClass(d)}">{signed(d, 1, '')}</span>
               {/if}
@@ -182,15 +241,18 @@
 
     <div class="row" role="row">
       <span class="rowlabel" role="rowheader">Rake</span>
-      <span class="cell tabular-nums" role="cell">
-        {modelOptimum ? `${signed(modelOptimum.dock.forestayMm, 0, 'mm')} forestay` : 'n/a'}
-      </span>
+      {@render modelCell(
+        modelOptimum?.dock.forestayMm ?? null,
+        modelOptimum ? `${signed(modelOptimum.dock.forestayMm, 0, 'mm')} forestay` : '',
+      )}
       {#each recs as { id, rec } (id)}
         <span class="cell" role="cell">
           {#if !rec}
             <span class="missing">not loaded</span>
+          {:else if rec.rakeNote === null || rec.rakeNote === undefined}
+            {@render noValue('no published value in this guide')}
           {:else}
-            {rec.rakeNote ?? 'n/a'}
+            {rec.rakeNote}
           {/if}
         </span>
       {/each}
@@ -198,15 +260,16 @@
 
     <div class="row" role="row">
       <span class="rowlabel" role="rowheader">Target BSP</span>
-      <span class="cell tabular-nums" role="cell">
-        {modelOptimum ? fmt(modelOptimum.bsKt.value, 2, 'kt') : 'n/a'}
-      </span>
+      {@render modelCell(
+        modelOptimum?.bsKt.value ?? null,
+        modelOptimum ? fmt(modelOptimum.bsKt.value, 2, 'kt') : '',
+      )}
       {#each recs as { id, rec } (id)}
         <span class="cell tabular-nums" role="cell">
           {#if !rec}
             <span class="missing">not loaded</span>
           {:else if rec.targets.bsKt === null}
-            n/a
+            {@render noValue('no published value in this guide')}
           {:else}
             {fmt(rec.targets.bsKt, 2, 'kt')}
             {@const d = delta(modelOptimum?.bsKt.value ?? null, rec.targets.bsKt)}
@@ -218,15 +281,16 @@
 
     <div class="row" role="row">
       <span class="rowlabel" role="rowheader">Target heel</span>
-      <span class="cell tabular-nums" role="cell">
-        {modelOptimum ? fmt(modelOptimum.heelDeg.value, 0, '°') : 'n/a'}
-      </span>
+      {@render modelCell(
+        modelOptimum?.heelDeg.value ?? null,
+        modelOptimum ? fmt(modelOptimum.heelDeg.value, 0, '°') : '',
+      )}
       {#each recs as { id, rec } (id)}
         <span class="cell tabular-nums" role="cell">
           {#if !rec}
             <span class="missing">not loaded</span>
           {:else if rec.targets.heelDeg === null}
-            n/a
+            {@render noValue('no published value in this guide')}
           {:else}
             {fmt(rec.targets.heelDeg, 0, '°')}
             {@const d = delta(modelOptimum?.heelDeg.value ?? null, rec.targets.heelDeg)}
@@ -316,6 +380,39 @@
     margin: 0;
     font-size: var(--text-sm);
     color: var(--ink-2);
+  }
+
+  .copy.err {
+    color: var(--bad);
+  }
+
+  .updating {
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  /* Numbers on screen belong to the previous condition until the new solve
+     lands, so they read as receding rather than current. */
+  .panel.stale .grid {
+    opacity: 0.6;
+  }
+
+  /* A bar, not a spinner: "still solving" without pretending to be a number. */
+  .skel {
+    display: inline-block;
+    width: 3.5ch;
+    height: 0.7em;
+    border-radius: 2px;
+    background: var(--muted);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .grid {

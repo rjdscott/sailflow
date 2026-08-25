@@ -3,8 +3,11 @@ import type { DockControls, DockScore, OptimalResult } from '../../core/types';
 import type { Request } from '../../worker/protocol';
 import {
   candidateSetups,
+  cellState,
   computeModelOptimum,
   ModelOptimumStore,
+  NOISE,
+  verdict,
   type Client,
 } from './store.svelte';
 
@@ -104,6 +107,38 @@ describe('computeModelOptimum', () => {
   it('throws rather than inventing an optimum when the solver returns nothing', async () => {
     const client: Client = { request: (() => Promise.resolve([])) as Client['request'] };
     await expect(computeModelOptimum(client, 12, 2, 300)).rejects.toThrow(/no dock scores/);
+  });
+});
+
+describe('cellState', () => {
+  it('separates "still solving" from "no value" (M-05)', () => {
+    expect(cellState(3.5, true)).toBe('value');
+    expect(cellState(0, false)).toBe('value');
+    expect(cellState(null, true)).toBe('solving');
+    expect(cellState(null, false)).toBe('none');
+    expect(cellState(undefined, false)).toBe('none');
+  });
+});
+
+describe('verdict', () => {
+  it('says nothing about agreement before the model has answered', () => {
+    expect(verdict(false, true, [])).toBe('comparing');
+    expect(verdict(false, false, [])).toBe('unknown');
+  });
+
+  it('claims a disagreement only when a delta is outside the noise band', () => {
+    expect(verdict(true, false, [NOISE, -NOISE, null])).toBe('agree');
+    expect(verdict(true, false, [0.1, NOISE + 0.01])).toBe('disagree');
+    expect(verdict(true, false, [-3, 0])).toBe('disagree');
+  });
+
+  it('claims neither when the guides publish nothing comparable', () => {
+    expect(verdict(true, false, [null, null])).toBe('unknown');
+    expect(verdict(true, false, [])).toBe('unknown');
+  });
+
+  it('reports on the numbers already on screen while a refresh is in flight', () => {
+    expect(verdict(true, true, [2])).toBe('disagree');
   });
 });
 
