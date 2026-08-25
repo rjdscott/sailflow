@@ -182,12 +182,13 @@ export function localAoa(
   twistTopDeg: number,
   at: number,
 ): number {
-  const twistAt = Math.max(0, twistTopDeg) * clamp((at - 0.25) / 0.5, 0, 1);
+  // Half the geometric twist reaches the local flow (upwash fills part of it). prov: assumed
+  const twistAt = 0.5 * Math.max(0, twistTopDeg) * clamp((at - 0.25) / 0.5, 0, 1);
   return awaDeg - sheetDeg - twistAt;
 }
 
-/** Jib luff telltale, read against a target entry angle of attack. prov: assumed 10° */
-export function luffRibbon(aoaDeg: number, entryDeg = 10, band = 3): Ribbon {
+/** Jib luff telltale, read against a target entry angle of attack. prov: assumed 12° */
+export function luffRibbon(aoaDeg: number, entryDeg = 12, band = 3): Ribbon {
   const d = aoaDeg - entryDeg;
   if (d < -band) return 'lifting';
   if (d > band) return 'stalled';
@@ -196,11 +197,11 @@ export function luffRibbon(aoaDeg: number, entryDeg = 10, band = 3): Ribbon {
 
 /**
  * Main leech telltale. The leech stalls when the top of the sail is
- * over-trimmed: little twist and a closed boom. prov: assumed target 6°, band 4°
+ * over-trimmed: little twist and a closed boom. prov: assumed target 8°, band 4°
  */
 export function leechRibbon(awaDeg: number, boomDeg: number, twistDeg: number, at = 1): Ribbon {
   const aoa = localAoa(awaDeg, boomDeg, twistDeg, at);
-  const d = aoa - 6;
+  const d = aoa - 8;
   if (d > 4) return 'stalled';
   if (d < -4) return 'lifting';
   return 'streaming';
