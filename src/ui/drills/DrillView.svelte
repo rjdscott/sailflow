@@ -3,14 +3,15 @@
   import { prefersReducedMotion, Tween } from 'svelte/motion';
   import Sheet from '../components/Sheet.svelte';
   import Slider from '../components/Slider.svelte';
-  import Readouts from '../race/Readouts.svelte';
+  import InstrumentBar from '../race/InstrumentBar.svelte';
+  import { History } from '../instruments/history';
   import ScoreSheet from './ScoreSheet.svelte';
   import { distanceSteps, MEDAL_BANDS, RACE_KEYS, type Drill } from '../../lib/drills';
   import { drills } from './store.svelte';
   import { fmt, snap, SEA_LABELS } from '../format';
   import type { ControlSpec, RaceControls } from '../../core/types';
   import type { TrimControl } from '../../worker/protocol';
-  import type { Objective } from '../race/store.svelte';
+  import { historyKey, type Objective } from '../race/store.svelte';
   import j70 from '../../../data/boats/j70.json';
 
   let { drill, onback }: { drill: Drill; onback: () => void } = $props();
@@ -28,7 +29,7 @@
     ].join(' · '),
   );
 
-  /** What "faster" means here, in the shape `Readouts` wants. */
+  /** What "faster" means here, in the shape the instrument bar wants. */
   const objective: Objective = $derived(
     drill.objective === 'speed'
       ? 'speed'
@@ -62,6 +63,22 @@
   const liveSteps = $derived(
     answer ? distanceSteps(drills.controls, answer.race, drill.free) : undefined,
   );
+
+  /**
+   * The drill's own trend buffer: the same instrument bar as Race, so the
+   * sparklines need somewhere to remember. One drill is one condition, so the
+   * key never changes and the buffer never resets under it.
+   */
+  const history = new History();
+  $effect(() => {
+    const r = drills.result;
+    if (!r?.converged) return;
+    history.push(historyKey(drill.condition), {
+      bs: r.bsKt.value,
+      vmg: r.vmgKt.value,
+      heel: r.heelDeg.value,
+    });
+  });
 
   // Live solve: any control move re-requests `trimmed`, debounced in the store.
   $effect(() => {
@@ -199,12 +216,14 @@
 
   <div class="col-secondary">
     {#if drills.result}
-      <Readouts
+      <InstrumentBar
         result={drills.result}
         twaDeg={drill.condition.twaDeg}
         {objective}
         busy={drills.loading}
         target={targets}
+        {history}
+        twsKt={drill.condition.twsKt}
       />
     {:else}
       <section class="card"><p class="quiet">Solving…</p></section>

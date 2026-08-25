@@ -6,18 +6,30 @@
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
   import Tabs from '../components/Tabs.svelte';
   import TopBar from '../components/TopBar.svelte';
+  import ActionsBar from '../race/ActionsBar.svelte';
   import ConditionsStrip from '../race/ConditionsStrip.svelte';
-  import DownAndDock from '../race/panels/DownAndDock.svelte';
   import Headsail from '../race/panels/Headsail.svelte';
+  import Helm from '../race/panels/Helm.svelte';
   import Mainsail from '../race/panels/Mainsail.svelte';
+  import Rig from '../race/panels/Rig.svelte';
   import InstrumentBar from '../race/InstrumentBar.svelte';
   import RigElevation from '../race/RigElevation.svelte';
   import SailSections from '../race/SailSections.svelte';
   import SailHero from '../three/SailHero.svelte';
-  import { CONTROLS, GAIN_EPS, OBJECTIVE_METRIC, race, raceObjective } from '../race/store.svelte';
+  import {
+    CONTROLS,
+    FORE_AFT_LABELS,
+    GAIN_EPS,
+    MODE_LABELS,
+    OBJECTIVE_METRIC,
+    race,
+    raceObjective,
+  } from '../race/store.svelte';
   import { snap } from '../format';
   import { nearestPointOfSail, POINTS_OF_SAIL } from '../race/pointOfSail';
-  import { optimum, OPTIMUM_REASON, OPTIMUM_TIER } from '../race/optimum.svelte';
+  import { optimum } from '../race/optimum.svelte';
+  import { play as playPuff } from '../race/PuffReplay.svelte';
+  import { puffPlayer } from '../race/puffPlayer.svelte';
   import { BASE_RACE, conditions } from '../stores/conditions.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
@@ -119,6 +131,20 @@
   }
 
   /**
+   * A/B compare: the same cleanup as undo — an apply half-tweened into place
+   * would keep lerping over the trim just swapped in — but both trims are
+   * kept, so pressing it again brings the other one back.
+   */
+  function abCompare(): void {
+    if (!race.previousRace) return;
+    from = to = null;
+    applied = null;
+    progress.set(1, { duration: 0 });
+    race.abToggle();
+    track('race.abCompare');
+  }
+
+  /**
    * Hand the trim on screen to the log form and go there. The entry itself is
    * written on the Log screen, so nothing is saved behind the user's back.
    */
@@ -128,6 +154,9 @@
       seaState: conditions.seaState,
       crewKg: conditions.crewKg,
       race: { ...$state.snapshot(race.controls.race) },
+      // The two the solver never saw: the mode being steered and where the
+      // crew sat. Notes, not fields, because the model does not read them.
+      notes: `Mode: ${MODE_LABELS[race.mode]}. Crew ${FORE_AFT_LABELS[race.crewForeAft]} (not modelled).`,
     });
     router.navigate('log');
   }
@@ -138,6 +167,10 @@
     applied = null;
     Object.assign(race.controls.race, BASE_RACE);
   }
+
+  // A replay left running after the screen goes away would keep rewriting the
+  // condition from a component nobody is looking at.
+  $effect(() => () => puffPlayer.cancel());
 
   let shortcutsOpen = $state(false);
 
@@ -157,7 +190,11 @@
     else if (action.type === 'applyOptimum') {
       if (canApply) applyOptimum();
     } else if (action.type === 'undo') undoTrim();
-    else if (action.type === 'focusPanel') focusPanel(action.panel);
+    else if (action.type === 'abCompare') abCompare();
+    else if (action.type === 'puffReplay') {
+      if (puffPlayer.playing) puffPlayer.cancel();
+      else playPuff('gust');
+    } else if (action.type === 'focusPanel') focusPanel(action.panel);
     else shortcutsOpen = true;
   }
 
@@ -239,55 +276,16 @@
         {/if}
       </p>
     </div>
-    <!-- Hover or focus any of these and the sliders it would move outline
-         themselves, before it moves them (research §3 principle 24). -->
-    <div class="actions">
-      <button
-        type="button"
-        class="apply"
-        onclick={applyOptimum}
-        disabled={!canApply}
-        onpointerenter={() => (race.hovering = race.willMove())}
-        onfocus={() => (race.hovering = race.willMove())}
-        onpointerleave={() => (race.hovering = null)}
-        onblur={() => (race.hovering = null)}
-      >
-        Apply optimum
-        <ConfidenceBadge tier={OPTIMUM_TIER} reason={OPTIMUM_REASON} />
-      </button>
-      {#if race.previousRace}
-        <button
-          type="button"
-          class="undo"
-          onclick={undoTrim}
-          onpointerenter={() => (race.hovering = race.willMoveTo(race.previousRace))}
-          onfocus={() => (race.hovering = race.willMoveTo(race.previousRace))}
-          onpointerleave={() => (race.hovering = null)}
-          onblur={() => (race.hovering = null)}
-        >
-          Back to my trim
-        </button>
-      {/if}
-      <button
-        type="button"
-        class="undo"
-        onclick={resetTrim}
-        onpointerenter={() => (race.hovering = race.willReset())}
-        onfocus={() => (race.hovering = race.willReset())}
-        onpointerleave={() => (race.hovering = null)}
-        onblur={() => (race.hovering = null)}
-      >
-        Base trim
-      </button>
-      <button type="button" class="undo" onclick={logTrim}>Log this trim</button>
-      {#if optimum.busy || optimum.stale}
-        <span class="hint">Searching…</span>
-      {:else if optimum.error}
-        <span class="hint">No optimum here: {optimum.error}</span>
-      {:else if optimum.result && optimum.moved.length === 0}
-        <span class="hint">Already there — nothing the model would move.</span>
-      {/if}
-    </div>
+    <!-- Everything that rewrites the whole trim lives in one bar, and every
+         button in it previews the sliders it would move (phase 05). -->
+    <ActionsBar
+      {canApply}
+      onapply={applyOptimum}
+      onab={abCompare}
+      onundo={undoTrim}
+      onreset={resetTrim}
+      onlog={logTrim}
+    />
     {#if applied?.length}
       <ul class="moved">
         {#each applied as m (m.label)}
@@ -434,7 +432,8 @@
 
     <Mainsail result={race.result} />
     <Headsail result={race.result} flying={conditions.sailset === 'jib'} />
-    <DownAndDock />
+    <Helm result={race.result} />
+    <Rig result={race.result} />
 
     {#if advanced}
       <section class="card">
@@ -531,50 +530,6 @@
 
   .insight.busy {
     opacity: 0.7;
-  }
-
-  .actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-3);
-  }
-
-  .apply,
-  .undo {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: var(--hit-min);
-    padding: 0 var(--space-3);
-    border-radius: var(--radius);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .apply {
-    border: 1px solid var(--accent);
-    background: var(--accent);
-    color: var(--on-accent);
-  }
-
-  .apply:disabled {
-    border-color: var(--line-strong);
-    background: transparent;
-    color: var(--ink-2);
-    cursor: default;
-  }
-
-  .undo {
-    border: 1px solid var(--line-strong);
-    background: transparent;
-    color: var(--ink);
-  }
-
-  .hint {
-    font-size: var(--text-xs);
-    color: var(--ink-2);
   }
 
   .moved {

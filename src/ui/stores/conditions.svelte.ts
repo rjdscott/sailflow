@@ -5,22 +5,18 @@
  * sliders from — not tuning-guide settings. The guide comparison lives in the
  * disagreement panel, not here, and the screen says so next to the buttons.
  */
+import boatJson from '../../../data/boats/j70.json';
 import type { Condition, RaceControls, SailSet, SeaState } from '../../core/types';
 
-/** Midpoint-ish race trim, the state every other preset moves away from. */
-export const BASE_RACE: RaceControls = {
-  backstay: 30,
-  mainsheet: 70,
-  traveller: 20,
-  cunningham: 20,
-  outhaul: 60,
-  vang: 30,
-  jibSheet: 70,
-  jibLead: 5,
-  inhauler: 20,
-  mainHalyard: 50,
-  jibHalyard: 50,
-};
+/**
+ * Midpoint-ish race trim, the state every other preset moves away from, read
+ * from `data/boats/j70.json`. It is the same block `core/shape/base.ts`'s
+ * `baseRace()` returns — the datum the shape deltas are measured against and
+ * the trim the leech-stall and spreader-stripe meters are calibrated on. The
+ * UI cannot import the core (ADR 0003), so both sides read the JSON rather
+ * than keeping two "base trims" that disagreed (carried from phase 03).
+ */
+export const BASE_RACE: RaceControls = boatJson.baseRace as RaceControls;
 
 export interface Preset {
   id: string;

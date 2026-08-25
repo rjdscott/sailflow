@@ -7,6 +7,7 @@
   import SagIndicator from '../SagIndicator.svelte';
   import SailSectionStack from '../SailSectionStack.svelte';
   import SpreaderStripeGauge from '../SpreaderStripeGauge.svelte';
+  import { puffPlayer } from '../puffPlayer.svelte';
   import { race } from '../store.svelte';
   import ControlRow from './ControlRow.svelte';
   import { explainText, explainTitle } from './copy';
@@ -44,6 +45,7 @@
 <Panel
   title="Headsail"
   id="headsail-title"
+  lit={puffPlayer.litIndex('headsail')}
   cue="Trim until the top leech ribbon just stalls, then ease a hair — if it keeps stalling, move the lead aft."
 >
   {#snippet controls()}

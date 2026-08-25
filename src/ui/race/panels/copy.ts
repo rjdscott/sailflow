@@ -14,6 +14,10 @@ const READOUT_TITLES: Record<string, string> = {
   batten: 'Top batten angle',
   draft: 'Draft depth',
   sag: 'Headstay sag',
+  heel: 'Heel angle',
+  helm: 'Helm load',
+  rake: 'Mast rake',
+  prebend: 'Prebend',
 };
 
 /** Sheet title for a control or a readout, or an empty string for neither. */

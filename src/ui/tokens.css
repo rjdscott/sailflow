@@ -148,7 +148,7 @@
    attribute is written on <html> by App.svelte — absent means "follow the
    system", `on` opts back in on a machine that reduces globally, `off`
    reduces everywhere. Component-level `prefers-reduced-motion` rules
-   (Readouts, PlanView) stay as they are: this block's !important wins. */
+   (PlanView) stay as they are: this block's !important wins. */
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-motion='on']) *,
   :root:not([data-motion='on']) *::before,

@@ -79,6 +79,67 @@ export function objectiveKt(objective: Objective, r: SolveResult): number {
   return objective === 'vmgDown' ? -r.vmgKt.value : r.vmgKt.value;
 }
 
+/**
+ * Modes: a deliberate deviation from the VMG angle, which is what a mode *is*
+ * (S11, "The Mechanics of Mode": typically 3–10° off VMG). Upwind the offset
+ * is applied to the close-hauled solve, downwind to the run's.
+ *
+ * prov: assumed for every offset (ASSUMPTIONS.md). S11 gives the 3–10° range
+ * but no per-mode number, and the downwind three come from the five-mode
+ * article's descriptions (S15), not from a published angle table.
+ */
+export type RaceMode = 'high' | 'vmg' | 'fast' | 'plane' | 'soak' | 'wing';
+
+export const MODE_OFFSET_DEG: Record<RaceMode, number> = {
+  high: -3,
+  vmg: 0,
+  fast: 3,
+  plane: -10,
+  soak: 8,
+  wing: 15,
+};
+
+export const UPWIND_MODES: { value: RaceMode; label: string }[] = [
+  { value: 'high', label: 'High' },
+  { value: 'vmg', label: 'VMG' },
+  { value: 'fast', label: 'Fast' },
+];
+
+export const DOWNWIND_MODES: { value: RaceMode; label: string }[] = [
+  { value: 'plane', label: 'Plane' },
+  { value: 'soak', label: 'Soak' },
+  { value: 'wing', label: 'Wing' },
+  { value: 'vmg', label: 'VMG' },
+];
+
+export const MODE_LABELS: Record<RaceMode, string> = {
+  high: 'High',
+  vmg: 'VMG',
+  fast: 'Fast',
+  plane: 'Plane',
+  soak: 'Soak',
+  wing: 'Wing',
+};
+
+/** The TWA slider's own range: a mode may not steer outside the boat's world. */
+const TWA_MIN = 20;
+const TWA_MAX = 180;
+
+/** Where the crew sits fore and aft. Drawing only — the core has no input for it. */
+export type ForeAft = 'fwd' | 'mid' | 'aft';
+
+export const FORE_AFT: { value: ForeAft; label: string }[] = [
+  { value: 'fwd', label: 'Fwd' },
+  { value: 'mid', label: 'Mid' },
+  { value: 'aft', label: 'Aft' },
+];
+
+export const FORE_AFT_LABELS: Record<ForeAft, string> = {
+  fwd: 'forward',
+  mid: 'mid',
+  aft: 'aft',
+};
+
 export interface Probe {
   control: string;
   dir: Dir;
@@ -168,6 +229,23 @@ export class RaceStore {
    * nobody asked for.
    */
   previousRace: RaceControls | null = $state(null);
+  /**
+   * The objective — VMG or boat speed, per `raceObjective` — at the trim in
+   * `previousRace`, captured when it was remembered. The A/B bar's delta, so
+   * comparing two trims costs no extra solve.
+   */
+  previousObjKt: number | null = $state(null);
+  /** Which side of the A/B compare is on the sliders. 'A' until you toggle. */
+  ab: 'A' | 'B' = $state('A');
+  /** The chosen mode, and the angle its offset is measured from. */
+  mode: RaceMode = $state('vmg');
+  modeBaseTwaDeg: number | null = $state(null);
+  /**
+   * Crew fore-aft. **Not modelled**: the solver takes crew weight, never its
+   * position, so this changes no number on the screen. It is here so the
+   * tuning log can record what the crew was actually doing (tier C).
+   */
+  crewForeAft: ForeAft = $state('mid');
   /** Advanced mode only: reveals the downwind controls under the C-tier banner. */
   downwind = $state(false);
   error: string | null = $state(null);
@@ -235,9 +313,16 @@ export class RaceStore {
     return this.willMoveTo(BASE_RACE);
   }
 
-  /** Park the current trim so `undo()` can put it back exactly. */
+  /** The objective at the trim currently solved, or null before the first answer. */
+  #objectiveNow(): number | null {
+    return this.result ? objectiveKt(raceObjective(conditions.value), this.result) : null;
+  }
+
+  /** Park the current trim so `undo()` and the A/B toggle can put it back exactly. */
   remember(): void {
     this.previousRace = { ...$state.snapshot(this.controls.race) };
+    this.previousObjKt = this.#objectiveNow();
+    this.ab = 'A';
   }
 
   /** Restore the remembered trim, every key, exactly. No-op with nothing to undo. */
@@ -246,6 +331,62 @@ export class RaceStore {
     // Mutate in place: the panel's sliders bind to this object.
     Object.assign(this.controls.race, this.previousRace);
     this.previousRace = null;
+    this.previousObjKt = null;
+    this.ab = 'A';
+  }
+
+  /**
+   * A/B compare: swap the trim on the sliders with the remembered one, keeping
+   * **both**, so toggling twice is exactly where you started. Undo throws the
+   * other trim away; this one does not, which is the whole difference between
+   * "put it back" and "which of these two is faster".
+   */
+  abToggle(): void {
+    if (!this.previousRace) return;
+    const other = this.previousRace;
+    const current = { ...$state.snapshot(this.controls.race) };
+    const currentObjKt = this.#objectiveNow();
+    // Mutate in place: the panels' sliders bind to this object.
+    Object.assign(this.controls.race, other);
+    this.previousRace = current;
+    this.previousObjKt = currentObjKt;
+    // The incoming trim's own objective is re-solved, not restored: the
+    // condition may have moved since it was parked.
+    this.ab = this.ab === 'A' ? 'B' : 'A';
+  }
+
+  /** Controls that differ between the two sides of the compare. */
+  get abMoved(): string[] {
+    return this.willMoveTo(this.previousRace);
+  }
+
+  /**
+   * This trim's objective minus the other one's, in knots — positive means
+   * the trim on the sliders is the faster of the two. Null until both sides
+   * have a solved answer.
+   */
+  get abDeltaKt(): number | null {
+    const now = this.#objectiveNow();
+    if (now === null || this.previousObjKt === null) return null;
+    return now - this.previousObjKt;
+  }
+
+  /**
+   * Pick a mode: the same point of sail, steered `MODE_OFFSET_DEG` off the
+   * angle the chip solved for. The base angle is remembered, so High → Fast
+   * is a 6° change and not two 3° ones, and it is re-taken every time a chip
+   * is tapped.
+   */
+  setMode(mode: RaceMode): void {
+    const base = this.modeBaseTwaDeg ?? conditions.twaDeg;
+    this.modeBaseTwaDeg = base;
+    this.mode = mode;
+    conditions.twaDeg = Math.min(TWA_MAX, Math.max(TWA_MIN, base + MODE_OFFSET_DEG[mode]));
+  }
+
+  /** Modes for the point of sail on screen: reaching offsets are downwind ones. */
+  get downwindModes(): boolean {
+    return Math.abs(conditions.twaDeg) >= 90 || conditions.sailset === 'asym';
   }
 
   applyPreset(p: Preset): void {
@@ -268,6 +409,10 @@ export class RaceStore {
     conditions.sailset = p.sailset;
     conditions.twaDeg = p.twaDeg;
     this.pointOfSail = { id, twaDeg: p.twaDeg };
+    // A new point of sail is a new VMG angle, so the mode offsets start again
+    // from it rather than compounding onto the last chip's angle.
+    this.mode = 'vmg';
+    this.modeBaseTwaDeg = p.twaDeg;
     if (!p.optimal) {
       this.pointOfSailBusy = null;
       return;
@@ -284,6 +429,9 @@ export class RaceStore {
         if (seq !== this.#posSeq) return;
         conditions.twaDeg = Math.round(Math.abs(r.twaDeg));
         this.pointOfSail = { id, twaDeg: conditions.twaDeg };
+        // The solved VMG angle is what a mode is measured off (S11).
+        this.modeBaseTwaDeg = conditions.twaDeg;
+        if (this.mode !== 'vmg') this.setMode(this.mode);
         this.pointOfSailBusy = null;
       })
       .catch(() => {
