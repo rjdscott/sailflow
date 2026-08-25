@@ -15,8 +15,8 @@ not hidden.
 
 - [x] `src/core/aero/orc/depower.ts` (or wherever `clampFlat` lives): spinnaker `flatmin = 0.53` when `sailset === 'asym'`; test; `pnpm validate` before/after diff in the progress log. If the asym hold-out rows move, say by how much and whether it is towards or away from the published polar.
 - [x] `data/boats/j70.json` `sails.asym.orcTable` → the correct table for the cited edition; `PROVENANCE.md` row.
-- [ ] `PROVENANCE.md`: ORC VPP edition pinned by year for the spinnaker tables; note the 2026 coefficient change and that the repo carries the earlier edition.
-- [ ] Progress log.
+- [x] `PROVENANCE.md`: ORC VPP edition pinned by year for the spinnaker tables; note the 2026 coefficient change and that the repo carries the earlier edition.
+- [x] Progress log.
 
 ## Verification
 
@@ -116,3 +116,42 @@ Both are correct in the 2023 edition and both also renumber in 2026 (2026
 inserted a new Table 5.1 for RS percentages and a new 5.7 for roller-furling
 jib deltas). The edition pin in `PROVENANCE.md` covers all three labels at
 once, so neither needed its own row for this.
+
+### 2026-08-25 — the ORC VPP edition is pinned by year
+
+`PROVENANCE.md` gains a hand-written section above the generated marker: the
+coefficient tables in `src/core/aero/orc/tables.ts` are the **2023 edition**,
+the spinnaker table numbering by edition (5.6/5.7/5.8 → 5.8/5.9/5.10), the
+2026 asym-on-centreline coefficient change with the numbers, and why the repo
+stays on 2023.
+
+The reason to pin by year rather than by document: ORC changed these numbers
+**without announcing it**. CL at 130° AWA went 0.372 → 0.592 (+59 %), raising
+derived drive at 130–150° by ~36 %, while the 2026 revision list names only
+the foiling model, RS rating assessment and neural-network bounds, and a
+standing footnote still claims the last single-sail coefficient change was in
+2016. A citation without an edition year silently tracks whichever PDF is at
+the URL today.
+
+**Staying on 2023 is a decision, not inertia**, and the section says so: the
+hydro calibration was fitted against the 2023 coefficients and the reference
+polar is older still (VPP 2011 1.02), so adopting 2026 means a re-fit and a
+re-run of the hold-out gate — and +36 % of drive at 130–150° AWA lands
+squarely on the regime the gate's asym VMG rows occupy. Moving one of the
+three without the others trades a known bias for an unknown one. Flagged as
+"until re-validated" rather than left implicit.
+
+Two numbers were deliberately *not* written down. The research reads the 2026
+main and jib table numbers off no table, so the section says the main (`5.1`)
+and jib (`5.4`) labels renumber in 2026 without guessing to what; and the 170°
+row's 2026 CD is absent from the research's table, so that row is out of the
+comparison and the 20 % figure appears only as prose from the derived `CFx`.
+
+`pnpm validate` before → after: header lines only (generated-at, commit). Gate
+unchanged, `FAIL — 21/25`. `make check` green.
+
+**Phase closed 🟢, with one caveat for whoever reads the gate.** Step 1 was the
+only behavioural change and it did not move the gate — but that is because the
+rows the gate scores never de-powered near the floor, not because the fix was
+inert. It binds on eight asym rows the gate does not score (every TWA 180° row
+plus TWS 20 kt at 60°), so a future gate that adds deep-angle rows will see it.

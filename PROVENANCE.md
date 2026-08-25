@@ -9,6 +9,63 @@ Kinds: **published** (printed in a source), **measured** (from an
 instrument), **derived** (computed from published values by a stated
 method), **assumed** (no source; see ASSUMPTIONS.md).
 
+## The ORC VPP edition is pinned by year
+
+**`src/core/aero/orc/tables.ts` transcribes the ORC VPP Documentation, 2023
+edition** (`orc-vpp-2023` below). Citing "the ORC VPP documentation" without a
+year is not enough: ORC moves both the table numbers and the numbers in them
+between editions, and in one case did so without saying it had.
+
+**Table numbering by edition.** The 2026 edition inserted a new Table 5.1 (RS
+percentages) and a new Table 5.7 (roller-furling jib deltas), pushing the
+spinnaker tables down by two. Every `orcTable` label in `data/boats/j70.json`
+is **2023 numbering**; the main (`5.1`) and jib (`5.4`) labels also renumber in
+2026, by how much is not recorded here because it was not read off the 2026
+document.
+
+| Sail | 2023 / 2024 | 2026 |
+| --- | --- | --- |
+| Symmetric spinnaker (`kpss` 0.02639) | 5.6 | 5.8 |
+| **Asymmetric on centreline** (`kpasc` 0.02648) — the J/70 | **5.7** | 5.9 |
+| Asymmetric on a pole (`kpasp` 0.02648) | 5.8 | 5.10 |
+
+**The 2026 edition changed the asymmetric-on-centreline coefficients, and the
+revision list does not mention it.** The section still carries a footnote
+saying the last adjustment to single-sail coefficients was made in 2016. It is
+wrong. Read off the two published tables, with drive
+`CFx = CL·sin β − CD·cos β` derived from them:
+
+| AWA | 2023 CL | 2026 CL | 2023 CD | 2026 CD | drive `CFx` |
+| ---: | ---: | ---: | ---: | ---: | --- |
+| 75° | 1.075 | 1.130 | 0.477 | 0.400 | 0.915 → 0.988 |
+| 115° | 0.805 | 0.885 | 0.566 | 0.565 | 0.969 → 1.041 |
+| **130°** | **0.372** | **0.592** (+59 %) | 0.475 | 0.540 | 0.590 → 0.801 (**+36 %**) |
+| 150° | 0.100 | 0.240 | 0.352 | 0.420 | 0.355 → 0.484 (**+36 %**) |
+| 180° | 0.000 | 0.000 | 0.262 | 0.195 | 0.262 → 0.195 (**−26 %**) |
+
+Net effect: 2026 raises deep-angle drive by ~36 % at 130–150° and lowers it
+20–26 % at 170–180°. It does not move the peak — maximum drive is at 100° AWA
+in both editions.
+
+**The repo stays on 2023 deliberately, until re-validated.** The whole hydro
+calibration was fitted against the 2023 coefficients, so adopting 2026 is a
+re-fit and a re-run of the hold-out gate, not a table swap: +36 % of drive at
+130–150° AWA is exactly the regime the gate's asymmetric VMG rows live in, and
+the reference polar those rows are scored against is older still (ORC Speed
+Guide, VPP 2011 1.02). Swapping one of the three without the others would
+trade a known bias for an unknown one. Numbers above from research
+[`2026-08-25-spinnaker/01-asymmetric-aerodynamics.md`](docs/research/2026-08-25-spinnaker/01-asymmetric-aerodynamics.md)
+§2.1–2.3, which read both editions directly.
+
+**One constant is not from 2023, on purpose.**
+`FLAT_MIN_SPINNAKER = 0.53` — the baseline minimum `flat` with a spinnaker or a
+headsail set flying — comes from the **2026** edition, §5.1 footnote 3, which
+records the change as made in 2024. The 2023 text gives only the 0.42 upwind
+baseline and no separate offwind floor, so there is nothing to carry from it;
+leaving 0.42 in place let the solver de-power downwind past what the VPP
+permits. The mixed edition is the honest trade and is flagged in the constant's
+own docblock.
+
 <!-- generated: do not edit below this line -->
 
 ## Sources
