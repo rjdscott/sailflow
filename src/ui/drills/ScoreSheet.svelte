@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
+  import { OPTIMUM_REASON, OPTIMUM_TIER } from '../race/optimum.svelte';
   import type { DrillScore } from './store.svelte';
 
   let {
@@ -42,14 +44,27 @@
       <p class="medal">{stale ? 'Re-check' : MEDAL[score.medal].label}</p>
       <p class="loss tabular-nums">
         {steps(score.distanceSteps)} off the optimum · {score.lossPct.toFixed(1)} % VMG lost
+        <!-- Both numbers are read off the same searched optimum, so they carry
+             its tier, not the polar's (audit ux-02 H-02). -->
+        <ConfidenceBadge tier={OPTIMUM_TIER} reason={OPTIMUM_REASON} />
       </p>
     </div>
   </div>
 
   {#if stale}
     <p class="quiet">You have moved a control since this score. Press Check again.</p>
+  {:else if score.isBest && score.prevBestSteps !== null}
+    <p class="quiet">New best — your closest before this was {steps(score.prevBestSteps)}.</p>
   {:else if score.isBest}
     <p class="quiet">Closest you have been on this drill.</p>
+  {:else if score.prevBestSteps !== null}
+    <p class="quiet">Your best on this drill is {steps(score.prevBestSteps)}.</p>
+  {/if}
+
+  {#if score.hintUsed}
+    <p class="quiet">
+      Solved with a hint — recorded, and the spacing schedule grades this attempt one step lower.
+    </p>
   {/if}
 
   {#if cTier}
@@ -63,8 +78,8 @@
     <p class="note">{score.guideNote}</p>
   {/if}
 
-  <p class="coach">{score.coach}</p>
-
+  <!-- The coach line itself lives in the Goal card, where it stays on screen
+       and above the sliders while the learner acts on it (audit ux-02 M-06). -->
   {#if score.deltas.length}
     <ul class="deltas">
       {#each score.deltas as d (d.key)}
@@ -74,6 +89,10 @@
         </li>
       {/each}
     </ul>
+    <p class="quiet">
+      The same answer is a ghost tick on each slider now, or take it in one move with
+      <em>Apply the answer</em>.
+    </p>
   {/if}
 
   <div class="actions">
@@ -101,7 +120,6 @@
 
   .medal,
   .loss,
-  .coach,
   .note,
   .quiet {
     margin: 0;
@@ -126,11 +144,6 @@
   .loss {
     font-size: var(--text-sm);
     color: var(--ink-2);
-  }
-
-  .coach {
-    font-size: var(--text-md);
-    color: var(--ink);
   }
 
   /* Same quiet warn strip as the drill view's C-tier banner. */
