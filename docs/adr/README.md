@@ -51,5 +51,5 @@ line. Don't hand-edit.
 | [0010](0010-persistence-behind-a-log-store-interface-localstorage-then-indexeddb.md) | Persistence behind a LogStore interface: localStorage now, IndexedDB when the schema settles | Accepted |
 | [0011](0011-two-d-svg-and-canvas-only-for-epic-1.md) | 2D SVG and Canvas only for Epic 1; no WebGL until measured | Accepted |
 | [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) | The calibration hold-out is split by wind speed, not by sailing angle | Accepted |
-| [0013](0013-drills-generated-from-fault-templates-scored-in-control-space.md) | Drills generated from fault templates, scored in control space | Proposed |
+| [0013](0013-drills-generated-from-fault-templates-scored-in-control-space.md) | Drills generated from fault templates, scored in control space | Accepted |
 <!-- index:end -->
