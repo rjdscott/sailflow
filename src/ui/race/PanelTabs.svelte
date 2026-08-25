@@ -1,6 +1,7 @@
 <script lang="ts">
   import { prefersReducedMotion } from 'svelte/motion';
   import { PANELS, panelSection, type PanelId } from '../keys';
+  import { conditions } from '../stores/conditions.svelte';
 
   /**
    * The phone's panel strip: four tabs under the instrument bar that scroll
@@ -63,7 +64,9 @@
       aria-current={current === p.id ? 'true' : undefined}
       onclick={() => go(p.id)}
     >
-      {p.short}
+      <!-- The headsail slot carries whichever sail is up (phase 03), so the
+           tab that scrolls to it says which one that is. -->
+      {p.id === 'headsail' && conditions.sailset === 'asym' ? 'Kite' : p.short}
     </button>
   {/each}
 </nav>

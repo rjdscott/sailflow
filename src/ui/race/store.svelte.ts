@@ -257,8 +257,6 @@ export class RaceStore {
    * tuning log can record what the crew was actually doing (tier C).
    */
   crewForeAft: ForeAft = $state('mid');
-  /** Advanced mode only: reveals the downwind controls under the C-tier banner. */
-  downwind = $state(false);
   error: string | null = $state(null);
   /**
    * Controls a pending action would move, while its button is hovered or
@@ -490,7 +488,15 @@ export class RaceStore {
     base: SolveResult,
   ): Promise<void> {
     const asked: { control: string; dir: Dir; solve: Promise<SolveResult> }[] = [];
-    for (const control of PROBE_CONTROLS) {
+    // Under the kite the jib carries no shape, so nudging its lead moves no
+    // number and could never win the coach line anyway — this just stops the
+    // screen buying two solves an answer for a sail that is furled, the same
+    // filter `core/solve/optimalTrim` applies to its active set.
+    const probed =
+      condition.sailset === 'jib'
+        ? (PROBE_CONTROLS as readonly string[])
+        : PROBE_CONTROLS.filter((c) => !c.startsWith('jib'));
+    for (const control of probed) {
       for (const dir of [1, -1] as Dir[]) {
         const nudged = nudge(controls, control, dir);
         if (nudged) asked.push({ control, dir, solve: this.#trimmed(nudged, condition) });

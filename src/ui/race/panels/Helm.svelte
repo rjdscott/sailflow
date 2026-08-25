@@ -11,7 +11,6 @@
   import { panelControlsId } from '../../keys';
   import { track } from '../../../lib/telemetry';
   import { conditions } from '../../stores/conditions.svelte';
-  import { settings } from '../../stores/settings.svelte';
   import { puffPlayer } from '../puffPlayer.svelte';
   import {
     DOWNWIND_MODES,
@@ -21,26 +20,22 @@
     type ForeAft,
     type RaceMode,
   } from '../store.svelte';
-  import ControlRow from './ControlRow.svelte';
   import { explainText, explainTitle } from './copy';
 
   /**
    * Helm & conditions: the two gauges that only mean anything together, the
-   * mode you are steering, where the crew is, and — under the kite — the
-   * downwind control set (ADR 0015, research §3 panel 4).
+   * mode you are steering, and where the crew is (ADR 0015, research §3
+   * panel 4).
+   *
+   * The downwind controls used to live here behind a checkbox. They are the
+   * Gennaker panel's now: under the kite the Headsail slot *is* that panel, so
+   * a second home for the same four sliders was one home too many (phase 03).
    *
    * S3's point is a correctness requirement, not a layout preference: helm
    * feel only reports trim while heel is steady, so the helm bar never
    * appears without the heel gauge beside it.
    */
   let { result }: { result: SolveResult | null } = $props();
-
-  const downValues = race.controls.down as unknown as Record<string, number>;
-  const DOWN_IDS = ['kiteHalyard', 'tackLine', 'kiteSheet', 'sprit'];
-
-  const advanced = $derived(settings.advanced);
-  /** Kite hoisted: the kite rows show in every tier, checkbox or not (ux-01 M-22). */
-  const kiteUp = $derived(conditions.sailset === 'asym');
 
   const heel = $derived(heelBands(conditions.twsKt));
   const modes = $derived(race.downwindModes ? DOWNWIND_MODES : UPWIND_MODES);
@@ -119,26 +114,6 @@
         />
       </div>
       <p class="note">Crew fore-aft is <strong>not modelled</strong> — it is logged, not solved.</p>
-
-      {#if advanced || kiteUp}
-        <section class="kite" aria-label="Downwind controls">
-          <span class="section-title">
-            Kite
-            {#if advanced && !kiteUp}
-              <label class="dw">
-                <input type="checkbox" bind:checked={race.downwind} />
-                show
-              </label>
-            {/if}
-          </span>
-          {#if race.downwind || kiteUp}
-            <p class="banner"><ConfidenceBadge tier="C" /> Downwind is direction only.</p>
-            {#each DOWN_IDS as id (id)}
-              <ControlRow {id} values={downValues} tier="C" onexplain={explain} />
-            {/each}
-          {/if}
-        </section>
-      {/if}
     </div>
   {/snippet}
 
@@ -212,36 +187,6 @@
   /* Prose is the learn tier's job; race and analyse have the chips. */
   :global([data-tier='learn']) .note {
     display: block;
-  }
-
-  .kite {
-    display: flex;
-    flex-direction: column;
-    margin-top: var(--space-2);
-    padding-top: var(--space-2);
-    border-top: 1px solid var(--line);
-  }
-
-  .banner {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin: var(--space-2) 0 0;
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    color: var(--ink-2);
-    font-size: var(--text-xs);
-  }
-
-  .dw {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: var(--hit-min);
-    margin-left: auto;
-    text-transform: none;
-    letter-spacing: normal;
   }
 
   .explainer {

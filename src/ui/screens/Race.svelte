@@ -7,6 +7,7 @@
   import TopBar from '../components/TopBar.svelte';
   import ActionsBar from '../race/ActionsBar.svelte';
   import ConditionsStrip from '../race/ConditionsStrip.svelte';
+  import Gennaker from '../race/panels/Gennaker.svelte';
   import Headsail from '../race/panels/Headsail.svelte';
   import Helm from '../race/panels/Helm.svelte';
   import Mainsail from '../race/panels/Mainsail.svelte';
@@ -282,8 +283,16 @@
   </section>
 
   <div class="p-main"><Mainsail result={race.result} /></div>
+  <!-- One slot, two sails: under the kite the jib is furled and the gennaker
+       is what the hand is on, so the Headsail panel becomes the Gennaker panel
+       (phase 03). Both keep the `headsail` ids, so `j`, the phone's tab strip
+       and the puff replay never learn which sail is up. -->
   <div class="p-jib">
-    <Headsail result={race.result} flying={conditions.sailset === 'jib'} />
+    {#if conditions.sailset === 'asym'}
+      <Gennaker result={race.result} />
+    {:else}
+      <Headsail result={race.result} flying={conditions.sailset === 'jib'} />
+    {/if}
   </div>
   <div class="p-helm"><Helm result={race.result} /></div>
   <div class="p-rig"><Rig result={race.result} /></div>

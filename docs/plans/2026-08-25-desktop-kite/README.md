@@ -29,7 +29,7 @@ gennaker is drawn, answers its four controls, and has its own panel.
 | 00 | [ADRs and plan](phase-00-adrs-and-plan.md) | 🟢 Completed | 2026-08-25 |
 | 01 | [Desktop layout: fill the screen, no internal scroll](phase-01-desktop-layout.md) | 🟢 Completed | 2026-08-25 |
 | 02 | [Kite geometry: loft, plan view, section stack](phase-02-kite-geometry.md) | 🟢 Completed | 2026-08-25 |
-| 03 | [Gennaker panel](phase-03-gennaker-panel.md) | 🔵 Not started | none |
+| 03 | [Gennaker panel](phase-03-gennaker-panel.md) | 🟢 Completed | 2026-08-25 |
 | 04 | [Verify and close out](phase-04-close-out.md) | 🔵 Not started | none |
 | 05 | [Kite flying shape from the research](phase-05-kite-shape-from-research.md) | 🔵 Not started | none |
 | 06 | [Core downwind corrections](phase-06-core-downwind-corrections.md) | 🔵 Not started | none |

@@ -95,7 +95,7 @@ export const SHORTCUTS: { keys: string; what: string }[] = [
   { keys: '[  ]', what: 'Nudge the focused slider one step' },
   { keys: '←  →', what: 'Nudge the focused slider one step' },
   { keys: 'm', what: 'Jump to the Mainsail controls' },
-  { keys: 'j', what: 'Jump to the Headsail controls' },
+  { keys: 'j', what: 'Jump to the Headsail controls (Gennaker under the kite)' },
   { keys: 'h', what: 'Jump to the Helm panel' },
   { keys: 'r', what: 'Jump to the Rig panel' },
   { keys: 'o', what: 'Apply optimum' },

@@ -135,6 +135,17 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     tip, because the plan's assumed mast station (0.45·LOA) is not the rig's J.
     The kite hangs off a straight, unraked spar there: a plan view has no third
     axis. Presentation only.
+  - **Downwind playbook bands** (`src/ui/race/downwind.ts`, copy only): the
+    Gennaker panel's mode line keys off four wind-speed boundaries — wing-on-wing
+    from 10 kt, tack-up soaking above 9 kt, lazy planing from 13 kt, and the
+    curl cue withdrawn above 15 kt. These are the sailmakers' own numbers, not
+    the app's, from research `2026-08-25-spinnaker` doc 03 §§2–3 (`T2` `T4`
+    `T5` `T6`), and each is `prov:` tagged at its constant. They select a
+    sentence and never a number: nothing downstream reads them. Where the
+    sources disagree the panel shows the spread rather than a value — the
+    running tack ease is quoted as the corpus's 0–12 in across four J/70
+    sources (doc 03 §4), because averaging four irreconcilable figures would
+    invent a fifth.
 - **Leech-profile drawing** (`src/ui/race/geometry.ts` `leechProfile`,
   presentation only): the main's chord at the foot, ¼, ½ and ¾ heights is
   taken as 1 / 0.78 / 0.56 / 0.34 of the foot — assumed, a roughly triangular

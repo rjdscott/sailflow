@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Instruments, SolveResult } from '../../core/types';
-import { verdict } from './verdict';
+import { DOWNWIND_CUE, verdict } from './verdict';
 
 const INSTRUMENTS: Instruments = {
   leechStallFrac: { value: 0.55, tier: 'C', sign: 1 },
@@ -137,6 +137,40 @@ describe('verdict', () => {
     expect(verdict({ result: dn, target: { vmgKt: -2.8 }, objective: 'vmgDown' })).toContain(
       '0.20 kt above target',
     );
+  });
+
+  it('names the kite sheet under the kite, where no measured cue can explain the gap', () => {
+    const dn = result({ vmgKt: { value: -3.0, tier: 'B', band: [-3.2, -2.8] } });
+    expect(verdict({ result: dn, target: { vmgKt: -3.2 }, objective: 'vmgDown' })).toBe(
+      `0.20 kt below target: ${DOWNWIND_CUE}`,
+    );
+    // No jib is up downwind, so nothing here may mention one.
+    expect(DOWNWIND_CUE).not.toMatch(/jib/i);
+  });
+
+  it('keeps the downwind line as the last resort, behind the probe and the instruments', () => {
+    const dn = result({ vmgKt: { value: -3.0, tier: 'B', band: [-3.2, -2.8] } });
+    // A probe with something to say outranks it.
+    expect(
+      verdict({
+        result: dn,
+        target: { vmgKt: -3.2 },
+        objective: 'vmgDown',
+        coach: 'Ease mainsheet one click: +0.06 kt VMG, leech is stalled.',
+      }),
+    ).toContain('Ease mainsheet');
+    // And a stalled main leech outranks both.
+    expect(
+      verdict({
+        result: result(
+          { vmgKt: { value: -3.0, tier: 'B', band: [-3.2, -2.8] } },
+          { leechStallFrac: { value: 0.9, tier: 'C', sign: 1 } },
+        ),
+        target: { vmgKt: -3.2 },
+        objective: 'vmgDown',
+        coach: 'Ease mainsheet one click: +0.06 kt VMG, leech is stalled.',
+      }),
+    ).toContain('main leech stalled');
   });
 
   it('reads boat speed on a reach', () => {
