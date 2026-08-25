@@ -213,6 +213,59 @@ export const SAG_FORWARD_FRACTION = 0.6;
  */
 export const SAG_MAX_FRACTION = 0.3;
 
+/**
+ * Leech bulge: how far the leech stands out to leeward and forward of the
+ * straight head→clew line, m, at full trim and the travel added by full ease.
+ * A straight leech into the masthead makes every upper section hook inboard
+ * — the top of the sail reads closed, and easing the sheet cannot open it,
+ * because the head is pinned. The real leech falls away to leeward in its
+ * upper half (the shoulders every photograph of a J/70 kite shows), most
+ * of all when the sheet is eased and the leech twists open.
+ * prov: assumed 0.4 m trimmed, +0.7 m eased, peak at ~63 % height, 0.4 of
+ * the bulge forward — read off photographs (owner-supplied, 2026-08-26) and
+ * the twist-opens-with-ease direction in research doc 02 §5; no measured
+ * leech profile exists. The leech's cloth length stays the published
+ * 8.8 m: the straight head→clew distance is shortened by the arc surplus.
+ */
+export const LEECH_BULGE_MIN_M = 0.4;
+export const LEECH_BULGE_TRAVEL_M = 0.7;
+export const LEECH_BULGE_FORWARD_FRACTION = 0.4;
+/** `sin(π·t^k)` peaks where t^k = ½: k = 1.5 puts it at ~63 % of the leech. */
+export const LEECH_BULGE_PEAK_EXPONENT = 1.5;
+
+/**
+ * The straight chord that, bulged by `bulge` on `leechBulgeProfile`, has arc
+ * length `arcM`. The profile is not a parabola, so this is a numerical
+ * length rather than the closed form the luff uses: 64 samples, three
+ * fixed-point passes, deterministic, and within 0.1 % of the sampled arc.
+ */
+export function chordForArc(arcM: number, bulge: number): number {
+  const N = 64;
+  const arcOf = (c: number): number => {
+    let len = 0;
+    let px = 0;
+    let py = 0;
+    for (let i = 1; i <= N; i++) {
+      const t = i / N;
+      const x = c * t;
+      const y = bulge * leechBulgeProfile(t);
+      len += Math.hypot(x - px, y - py);
+      px = x;
+      py = y;
+    }
+    return len;
+  };
+  let c = arcM;
+  for (let k = 0; k < 3; k++) c = (c * arcM) / arcOf(c);
+  return c;
+}
+
+/** Where along the leech (0 clew, 1 head) the bulge profile is, 0..1. */
+export function leechBulgeProfile(t: number): number {
+  const u = Math.min(1, Math.max(0, t));
+  return Math.sin(Math.PI * Math.pow(u, LEECH_BULGE_PEAK_EXPONENT));
+}
+
 // ---------------------------------------------------------------------------
 // Geometry
 // ---------------------------------------------------------------------------
@@ -260,12 +313,18 @@ export const BARE_SPAR: KiteRig = {
  * held it at the tack's height at every setting, because `chordDir` has no
  * vertical component.
  */
-export function clewOnCircle(tack: Vec3, head: Vec3, thetaRad: number, side: Side): Vec3 {
+export function clewOnCircle(
+  tack: Vec3,
+  head: Vec3,
+  thetaRad: number,
+  side: Side,
+  leechM = LEECH_M,
+): Vec3 {
   const v = sub(head, tack);
   const L = Math.hypot(...v) || 1;
   const u = scaled(v, 1 / L);
   // Where the circle's plane cuts the tack→head axis, measured from the tack.
-  const a = (L * L + FOOT_M * FOOT_M - LEECH_M * LEECH_M) / (2 * L);
+  const a = (L * L + FOOT_M * FOOT_M - leechM * leechM) / (2 * L);
   const s = lee(side);
   const A = -u[0] * Math.cos(thetaRad) + s * u[2] * Math.sin(thetaRad);
   const uy = u[1] || 1e-9;
@@ -288,6 +347,8 @@ export interface KiteGeometry {
   chords: SailChords;
   /** Sheeting angle off the centreline, radians, unsigned: `buildSail`'s base. */
   sheetRad: number;
+  /** Straight head→clew distance, m: the published leech less the bulge's arc surplus. */
+  leechChord: number;
   /** Eased past `CURL_EASE_THRESHOLD`: the luff is unloaded and curling. */
   curl: boolean;
   /**
@@ -296,6 +357,8 @@ export interface KiteGeometry {
    * and only the luff bows. Camber and draft position are `shape.asym`'s.
    */
   sections: (shape: SailShape) => Section[];
+  /** The leech point at height `y` (clamped to the clew→head span). */
+  leechAt: (y: number) => Vec3;
 }
 
 const pct = (v: number): number => Math.min(1, Math.max(0, v / 100));
@@ -351,7 +414,12 @@ export function kiteGeometry(
 
   const ease = 1 - pct(down.kiteSheet);
   const sheetRad = (SHEET_TRIM_DEG + ease * (SHEET_EASE_DEG - SHEET_TRIM_DEG)) * DEG2RAD;
-  const clew = clewOnCircle(tack, head, sheetRad, side);
+  // The leech bows out by `bulge`; the same parabola-length reduction as the
+  // luff turns the published cloth length into the straight head→clew chord.
+  const bulge = LEECH_BULGE_MIN_M + ease * LEECH_BULGE_TRAVEL_M;
+  const leechChord = chordForArc(LEECH_M, bulge);
+  const clew = clewOnCircle(tack, head, sheetRad, side, leechChord);
+  const bulgeDir = norm([LEECH_BULGE_FORWARD_FRACTION, 0, lee(side)]);
 
   // The leech is a straight line from head to clew — a gennaker's leech is
   // held by the sheet and stands nearly straight, while the luff is the free
@@ -367,9 +435,9 @@ export function kiteGeometry(
   // on the leech line rather than on the clew itself.
   const leechAt = (y: number): Vec3 => {
     const t = Math.min(1, Math.max(0, (y - clew[1]) / (head[1] - clew[1] || 1)));
-    return lerp3(clew, head, t);
+    return add(lerp3(clew, head, t), scaled(bulgeDir, bulge * leechBulgeProfile(t)));
   };
-  // Seventeen knots, not the stack's five: the loft interpolates chord and
+  // Thirty-three knots, not the stack's five: the loft interpolates chord and
   // twist between knots, and five cannot follow a parabolic luff closely
   // enough to keep the leech on its line (measured 0.57 m off; 17 keeps it
   // under a few centimetres). Camber, draft position and entry are the
@@ -389,7 +457,7 @@ export function kiteGeometry(
       hs,
       stack.map((k) => k.entryRad),
     );
-    const KNOTS = 17;
+    const KNOTS = 33;
     return Array.from({ length: KNOTS }, (_, i) => {
       const h = i / (KNOTS - 1);
       const luff = spine(h);
@@ -415,6 +483,8 @@ export function kiteGeometry(
     spine,
     chords: KITE_CHORDS,
     sheetRad,
+    leechChord,
+    leechAt,
     curl: ease >= CURL_EASE_THRESHOLD,
     sections,
   };
