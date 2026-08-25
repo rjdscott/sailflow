@@ -3,6 +3,7 @@ import j70 from '../../data/boats/j70.json';
 import type { BoatDefinition } from '../core/types';
 import { baseDock, baseRace } from '../core/shape/base';
 import { handle } from './solver.worker';
+import type { Response } from './protocol';
 
 const boat = j70 as unknown as BoatDefinition;
 const cond = { twsKt: 10, twaDeg: 42, seaState: 1 as const, crewKg: 300, sailset: 'jib' as const };
@@ -76,5 +77,34 @@ describe('solver worker dispatch', () => {
       expect(json).not.toMatch(/NaN|Infinity/);
       expect(JSON.parse(json)).toEqual(r);
     }
+  });
+  it('emits progress before the result, only when the request asks for it', () => {
+    expect(handle({ protocolVersion: 1, id: 10, type: 'loadBoat', boat }).type).toBe('ok');
+    const req = {
+      protocolVersion: 1 as const,
+      id: 11,
+      type: 'dockScore' as const,
+      setups: [baseDock()],
+      candidates: [baseDock(), { upperTurns: 2, lowerTurns: 1, forestayMm: 0 }],
+      forecast: { minKt: 10, likelyKt: 11, maxKt: 12, seaState: 1 as const, crewKg: 300 },
+    };
+
+    const silent: unknown[] = [];
+    handle(req, (r) => silent.push(r));
+    expect(silent).toEqual([]);
+
+    const sent: Response[] = [];
+    const res = handle({ ...req, id: 12, progress: true }, (r) => sent.push(r));
+    expect(res).toMatchObject({ type: 'ok', id: 12 });
+    // 2 candidates x 3 wind speeds, every message JSON-safe and correlated.
+    expect(sent).toHaveLength(6);
+    expect(sent.at(-1)).toEqual({
+      protocolVersion: 1,
+      id: 12,
+      type: 'progress',
+      done: 6,
+      total: 6,
+    });
+    for (const m of sent) expect(JSON.parse(JSON.stringify(m))).toEqual(m);
   });
 });

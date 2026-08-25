@@ -39,6 +39,13 @@ export function backstayFromFlat(flat: number): number {
 export interface OptimalOptions {
   optimiseTwa: boolean;
   race?: RaceControls;
+  /**
+   * Golden-section budgets. Omitted means the accurate defaults above; dock
+   * scoring passes a coarser pair because it runs hundreds of these per
+   * screen (see `core/solve/dock`). Explicit numbers, not a `coarse` flag, so
+   * the accuracy test can sweep them.
+   */
+  iters?: { flat: number; twa: number };
 }
 
 export function optimal(
@@ -49,6 +56,8 @@ export function optimal(
   geom: Record<SailId, AeroGeometry> = geometryFor(boat),
 ): OptimalResult {
   const baseRaceCtl = opts.race ?? baseRace();
+  const flatIters = opts.iters?.flat ?? FLAT_ITERS;
+  const twaIters = opts.iters?.twa ?? TWA_ITERS;
   const upwind = Math.abs(condition.twaDeg) < 90; // prov: assumed, upwind/downwind split at 90° TWA
 
   const solveAt = (twaDeg: number, flat: number) => {
@@ -68,14 +77,14 @@ export function optimal(
       const vmg = v * Math.cos((twaDeg * Math.PI) / 180);
       return upwind ? vmg : -vmg;
     };
-    const g = goldenMax(objective, flatMin(), 1, FLAT_ITERS);
+    const g = goldenMax(objective, flatMin(), 1, flatIters);
     return { flat: g.x, score: g.fx };
   };
 
   let twaDeg = Math.abs(condition.twaDeg);
   if (opts.optimiseTwa) {
     const [a, b] = upwind ? TWA_UP : TWA_DN;
-    twaDeg = goldenMax((t) => bestFlatAt(t).score, a, b, TWA_ITERS).x;
+    twaDeg = goldenMax((t) => bestFlatAt(t).score, a, b, twaIters).x;
   }
   const { flat } = bestFlatAt(twaDeg);
   const { r, race } = solveAt(twaDeg, flat);

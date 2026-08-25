@@ -190,6 +190,7 @@
       Model and guides agree within the noise: no gap is larger than {NOISE} in the units shown.
     </p>
   {/if}
+  <p class="copy legend">&Delta; = model &minus; guide, in the guide's units.</p>
 
   <div class="grid" role="table" aria-label="Model versus tuning guides">
     <div class="row head" role="row">
@@ -220,7 +221,7 @@
                   1,
                 )}{/if}
               {#if d !== null}
-                <span class="delta {deltaClass(d)}">{signed(d, 1, '')}</span>
+                <span class="delta">{signed(d, 1, '')}</span>
               {/if}
             {/if}
           </span>
@@ -273,7 +274,7 @@
           {:else}
             {fmt(rec.targets.bsKt, 2, 'kt')}
             {@const d = delta(modelOptimum?.bsKt.value ?? null, rec.targets.bsKt)}
-            {#if d !== null}<span class="delta {deltaClass(d)}">{signed(d, 2, 'kt')}</span>{/if}
+            {#if d !== null}<span class="delta">{signed(d, 2, 'kt')}</span>{/if}
           {/if}
         </span>
       {/each}
@@ -294,7 +295,7 @@
           {:else}
             {fmt(rec.targets.heelDeg, 0, '°')}
             {@const d = delta(modelOptimum?.heelDeg.value ?? null, rec.targets.heelDeg)}
-            {#if d !== null}<span class="delta {deltaClass(d)}">{signed(d, 0, '°')}</span>{/if}
+            {#if d !== null}<span class="delta">{signed(d, 0, '°')}</span>{/if}
           {/if}
         </span>
       {/each}
@@ -415,6 +416,10 @@
     white-space: nowrap;
   }
 
+  .legend {
+    font-size: var(--text-xs);
+  }
+
   .grid {
     display: flex;
     flex-direction: column;
@@ -454,21 +459,22 @@
     flex-direction: column;
   }
 
+  /* Neutral: the panel never picks a winner, so a delta must not be painted as
+     approval or alarm (audit ux-01 M-06). The divergence history below keeps
+     the magnitude ramp, where ranking the gaps is the point of the list. */
   .delta {
     font-size: var(--text-xs);
+    color: var(--ink-2);
   }
 
-  .delta.muted,
   .muted {
     color: var(--ink-2);
   }
 
-  .delta.warn,
   .warn {
     color: var(--warn);
   }
 
-  .delta.bad,
   .bad {
     color: var(--bad);
   }

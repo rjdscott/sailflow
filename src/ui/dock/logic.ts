@@ -91,6 +91,19 @@ export function candidateSetups(cap = MAX_CANDIDATES): DockControls[] {
   return out;
 }
 
+/**
+ * A cheap stand-in reference grid: five setups spread evenly through
+ * `candidateSetups()`. T*(w) taken over these alone can only be slower than
+ * the real optimum, so regret scored against them is an under-estimate — the
+ * UI labels such a score provisional and replaces it with the full-grid one.
+ * Five is what fits inside the ~1 s the first paint is allowed.
+ */
+export function quickCandidates(): DockControls[] {
+  const grid = candidateSetups();
+  const n = Math.min(5, grid.length);
+  return Array.from({ length: n }, (_, i) => grid[Math.round((i * (grid.length - 1)) / (n - 1))]);
+}
+
 // ---------------------------------------------------------------------------
 // Tie band
 // ---------------------------------------------------------------------------

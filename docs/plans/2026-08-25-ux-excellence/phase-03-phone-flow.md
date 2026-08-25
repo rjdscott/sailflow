@@ -19,13 +19,13 @@ M-14, and the dock scoring latency risk.
       (M-05).
 - [x] Applying a suggestion while locked today prompts to unlock first (M-07).
 - [x] Dock columns get `.stack` (M-14).
-- [ ] Measure dock initial scoring on a mid phone; if >2 s, precompute
+- [x] Measure dock initial scoring on a mid phone; if >2 s, precompute
       T*(w) for the default forecast at build time or shrink the grid, and
       show a progress fraction instead of "Scoring…".
-      Measured (10.5 s on a warm desktop, see log) and the wait now names its
-      own size; the precompute/grid-shrink and the progress fraction are
-      **still open** — both need `src/core` or `src/worker`, which this phase
-      does not own.
+      Measured (10.5 s on a warm desktop, see log); the follow-up PR closed
+      it in `src/core` + `src/worker` — coarse `DOCK_ITERS`, a provisional
+      first pass, and a real `n / 324` progress fraction. Still owed: a
+      measurement on real phone hardware.
 - [x] Tests: commit two-step state machine; panel loading states.
 
 ## Verification
@@ -118,3 +118,91 @@ progress message — so a progress callback needs a protocol change, and
 precomputing T*(w) or shrinking the grid needs `src/core`. Both are left for the
 owner; neither is in this phase's file ownership.
 - 2026-08-25 — Merged as PR #31 except the scoring-latency item (measured 10.5 s desktop); a follow-up PR adds worker progress messages and cuts the work. Arm→confirm on phone shipped per owner brief, diverging from the audit's one-tap suggestion; revert is deleting `arm/disarm`.
+
+### 2026-08-25 — Dock scoring latency
+
+Baseline, measured on desktop with a scratch harness (default forecast
+8/12/16 kt, 36 candidates + the user's setup, 9 wind speeds = 324 lap solves):
+**10 594 ms** to first regret number. Each lap is two `optimal()` calls with
+`optimiseTwa: true`, i.e. a 12-iteration golden search on `flat` nested inside
+a 16-iteration one on TWA — about 600 equilibrium solves per lap.
+
+Two changes, both measured before being kept.
+
+**1. Progress over the protocol (additive, `PROTOCOL_VERSION` stays 1).**
+`dockScore` requests may carry `progress: true`; the worker then posts
+`{ type: 'progress', id, done, total }` messages before the `ok`. `handle()`
+takes an optional `emit` callback (defaulting to a no-op) that the real
+`onmessage` wires to `postMessage`. `SolverClient.request` gained an optional
+second argument `{ onProgress }`; a `progress` message fires the callback and
+leaves the request pending, so a client that ignores it still resolves
+normally. `stubClient` ignores the option entirely. `DockStore.progress`
+exposes `{ done, total } | null` and `RegretCard` renders "Scoring 47 / 324…".
+
+**2. Cut the work.** Options weighed by measurement:
+
+| Variant | First paint | Full result | Worst Δ expected regret vs full |
+|---|---|---|---|
+| Baseline (flat 12 / TWA 16) | 10 594 ms | 10 594 ms | — |
+| Coarse budgets flat 7 / TWA 8 | — | 4 176 ms | 0.18 s/mi |
+| Shared TWA per wind speed | — | 838 ms | 1.71 s/mi — rejected |
+| **Coarse + provisional first pass** | **719 ms** | **4 235 ms** | 0.18 s/mi |
+
+Option (b) chosen and capped at flat 7 / TWA 8: a sweep over three setups ×
+four wind speeds put worst-case lap-time error at 0.35 %, and the knock-on to
+a delivered expected-regret figure at 0.18 s/mile — under a tenth of the
+2 s/mile tie band the UI already refuses to resolve inside. The budgets live
+in `DOCK_ITERS` in `core/solve/dock.ts` and are passed through a new optional
+`OptimalOptions.iters`; `optimal()`'s own defaults are untouched, so race
+mode, calibration and the polar are unaffected and `validation/golden` replays
+byte-identical (no `pnpm golden` needed).
+
+Rejected: solving the optimal TWA once per wind speed against a reference rig
+and holding it for every candidate. It is 19× faster and the argmax TWA barely
+moves across the legal grid (≤ 0.1° at most wind speeds) — but at 16 kt
+downwind the model's VMG-vs-TWA curve is genuinely spiky and multi-modal
+(7.36 kt at 144°, 6.12 kt at 146° for a neighbouring rig), and collapsing to a
+shared angle moved some setups' expected regret by 1.7 s/mile. On a quantity
+whose values here run 0.0–0.5 s/mile that is not a rounding error. Noted in
+passing: the same spikiness means the downwind `optimiseTwa` search is already
+running golden section on a non-unimodal function. Not touched here — it is a
+solver-physics question, not a latency one.
+
+Option (a) also shipped, in the cheapest form that needed no new protocol
+message: `DockStore.send()` now scores twice. The first pass uses
+`quickCandidates()` (five setups spread through the grid) and paints in
+**719 ms**; the second uses the full grid and replaces it. `RegretCard` labels
+the first "Provisional — measured against five reference setups so far, so it
+can only rise", which is exactly the direction the error runs: T*(w) over a
+subset can only be slower than the true optimum. The solver's `lapCache` means
+the second pass re-solves only the candidates the first did not cover, so the
+two passes cost 333 laps against 324 for one.
+
+Option (c), shrinking `candidateSetups()`, was not used — it changes which
+setups can be suggested.
+
+Net: first paint 10 594 ms → **719 ms**, final number → 4 235 ms with a live
+count, and a slider nudge against a warm grid is 113 ms. All desktop; a phone
+is several times slower, so the final number is still the slow part and the
+progress count is what carries it. Not yet measured on real phone hardware —
+the manual pass below still owes that.
+
+### 2026-08-25 — Leftovers
+
+- **M-06** (`disagree/Panel.svelte`): the three delta cells lost their
+  valenced `muted`/`warn`/`bad` ramp and are now neutral `--ink-2`, with a
+  legend line under the copy. The legend reads "Δ = model − guide, in the
+  guide's units", not "guide − model" as the task text had it: the code
+  computes `model - guide` (`Panel.svelte:88`) and the divergence log persists
+  the same convention, so the stated direction was the one that would have
+  been a lie. The history list keeps the magnitude ramp — ranking gaps is that
+  list's whole job.
+- The 🔒 emoji in the Dock top bar is now `<LockIcon />`, stroked in
+  `currentColor` like the rest of the icon set.
+
+Verification: `make check` green (docs, lint, typecheck, 672 tests).
+New tests: worker round-trip asserts progress fires only when asked and is
+JSON-safe; client asserts callbacks arrive before the result and never after;
+`solve.test.ts` asserts the coarse budgets stay within 0.5 % of the full solve
+at three conditions and that progress cannot change the result; store tests
+cover the provisional→full handover and stale-run progress.

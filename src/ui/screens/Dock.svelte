@@ -1,5 +1,6 @@
 <script lang="ts">
   import TopBar from '../components/TopBar.svelte';
+  import LockIcon from '../components/LockIcon.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
   import { dock } from '../dock/store.svelte';
@@ -61,14 +62,21 @@
 
 <TopBar title="Dock">
   {#snippet lock()}
-    {#if rigLock.lockedToday}<span class="locked-chip" title="Rig committed for today">🔒</span
+    {#if rigLock.lockedToday}<span class="locked-chip" title="Rig committed for today"
+        ><LockIcon /></span
       >{/if}
   {/snippet}
 </TopBar>
 
 <div class="screen dock-screen">
   <div class="col-primary stack">
-    <RegretCard {score} busy={dock.busy} busyNote={scoringNote} />
+    <RegretCard
+      {score}
+      busy={dock.busy}
+      busyNote={scoringNote}
+      progress={dock.progress}
+      provisional={dock.provisional}
+    />
 
     {#if dock.error}
       <p class="error" role="alert">{dock.error}</p>
@@ -169,7 +177,8 @@
 
 <style>
   .locked-chip {
-    font-size: var(--text-md);
+    display: inline-flex;
+    color: var(--ink-2);
   }
 
   .table-wrap {

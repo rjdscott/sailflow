@@ -50,6 +50,76 @@ describe('stubClient', () => {
   });
 });
 
+describe('SolverClient progress', () => {
+  it('delivers every progress message before the result, and none after', async () => {
+    let onmessage: ((e: MessageEvent) => void) | undefined;
+    const post = (data: unknown) => onmessage?.({ data } as MessageEvent);
+    const fakeWorker = {
+      postMessage: (m: unknown) => {
+        const id = (m as { id: number }).id;
+        queueMicrotask(() => {
+          for (const done of [1, 2, 3])
+            post({ type: 'progress', id, protocolVersion: 1, done, total: 3 });
+          post({ type: 'ok', id, protocolVersion: 1, result: [] });
+          // Late progress for a settled request must be ignored, not thrown.
+          post({ type: 'progress', id, protocolVersion: 1, done: 4, total: 3 });
+        });
+      },
+      addEventListener: (_: string, fn: (e: MessageEvent) => void) => {
+        onmessage = fn;
+      },
+    } as unknown as Worker;
+
+    const { SolverClient } = await import('./client');
+    const client = new SolverClient(fakeWorker);
+    const seen: number[] = [];
+    let resolved = false;
+    await client
+      .request<DockScoreRequest>(
+        { type: 'dockScore', setups: [], forecast: undefined!, progress: true },
+        {
+          onProgress: (done, total) => {
+            expect(resolved).toBe(false); // never after the result
+            expect(total).toBe(3);
+            seen.push(done);
+          },
+        },
+      )
+      .then((r) => {
+        resolved = true;
+        return r;
+      });
+    await new Promise((r) => setTimeout(r, 0)); // let the late message land
+    expect(seen).toEqual([1, 2, 3]);
+  });
+
+  it('resolves normally when the caller passes no onProgress', async () => {
+    let onmessage: ((e: MessageEvent) => void) | undefined;
+    const fakeWorker = {
+      postMessage: (m: unknown) => {
+        const id = (m as { id: number }).id;
+        queueMicrotask(() => {
+          onmessage?.({
+            data: { type: 'progress', id, protocolVersion: 1, done: 1, total: 2 },
+          } as MessageEvent);
+          onmessage?.({ data: { type: 'ok', id, protocolVersion: 1, result: [] } } as MessageEvent);
+        });
+      },
+      addEventListener: (_: string, fn: (e: MessageEvent) => void) => {
+        onmessage = fn;
+      },
+    } as unknown as Worker;
+    const { SolverClient } = await import('./client');
+    await expect(
+      new SolverClient(fakeWorker).request<DockScoreRequest>({
+        type: 'dockScore',
+        setups: [],
+        forecast: undefined!,
+      }),
+    ).resolves.toEqual([]);
+  });
+});
+
 describe('SolverClient', () => {
   it('posts a structured-clone-safe copy of the request and correlates the reply', async () => {
     const posted: unknown[] = [];

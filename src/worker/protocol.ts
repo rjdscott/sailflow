@@ -85,6 +85,8 @@ export interface DockScoreRequest extends Base {
   forecast: Forecast;
   /** Optional reference grid for T*(w); defaults to the solver's legal grid. */
   candidates?: DockControls[];
+  /** Ask for `progress` messages before the result. Additive in protocol v1. */
+  progress?: boolean;
 }
 
 export type Request =
@@ -93,6 +95,16 @@ export type Request =
 export interface OkResponse<T> extends Base {
   type: 'ok';
   result: T;
+}
+
+/**
+ * Sent zero or more times before the `ok` for the same id, only when the
+ * request asked for it. A client that ignores these still gets its result.
+ */
+export interface ProgressResponse extends Base {
+  type: 'progress';
+  done: number;
+  total: number;
 }
 
 export interface ErrorResponse extends Base {
@@ -106,6 +118,7 @@ export type Response =
   | OkResponse<OptimalResult>
   | OkResponse<OptimalTrimResult>
   | OkResponse<DockScore[]>
+  | ProgressResponse
   | ErrorResponse;
 
 export type ResultOf<R extends Request> = R extends LoadBoatRequest

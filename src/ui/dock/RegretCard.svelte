@@ -7,14 +7,24 @@
   let {
     score,
     busy = false,
-    busyNote = 'Scoring…',
+    busyNote = 'Scoring\u2026',
+    progress = null,
+    provisional = false,
   }: {
     score: DockScore | null;
     busy?: boolean;
-    /** What the solve is chewing on. The worker answers once, with no progress
-        messages, so this states the size of the job rather than a fraction. */
+    /** What the solve is chewing on, when the worker reports no fraction. */
     busyNote?: string;
+    /** Laps solved / laps to solve, when the solver is reporting them. */
+    progress?: { done: number; total: number } | null;
+    /** Scored against a reduced reference grid, so the number can only rise. */
+    provisional?: boolean;
   } = $props();
+
+  /* A real fraction beats naming the size of the job, so it replaces it. */
+  const scoringNote = $derived(
+    progress ? `Scoring ${progress.done} / ${progress.total}\u2026` : busyNote,
+  );
 
   /** User units for the plot box; the SVG scales to the card via viewBox. */
   const W = 240;
@@ -35,6 +45,15 @@
       </p>
       <ConfidenceBadge tier={score.expectedRegretSPerMile.tier} />
     </div>
+    {#if provisional}
+      <p class="note">
+        Provisional &mdash; measured against five reference setups so far, so it can only rise.
+        {#if busy}{scoringNote}{/if}
+      </p>
+    {:else if busy}
+      <p class="note">{scoringNote}</p>
+    {/if}
+
     {#if score.expectedRegretSPerMile.band}
       <p class="band tabular-nums">
         band {fmt(score.expectedRegretSPerMile.band[0], 1)}–{fmt(
@@ -103,7 +122,7 @@
       is the price of committing once, not a mistake.
     </p>
   {:else}
-    <p class="explain">{busy ? busyNote : 'No score yet.'}</p>
+    <p class="explain">{busy ? scoringNote : 'No score yet.'}</p>
   {/if}
 </section>
 
@@ -123,6 +142,12 @@
   }
 
   .band {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  .note {
     margin: var(--space-1) 0 0;
     font-size: var(--text-xs);
     color: var(--ink-2);
