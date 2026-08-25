@@ -17,6 +17,9 @@
 4. `04-decision-log.md`: every owner Q&A answer, verbatim intent, with the
    recommendation that was offered. Decisions are promoted to ADRs; this file
    is the audit trail.
+5. `05-second-class-readiness.md`: what a second boat class costs today —
+   every hardcoded `j70.json` import and the estimated refactor (audit ux-02
+   L-05, assessment only).
 
 ## Verdict (summary; decisions live in ADRs)
 

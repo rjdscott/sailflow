@@ -32,5 +32,5 @@ test: ## Run tests
 
 check: docs-check lint typecheck test ## Run all checks (docs, lint, typecheck, test)
 
-validate: ## Polar validation, local only (placeholder for later)
+validate: ## Polar hold-out gate + regenerate validation/report.md (CI runs it non-blocking)
 	pnpm validate

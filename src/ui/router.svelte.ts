@@ -3,6 +3,8 @@
  * routing library. Unknown hashes fall back to the default route.
  */
 
+import { track } from '../lib/telemetry';
+
 export const ROUTES = ['race', 'dock', 'log', 'drills', 'more', 'kit'] as const;
 export type Route = (typeof ROUTES)[number];
 
@@ -22,8 +24,11 @@ class Router {
 
   constructor() {
     if (typeof window !== 'undefined') {
+      track(`view.${this.route}`);
       window.addEventListener('hashchange', () => {
-        this.route = parseHash(currentHash());
+        const next = parseHash(currentHash());
+        if (next !== this.route) track(`view.${next}`);
+        this.route = next;
       });
     }
   }

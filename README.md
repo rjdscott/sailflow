@@ -29,6 +29,13 @@ day against a forecast wind range. A disagreement panel compares the model's
 recommendation against the North and Quantum tuning guides. A tuning log
 records what was tried; drills rehearse the decisions.
 
+## Model honesty
+
+Every push regenerates the polar hold-out comparison in CI (the `validate`
+job, non-blocking) and prints the held-out rows and the gate verdict in the
+job summary — see [`validation/report.md`](validation/report.md) and
+[`docs/runbooks/run-validation-and-recalibrate.md`](docs/runbooks/run-validation-and-recalibrate.md).
+
 ## Quick start
 
 ```bash
