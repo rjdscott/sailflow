@@ -29,6 +29,16 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 - `hydro.heelDragK` fitted at ~2× the value `hydro/resistance.ts` assumes;
   `aero.hbiM` pinned at its 1.4 m upper bound (the fit wanted more heeling
   arm). Both are the fit compensating for missing physics, not measurements.
+- **Target draft depth versus wind speed.** `shape/toOrc.ts` scores a section's
+  CLmax and CD0 penalty against the depth the breeze wants, not against the
+  base setup: `shape.draftTargetPerKt` 0.025 of the base draft per knot away
+  from `shape.draftTargetRefKt` 12 kt, clamped to ±`shape.draftTargetSpan`
+  0.25. All three are assumed; only the direction — full in light air, flat in
+  breeze — is claimed, and it comes from the two guides' published backstay
+  bands, not from a measurement. Without it the penalty was a well centred on
+  one wind band, so flattening paid at every wind speed and the model's own
+  optimum inverted the guides (audit ux-02 H-04). `flat` still measures from
+  the base setup, as ORC §5.1.3 defines it.
 - **Drill medals**: gold ≤ 1 %, silver ≤ 3 %, bronze ≤ 6 % VMG loss
   (`src/lib/drills.ts`, assumed).
 - **Dock forecast pmf**: triangular on a 1-kt grid with a 5 % floor (ADR 0009, assumed).

@@ -1,7 +1,7 @@
 # Validation report
 
-- **Generated:** 2026-08-25 03:32:05 UTC
-- **Commit:** `f15c3e9`
+- **Generated:** 2026-08-25 03:48:34 UTC
+- **Commit:** `7dbc3ff`
 - **Boat:** `j70` — geometry hash `c31fb449`
 - **Calibration:** hash `ab97c1e7` — 18 fitted parameter(s)
 - **Replay condition:** sea state 1, crew 340 kg, dock rig at the guide base, race trim optimised (prov: assumed — the Speed Guide prints neither).
@@ -18,18 +18,18 @@ VMG rows are solved with the TWA optimised; 60/90/120° rows are solved at the p
 
 | row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 4.15 | 3.94 | 5.1 % | 44.1 | 43.4 | 0.7° | 3.0 | 2.9 | 3.0 % / 2° | **FAIL** |
-| vmgDn asym | 4.32 | 4.10 | 5.0 % | 141.9 | 145.4 | 3.5° | 11.8 | 0.6 | 3.0 % / 2° | **FAIL** |
-| 60° jib | 4.83 | 4.56 | 5.6 % | 60.0 | 60.0 | — | 3.0 | 2.8 | 5.0 % | **FAIL** |
-| 90° jib | 4.93 | 4.71 | 4.6 % | 90.0 | 90.0 | — | 2.1 | 1.8 | 5.0 % | ok |
-| 120° jib | 3.83 | 3.72 | 2.9 % | 120.0 | 120.0 | — | 0.9 | 0.6 | 5.0 % | ok |
+| vmgUp jib | 4.15 | 3.94 | 5.1 % | 44.1 | 43.5 | 0.6° | 3.0 | 2.9 | 3.0 % / 2° | **FAIL** |
+| vmgDn asym | 4.32 | 4.10 | 5.2 % | 141.9 | 145.5 | 3.6° | 11.8 | 0.6 | 3.0 % / 2° | **FAIL** |
+| 60° jib | 4.83 | 4.55 | 5.7 % | 60.0 | 60.0 | — | 3.0 | 2.8 | 5.0 % | **FAIL** |
+| 90° jib | 4.93 | 4.70 | 4.6 % | 90.0 | 90.0 | — | 2.1 | 1.8 | 5.0 % | ok |
+| 120° jib | 3.83 | 3.72 | 3.0 % | 120.0 | 120.0 | — | 0.9 | 0.6 | 5.0 % | ok |
 
 ### TWS 8 kt — HELD-OUT
 
 | row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | vmgUp jib | 4.80 | 4.72 | 1.6 % | 40.7 | 40.7 | 0.0° | 4.5 | 4.8 | 3.0 % / 2° | ok |
-| vmgDn asym | 5.19 | 5.19 | 0.1 % | 144.8 | 145.7 | 0.9° | 12.0 | 0.9 | 3.0 % / 2° | ok |
+| vmgDn asym | 5.19 | 5.19 | 0.0 % | 144.8 | 145.7 | 0.9° | 12.0 | 0.9 | 3.0 % / 2° | ok |
 | 60° jib | 5.72 | 5.55 | 3.1 % | 60.0 | 60.0 | — | 4.3 | 4.6 | 5.0 % | ok |
 | 90° jib | 5.82 | 5.69 | 2.2 % | 90.0 | 90.0 | — | 2.8 | 2.9 | 5.0 % | ok |
 | 120° jib | 4.80 | 4.74 | 1.2 % | 120.0 | 120.0 | — | 1.3 | 1.0 | 5.0 % | ok |
@@ -58,31 +58,31 @@ VMG rows are solved with the TWA optimised; 60/90/120° rows are solved at the p
 
 | row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 5.89 | 6.23 | 5.8 % | 38.0 | 39.8 | 1.8° | 20.8 | 16.4 | 3.0 % / 2° | **FAIL** |
+| vmgUp jib | 5.89 | 6.23 | 5.8 % | 38.0 | 39.8 | 1.8° | 20.8 | 16.3 | 3.0 % / 2° | **FAIL** |
 | vmgDn asym | 6.26 | 7.21 | 15.1 % | 172.0 | 146.5 | 25.5° | 11.7 | 2.0 | 3.0 % / 2° | **FAIL** |
-| 60° jib | 6.93 | 7.01 | 1.2 % | 60.0 | 60.0 | — | 23.1 | 14.9 | 5.0 % | ok |
+| 60° jib | 6.93 | 7.01 | 1.1 % | 60.0 | 60.0 | — | 23.1 | 14.9 | 5.0 % | ok |
 | 90° jib | 7.29 | 7.30 | 0.1 % | 90.0 | 90.0 | — | 6.5 | 6.4 | 5.0 % | ok |
-| 120° jib | 6.52 | 6.66 | 2.2 % | 120.0 | 120.0 | — | 2.5 | 2.5 | 5.0 % | ok |
+| 120° jib | 6.52 | 6.66 | 2.1 % | 120.0 | 120.0 | — | 2.5 | 2.5 | 5.0 % | ok |
 
 ### TWS 16 kt — FIT
 
 | row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 5.95 | 6.30 | 5.9 % | 37.1 | 38.3 | 1.2° | 21.5 | 21.6 | 3.0 % / 2° | **FAIL** |
-| vmgDn asym | 6.73 | 6.39 | 5.1 % | 174.0 | 169.3 | 4.7° | 11.7 | 0.6 | 3.0 % / 2° | **FAIL** |
-| 60° jib | 7.05 | 7.26 | 3.0 % | 60.0 | 60.0 | — | 23.5 | 20.1 | 5.0 % | ok |
-| 90° jib | 7.91 | 7.71 | 2.5 % | 90.0 | 90.0 | — | 14.0 | 7.8 | 5.0 % | ok |
-| 120° jib | 6.92 | 7.08 | 2.3 % | 120.0 | 120.0 | — | 3.0 | 3.2 | 5.0 % | ok |
+| vmgUp jib | 5.95 | 6.30 | 5.9 % | 37.1 | 38.4 | 1.3° | 21.5 | 21.5 | 3.0 % / 2° | **FAIL** |
+| vmgDn asym | 6.73 | 6.37 | 5.3 % | 174.0 | 170.0 | 4.0° | 11.7 | 0.6 | 3.0 % / 2° | **FAIL** |
+| 60° jib | 7.05 | 7.25 | 2.9 % | 60.0 | 60.0 | — | 23.5 | 19.9 | 5.0 % | ok |
+| 90° jib | 7.91 | 7.70 | 2.7 % | 90.0 | 90.0 | — | 14.0 | 7.8 | 5.0 % | ok |
+| 120° jib | 6.92 | 7.06 | 2.1 % | 120.0 | 120.0 | — | 3.0 | 3.2 | 5.0 % | ok |
 
 ### TWS 20 kt — FIT
 
 | row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 5.94 | 6.32 | 6.5 % | 38.3 | 37.3 | 1.0° | 24.2 | 24.6 | 3.0 % / 2° | **FAIL** |
-| vmgDn asym | 11.53 | 12.56 | 9.0 % | 137.1 | 138.2 | 1.1° | 19.0 | 9.7 | 3.0 % / 2° | **FAIL** |
-| 60° jib | 7.13 | 7.62 | 6.9 % | 60.0 | 60.0 | — | 24.9 | 27.3 | 5.0 % | **FAIL** |
-| 90° jib | 8.66 | 8.84 | 2.1 % | 90.0 | 90.0 | — | 24.1 | 16.3 | 5.0 % | ok |
-| 120° jib | 7.88 | 7.83 | 0.6 % | 120.0 | 120.0 | — | 4.3 | 4.8 | 5.0 % | ok |
+| vmgUp jib | 5.94 | 6.31 | 6.3 % | 38.3 | 37.3 | 1.0° | 24.2 | 24.5 | 3.0 % / 2° | **FAIL** |
+| vmgDn asym | 11.53 | 12.39 | 7.5 % | 137.1 | 137.9 | 0.8° | 19.0 | 9.5 | 3.0 % / 2° | **FAIL** |
+| 60° jib | 7.13 | 7.60 | 6.5 % | 60.0 | 60.0 | — | 24.9 | 26.8 | 5.0 % | **FAIL** |
+| 90° jib | 8.66 | 8.72 | 0.6 % | 90.0 | 90.0 | — | 24.1 | 15.5 | 5.0 % | ok |
+| 120° jib | 7.88 | 7.77 | 1.4 % | 120.0 | 120.0 | — | 4.3 | 4.8 | 5.0 % | ok |
 
 ## Gate (ADR 0007)
 
@@ -95,10 +95,10 @@ Tolerances, frozen by ADR 0007: held-out VMG rows within **3.0 %** boat speed an
 
 Rows outside tolerance:
 
-- TWS 6 jib 60°: boat speed 5.6 %
+- TWS 6 jib 60°: boat speed 5.7 %
 - TWS 14 jib vmgUp: boat speed 5.8 %, angle 1.8°
 - TWS 14 asym vmgDn: boat speed 15.1 %, angle 25.5°
-- TWS 20 jib 60°: boat speed 6.9 %
+- TWS 20 jib 60°: boat speed 6.5 %
 
 ## Model optimum vs North base settings
 
@@ -106,13 +106,13 @@ For each North tuning-guide band, the dock setup the model picks at the band mid
 
 | band | TWS | guide uppers | guide lowers | model uppers | model lowers | model forestay | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| <6 kt | 5 | -3 | -2 | 6 | 0 | 0 mm | |
-| 6-8 kt | 7 | -2 | -1 | 6 | 0 | 0 mm | |
-| 8-10 kt | 9 | 0 | 0 | 6 | 0 | 0 mm | calibrated here |
-| 10-12 kt | 11 | 2 | 1 | 6 | 0 | 0 mm | |
-| 12-16 kt | 14 | 4 | 2 | 2 | -2 | 0 mm | calibrated here |
-| 16-20 kt | 18 | 6 | 3 | 4 | -2 | 30 mm | |
-| 20+ kt | 22 | 6 | 5 | 2 | -2 | 30 mm | |
+| <6 kt | 5 | -3 | -2 | -3 | 5 | 30 mm | |
+| 6-8 kt | 7 | -2 | -1 | -3 | 1 | 30 mm | |
+| 8-10 kt | 9 | 0 | 0 | -3 | -2 | 30 mm | calibrated here |
+| 10-12 kt | 11 | 2 | 1 | -1 | -2 | 0 mm | |
+| 12-16 kt | 14 | 4 | 2 | 6 | -2 | 0 mm | calibrated here |
+| 16-20 kt | 18 | 6 | 3 | 6 | -2 | 0 mm | |
+| 20+ kt | 22 | 6 | 5 | 6 | -2 | 0 mm | |
 
 Guide turns are relative to the guide base (Loos PT-2 22 uppers / 12 lowers); model turns are on the same scale. A row where the two disagree is information, not a bug: the guide optimises for a fleet and a sail inventory, the model for lap time under this hydro fit.
 

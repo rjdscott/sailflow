@@ -494,6 +494,77 @@ describe('13. per-control trim optimum', () => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// 14. Backstay follows the tuning guides' direction
+// ---------------------------------------------------------------------------
+
+/**
+ * Backstay off in light air, backstay on in breeze — the one thing every
+ * tuning guide for the boat agrees on, and the thing the model got backwards
+ * (audit ux-02 H-04: the per-control optimum wanted 80 % backstay at 6 kt on
+ * flat water and 15 % at 20 kt).
+ *
+ * Scored at the rig the North guide publishes for each band, because that is
+ * the only state at which the guides' backstay numbers are claims about the
+ * same boat. Thresholds are one-sided bands well clear of the published
+ * numbers, not the numbers themselves: prov: `data/tuning/quantum-j70.json`
+ * publishes backstay 25 % at and below 12 kt and 90 % at 20-23 kt, and the
+ * model is not calibrated against either guide. Only the direction is asserted.
+ */
+describe('14. backstay direction matches the tuning guides', () => {
+  /**
+   * Rig and trim as the North guide publishes them for the band, everything
+   * except the backstay. prov: data/tuning/north-j70.json — the <6/6-8 kt rows
+   * (uppers -2, lowers -1, outhaul "Loose", vang "0%", traveller above centre,
+   * jib lead 4-5 holes) and the 20+ kt row (uppers 6, lowers 5, outhaul 100 %,
+   * vang 100 %, traveller 4-6 in below centre). The percentages are this app's
+   * own reading of the guide's words onto the 0-100 scales, as in `baseRace()`.
+   *
+   * The trim matters as much as the rig: scored from `baseRace()` alone the
+   * model gets the direction right by accident. H-04 shows up once the other
+   * ten controls are already set for the band, which is the state a sailor is
+   * actually in when they reach for the backstay.
+   */
+  const LIGHT: RaceControls = {
+    ...baseRace(),
+    traveller: 15,
+    cunningham: 0,
+    outhaul: 25,
+    vang: 0,
+    jibSheet: 50,
+    jibLead: 4,
+  };
+  const HEAVY: RaceControls = {
+    ...baseRace(),
+    traveller: -30,
+    cunningham: 60,
+    outhaul: 100,
+    vang: 100,
+    jibSheet: 70,
+    jibLead: 4,
+  };
+  const LIGHT_RIG: DockControls = { upperTurns: -2, lowerTurns: -1, forestayMm: 20 };
+  const HEAVY_RIG: DockControls = { upperTurns: 6, lowerTurns: 5, forestayMm: 0 };
+
+  const bestBackstay = (c: Condition, dock: DockControls, race: RaceControls) =>
+    optimalTrim(boat, controls(dock, race), c, {}, GEOM).race.backstay;
+
+  const light = () => bestBackstay({ ...cond(6, 44), seaState: 0 }, LIGHT_RIG, LIGHT);
+  const heavy = () => bestBackstay(cond(20, 38), HEAVY_RIG, HEAVY);
+
+  it('is 40 % or less at 6 kt on flat water (guide: 25 %)', () => {
+    expect(light()).toBeLessThanOrEqual(40);
+  });
+
+  it('is 60 % or more at 20 kt (guide: 90 %)', () => {
+    expect(heavy()).toBeGreaterThanOrEqual(60);
+  });
+
+  it('is strictly more backstay at 20 kt than at 6 kt', () => {
+    expect(heavy()).toBeGreaterThan(light());
+  });
+});
+
 // Type-level guard: the boat file really is a BoatDefinition.
 const _typed: BoatDefinition = boat;
 void _typed;
