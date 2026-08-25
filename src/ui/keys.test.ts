@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isTypingTarget, keyAction } from './keys';
+import { isTypingTarget, keyAction, panelControlsId, SHORTCUTS } from './keys';
 
 const el = (tagName: string, type = '', isContentEditable = false): EventTarget =>
   ({ tagName, type, isContentEditable }) as unknown as EventTarget;
@@ -32,10 +32,33 @@ describe('keyAction', () => {
     expect(keyAction({ key: '?' }, false)).toEqual({ type: 'help' });
   });
 
+  it('jumps to a sail panel', () => {
+    expect(keyAction({ key: 'm' }, false)).toEqual({ type: 'focusPanel', panel: 'mainsail' });
+    expect(keyAction({ key: 'j' }, false)).toEqual({ type: 'focusPanel', panel: 'headsail' });
+  });
+
   it('stays out of the way while typing and under a modifier', () => {
     expect(keyAction({ key: 'o' }, true)).toBeNull();
     expect(keyAction({ key: '1' }, true)).toBeNull();
+    expect(keyAction({ key: 'm' }, true)).toBeNull();
+    expect(keyAction({ key: 'j' }, true)).toBeNull();
     expect(keyAction({ key: 'o', metaKey: true }, false)).toBeNull();
     expect(keyAction({ key: 'u', ctrlKey: true }, false)).toBeNull();
+  });
+});
+
+describe('SHORTCUTS', () => {
+  it('documents every key the mapping answers to', () => {
+    const documented = SHORTCUTS.map((s) => s.keys).join(' ');
+    for (const key of ['1 – 5', 'm', 'j', 'o', 'u', '?']) {
+      expect(documented, `${key} is bound but not in the help sheet`).toContain(key);
+    }
+  });
+});
+
+describe('panelControlsId', () => {
+  it('names the element the jump looks inside', () => {
+    expect(panelControlsId('mainsail')).toBe('mainsail-controls');
+    expect(panelControlsId('headsail')).toBe('headsail-controls');
   });
 });

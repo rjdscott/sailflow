@@ -16,8 +16,10 @@
     target,
     targetStale = false,
     guide,
+    highlight = false,
     locked = false,
-    lockReason = 'Committed at the dock, rule C.9.5.',
+    lockReason = "Committed at the dock, rule C.9.5. Standing rigging can't be adjusted between leaving the dock and racing finishing for the day.",
+    tickWord = 'guide',
     tier,
     hint,
     decimals = 1,
@@ -37,10 +39,19 @@
     /** Guide band [lo, hi], announced as "guide 60–75 %". */
     guide?: [number, number];
     locked?: boolean;
+    /** Why this control cannot be moved. The whole sentence, not a fragment. */
     lockReason?: string;
+    /** What the tick or band on the track is: "guide", "base trim", … */
+    tickWord?: string;
     tier?: Tier;
     hint?: string;
     decimals?: number;
+    /**
+     * Preview that a pending action would move this control (research §3
+     * principle 24, Factorio's reset hover). Outline only — no fill, no
+     * colour valence: nothing has happened yet.
+     */
+    highlight?: boolean;
   } = $props();
 
   const uid = $props.id();
@@ -105,6 +116,12 @@
     else if (e.key === 'Escape') cancelEdit();
   }
 
+  /** One legal step, from the arrow keys, `[`/`]` or the stepper buttons. */
+  function nudge(dir: 1 | -1): void {
+    if (locked) return;
+    value = snap(value + dir * step, min, max, step);
+  }
+
   /**
    * `[` and `]` alongside the arrow keys the range input already handles, so
    * a desktop study session never leaves the home row (audit ux-02 M-13).
@@ -112,8 +129,7 @@
   function onTrackKey(e: KeyboardEvent): void {
     if (e.key !== '[' && e.key !== ']') return;
     e.preventDefault();
-    if (locked) return;
-    value = snap(value + (e.key === ']' ? step : -step), min, max, step);
+    nudge(e.key === ']' ? 1 : -1);
   }
 
   /** The editor is useless unless it is where you are typing. */
@@ -123,7 +139,7 @@
   }
 </script>
 
-<div class="slider-row">
+<div class="slider-row" class:highlight>
   <div class="top">
     <span class="label">
       {label}
@@ -160,53 +176,77 @@
     {/if}
   </div>
 
-  <div class="track-wrap" class:locked style="--fill: {fillPct}%">
-    <input
-      class="range"
-      type="range"
-      aria-label={label}
-      aria-valuetext={valueText(value, decimals, unit, guideText, target)}
-      aria-describedby={describedBy}
-      aria-disabled={locked ? 'true' : undefined}
-      {min}
-      {max}
-      {step}
-      {value}
-      oninput={onInput}
-      onkeydown={onTrackKey}
-    />
-    {#if tickPct !== undefined}
-      <div class="tick" style="left: {tickPct}%"></div>
-    {/if}
-    {#if targetPct !== undefined}
-      <!-- Hover gets the title; keyboard and AT get the same words through
+  <div class="line">
+    <!-- The exact value beside the coarse one (research §3 principle 5): a
+         slider is for the sweep, these two are for the last step. Hidden in
+         the learn tier by CSS, where the readout editor is enough. -->
+    <button
+      type="button"
+      class="step"
+      onclick={() => nudge(-1)}
+      disabled={locked || value <= min}
+      aria-label="Decrease {label}"
+    >
+      −
+    </button>
+
+    <div class="track-wrap" class:locked style="--fill: {fillPct}%">
+      <input
+        class="range"
+        type="range"
+        aria-label={label}
+        aria-valuetext={valueText(value, decimals, unit, guideText, target, tickWord)}
+        aria-describedby={describedBy}
+        aria-disabled={locked ? 'true' : undefined}
+        {min}
+        {max}
+        {step}
+        {value}
+        oninput={onInput}
+        onkeydown={onTrackKey}
+      />
+      {#if tickPct !== undefined}
+        <div class="tick" style="left: {tickPct}%"></div>
+      {/if}
+      {#if targetPct !== undefined}
+        <!-- Hover gets the title; keyboard and AT get the same words through
            aria-valuetext, so the ghost tick is never mouse-only. -->
-      <div
-        class="target"
-        class:stale={targetStale}
-        style="left: {targetPct}%"
-        title={targetStale ? `${targetLabel} — re-searching from this trim` : targetLabel}
-      ></div>
-    {/if}
-    {#if locked}
-      <button
-        type="button"
-        class="lock-overlay"
-        onclick={() => (showLockNote = !showLockNote)}
-        aria-expanded={showLockNote}
-        aria-controls="{uid}-lock"
-        aria-label="Why {label} is locked"
-      >
-        <LockIcon />
-      </button>
-    {/if}
+        <div
+          class="target"
+          class:stale={targetStale}
+          style="left: {targetPct}%"
+          title={targetStale ? `${targetLabel} — re-searching from this trim` : targetLabel}
+        ></div>
+      {/if}
+      {#if locked}
+        <button
+          type="button"
+          class="lock-overlay"
+          onclick={() => (showLockNote = !showLockNote)}
+          aria-expanded={showLockNote}
+          aria-controls="{uid}-lock"
+          aria-label="Why {label} is locked"
+        >
+          <LockIcon />
+        </button>
+      {/if}
+    </div>
+
+    <button
+      type="button"
+      class="step"
+      onclick={() => nudge(1)}
+      disabled={locked || value >= max}
+      aria-label="Increase {label}"
+    >
+      +
+    </button>
   </div>
 
   {#if locked}
     <!-- Always in the accessibility tree, revealed on tap for everyone else. -->
     <p id="{uid}-lock" class="lock-note" class:sr-only={!showLockNote}>
-      {lockReason} Standing rigging can't be adjusted between leaving the dock and racing finishing for
-      the day.
+      {lockReason}
     </p>
   {/if}
   {#if hint}
@@ -219,6 +259,27 @@
     display: flex;
     flex-direction: column;
     padding-block: var(--space-1);
+  }
+
+  /* Factorio's destructive-action preview (research §3 principle 24): the
+     rows a pending action would move say so before it moves them. Outline,
+     never fill or colour valence — nothing has happened yet. */
+  .slider-row.highlight {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: var(--radius);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .slider-row.highlight {
+      animation: outline-pulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes outline-pulse {
+    50% {
+      outline-color: transparent;
+    }
   }
 
   .top {
@@ -269,13 +330,50 @@
     text-align: right;
   }
 
-  /* 44 px hit area around a 4 px track. */
+  /* One row: stepper, track, stepper. The track takes what is left. */
+  .line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  /* 44 px hit area around a 6 px track. The whole 44 px belongs to the range
+     input, so a press anywhere on the row jumps the thumb there — native
+     behaviour, and the padding is what makes it reachable with a thumb. */
   .track-wrap {
     position: relative;
     display: flex;
     align-items: center;
+    flex: 1;
+    min-width: 0;
     height: var(--hit-min);
     --track: linear-gradient(to right, var(--accent) 0 var(--fill), var(--muted) var(--fill) 100%);
+  }
+
+  /* Fitts: 44 px square, always on screen, no hover or long-press to find. */
+  .step {
+    flex: none;
+    width: var(--hit-min);
+    height: var(--hit-min);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink);
+    font-size: var(--text-lg);
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .step:disabled {
+    color: var(--muted);
+    border-color: var(--line);
+    cursor: default;
+  }
+
+  /* Learn has the sliders and the tap-to-edit readout; the steppers are the
+     trimmer's tier. One attribute on the root picks it (ADR 0015). */
+  :global([data-tier='learn']) .step {
+    display: none;
   }
 
   .range {
@@ -288,14 +386,14 @@
   }
 
   .range::-webkit-slider-runnable-track {
-    height: 4px;
-    border-radius: 2px;
+    height: 6px;
+    border-radius: 3px;
     background: var(--track);
   }
 
   .range::-moz-range-track {
-    height: 4px;
-    border-radius: 2px;
+    height: 6px;
+    border-radius: 3px;
     background: var(--track);
   }
 
@@ -304,7 +402,7 @@
     appearance: none;
     width: 24px;
     height: 24px;
-    margin-top: -10px;
+    margin-top: -9px;
     border-radius: 50%;
     background: var(--accent);
     border: 2px solid var(--bg);

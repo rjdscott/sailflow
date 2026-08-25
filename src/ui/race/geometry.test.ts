@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { RigState, SectionShape } from '../../core/types';
+import type { RigState, SailShape, SectionShape } from '../../core/types';
 import {
   type Box,
+  battenAngleDeg,
+  leechProfile,
   mastPoints,
   rotate,
   SECTION_LAYOUT,
@@ -21,6 +23,13 @@ const section = (over: Partial<SectionShape> = {}): SectionShape => ({
   entryDeg: 22,
   exitDeg: -4,
   ...over,
+});
+
+/** One sail's three sections, twisting the way the flying-shape layer does. */
+const shape = (q: number, h: number, t: number): SailShape => ({
+  quarter: section({ twistDeg: q }),
+  half: section({ twistDeg: h }),
+  threeQuarter: section({ twistDeg: t }),
 });
 
 describe('sectionPoints', () => {
@@ -166,21 +175,19 @@ describe('SECTION_LAYOUT', () => {
   /** Union of every section the component can draw, over the clamped extremes. */
   function worstCase(): Box {
     let box: Box | null = null;
-    for (const sail of [0, 1]) {
-      for (const [ri, y] of SECTION_LAYOUT.rowY.entries()) {
-        // The quarter row is the twist reference, so it is never rotated.
-        const twists = ri === 2 ? [0] : ROT;
-        for (const draft of DRAFT) {
-          for (const draftPos of POS) {
-            for (const deg of twists) {
-              const b = sectionBox(
-                section({ draft, draftPos }),
-                SECTION_LAYOUT.chord,
-                { x: SECTION_LAYOUT.luffX[sail], y },
-                deg,
-              );
-              box = box ? unionBox(box, b) : b;
-            }
+    for (const [ri, y] of SECTION_LAYOUT.rowY.entries()) {
+      // The quarter row is the twist reference, so it is never rotated.
+      const twists = ri === 2 ? [0] : ROT;
+      for (const draft of DRAFT) {
+        for (const draftPos of POS) {
+          for (const deg of twists) {
+            const b = sectionBox(
+              section({ draft, draftPos }),
+              SECTION_LAYOUT.chord,
+              { x: SECTION_LAYOUT.luffX, y },
+              deg,
+            );
+            box = box ? unionBox(box, b) : b;
           }
         }
       }
@@ -193,8 +200,9 @@ describe('SECTION_LAYOUT', () => {
     expect(b.minX).toBeGreaterThanOrEqual(0);
     expect(b.maxX).toBeLessThanOrEqual(SECTION_LAYOUT.w);
     expect(b.minY).toBeGreaterThanOrEqual(SECTION_LAYOUT.luffTop);
-    // The sail name sits on its own baseline below the lowest row.
-    expect(b.maxY).toBeLessThanOrEqual(SECTION_LAYOUT.labelY - 10);
+    // A margin below the lowest row, so a maximally twisted section never
+    // runs into the edge of the box.
+    expect(b.maxY).toBeLessThanOrEqual(SECTION_LAYOUT.h - 20);
   });
 
   it('leaves the rows clear of each other at maximum twist', () => {
@@ -206,9 +214,41 @@ describe('SECTION_LAYOUT', () => {
     expect(at(mid, 0).maxY).toBeLessThanOrEqual(at(bot, 0).minY);
   });
 
-  it('keeps the two sail panels from overlapping', () => {
-    const [mainX, jibX] = SECTION_LAYOUT.luffX;
-    expect(jibX).toBeGreaterThan(mainX + SECTION_LAYOUT.chord);
+  it('holds one sail, with room for the chord it draws', () => {
+    // One sail per stack since phase 03: the panels each own theirs.
+    expect(SECTION_LAYOUT.w).toBeGreaterThanOrEqual(SECTION_LAYOUT.luffX + SECTION_LAYOUT.chord);
+  });
+});
+
+describe('leechProfile', () => {
+  it('runs clew at the bottom to top batten at the top, with finite points', () => {
+    const pts = leechProfile(shape(3, 7, 12), 14, 180, 64);
+    expect(pts).toHaveLength(4);
+    expect(pts.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y))).toBe(true);
+    expect(pts[0].y).toBe(180);
+    expect(pts[3].y).toBe(0);
+    for (let i = 1; i < pts.length; i++) expect(pts[i].y).toBeLessThan(pts[i - 1].y);
+  });
+
+  it('opens the leech outboard as twist grows, at a fixed boom angle', () => {
+    const straight = leechProfile(shape(0, 0, 0), 14);
+    const twisted = leechProfile(shape(6, 14, 24), 14);
+    // The clew is on the boom either way; every station above it moves out.
+    expect(twisted[0].x).toBeCloseTo(straight[0].x, 9);
+    for (let i = 1; i < 4; i++) expect(twisted[i].x).toBeGreaterThan(straight[i].x);
+  });
+
+  it('swings the whole leech out with the boom', () => {
+    const inboard = leechProfile(shape(3, 7, 12), 6);
+    const outboard = leechProfile(shape(3, 7, 12), 40);
+    for (let i = 0; i < 4; i++) expect(outboard[i].x).toBeGreaterThan(inboard[i].x);
+  });
+});
+
+describe('battenAngleDeg', () => {
+  it('is the twist at the top-batten station, zero when the leech is not twisted', () => {
+    expect(battenAngleDeg(shape(3, 7, 12))).toBe(12);
+    expect(battenAngleDeg(shape(0, 0, 0))).toBe(0);
   });
 });
 

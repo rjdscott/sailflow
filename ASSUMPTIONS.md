@@ -61,22 +61,37 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   solver): mast step at 0.45·LOA; boom angle ≈ 6° + (100 − mainsheet)·0.25° +
   traveller·0.08°; jib sheeting angle ≈ 7° + jibLead·0.4° + (100 − jibSheet)·0.15°.
   Sign-correct, magnitude assumed; the figcaption says so.
+- **Leech-profile drawing** (`src/ui/race/geometry.ts` `leechProfile`,
+  presentation only): the main's chord at the foot, ¼, ½ and ¾ heights is
+  taken as 1 / 0.78 / 0.56 / 0.34 of the foot — assumed, a roughly triangular
+  main — and the leech's drawn offset is that chord swung out by the boom
+  angle plus the section's twist, the same construction the spreader-stripe
+  reading uses. The profile stops at the top batten (the ¾ station): the
+  flying-shape layer reports no head section and the drawing does not invent
+  one. `battenAngleDeg` is that station's twist, unchanged.
+- **Headstay-sag bar range** (`src/ui/race/SagIndicator.svelte`): 0–45 mm,
+  assumed — the model's own golden corpus spans 8–42 mm across the polar and
+  both rigs, so the bar is scaled to hold it. Drawing range only.
 
 ### Cockpit instruments (`src/core/solve/instruments.ts`, all tier C but `pctPolar`)
 
-- **Main leech stall fraction.** `1 − exp(−3·dev / (band + 2·stallScale))` on
-  the sheeting model's over-trim deviation, zero anywhere the sail is not
-  over-trimmed. The two constants are assumed: the deviation at which the
-  whole leech counts as stalled is two stall e-folds past the groove band,
-  and the exponent 3 puts the reading at 0.95 there. **Known ceiling:** with
-  the fitted `aero.sheet.stallScaleDeg` of 30° the reachable upwind range is
-  about 0 to 0.11 — mainsheet hard on at 20 kt reads 0.11 — so the North
-  guide's 50–70 % band shown on the gauge is not reachable upwind and the
-  reading is a "more trimmed / less trimmed" direction, not a percentage to
-  hit. Downwind, where the boom cannot go far enough out, it reaches ~0.96
-  and behaves as intended. Upgrade path: give the stall meter its own scale
-  (the twist range across the leech) rather than borrowing the lift-loss
-  e-fold, once there is evidence for one.
+- **Main leech stall fraction.** A logistic on the *twist* deviation:
+  `1 / (1 + exp(−(twistDev + 56°) / 45°))`, where `twistDev = dev / 0.25` is
+  the head twist the leech would need for the sheeting model's mid-height
+  angle of attack to land on its optimum, minus the twist it has. The two
+  constants are calibrated, not fitted: the centre (−56°) puts the base trim
+  (`baseRace()`, upwind at 10 kt) at 0.53, inside the guide's 50–70 % band,
+  and the width (45°) puts mainsheet hard on at 0.80, above the band, and
+  mainsheet eased to 30 % at 0.09, below it. The offset is large because the
+  sheeting layer's optimum angle of attack is its *lift-maximising* one,
+  which sits far tighter than the trim the guides call base — so the meter is
+  anchored on the guide's base trim rather than on the model's own optimum.
+  Downwind, where the boom cannot go far enough out, it still reads ~1.0.
+  **What it is not:** a percentage of ribbons measured on a boat. It is tier
+  C, a direction with a band drawn on it, and the whole upwind range from
+  eased to pinned spans roughly 0.02 to 0.85. Superseded the phase-02
+  scaling, which borrowed the 30° lift-loss e-fold and left the entire upwind
+  range inside 0–0.11 with the guide's band unreachable.
 - **Jib leech spreader stripe.** Athwartships offset of the leech at the
   spreader height = jib chord there × sin(clew sheeting angle + twist at ¾
   height), with the luff taken as on the centreline; the index is linear
@@ -84,8 +99,18 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   girth stations (published), the two angles from the invented sheeting and
   flying-shape layers, and the straight-chord geometry is assumed. Only the
   direction is claimed — lead aft and sheet eased both open the leech
-  outboard. At the base trim the model reads about −0.6 (inside the 18"
-  stripe), so the absolute inches are not calibrated against a boat.
+  outboard. A **3.2" offset** is added before the index is taken: the chord
+  is swung about a luff taken as on the centreline while the stripes are
+  painted outboard from the mast, which is neither the same point nor the
+  same station. It is calibrated, not measured — the value is the one that
+  puts the base trim (`baseRace()`, upwind at 10 kt) on the middle 20" stripe,
+  where the North guide's base setting puts the jib leech; without it the
+  model read −0.6 there and the verdict called for lead aft from the trim the
+  guide calls right. The lead car then walks ±1.35 stripes over ±3 holes,
+  which rounds to the 22" and 18" stripes but is not calibrated to hit them
+  exactly. Race mode's own `BASE_RACE` is a harder-sheeted trim than
+  `baseRace()` (jib sheet 70 % against 60 %) and reads about −0.45 there; the
+  two base trims should be reconciled.
 - **Helm load reference** `HELM_REF_NM` = 300 N·m, assumed: the yaw moment of
   a well-powered J/70 upwind at 12–14 kt with the crew hiking, chosen so 1.0
   reads "firm" and the cockpit's 1.2 "heavy helm" threshold trips when heel

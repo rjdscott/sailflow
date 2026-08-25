@@ -6,7 +6,7 @@
  * chosen anchor. Sections are drawn leading edge at the origin, chord along +x,
  * camber toward -y.
  */
-import type { RigState, SectionShape } from '../../core/types';
+import type { RigState, SailShape, SectionShape } from '../../core/types';
 
 export interface Pt {
   x: number;
@@ -160,14 +160,18 @@ export const HULL_PATH =
 // use, so "does anything clip?" is a unit test rather than a browser check.
 // ---------------------------------------------------------------------------
 
-/** Section-drawing layout, in the viewBox user units the component draws in. */
+/**
+ * Section-drawing layout for ONE sail, in the viewBox user units the component
+ * draws in. Per sail since cockpit phase 03: each panel owns its own sail, so
+ * the two used to share a viewBox for no reason other than history.
+ */
 export const SECTION_LAYOUT = {
   /** viewBox is `0 0 w h`. */
-  w: 272,
+  w: 132,
   h: 216,
   chord: 100,
-  /** Luff x for the main and the jib panel. */
-  luffX: [16, 152],
+  /** Luff x: the leading edge every section starts on. */
+  luffX: 16,
   /**
    * Row baselines, ¾ on top down to ¼. Spacing is set by the worst leech rise
    * a fully twisted, maximum-draft section can produce (~57.5 at chord 100);
@@ -175,8 +179,63 @@ export const SECTION_LAYOUT = {
    */
   rowY: [66, 128, 190],
   luffTop: 8,
-  labelY: 206,
 } as const;
+
+// ---------------------------------------------------------------------------
+// Leech profile and top-batten angle (cockpit phase 03)
+// ---------------------------------------------------------------------------
+
+/**
+ * Chord at the foot, quarter, half and three-quarter heights, as a fraction
+ * of the foot. Presentation only: it sets how far the drawn leech leans in
+ * towards the centreline as it goes up, nothing else. prov: assumed, a
+ * roughly triangular main.
+ */
+const MAIN_CHORD_TAPER = [1, 0.78, 0.56, 0.34] as const;
+
+/**
+ * The main's leech from the clew up to the top batten, seen from astern:
+ * `x` is the leech's athwartships offset from the centreline (+ is to
+ * leeward), `y` is screen-down as everywhere else in this file, so index 0
+ * is the clew at the bottom and the last point is the top batten at the top.
+ *
+ * The offset at each height is the local chord swung out by the boom angle
+ * plus the twist the sail carries there — the same construction the jib's
+ * spreader-stripe reading uses, so the two pictures cannot disagree about
+ * which way twist opens a leech.
+ *
+ * `heightPx` spans clew to top batten, i.e. the three-quarter station, not
+ * the head: the flying-shape layer reports no head section, and extrapolating
+ * one to draw would be an invention on top of an invented layer.
+ */
+export function leechProfile(
+  shape: SailShape,
+  boomDeg: number,
+  heightPx = 180,
+  chordPx = 64,
+): Pt[] {
+  const twists = [0, shape.quarter.twistDeg, shape.half.twistDeg, shape.threeQuarter.twistDeg];
+  return twists.map((twistDeg, i) => {
+    const r = ((boomDeg + Math.max(0, twistDeg)) * Math.PI) / 180;
+    return {
+      x: chordPx * MAIN_CHORD_TAPER[i] * Math.sin(r),
+      y: heightPx * (1 - i / (twists.length - 1)),
+    };
+  });
+}
+
+/**
+ * Top-batten angle to the boom, degrees: what a trimmer reads sighting up the
+ * sail from under the boom. Zero is the batten parallel to the boom, the
+ * classic upwind target; positive is the top of the leech twisted open.
+ *
+ * It is the flying-shape layer's twist at the three-quarter station, which is
+ * where the top batten sits, measured against the foot — so it inherits that
+ * layer's confidence and adds nothing of its own.
+ */
+export function battenAngleDeg(shape: SailShape): number {
+  return shape.threeQuarter.twistDeg;
+}
 
 /** Rotate `p` about `about`. Positive degrees is clockwise, as in SVG. */
 export function rotate(p: Pt, deg: number, about: Pt = { x: 0, y: 0 }): Pt {

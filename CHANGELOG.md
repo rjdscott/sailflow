@@ -15,6 +15,22 @@ undiagnosable.
 
 ### Added
 
+- Race mode's controls are two task-named cockpit panels (ADR 0015).
+  **Mainsail** carries mainsheet, traveller, backstay, vang, outhaul and
+  cunningham with the main halyard under a collapsed "Setup", beside the
+  main's own section stack, a leech profile showing the boom angle and the
+  top-batten angle, a leech-stall bullet gauge against the guide's 50–70 %
+  band, and batten and draft cells. **Headsail** carries jib sheet, lead and
+  inhauler beside the jib's section stack, a spreader-stripe gauge reading
+  18/20/22" and a headstay-sag bar; under the kite it says the jib is not
+  flying and locks its controls. `ControlPanel` is retired; the kite and dock
+  rows keep a temporary card below the panels until phase 05 gives them one.
+- Sliders gained an always-visible −/+ stepper (race and analyse tiers), a
+  fatter 6 px track, a mark at the base trim, and an outline preview: hover
+  or focus Apply optimum, "Back to my trim" or the new "Base trim" button and
+  the sliders it would move outline themselves before it moves them.
+- Keyboard: `m` jumps to the Mainsail controls, `j` to the Headsail controls.
+
 - Four cockpit instruments on every solve (`SolveResult.instruments`, protocol
   v1, additive): main leech stall fraction, jib leech position against the
   18/20/22" spreader stripes, a weather-helm load proxy, and boat speed as a
@@ -65,6 +81,16 @@ undiagnosable.
 
 ### Changed
 
+- **The main leech stall meter is rescaled.** It now reads the leech's twist
+  against the twist that would put the sail on the sheeting model's optimum,
+  rather than borrowing that model's lift-loss e-fold — which had confined the
+  whole upwind range to 0–0.11 and made the guides' 50–70 % band unreachable.
+  Upwind the base trim now reads 0.53, inside the band; the mainsheet hard on
+  reads 0.80 and well eased 0.09. Still tier C, still a direction.
+- **The jib spreader-stripe reading is offset by 3.2 inches**, calibrated so
+  the base trim sits on the middle 20" stripe where the guide puts it. It
+  previously read −0.6 there — hooked inside the inner stripe — so the verdict
+  line asked for lead aft from the trim the guide calls right.
 - The PWA "new version available" prompt is an in-app toast with a Reload
   action instead of a native `confirm()`.
 - Simple/Advanced is one control on More rather than a header segment on every

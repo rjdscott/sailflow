@@ -1,220 +1,44 @@
 <script lang="ts">
-  import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion, Tween } from 'svelte/motion';
-  import type { SailShape, SectionShape } from '../../core/types';
-  import { SECTION_LAYOUT as L, sectionPath, twistRelativeDeg } from './geometry';
+  import type { SailShape } from '../../core/types';
+  import SailSectionStack from './SailSectionStack.svelte';
 
-  let {
-    main,
-    jib,
-  }: {
-    main?: SailShape;
-    jib?: SailShape;
-  } = $props();
+  /**
+   * Both sails' section stacks side by side. Since cockpit phase 03 this is a
+   * two-up of `SailSectionStack`, which is the component the Mainsail and
+   * Headsail panels each use on its own; this wrapper is what the picture
+   * card on the primary column still renders.
+   */
+  let { main, jib }: { main?: SailShape; jib?: SailShape } = $props();
 
-  // A Bezier `d` cannot be CSS-transitioned, so the tween runs on the numbers
-  // behind it — draft, draft position, twist — and the path is rebuilt each
-  // frame from the eased shape. prov: assumed 250 ms, the same as the plan view.
-  // 1 ms rather than 0 under reduced motion: same trick as tokens.css, and it
-  // keeps the first frame off a zero divide inside Tween.
-  const EASE = {
-    duration: () => (prefersReducedMotion.current ? 1 : 250),
-    easing: cubicOut,
-  };
-  /** Tween start for a sail that is not in the solve yet: a flat, untwisted section. */
-  const FLAT_SECTION: SectionShape = {
-    draft: 0,
-    draftPos: 0.5,
-    twistDeg: 0,
-    entryDeg: 0,
-    exitDeg: 0,
-  };
-  const FLAT: SailShape = {
-    quarter: FLAT_SECTION,
-    half: FLAT_SECTION,
-    threeQuarter: FLAT_SECTION,
-  };
-  const mainT = Tween.of(() => main ?? FLAT, EASE);
-  const jibT = Tween.of(() => jib ?? FLAT, EASE);
-
-  const ROWS: { key: keyof SailShape; label: string }[] = [
-    { key: 'threeQuarter', label: '¾' },
-    { key: 'half', label: '½' },
-    { key: 'quarter', label: '¼' },
-  ];
-
-  /** `shape` is the solve, `drawn` the eased shape: the table never shows a mid-tween number. */
-  interface Sail {
-    name: string;
-    shape: SailShape;
-    drawn: SailShape;
-  }
-  const sails: Sail[] = $derived(
-    [
-      { name: 'Main', shape: main, drawn: mainT.current },
-      { name: 'Jib', shape: jib, drawn: jibT.current },
-    ].filter((s): s is Sail => s.shape !== undefined),
+  const sails = $derived(
+    (
+      [
+        { sail: 'main', label: 'Main', shape: main },
+        { sail: 'jib', label: 'Jib', shape: jib },
+      ] as const
+    ).filter((s) => s.shape !== undefined),
   );
-
-  /** SVG rotates clockwise, so the negative sign twists the leech open (up). */
-  function twist(s: SectionShape, ref: SectionShape): number {
-    return -twistRelativeDeg(s, ref);
-  }
-
-  function pct(v: number, dp = 0): string {
-    return `${(v * 100).toFixed(dp)}%`;
-  }
 </script>
 
 {#if sails.length === 0}
   <p class="empty">No flying shape in this solve yet.</p>
 {:else}
-  <figure>
-    <svg viewBox="0 0 {L.w} {L.h}" role="img" aria-label="Flying shape at three heights">
-      {#each sails as sail, si (sail.name)}
-        {@const x = L.luffX[si]}
-        <!-- One luff line per sail: every section starts on it, so twist reads
-             as rotation about the luff rather than as three loose curves. -->
-        <line class="luff" x1={x} y1={L.luffTop} x2={x} y2={L.rowY[2]} />
-
-        {#each ROWS as row, ri (row.key)}
-          {@const s = sail.drawn[row.key]}
-          <g transform="translate({x} {L.rowY[ri]})">
-            <!-- Reference: this sail's ¼ section, unrotated, behind every row. -->
-            <path class="ref" d={sectionPath(sail.drawn.quarter, L.chord)} />
-            <g transform="rotate({twist(s, sail.drawn.quarter)} 0 0)">
-              <line class="chord" x1="0" y1="0" x2={L.chord} y2="0" />
-              <path class="camber" d={sectionPath(s, L.chord)} />
-            </g>
-          </g>
-        {/each}
-
-        <text class="sail-label" x={x + L.chord / 2} y={L.labelY}>{sail.name}</text>
-      {/each}
-    </svg>
-
-    <figcaption>
-      Live shape in accent, this sail's ¼ section repeated behind it as a reference. Sections are
-      rotated by their twist relative to ¼.
-    </figcaption>
-  </figure>
-
-  <table class="mono">
-    <thead>
-      <tr>
-        <th scope="col">Sail</th>
-        <th scope="col">At</th>
-        <th scope="col">Draft</th>
-        <th scope="col">Pos</th>
-        <th scope="col">Twist</th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each sails as sail (sail.name)}
-        {#each ROWS as row, ri (row.key)}
-          {@const s = sail.shape[row.key]}
-          <tr class:group={ri === 0}>
-            <th scope="row">{ri === 0 ? sail.name : ''}</th>
-            <td>{row.label}</td>
-            <td>{pct(s.draft, 1)}</td>
-            <td>{pct(s.draftPos)}</td>
-            <td>{s.twistDeg.toFixed(0)}°</td>
-          </tr>
-        {/each}
-      {/each}
-    </tbody>
-  </table>
+  <div class="pair">
+    {#each sails as s (s.sail)}
+      <div>
+        <h3 class="section-title">{s.label}</h3>
+        <SailSectionStack sail={s.sail} shape={s.shape} />
+      </div>
+    {/each}
+  </div>
 {/if}
 
 <style>
-  figure {
-    margin: 0;
-  }
-
-  /* viewBox + width:100% + height:auto: the drawing is resolution-independent
-     and its box is exactly its own aspect, so it can never clip or letterbox. */
-  svg {
-    display: block;
-    width: 100%;
-    height: auto;
-    max-height: 340px;
-    margin-inline: auto;
-  }
-
-  figcaption {
-    margin-top: var(--space-2);
-    font-size: var(--text-xs);
-    color: var(--ink-2);
-  }
-
-  .luff {
-    stroke: var(--ink-2);
-    stroke-width: 1.5;
-  }
-
-  .chord {
-    stroke: var(--muted);
-    stroke-width: 1;
-    stroke-dasharray: 4 3;
-  }
-
-  .ref {
-    fill: none;
-    stroke: var(--muted);
-    stroke-width: 2.5;
-  }
-
-  .camber {
-    fill: none;
-    stroke: var(--accent);
-    stroke-width: 3;
-    stroke-linecap: round;
-  }
-
-  .sail-label {
-    fill: var(--ink-2);
-    font-family: var(--font-sans);
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-anchor: middle;
-    text-transform: uppercase;
-  }
-
-  /* Numbers live here, never on the curve. */
-  table {
-    width: 100%;
-    margin-top: var(--space-3);
-    border-collapse: collapse;
-    text-align: right;
-  }
-
-  th,
-  td {
-    padding: 3px 0 3px var(--space-2);
-    white-space: nowrap;
-  }
-
-  thead th {
-    font-weight: 500;
-    color: var(--ink-2);
-    border-bottom: 1px solid var(--line);
-  }
-
-  tbody th {
-    text-align: left;
-    padding-left: 0;
-    font-weight: 600;
-    color: var(--ink-2);
-  }
-
-  tbody td {
-    color: var(--ink);
-  }
-
-  tr.group th,
-  tr.group td {
-    padding-top: var(--space-2);
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-4);
+    align-items: start;
   }
 
   .empty {

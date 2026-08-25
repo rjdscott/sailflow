@@ -23,7 +23,7 @@ import type {
   SailShape,
   Tier,
 } from '../types';
-import { boomAngle, jibSheetAngle, sheetingDeviation } from '../shape/sheeting';
+import { boomAngle, jibSheetAngle, sheetingDeviation, TWIST_TO_AOA } from '../shape/sheeting';
 import { polarTarget } from '../reference/polar';
 import { interp1 } from '../math';
 import { tiered } from './tierFor';
@@ -46,21 +46,47 @@ function dim(boat: BoatDefinition, sail: SailId, key: string): number {
  */
 export const LEECH_STALL_BAND: readonly [number, number] = [0.5, 0.7];
 
-/** Deviations past which the whole leech counts as stalled, in stall e-folds. prov: assumed */
-const STALL_FULL_SCALES = 2;
-/** Exponent giving 0.95 at that full-scale deviation. prov: assumed */
-const STALL_EFOLD = 3;
+/**
+ * Head twist the leech would need for the mid-height angle of attack to land
+ * on the sheeting model's optimum, minus the twist it has. Positive is a
+ * leech closed inside that optimum-twist target — the direction that stalls
+ * ribbons; negative is one open of it. Only `TWIST_TO_AOA` of head twist
+ * reaches the station the deviation is measured at, so one degree of
+ * over-trim is four degrees of twist.
+ */
+export function leechTwistDevDeg(devDeg: number): number {
+  return devDeg / TWIST_TO_AOA;
+}
 
 /**
- * Stall fraction from the sheeting model's over-trim deviation. Zero
- * anywhere the sail is inside or eased of its groove, then rising smoothly
- * — never quite reaching one, because a leech that is entirely stalled is a
- * state the lift model does not claim to resolve.
+ * Twist deviation at which the guides' 50–70 % band is centred, degrees. The
+ * sheeting layer's optimum angle of attack is its lift-maximising one, which
+ * sits far tighter than the trim the North guide calls base, so the meter is
+ * anchored on that base trim rather than on the model's own optimum.
  */
-export function leechStallFrac(devDeg: number, bandDeg: number, stallScaleDeg: number): number {
-  if (devDeg <= 0) return 0;
-  const full = bandDeg + STALL_FULL_SCALES * stallScaleDeg;
-  return 1 - Math.exp((-STALL_EFOLD * devDeg) / full);
+// prov: calibrated so `baseRace()` upwind at 10 kt reads inside the band (ASSUMPTIONS.md)
+const STALL_TWIST_CENTRE_DEG = -56;
+
+/**
+ * Width of the transition in twist degrees — the logistic's scale, so a leech
+ * one scale closed of the centre reads 0.73 and one scale open of it 0.27.
+ * This is the stall meter's own scale, not the lift-loss e-fold it used to
+ * borrow: that e-fold is 30° of *angle of attack*, which put the whole upwind
+ * range inside 0–0.11 and made the guide's band unreachable.
+ */
+// prov: calibrated so mainsheet hard on reads above 0.7 and eased to 30 % below 0.3 (ASSUMPTIONS.md)
+const STALL_TWIST_RANGE_DEG = 45;
+
+/**
+ * Stall fraction from how far the leech's twist sits inside the optimum-twist
+ * target. Monotone in the deviation — and therefore in mainsheet, which is
+ * the control that closes the leech — and asymptotic at both ends, because
+ * neither a wholly stalled nor a wholly attached leech is a state the lift
+ * model claims to resolve.
+ */
+export function leechStallFrac(devDeg: number): number {
+  const z = (leechTwistDevDeg(devDeg) - STALL_TWIST_CENTRE_DEG) / STALL_TWIST_RANGE_DEG;
+  return 1 / (1 + Math.exp(-z));
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +96,18 @@ export function leechStallFrac(devDeg: number, bandDeg: number, stallScaleDeg: n
 /** Spreader stripe distances from the mast, inches. prov: North Sails J/70 tuning guide (S1) */
 export const STRIPE_INCHES: readonly [number, number, number] = [18, 20, 22];
 const M_PER_INCH = 0.0254; // prov: international inch, exact by definition
+
+/**
+ * Athwartships offset added to the modelled leech position before it is read
+ * against the stripes, inches. The chord is swung about a luff taken as on
+ * the centreline, and the stripes are painted outboard from the mast, which
+ * is neither the same point nor the same station; this absorbs the
+ * difference. Without it the model reads −0.6 at the base trim, i.e. hooked
+ * inside the innermost stripe, and the verdict calls for lead aft from the
+ * one trim the guide calls right.
+ */
+// prov: calibrated so `baseRace()` upwind at 10 kt reads the middle 20" stripe, the North J/70 tuning guide's base position (ASSUMPTIONS.md)
+const STRIPE_OFFSET_IN = 3.2;
 
 /**
  * Jib chord at the spreaders, m, read off the class girth stations rather
@@ -106,7 +144,9 @@ export function jibChordAtSpreaderM(boat: BoatDefinition): number {
  * magnitude assumed (ASSUMPTIONS.md).
  */
 export function jibLeechStripe(boat: BoatDefinition, sheetDeg: number, twistDeg: number): number {
-  const offsetM = jibChordAtSpreaderM(boat) * Math.sin((sheetDeg + Math.max(0, twistDeg)) * DEG);
+  const offsetM =
+    jibChordAtSpreaderM(boat) * Math.sin((sheetDeg + Math.max(0, twistDeg)) * DEG) +
+    STRIPE_OFFSET_IN * M_PER_INCH;
   const zeroM = STRIPE_INCHES[0] * M_PER_INCH;
   const stepM = (STRIPE_INCHES[1] - STRIPE_INCHES[0]) * M_PER_INCH;
   return (offsetM - zeroM) / stepM;
@@ -172,7 +212,7 @@ export function instrumentsFor(
     sheetDeg: boomAngle(r.mainsheet, r.traveller),
     twistDeg: shape.main?.threeQuarter.twistDeg ?? 0,
   });
-  const stall = leechStallFrac(main.devDeg, main.bandDeg, main.stallScaleDeg);
+  const stall = leechStallFrac(main.devDeg);
 
   const target = polarTarget(condition.twsKt, condition.twaDeg, condition.sailset);
   const pct = target.bsKt > 0 ? (state.bsKt / target.bsKt) * 100 : 0;
