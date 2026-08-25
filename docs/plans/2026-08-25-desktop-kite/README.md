@@ -17,7 +17,8 @@ gennaker is drawn, answers its four controls, and has its own panel.
 ## Non-goals
 
 - Phone and tablet layouts (unchanged).
-- Any change to `src/core`, the solver's kite constants, or the hold-out gate.
+- Any change to the hold-out gate's tolerances. (`src/core` is touched only
+  by phases 05 and 06, each with the validation report diffed in its log.)
 - The ux-03 Medium/Low punchlist beyond M-01 and M-04, which this plan
   closes as a side effect.
 
@@ -30,9 +31,13 @@ gennaker is drawn, answers its four controls, and has its own panel.
 | 02 | [Kite geometry: loft, plan view, section stack](phase-02-kite-geometry.md) | 🟢 Completed | 2026-08-25 |
 | 03 | [Gennaker panel](phase-03-gennaker-panel.md) | 🔵 Not started | none |
 | 04 | [Verify and close out](phase-04-close-out.md) | 🔵 Not started | none |
+| 05 | [Kite flying shape from the research](phase-05-kite-shape-from-research.md) | 🔵 Not started | none |
+| 06 | [Core downwind corrections](phase-06-core-downwind-corrections.md) | 🔵 Not started | none |
 
-Order: 00 → 01 ∥ 02 → 03 → 04. Phases 01 and 02 touch disjoint files and
-run in parallel.
+Order: 00 → 01 ∥ 02 → 03 ∥ 05 ∥ 06 → 04. Phases 03, 05 and 06 touch disjoint
+files and run in parallel; 04 closes out after all of them. 05 and 06 were
+added after research `2026-08-25-spinnaker` (owner: "do the deep dive on
+spinnaker physics and the shape and trimming best practices").
 
 ## Critical files
 
