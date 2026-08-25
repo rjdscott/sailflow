@@ -21,6 +21,15 @@ const STRIPE_HOOKED = 0.5;
 /** Helm load past this is the rudder braking rather than steering. prov: assumed */
 const HELM_HEAVY = 1.2;
 
+/**
+ * The last word under the kite. None of the four downwind controls reaches a
+ * number (ADR 0017), so when no instrument explains the gap the honest line is
+ * the one thing the model does know downwind — the polar angle — plus the cue
+ * the sail itself gives. Tier C, direction only, and it names the kite sheet
+ * because there is no jib up to name.
+ */
+export const DOWNWIND_CUE = 'sail to the polar angle, and sheet to the curl';
+
 export interface VerdictInput {
   result: SolveResult | null;
   /** What the solver's optimal trim reaches here, if it has answered. */
@@ -66,6 +75,9 @@ export function verdict({ result, target, objective, coach }: VerdictInput): str
   if (Math.abs(gap) < ON_TARGET_KT) return 'On target.';
 
   const head = `${Math.abs(gap).toFixed(2)} kt ${gap > 0 ? 'below' : 'above'} target`;
-  const why = cue(result, objective) ?? coach;
+  // Instrument first, then the probe's own sentence, then the downwind line:
+  // the fallback only speaks when nothing measured has anything to say.
+  const why =
+    cue(result, objective) ?? coach ?? (objective === 'vmgDown' ? DOWNWIND_CUE : undefined);
   return why ? `${head}: ${why}` : `${head}.`;
 }

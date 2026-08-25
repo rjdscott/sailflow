@@ -175,6 +175,16 @@ describe('coach line', () => {
     expect(store.chevrons.traveller.dir).toBe(1);
   });
 
+  it('does not probe the jib under the kite: it is furled, and its lead moves no number', async () => {
+    const { client, seen } = scoringClient(() => 5);
+    const store = new RaceStore(client);
+    store.request(controls(), { ...CONDITION, twaDeg: 150, sailset: 'asym' });
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    // 1 main solve + 3 controls x 2 directions: jibLead is not asked.
+    expect(seen).toHaveLength(7);
+    expect(seen.some((r) => r.jibLead !== BASE_RACE.jibLead)).toBe(false);
+  });
+
   it('does not probe past a control stop', async () => {
     const { client, seen } = scoringClient(() => 5);
     const store = new RaceStore(client);

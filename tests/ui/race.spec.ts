@@ -244,6 +244,44 @@ test('the keyboard reaches every panel', async ({ page }) => {
 });
 
 /**
+ * The Headsail slot carries whichever sail is up (desktop-kite phase 03).
+ * Under the kite it is the Gennaker panel — four downwind sliders — and it
+ * keeps the `headsail` ids, so `j` still lands in it.
+ */
+test('choosing Run swaps the Headsail panel for the Gennaker, and Close-hauled swaps it back', async ({
+  page,
+}) => {
+  await raceTier(page);
+  await page.setViewportSize(VIEWPORTS[1]);
+  await page.goto('/#/race');
+  await expect(page.getByRole('heading', { name: 'Headsail' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Run' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Gennaker' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Headsail' })).toHaveCount(0);
+
+  const sliders = page.locator('#headsail-controls input[type="range"]');
+  await expect(sliders).toHaveCount(4);
+  for (const label of ['Gennaker sheet', 'Tack line', 'Gennaker halyard', 'Bowsprit position']) {
+    await expect(
+      page.locator('#headsail-controls').getByRole('slider', { name: label, exact: true }),
+    ).toBeVisible();
+  }
+
+  // The `j` jump does not know which sail is up, and must not have to.
+  await page.keyboard.press('j');
+  const onFirst = await page.evaluate(
+    () => document.activeElement === document.querySelector('#headsail-controls input'),
+  );
+  expect(onFirst, 'j should focus the first kite slider').toBe(true);
+
+  await page.getByRole('button', { name: 'Close-hauled' }).click();
+  await expect(page.getByRole('heading', { name: 'Headsail' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Gennaker' })).toHaveCount(0);
+});
+
+/**
  * A/B is disabled until there is a second trim to compare with, and it says
  * so rather than doing nothing when pressed (phase 05).
  */

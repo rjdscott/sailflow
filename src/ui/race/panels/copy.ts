@@ -14,6 +14,7 @@ const READOUT_TITLES: Record<string, string> = {
   batten: 'Top batten angle',
   draft: 'Draft depth',
   sag: 'Headstay sag',
+  kiteTwist: 'Kite twist',
   heel: 'Heel angle',
   helm: 'Helm load',
   rake: 'Mast rake',
