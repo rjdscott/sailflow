@@ -64,7 +64,8 @@ every grid point scores exactly 0; and the pmf's "5 % floor" is 5 % of the
 peak weight before normalisation (≈1 % probability after). The Cons figure
 "several hundred VMG solves" is ~2,400 for an 8–18 kt forecast (L-05).
 
-Decided 2026-08-26: kept as coded (M-05).
+Decided 2026-08-26: kept as coded (M-05). Decided 2026-08-26: kept — regret
+is never negative and monotone in the scored set (M-04).
 
 ## Related
 
