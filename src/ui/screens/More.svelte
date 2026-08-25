@@ -22,33 +22,57 @@
   import { drills } from '../drills/store.svelte';
   import { GUIDE_LABELS, referenceStatus, type GuideId } from '../../lib/reference';
 
-  // Bundled at build time so the honesty documents open on a dock with no
-  // signal, which is where the app says it works (audit ux-02 M-22). The
-  // GitHub links stay for anyone who wants the rendered, linkable version.
-  import provenanceMd from '../../../PROVENANCE.md?raw';
-  import assumptionsMd from '../../../ASSUMPTIONS.md?raw';
-  import validationMd from '../../../validation/report.md?raw';
-
   const VERSION = import.meta.env.VITE_APP_VERSION;
   const REPO = 'https://github.com/rjdscott/sailflow/blob/main';
 
+  /* Each document is its own chunk, fetched when the sheet opens (audit ux-03
+     M-23): 48 KB of markdown — 13.8 KB gzip — was riding in the entry chunk
+     for text nobody sees until they tap a link on the More tab. Still bundled
+     rather than fetched from GitHub, so the service worker precaches them and
+     they open on a dock with no signal (audit ux-02 M-22); the GitHub links
+     stay for anyone who wants the rendered, linkable version. */
   const DOCS = [
-    { id: 'provenance', title: 'Provenance', file: 'PROVENANCE.md', text: provenanceMd },
-    { id: 'assumptions', title: 'Assumptions', file: 'ASSUMPTIONS.md', text: assumptionsMd },
+    {
+      id: 'provenance',
+      title: 'Provenance',
+      file: 'PROVENANCE.md',
+      load: () => import('../../../PROVENANCE.md?raw'),
+    },
+    {
+      id: 'assumptions',
+      title: 'Assumptions',
+      file: 'ASSUMPTIONS.md',
+      load: () => import('../../../ASSUMPTIONS.md?raw'),
+    },
     {
       id: 'validation',
       title: 'Validation report',
       file: 'validation/report.md',
-      text: validationMd,
+      load: () => import('../../../validation/report.md?raw'),
     },
   ];
 
-  let openDoc: (typeof DOCS)[number] | null = $state(null);
+  /* `$state.raw`, not `$state`: a plain `$state` wraps the assigned DOCS entry
+     in a proxy, so the `openDoc === doc` identity check below never matched
+     and the sheet sat on "Loading…" forever. Nothing mutates the entry, so
+     there is nothing for the proxy to be doing here anyway. */
+  let openDoc: (typeof DOCS)[number] | null = $state.raw(null);
   let docOpen = $state(false);
+  let docText = $state('');
 
-  function readInApp(doc: (typeof DOCS)[number]): void {
+  async function readInApp(doc: (typeof DOCS)[number]): Promise<void> {
     openDoc = doc;
+    docText = '';
     docOpen = true;
+    try {
+      const { default: text } = await doc.load();
+      // The reader may have closed this sheet, or opened another, while the
+      // chunk was in flight; only the document still on screen gets the text.
+      if (openDoc === doc) docText = text;
+    } catch {
+      if (openDoc === doc)
+        docText = `Could not load ${doc.file}. It is on GitHub at\n${REPO}/${doc.file}`;
+    }
   }
 
   const engine = logStoreEngine();
@@ -137,7 +161,7 @@
       <ul class="links">
         {#each DOCS as doc (doc.id)}
           <li>
-            <button type="button" class="linkish" onclick={() => readInApp(doc)}>
+            <button type="button" class="linkish" onclick={() => void readInApp(doc)}>
               {doc.title} — read here
             </button>
             <a href="{REPO}/{doc.file}" rel="noopener noreferrer">on GitHub</a>
@@ -298,7 +322,11 @@
 <Sheet bind:open={docOpen} title={openDoc?.title ?? ''}>
   <!-- Raw markdown, monospaced. A renderer is a dependency for three files
        nobody edits in the app; the source is legible as it is. -->
-  <pre class="doc">{openDoc?.text ?? ''}</pre>
+  {#if docText}
+    <pre class="doc">{docText}</pre>
+  {:else}
+    <p class="doc-loading" role="status">Loading {openDoc?.file ?? 'document'}…</p>
+  {/if}
 </Sheet>
 
 <Toast message={toast} bind:open={toastOpen} />
@@ -348,6 +376,12 @@
 
   /* The sheet is the only scrolling surface on the screen; the document is
      long and must not push the page. */
+  .doc-loading {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+
   .doc {
     max-height: 60vh;
     overflow: auto;

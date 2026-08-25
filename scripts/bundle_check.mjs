@@ -4,9 +4,10 @@
  *
  * The 3D sail view is allowed to be heavy because it is lazily imported: the
  * app's first load is supposed to be unchanged by it. That promise is only
- * worth something if something checks it, so this asserts the gzip size of the
- * entry chunk `index.html` actually loads against a committed baseline, and
- * prints every other chunk for the record.
+ * worth something if something checks it, so this asserts the total gzip size
+ * of the chunks `index.html` actually loads — the entry plus anything it
+ * `modulepreload`s — against a committed baseline, and prints every other
+ * chunk for the record.
  *
  * Run: pnpm build && node scripts/bundle_check.mjs
  */
@@ -51,25 +52,28 @@ const three = chunks.find((c) => /SailView3D/.test(c.name));
 if (three) console.log(`\nthree.js hero chunk: ${kb(three.gzip)} gzip (lazy, not on first load)`);
 else console.log('\nthree.js hero chunk: not emitted');
 
+/* Every chunk index.html names — the entry plus its `modulepreload`ed shared
+   chunks — is fetched before the app renders, so the budget is their sum, not
+   the biggest one. Splitting a screen out of the entry only counts as a win if
+   it leaves the first-load set entirely (ux-03 M-23). */
 const entries = chunks.filter((c) => c.entry);
-if (entries.length !== 1) {
-  console.error(
-    `bundle-check: expected exactly one entry chunk in index.html, found ${entries.length}.`,
-  );
+if (entries.length === 0) {
+  console.error('bundle-check: index.html names no JS chunk in dist/assets.');
   process.exit(1);
 }
 
-const [entry] = entries;
+const first = entries.reduce((n, c) => n + c.gzip, 0);
 const limit = baseline.entryGzipBytes + baseline.toleranceBytes;
-const delta = entry.gzip - baseline.entryGzipBytes;
+const delta = first - baseline.entryGzipBytes;
 console.log(
-  `\nentry ${entry.name}: ${entry.gzip} B gzip, baseline ${baseline.entryGzipBytes} B ` +
-    `(${delta >= 0 ? '+' : ''}${delta} B), limit ${limit} B`,
+  `\nfirst load (${entries.length} chunk${entries.length === 1 ? '' : 's'}: ` +
+    `${entries.map((c) => c.name).join(', ')}): ${first} B gzip, ` +
+    `baseline ${baseline.entryGzipBytes} B (${delta >= 0 ? '+' : ''}${delta} B), limit ${limit} B`,
 );
 
-if (entry.gzip > limit) {
+if (first > limit) {
   console.error(
-    `bundle-check: FAIL — the first-load chunk grew ${delta} B past the ` +
+    `bundle-check: FAIL — the first load grew ${delta} B past the ` +
       `${baseline.toleranceBytes} B tolerance. Either it belongs behind a dynamic import, ` +
       'or raise scripts/bundle_baseline.json deliberately in this PR.',
   );
