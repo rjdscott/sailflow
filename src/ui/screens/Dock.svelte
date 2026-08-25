@@ -1,6 +1,7 @@
 <script lang="ts">
   import TopBar from '../components/TopBar.svelte';
   import LockIcon from '../components/LockIcon.svelte';
+  import Toast from '../components/Toast.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
   import { dock } from '../dock/store.svelte';
@@ -28,9 +29,12 @@
    * 'draft'), so "starts a log entry" survives a reload and the Log screen
    * has something to show (audit ux-02 M-04).
    */
+  let committedToast = $state(false);
+
   function commit(): void {
     track('dock.commit');
     void logStoreUi.startDraft(dock.commit());
+    committedToast = true;
   }
 
   const advanced = $derived(settings.advanced);
@@ -160,6 +164,8 @@
   </div>
 </div>
 
+<Toast bind:open={committedToast} message="Rig committed for today — log entry started." />
+
 <!-- One card, screen-hidden, that is the entire printout: the sheet that goes
      on the bulkhead (audit ux-02 M-25). Outside .dock-screen so the print
      stylesheet can hide the live screen wholesale. -->
@@ -243,6 +249,13 @@
 {/if}
 
 <style>
+  /* Cockpit panels, not flat cards: every card on this screen sits on
+     --surface-2, one step off --bg, the same raise the Race panels use
+     (ADR 0015). One rule reaches the child components' own cards. */
+  .dock-screen :global(.card) {
+    background: var(--surface-2);
+  }
+
   /* Screen: nothing. Print: the only thing. */
   .print-card {
     display: none;
@@ -292,7 +305,7 @@
   .quiet {
     min-height: var(--hit-min);
     padding: 0 var(--space-3);
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-strong);
     border-radius: var(--radius);
     background: transparent;
     color: var(--ink-2);

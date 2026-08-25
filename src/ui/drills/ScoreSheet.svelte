@@ -1,5 +1,6 @@
 <script lang="ts">
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
+  import InstrumentCell from '../components/InstrumentCell.svelte';
   import { OPTIMUM_REASON, OPTIMUM_TIER } from '../race/optimum.svelte';
   import type { DrillScore } from './store.svelte';
 
@@ -40,15 +41,31 @@
 <section class="card sheet" class:stale>
   <div class="head">
     <span class="glyph" aria-hidden="true">{MEDAL[score.medal].glyph}</span>
-    <div>
-      <p class="medal">{stale ? 'Re-check' : MEDAL[score.medal].label}</p>
-      <p class="loss tabular-nums">
-        {steps(score.distanceSteps)} off the optimum · {score.lossPct.toFixed(1)} % VMG lost
-        <!-- Both numbers are read off the same searched optimum, so they carry
-             its tier, not the polar's (audit ux-02 H-02). -->
-        <ConfidenceBadge tier={OPTIMUM_TIER} reason={OPTIMUM_REASON} />
-      </p>
-    </div>
+    <p class="medal">{stale ? 'Re-check' : MEDAL[score.medal].label}</p>
+  </div>
+
+  <!-- Both numbers on the cockpit's cell contract (ADR 0015), and both read
+       off the same searched optimum, so they carry its tier, not the polar's
+       (audit ux-02 H-02). -->
+  <div class="cells">
+    <InstrumentCell
+      label="Off optimum"
+      id="drillDistance"
+      size="sm"
+      value={String(Math.round(score.distanceSteps))}
+      unit={Math.round(score.distanceSteps) === 1 ? 'click' : 'clicks'}
+    />
+    <InstrumentCell
+      label="VMG lost"
+      id="drillLoss"
+      size="sm"
+      value={score.lossPct.toFixed(1)}
+      unit="%"
+    />
+    <p class="tierline">
+      Both from the searched optimum
+      <ConfidenceBadge tier={OPTIMUM_TIER} reason={OPTIMUM_REASON} />
+    </p>
   </div>
 
   {#if stale}
@@ -119,10 +136,25 @@
   }
 
   .medal,
-  .loss,
   .note,
   .quiet {
     margin: 0;
+  }
+
+  .cells {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-3) var(--space-4);
+    align-items: center;
+  }
+
+  .tierline {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
   }
 
   /* Stale: the numbers still belong to the trim they were taken on, so they
@@ -139,11 +171,6 @@
   .medal {
     font-size: var(--text-lg);
     color: var(--ink);
-  }
-
-  .loss {
-    font-size: var(--text-sm);
-    color: var(--ink-2);
   }
 
   /* Same quiet warn strip as the drill view's C-tier banner. */
@@ -199,6 +226,6 @@
   .secondary {
     background: transparent;
     color: var(--ink);
-    border: 1px solid var(--ink-2);
+    border: 1px solid var(--line-strong);
   }
 </style>

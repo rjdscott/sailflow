@@ -68,54 +68,62 @@
 
 <TopBar title="Drills" />
 
-{#if drills.loading && !drills.current}
-  <p class="lede">Generating a drill…</p>
-{:else if drills.current}
-  <DrillView drill={drills.current} onback={() => drills.close()} />
-{:else}
-  <p class="lede">
-    Each drill is a real condition with a deliberately wrong setup, generated fresh from the day's
-    seed. Trim the free controls, hit Check, and the solver's optimum from where you started tells
-    you how far off the shape was.
-  </p>
-  {#if drills.endNote}
-    <p class="lede">{drills.endNote}</p>
-  {/if}
-
-  {#if today}
-    <Today
-      template={today}
-      {seed}
-      best={drills.best[today.id]}
-      streak={drills.streak}
-      onopen={(t, s) => void drills.open(t, s)}
-      onshare={(t, s) => void share(t, s)}
-    />
-  {/if}
-
-  {#each tiers as tier (tier)}
-    {@const inTier = drills.visible.filter((t) => t.tier === tier)}
-    {#if inTier.length}
-      <section>
-        <h2 class="section-title">{TIER_NAME[tier]}</h2>
-        <div class="cards">
-          {#each inTier as template (template.id)}
-            <DrillCard
-              {template}
-              best={drills.best[template.id]}
-              due={dueIds.has(template.id)}
-              onopen={(t) => void drills.open(t)}
-            />
-          {/each}
-        </div>
-      </section>
+<div class="drills-screen">
+  {#if drills.loading && !drills.current}
+    <p class="lede">Generating a drill…</p>
+  {:else if drills.current}
+    <DrillView drill={drills.current} onback={() => drills.close()} />
+  {:else}
+    <p class="lede">
+      Each drill is a real condition with a deliberately wrong setup, generated fresh from the day's
+      seed. Trim the free controls, hit Check, and the solver's optimum from where you started tells
+      you how far off the shape was.
+    </p>
+    {#if drills.endNote}
+      <p class="lede">{drills.endNote}</p>
     {/if}
-  {/each}
-{/if}
+
+    {#if today}
+      <Today
+        template={today}
+        {seed}
+        best={drills.best[today.id]}
+        streak={drills.streak}
+        onopen={(t, s) => void drills.open(t, s)}
+        onshare={(t, s) => void share(t, s)}
+      />
+    {/if}
+
+    {#each tiers as tier (tier)}
+      {@const inTier = drills.visible.filter((t) => t.tier === tier)}
+      {#if inTier.length}
+        <section>
+          <h2 class="section-title">{TIER_NAME[tier]}</h2>
+          <div class="cards">
+            {#each inTier as template (template.id)}
+              <DrillCard
+                {template}
+                best={drills.best[template.id]}
+                due={dueIds.has(template.id)}
+                onopen={(t) => void drills.open(t)}
+              />
+            {/each}
+          </div>
+        </section>
+      {/if}
+    {/each}
+  {/if}
+</div>
 
 <Toast message={toast} bind:open={toastOpen} />
 
 <style>
+  /* Cockpit panels, not flat cards (ADR 0015). One rule covers the drill
+     cards, the Today card and everything DrillView draws. */
+  .drills-screen :global(.card) {
+    background: var(--surface-2);
+  }
+
   .lede {
     margin: 0 0 var(--space-4);
     font-size: var(--text-sm);

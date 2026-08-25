@@ -132,6 +132,6 @@
   .secondary {
     background: transparent;
     color: var(--ink);
-    border: 1px solid var(--ink-2);
+    border: 1px solid var(--line-strong);
   }
 </style>

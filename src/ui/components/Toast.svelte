@@ -38,10 +38,14 @@
     left: 50%;
     bottom: calc(56px + var(--space-4) + env(safe-area-inset-bottom));
     transform: translateX(-50%);
-    background: var(--ink);
-    color: var(--bg);
+    /* A raised cockpit panel, not an inverted slab: the confirmation after a
+       commit should read as part of the instrument, and the old --ink fill
+       flashed a white card across a dark screen (phase 06). */
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
     padding: var(--space-3) var(--space-4);
-    border-radius: var(--radius);
+    border-radius: var(--radius-card);
     font-size: var(--text-sm);
     max-width: calc(100% - var(--space-8));
     text-align: center;
@@ -52,10 +56,10 @@
     flex: none;
     min-height: var(--hit-min);
     padding: 0 var(--space-3);
-    border: 1px solid currentColor;
+    border: 1px solid var(--accent);
     border-radius: var(--radius);
     background: transparent;
-    color: inherit;
+    color: var(--accent);
     font: inherit;
     cursor: pointer;
   }

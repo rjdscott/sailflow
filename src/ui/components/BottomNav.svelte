@@ -1,19 +1,16 @@
 <script lang="ts">
   import { router } from '../router.svelte';
-  import { NAV_ITEMS } from './navItems';
+  import { navItems } from './navItems';
+
+  const items = $derived(navItems(router.route));
 </script>
 
 <!-- The product name, once, above the tabs (audit ux-02 M-01). -->
 <p class="wordmark">Sailflow</p>
 
 <nav class="bottom-nav" aria-label="Primary">
-  {#each NAV_ITEMS as tab (tab.route)}
-    <button
-      type="button"
-      class:active={router.route === tab.route}
-      aria-current={router.route === tab.route ? 'page' : undefined}
-      onclick={() => router.navigate(tab.route)}
-    >
+  {#each items as tab (tab.route)}
+    <a href={tab.href} class:active={tab.current} aria-current={tab.current ? 'page' : undefined}>
       <svg
         viewBox="0 0 24 24"
         width="22"
@@ -28,7 +25,7 @@
         <path d={tab.icon} />
       </svg>
       <span>{tab.label}</span>
-    </button>
+    </a>
   {/each}
 </nav>
 
@@ -51,7 +48,8 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  button {
+  a {
+    position: relative;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -59,14 +57,25 @@
     justify-content: center;
     gap: 2px;
     min-height: var(--hit-min);
-    background: none;
-    border: none;
     color: var(--ink-2);
     font-size: var(--text-xs);
-    cursor: pointer;
+    text-decoration: none;
   }
 
-  button.active {
+  /* Same 3 px indicator as the rail, on the edge nearest the content, so the
+     current tab is not colour alone (research §3 principle 10). */
+  a.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: var(--space-3);
+    right: var(--space-3);
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--accent);
+  }
+
+  a.active {
     color: var(--accent);
   }
 </style>

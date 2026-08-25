@@ -56,9 +56,13 @@
 </div>
 
 <style>
+  /* An inset control on a cockpit panel: the trough sits one step *below* the
+     card it is on, and the outline carries the group boundary at 3:1 rather
+     than leaving it to a 1.3:1 fill difference (WCAG 1.4.11). */
   .segmented {
     display: inline-flex;
-    background: var(--surface);
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
     border-radius: var(--radius);
     padding: 2px;
     gap: 2px;

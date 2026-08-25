@@ -21,7 +21,8 @@
     type DivergenceRow,
   } from '../../lib/divergenceLog';
   import { fmt } from '../format';
-  import type { SeaState } from '../../core/types';
+  import InstrumentCell from '../components/InstrumentCell.svelte';
+  import type { SeaState, Tier } from '../../core/types';
   import { cellState, NOISE, verdict, type ModelOptimum } from './store.svelte';
 
   let {
@@ -149,15 +150,43 @@
   <span class="missing" title={why}>&mdash;<span class="visually-hidden"> {why}</span> </span>
 {/snippet}
 
-{#snippet modelCell(value: number | null, text: string)}
+{#snippet modelCell(id: string, value: number | null, text: string, unit = '', tier?: Tier)}
   {@const state = cellState(value, busy)}
-  <span class="cell tabular-nums" role="cell">
+  <span class="cell" role="cell">
     {#if state === 'value'}
-      {text}
-    {:else if state === 'solving'}
-      {@render skeleton()}
+      <InstrumentCell label="Model" {id} size="sm" value={text} {unit} {tier} />
     {:else}
-      {@render noValue('the model has no value here')}
+      <span class="section-title">Model</span>
+      {#if state === 'solving'}
+        {@render skeleton()}
+      {:else}
+        {@render noValue('the model has no value here')}
+      {/if}
+    {/if}
+  </span>
+{/snippet}
+
+<!-- One guide's take on one row. The number wears the same cell contract as
+     the model's beside it (ADR 0015) and the delta rides underneath in plain
+     ink: the panel never picks a winner (audit ux-01 M-06). -->
+{#snippet guideCell(
+  gid: GuideId,
+  id: string,
+  loaded: boolean,
+  text: string | null,
+  d: string | null,
+  unit = '',
+)}
+  <span class="cell" role="cell">
+    {#if !loaded}
+      <span class="section-title">{GUIDE_LABELS[gid]}</span>
+      <span class="missing">not loaded</span>
+    {:else if text === null}
+      <span class="section-title">{GUIDE_LABELS[gid]}</span>
+      {@render noValue('no published value in this guide')}
+    {:else}
+      <InstrumentCell label={GUIDE_LABELS[gid]} {id} size="sm" value={text} {unit} />
+      {#if d}<span class="delta tabular-nums">&Delta; {d}</span>{/if}
     {/if}
   </span>
 {/snippet}
@@ -177,129 +206,116 @@
   {#if error}
     <p class="copy err" role="alert">The model could not be solved: {error}</p>
   {:else if headline === 'comparing'}
-    <p class="copy">Comparing the model with the guides&hellip;</p>
+    <p class="copy verdict">Comparing the model with the guides&hellip;</p>
   {:else if headline === 'unknown'}
-    <p class="copy">Nothing to compare yet for this condition.</p>
+    <p class="copy verdict">Nothing to compare yet for this condition.</p>
   {:else if headline === 'disagree'}
-    <p class="copy">
+    <p class="copy verdict">
       These disagree. The model is calibrated to North at 8&ndash;10 and 12&ndash;16 kt (marked);
       elsewhere the gap is information.
     </p>
   {:else}
-    <p class="copy">
+    <p class="copy verdict">
       Model and guides agree within the noise: no gap is larger than {NOISE} in the units shown.
     </p>
   {/if}
   <p class="copy legend">&Delta; = model &minus; guide, in the guide's units.</p>
 
+  <!-- No column-header row: every cell carries its own source name, which is
+       what the instrument-cell contract already asks for and what lets four
+       columns wrap to two on a phone. -->
   <div class="grid" role="table" aria-label="Model versus tuning guides">
-    <div class="row head" role="row">
-      <span role="columnheader">&nbsp;</span>
-      <span role="columnheader">Model</span>
-      {#each recs as { id } (id)}
-        <span role="columnheader">{GUIDE_LABELS[id]}</span>
-      {/each}
-    </div>
-
-    {#snippet turnsRow(
+    {#snippet numberRow(
+      rowId: string,
       label: string,
       modelValue: number | null,
       pick: (r: GuideRecommendation) => number | null,
+      decimals: number,
+      unit: string,
+      tier?: Tier,
     )}
       <div class="row" role="row">
         <span class="rowlabel" role="rowheader">{label}</span>
-        {@render modelCell(modelValue, modelValue === null ? '' : fmt(modelValue, 1))}
+        {@render modelCell(
+          rowId,
+          modelValue,
+          modelValue === null ? '' : fmt(modelValue, decimals),
+          unit,
+          tier,
+        )}
         {#each recs as { id, rec } (id)}
-          <span class="cell tabular-nums" role="cell">
-            {#if !rec}
-              <span class="missing">not loaded</span>
-            {:else}
-              {@const v = pick(rec)}
-              {@const d = delta(modelValue, v)}
-              {#if v === null}{@render noValue('no published value in this guide')}{:else}{fmt(
-                  v,
-                  1,
-                )}{/if}
-              {#if d !== null}
-                <span class="delta">{signed(d, 1, '')}</span>
-              {/if}
-            {/if}
-          </span>
+          {@const v = rec ? pick(rec) : null}
+          {@const d = rec ? delta(modelValue, v) : null}
+          {@render guideCell(
+            id,
+            `${rowId}-${id}`,
+            !!rec,
+            v === null ? null : fmt(v, decimals),
+            d === null ? null : signed(d, decimals, ''),
+            unit,
+          )}
         {/each}
       </div>
     {/snippet}
 
-    {@render turnsRow(
-      'Uppers (turns)',
+    {@render numberRow(
+      'uppers',
+      'Uppers',
       modelOptimum?.dock.upperTurns ?? null,
       (r) => r.uppersTurns,
+      1,
+      'turns',
     )}
-    {@render turnsRow(
-      'Lowers (turns)',
+    {@render numberRow(
+      'lowers',
+      'Lowers',
       modelOptimum?.dock.lowerTurns ?? null,
       (r) => r.lowersTurns,
+      1,
+      'turns',
     )}
 
+    <!-- Rake is prose in every guide, so only the model's half is a number. -->
     <div class="row" role="row">
       <span class="rowlabel" role="rowheader">Rake</span>
       {@render modelCell(
+        'rake',
         modelOptimum?.dock.forestayMm ?? null,
-        modelOptimum ? `${signed(modelOptimum.dock.forestayMm, 0, 'mm')} forestay` : '',
+        modelOptimum ? signed(modelOptimum.dock.forestayMm, 0, '') : '',
+        'mm forestay',
       )}
       {#each recs as { id, rec } (id)}
         <span class="cell" role="cell">
+          <span class="section-title">{GUIDE_LABELS[id]}</span>
           {#if !rec}
             <span class="missing">not loaded</span>
           {:else if rec.rakeNote === null || rec.rakeNote === undefined}
             {@render noValue('no published value in this guide')}
           {:else}
-            {rec.rakeNote}
+            <span class="prose">{rec.rakeNote}</span>
           {/if}
         </span>
       {/each}
     </div>
 
-    <div class="row" role="row">
-      <span class="rowlabel" role="rowheader">Target BSP</span>
-      {@render modelCell(
-        modelOptimum?.bsKt.value ?? null,
-        modelOptimum ? fmt(modelOptimum.bsKt.value, 2, 'kt') : '',
-      )}
-      {#each recs as { id, rec } (id)}
-        <span class="cell tabular-nums" role="cell">
-          {#if !rec}
-            <span class="missing">not loaded</span>
-          {:else if rec.targets.bsKt === null}
-            {@render noValue('no published value in this guide')}
-          {:else}
-            {fmt(rec.targets.bsKt, 2, 'kt')}
-            {@const d = delta(modelOptimum?.bsKt.value ?? null, rec.targets.bsKt)}
-            {#if d !== null}<span class="delta">{signed(d, 2, 'kt')}</span>{/if}
-          {/if}
-        </span>
-      {/each}
-    </div>
-
-    <div class="row" role="row">
-      <span class="rowlabel" role="rowheader">Target heel</span>
-      {@render modelCell(
-        modelOptimum?.heelDeg.value ?? null,
-        modelOptimum ? fmt(modelOptimum.heelDeg.value, 0, '°') : '',
-      )}
-      {#each recs as { id, rec } (id)}
-        <span class="cell tabular-nums" role="cell">
-          {#if !rec}
-            <span class="missing">not loaded</span>
-          {:else if rec.targets.heelDeg === null}
-            {@render noValue('no published value in this guide')}
-          {:else}
-            {fmt(rec.targets.heelDeg, 0, '°')}
-            {@const d = delta(modelOptimum?.heelDeg.value ?? null, rec.targets.heelDeg)}
-            {#if d !== null}<span class="delta">{signed(d, 0, '°')}</span>{/if}
-          {/if}
-        </span>
-      {/each}
-    </div>
+    {@render numberRow(
+      'bsp',
+      'Target BSP',
+      modelOptimum?.bsKt.value ?? null,
+      (r) => r.targets.bsKt,
+      2,
+      'kt',
+      modelOptimum?.bsKt.tier,
+    )}
+    {@render numberRow(
+      'heel',
+      'Target heel',
+      modelOptimum?.heelDeg.value ?? null,
+      (r) => r.targets.heelDeg,
+      0,
+      '°',
+      modelOptimum?.heelDeg.tier,
+    )}
   </div>
 
   {#each recs as { id, guide, rec } (id)}
@@ -387,6 +403,19 @@
     color: var(--bad);
   }
 
+  /* The same weight as the instrument bar's verdict line, for the same reason:
+     state before data (research §3 principle 14), and the learn tier reads it
+     first because it is the only sentence on the panel. */
+  .verdict {
+    font-size: var(--text-md);
+    color: var(--ink);
+  }
+
+  :global([data-tier='learn']) .verdict {
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
   .updating {
     font-size: var(--text-xs);
     color: var(--ink-2);
@@ -423,32 +452,32 @@
   .grid {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    border: 1px solid var(--line);
     border-radius: var(--radius);
     overflow: hidden;
   }
 
+  /* The row label owns its own line, then the three readings share the width:
+     three instrument cells at 96 px is the same minimum the cockpit's bar
+     uses, so this wraps to one column on a phone instead of crushing. */
   .row {
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr 1fr;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    align-items: baseline;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-3);
+    align-items: start;
   }
 
   .row + .row {
-    border-top: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
-  }
-
-  .head {
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--ink-2);
+    border-top: 1px solid var(--line);
   }
 
   .rowlabel {
-    font-size: var(--text-sm);
+    grid-column: 1 / -1;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     color: var(--ink-2);
   }
 
@@ -457,6 +486,11 @@
     color: var(--ink);
     display: flex;
     flex-direction: column;
+    min-width: 0;
+  }
+
+  .prose {
+    font-size: var(--text-sm);
   }
 
   /* Neutral: the panel never picks a winner, so a delta must not be painted as
