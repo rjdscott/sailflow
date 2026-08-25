@@ -1,7 +1,7 @@
 {
-  "note": "Gzip size, bytes, of the entry chunk index.html loads. ADR 0014's promise is that the three.js sail view does not land on first load; `bundle_check.mjs` is what makes that promise checkable. Raise this deliberately, in the PR that earns it, never to make CI green — and if the number jumps by tens of kilobytes, something that should be behind a dynamic import is not.",
+  "note": "Gzip size, bytes, of the entry chunk index.html loads. ADR 0014's promise is that the three.js sail view does not land on first load; `bundle_check.mjs` is what makes that promise checkable. Raise this deliberately, in the PR that earns it, never to make CI green \u2014 and if the number jumps by tens of kilobytes, something that should be behind a dynamic import is not.",
   "measured": "2026-08-25",
-  "entryGzipBytes": 104940,
+  "entryGzipBytes": 110701,
   "toleranceBytes": 2048,
   "history": [
     {

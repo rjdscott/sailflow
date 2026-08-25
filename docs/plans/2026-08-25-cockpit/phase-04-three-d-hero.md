@@ -134,3 +134,4 @@ image.
   the ADR's position; four baselines on a view whose whole point is that it
   changes appearance is a maintenance tax.
 
+- **2026-08-25 — merged onto main after phase 02.** Entry baseline rebased 104,940 → 110,701 B gzip: the growth is phase 02's InstrumentBar, instruments and polar data (merged after the baseline was taken), not the hero — the entry chunk still contains no `WebGLRenderer`. Merge conflicts: ci.yml (Playwright image has no make → `pnpm install`), playwright.config.ts (took phase 04's port 4318 / no reuse), Race.svelte imports.
