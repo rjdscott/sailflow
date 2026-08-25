@@ -85,6 +85,12 @@
   /* Layout constants, so screens and the shell agree on one set of numbers. */
   --rail-w: 72px;
   --content-max: 1280px;
+  /* The cockpit alone runs past --content-max: it is an instrument panel, and
+     the room a 1920 px monitor has is room its gauges and sliders should use
+     (ADR 0016). Every other screen is prose and stays at --content-max.
+     prov: assumed 2200 px — past that the hero's two flanking panels are
+     further apart than one saccade, which is the thing the layout is for. */
+  --cockpit-max: 2200px;
   --gutter: 16px;
 }
 

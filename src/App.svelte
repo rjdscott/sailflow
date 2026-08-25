@@ -98,7 +98,7 @@
 <div class="shell">
   <div class="rail-slot"><NavRail /></div>
 
-  <main>
+  <main class:cockpit-wide={router.route === 'race'}>
     {#if router.route === 'race'}
       <Race />
     {:else if router.route === 'dock'}
@@ -181,6 +181,13 @@
     main {
       max-width: var(--content-max);
       padding-block: var(--space-6);
+    }
+
+    /* Race only: the cockpit fills the window past the rail up to its own cap.
+       A 1920 px monitor was giving 640 px of it back to the margins while the
+       panels scrolled inside themselves (ADR 0016, audit ux-03 M-01). */
+    main.cockpit-wide {
+      max-width: var(--cockpit-max);
     }
   }
 </style>

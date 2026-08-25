@@ -108,10 +108,24 @@
     display: block;
   }
 
+  /* Narrow: the picture comes first, because it is what you look at while a
+     thumb is still finding the control. Named areas rather than `order`, so
+     the wide steps below can rearrange rows as well as columns. */
   .grid {
     display: grid;
     gap: var(--space-4);
     min-width: 0;
+    align-content: start;
+    grid-template-areas:
+      'visual'
+      'controls';
+  }
+
+  .grid.with-instruments {
+    grid-template-areas:
+      'visual'
+      'controls'
+      'instruments';
   }
 
   .controls,
@@ -120,27 +134,53 @@
     min-width: 0;
   }
 
-  /* Wide enough for the control and its picture side by side: controls left,
-     what you look at right, and the numbers in a narrow rail beside them. */
-  @container (min-width: 560px) {
+  /* A control row decides between its one-line and two-line form off this
+     width, not off the viewport's: the same panel is 600 px wide in one
+     cockpit column and 270 px in another (research §2E — media queries for
+     the page grid, container queries for panel internals). */
+  .controls {
+    container-type: inline-size;
+  }
+
+  .visual {
+    grid-area: visual;
+  }
+
+  .controls {
+    grid-area: controls;
+  }
+
+  .instruments {
+    grid-area: instruments;
+  }
+
+  /* Wide enough for the control beside its picture. Stacking all three is what
+     made a cockpit panel 830 px tall in a 600 px column and put 54–81 % of it
+     behind a scroller (audit ux-03 M-01); side by side the panel is as tall as
+     its tallest column instead of the sum of three.
+     prov: assumed 520 px — the control column keeps ~300 px, which is a name,
+     a value and a track a mouse can aim at. */
+  @container (min-width: 470px) {
     .grid {
-      grid-template-columns: minmax(0, 1fr) minmax(200px, 1fr);
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      grid-template-areas: 'controls visual';
     }
 
     .grid.with-instruments {
-      grid-template-columns: minmax(0, 1fr) minmax(200px, 1fr) minmax(120px, 0.6fr);
+      grid-template-areas:
+        'controls visual'
+        'controls instruments';
     }
+  }
 
-    .visual {
-      order: 1;
-    }
-
-    .controls {
-      order: 0;
-    }
-
-    .instruments {
-      order: 2;
+  /* Wider still: the numbers get their own rail, so nothing is stacked at all
+     and the panel is exactly as tall as its tallest of three columns.
+     prov: assumed 595 px — a 265 px control column (a name, a value and a
+     track a mouse can aim at), a 190 px picture, a 110 px rail, two gaps. */
+  @container (min-width: 595px) {
+    .grid.with-instruments {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.58fr);
+      grid-template-areas: 'controls visual instruments';
     }
   }
 </style>
