@@ -62,7 +62,7 @@
       "leechMm": 8800,
       "footMm": 5700,
       "halfMm": 5560,
-      "orcTable": "5.6"
+      "orcTable": "5.7"
     }
   },
   "crew": {
@@ -500,6 +500,11 @@
       "source": "class-rules-2026",
       "kind": "published",
       "note": "Class Rules G.5.3: gennaker half width maximum 5560mm"
+    },
+    "sails.asym.orcTable": {
+      "source": "orc-vpp-2023",
+      "kind": "published",
+      "note": "Table 5.7, asymmetric spinnaker tacked on centreline (kpasc 0.02648) - the J/70's gennaker is tacked to a bowsprit on the centreline. Was labelled 5.6, which is the SYMMETRIC spinnaker table; a metadata error only, since src/core/aero/orc/tables.ts hardcodes ASYM_TABLE from 5.7 and nothing dispatches on this string. 2023-edition numbering: the same table is 5.9 in the 2026 edition, whose coefficients also differ (see PROVENANCE.md)"
     },
     "crew.minKg": {
       "source": "orc-cert",
@@ -990,6 +995,12 @@
       "url": "",
       "retrieved": "2026-08-25",
       "edition": "internal"
+    },
+    "orc-vpp-2023": {
+      "title": "ORC VPP Documentation",
+      "url": "https://orc.org/uploads/files/ORC-VPP-Documentation-2023.pdf",
+      "retrieved": "2026-08-25",
+      "edition": "2023 edition. The coefficient tables in src/core/aero/orc/tables.ts are transcribed from this edition. ORC renumbered the sail tables in the 2026 edition (symmetric 5.6 -> 5.8, asymmetric on centreline 5.7 -> 5.9, asymmetric on pole 5.8 -> 5.10) and changed the asymmetric-on-centreline coefficients; every orcTable label in this file is 2023 numbering"
     }
   }
 }

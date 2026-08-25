@@ -18,6 +18,7 @@ method), **assumed** (no source; see ASSUMPTIONS.md).
 | `class-rules-2026` | International J/70 Class Rules, effective 1 February 2026 | 2026-08-25 | Published 02 February 2026; Effective 01 February 2026; previous issue 16 January 2024. Linked from https://j70ica.org/class-office-rules/ (no separate 2025 edition was found there; this is the current edition) | <https://j70ica.org/wp-content/uploads/2026/02/J70-Class-Rules-2026-1.pdf> |
 | `orc-cert` | ORC public one-design certificate, J/70 | 2026-08-25 | 2021 offset file (J70.od), VPP ver 2021 1.00; page marked 'TEST CERTIFICATE - NOT VALID FOR RACING' (data.orc.org public template certificate, not an owner-specific issued certificate) | <https://data.orc.org/public/od/2021/j70.od.html?nav=1> |
 | `app-convention` | Sailflow app UI convention (not a published source) | 2026-08-25 | internal | <> |
+| `orc-vpp-2023` | ORC VPP Documentation | 2026-08-25 | 2023 edition. The coefficient tables in src/core/aero/orc/tables.ts are transcribed from this edition. ORC renumbered the sail tables in the 2026 edition (symmetric 5.6 -> 5.8, asymmetric on centreline 5.7 -> 5.9, asymmetric on pole 5.8 -> 5.10) and changed the asymmetric-on-centreline coefficients; every orcTable label in this file is 2023 numbering | <https://orc.org/uploads/files/ORC-VPP-Documentation-2023.pdf> |
 | `north-j70` | J/70 Tuning Guide | 2026-08-25 | Rev. 1015 | <https://j70tr.org/wp-content/uploads/2025/12/north-j70-tuningguide-EUR.pdf> |
 | `quantum-j70` | J/70 Tuning and How-To Guide | 2026-08-25 |  | <https://www.quantumsails.com/en/sails/one-design/documents/j70/j70_tuningguide.aspx> |
 | `orc-speed-guide-j70` | ORC Speed Guide - J/70 Class | 2026-08-25 | VPP 2011 1.02 | <https://www.carpediemsailingteam.com/app/download/16137868/Speed_Guide_J70_Class.pdf> |
@@ -147,6 +148,7 @@ method), **assumed** (no source; see ASSUMPTIONS.md).
 | `sails.asym.halfMm` | 5560 | published | `class-rules-2026` | Class Rules G.5.3: gennaker half width maximum 5560mm |
 | `sails.asym.leechMm` | 8800 | published | `class-rules-2026` | Class Rules G.5.3: gennaker leech length maximum 8800mm |
 | `sails.asym.luffMm` | 10800 | published | `class-rules-2026` | Class Rules G.5.3: gennaker luff length maximum 10800mm |
+| `sails.asym.orcTable` | 5.7 | published | `orc-vpp-2023` | Table 5.7, asymmetric spinnaker tacked on centreline (kpasc 0.02648) - the J/70's gennaker is tacked to a bowsprit on the centreline. Was labelled 5.6, which is the SYMMETRIC spinnaker table; a metadata error only, since src/core/aero/orc/tables.ts hardcodes ASYM_TABLE from 5.7 and nothing dispatches on this string. 2023-edition numbering: the same table is 5.9 in the 2026 edition, whose coefficients also differ (see PROVENANCE.md) |
 | `sails.asym.ratedAreaM2` | 45.64 | published | `orc-cert` | ORC cert SAIL AREAS: Asymmetric Rated 45.64 m2 |
 | `sails.jib.halfMm` | 1250 | published | `class-rules-2026` | Class Rules G.4.3: headsail half width maximum 1250mm |
 | `sails.jib.lpMm` | 2450 | published | `class-rules-2026` | Class Rules G.4.3: headsail luff perpendicular maximum 2450mm |

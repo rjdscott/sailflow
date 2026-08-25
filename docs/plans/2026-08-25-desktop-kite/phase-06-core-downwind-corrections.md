@@ -14,7 +14,7 @@ not hidden.
 ## Tasks
 
 - [x] `src/core/aero/orc/depower.ts` (or wherever `clampFlat` lives): spinnaker `flatmin = 0.53` when `sailset === 'asym'`; test; `pnpm validate` before/after diff in the progress log. If the asym hold-out rows move, say by how much and whether it is towards or away from the published polar.
-- [ ] `data/boats/j70.json` `sails.asym.orcTable` → the correct table for the cited edition; `PROVENANCE.md` row.
+- [x] `data/boats/j70.json` `sails.asym.orcTable` → the correct table for the cited edition; `PROVENANCE.md` row.
 - [ ] `PROVENANCE.md`: ORC VPP edition pinned by year for the spinnaker tables; note the 2026 coefficient change and that the repo carries the earlier edition.
 - [ ] Progress log.
 
@@ -84,3 +84,35 @@ downwind (`A · reef²`) and enforces a ≈ 21.5° soft heel ceiling under
 spinnaker. Neither is modelled here; both are research doc 01 §2.4 items for
 someone else.
 
+
+### 2026-08-25 — the asym's ORC table label is 5.7, not 5.6
+
+`sails.asym.orcTable` said `"5.6"`, which in the 2023 edition is the
+**symmetric** spinnaker table (`kpss` 0.02639). The J/70's gennaker is tacked
+to a bowsprit on the centreline, so it is **Table 5.7** (`kpasc` 0.02648) —
+confirmed against `tables.ts`'s own header, which names 5.7 and correctly
+distinguishes it from 5.8 (asym on a pole: same `kp`, same values out to
+AWA 100°, diverging from 115°), and against research doc 01 §2.1.
+
+**Nothing reads the label numerically.** `grep -rn orcTable` over the repo
+returns three code hits and no dispatch: `types.ts:96` types it as a union of
+five strings, `validate.ts:48` checks set membership against
+`{5.1, 5.4, 5.6, 5.7, 5.8}` (so `"5.6"` passed happily), and nothing else. The
+solver hardcodes `ASYM_TABLE` in `tables.ts`. Proof rather than assertion: the
+regenerated golden corpus is byte-identical apart from the `boatHash` line
+(`2b39f8fb` → `60104ed1`, from the boat file changing at all), and `pnpm
+validate` differs only in its generated-at, commit and hash header lines. Gate
+still `FAIL — 21/25`, same rows, same residuals.
+
+**`PROVENANCE.md` row added**, which meant adding a source too: the boat file
+had no ORC VPP documentation entry at all, so the row now cites a new
+`orc-vpp-2023` source. The row records that the label is 2023 numbering, that
+the same table is 5.9 in 2026, and that the old value was a metadata error
+rather than a behaviour bug — the kind of quiet mislabelling the provenance
+rules exist to catch.
+
+Not touched: `sails.main.orcTable` `"5.1"` and `sails.jib.orcTable` `"5.4"`.
+Both are correct in the 2023 edition and both also renumber in 2026 (2026
+inserted a new Table 5.1 for RS percentages and a new 5.7 for roller-furling
+jib deltas). The edition pin in `PROVENANCE.md` covers all three labels at
+once, so neither needed its own row for this.
