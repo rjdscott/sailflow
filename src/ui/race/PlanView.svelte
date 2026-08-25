@@ -26,6 +26,8 @@
   import type { Pt } from './geometry';
   import { race } from './store.svelte';
   import { conditions } from '../stores/conditions.svelte';
+  import { SPRIT_TIP_X, type Vec3 } from '../three/conventions';
+  import { BARE_SPAR, kiteGeometry } from '../three/kite';
 
   let {
     aero,
@@ -87,6 +89,38 @@
 
   const mainSail = $derived(main ? sailPath(MAST, boomTip, main.half, side) : '');
   const jibSail = $derived(jib && jibUp ? sailPath(TACK, jibClew, jib.half, side) : '');
+
+  // --- the gennaker, projected (ADR 0017) -----------------------------------
+  //
+  // Same mapping as the 3D hero, so the two pictures cannot disagree about
+  // where the sail is. The rig it hangs off is the bare spar: a plan view has
+  // no third axis, so rake and bend do not project — and reaching for the real
+  // one would drag the whole 3D chunk into the first load.
+  //
+  // World (`three/conventions.ts`) to viewBox: athwartships is the plan's own
+  // scale, true. Fore-and-aft is anchored at the two datums both drawings
+  // share — the mast and the bowsprit tip — because the plan's assumed mast
+  // station (0.45·LOA) is not the rig's J, and a sail tacked to the sprit has
+  // to be drawn on the sprit that is actually on screen.
+  const KITE_SCALE_X = (MAST.y - (ORIGIN.y + D.spritTip.y)) / SPRIT_TIP_X;
+  const toPlan = (p: Vec3): Pt => ({
+    x: ORIGIN.x + p[2] * L.scale,
+    y: MAST.y - p[0] * KITE_SCALE_X,
+  });
+
+  const asym = $derived(race.result?.shape.asym);
+  const kite = $derived(
+    !jibUp && asym && race.controls.down
+      ? kiteGeometry(race.controls.down, BARE_SPAR, side)
+      : undefined,
+  );
+  /** Luff sampled tack to head, then the leech to the clew and the foot home. */
+  const kiteSail = $derived.by(() => {
+    if (!kite) return '';
+    const at = (p: Pt): string => `${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
+    const luff = Array.from({ length: 9 }, (_, i) => toPlan(kite.spine(i / 8)));
+    return `M ${luff.map(at).join(' L ')} L ${at(toPlan(kite.clew))} Z`;
+  });
 
   /** The ¾-height section, shorter in chord and twisted open: twist, in plan. */
   function ghost(tack: Pt, deg: number, len: number, s: SailShape): string {
@@ -215,6 +249,9 @@
       <g class="sails">
         <path class="ghost" d={mainGhost} />
         <path class="ghost" d={jibGhost} />
+        <!-- The kite goes down first: it is the sail furthest to leeward, and
+             the main reads over it rather than under. -->
+        <path class="sail kite" class:curl={kite?.curl} d={kiteSail} />
         <path class="sail" d={mainSail} />
         <path class="sail" d={jibSail} />
         <line
@@ -309,8 +346,8 @@
         <dd>{((main?.half.draft ?? 0) * 100).toFixed(1)}%</dd>
       </div>
       <div>
-        <dt>Jib draft</dt>
-        <dd>{((jib?.half.draft ?? 0) * 100).toFixed(1)}%</dd>
+        <dt>{jibUp ? 'Jib' : 'Kite'} draft</dt>
+        <dd>{(((jibUp ? jib : asym)?.half.draft ?? 0) * 100).toFixed(1)}%</dd>
       </div>
       <div>
         <dt>Twist</dt>
@@ -333,6 +370,15 @@
     The lean of the plan view is illustrative and capped at {MAX_DRAWN_HEEL}°. The Heel figure is
     the solved angle, uncapped.
   </p>
+  {#if kite}
+    <p>
+      The gennaker's outline is drawn from the four downwind controls, not solved: the sprit and
+      tack line put the tack, the halyard sets how much the free luff sags, and the sheet swings the
+      clew. A dashed outline means the sheet is eased past the assumed curl threshold. Direction
+      only (ADR 0017).
+    </p>
+  {/if}
+
   <p>The telltale ribbons carry three states:</p>
   <ul>
     <li><strong>Streaming</strong> — flow attached, this is the target.</li>
@@ -490,6 +536,19 @@
     stroke: var(--accent);
     stroke-width: 1.1;
     stroke-linejoin: round;
+  }
+
+  /* One step lighter than the working sails: the kite is the biggest shape in
+     the picture and at the sails' own opacity it swamps the main behind it.
+     A dashed outline is the curl cue — the same tier-C threshold the 3D
+     hero's luff ribbons read, said in the one way a still drawing can. */
+  .sail.kite {
+    fill-opacity: 0.1;
+    stroke-width: 1;
+  }
+
+  .sail.kite.curl {
+    stroke-dasharray: 5 3;
   }
 
   .ghost {

@@ -1,7 +1,7 @@
 {
   "note": "Gzip size, bytes, of the entry chunk index.html loads. ADR 0014's promise is that the three.js sail view does not land on first load; `bundle_check.mjs` is what makes that promise checkable. Raise this deliberately, in the PR that earns it, never to make CI green — and if the number jumps by tens of kilobytes, something that should be behind a dynamic import is not.",
   "measured": "2026-08-25",
-  "entryGzipBytes": 121717,
+  "entryGzipBytes": 125384,
   "toleranceBytes": 2048,
   "history": [
     {
@@ -28,6 +28,11 @@
       "date": "2026-08-25",
       "bytes": 121717,
       "note": "phase 05: Helm & conditions and Rig panels, the actions bar with A/B compare, the puff replay and its player, and the gear chart. All first-load Race UI by design; the tuning-guide JSON the chart reads was already in the entry for the disagreement panel, so none of the +6.5 KB is data."
+    },
+    {
+      "date": "2026-08-25",
+      "bytes": 125384,
+      "note": "desktop-kite phase 02: the gennaker (ADR 0017). +3.0 KB over this branch's HEAD, which itself builds at 122380 B here — 663 B above the 121717 recorded on the cockpit branch, so re-measure HEAD before attributing a delta to your own change. Of the 3.0 KB, 1.3 KB is the plan view drawing the kite: `three/kite.ts` and `three/conventions.ts` become shared modules and move into the entry, because the 2D plan view is the always-loaded fallback and it now draws the sail too. Deliberate: ADR 0017 puts one kite mapping behind both pictures, and a second copy of it in plan-view coordinates would cost more in drift than it saves in bytes. No renderer code moved — checked, not assumed: the hull stations and the kite material are in the SailView3D chunk and not in the entry, and that chunk is still lazy at 140.1 KB gzip."
     }
   ]
 }

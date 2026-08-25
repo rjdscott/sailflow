@@ -46,10 +46,20 @@
  * sags, so the spanwise grid lines are not vertical and the surface normals
  * tilt with them.
  */
+import boat from '../../../data/boats/j70.json';
 import { tackSide, type Side } from '../race/boat';
 
 export { tackSide };
 export type { Side };
+
+/**
+ * Stem, +J forward of the mast heel — the reduction `race/rigLayout.ts` uses
+ * for the side elevation, and the fore-and-aft datum every drawing shares.
+ */
+export const STEM_X = boat.rig.jM;
+
+/** Bowsprit fully extended: where the gennaker tacks at `sprit = 100`. */
+export const SPRIT_TIP_X = STEM_X + boat.rig.bowspritOuterMm / 1000;
 
 /** `[x, y, z]` in the frame above. A tuple, so it is JSON-safe and cheap. */
 export type Vec3 = [number, number, number];

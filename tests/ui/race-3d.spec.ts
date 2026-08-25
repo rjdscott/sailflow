@@ -92,6 +92,30 @@ test('renders the 3D hero from the leeward quarter', async ({ page }) => {
   });
 });
 
+test('sets the gennaker and furls the jib under sailset=asym', async ({ page }) => {
+  // ADR 0017. `?set=asym` is the scenario link's own encoding (`ui/scenario.ts`),
+  // so this is the URL a downwind session actually lands on, and `twa=150`
+  // puts the boat where a kite belongs.
+  await openHero(page, 'view=leeward&freeze=1&set=asym&twa=150');
+
+  const hero = page.locator(HERO);
+  await expect(hero.locator('canvas')).toBeVisible();
+
+  // The DEV handle reports a sail that is not set as null, so this asks the
+  // question directly rather than reading `.visible` off a hidden mesh.
+  const sails = await page.evaluate(() => {
+    const s = (window as unknown as { __sail?: Record<string, unknown> }).__sail ?? {};
+    return { kite: s.kiteSail !== null && s.kiteSail !== undefined, jib: s.jibSail === null };
+  });
+  expect(sails).toEqual({ kite: true, jib: true });
+
+  await expect(hero).toHaveScreenshot('race-3d-kite-leeward.png', {
+    // Same tolerances, and for the same reason, as the jib baseline above.
+    maxDiffPixelRatio: 0.03,
+    threshold: 0.35,
+  });
+});
+
 test('honours the ?view= preset and the hero toggle', async ({ page }) => {
   await openHero(page, 'view=top&freeze=1');
   const hero = page.locator(HERO);
