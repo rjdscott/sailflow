@@ -58,10 +58,11 @@ export function trimmed(
   const eq = solveEquilibrium(boat, { condition, tune, deltas: orc.deltas, sheeting }, geom);
   const ctx = { sailset: condition.sailset, twsKt: condition.twsKt, deltas: orc.deltas };
   const vmg = eq.bsKt * Math.cos((condition.twaDeg * Math.PI) / 180);
+  const bsTier = tierFor('bs', ctx);
   return {
     converged: eq.converged,
     iters: eq.iters,
-    bsKt: tiered(eq.bsKt, tierFor('bs', ctx)),
+    bsKt: tiered(eq.bsKt, bsTier),
     vmgKt: tiered(vmg, tierFor('vmg', ctx)),
     heelDeg: tiered(eq.heelDeg, tierFor('heel', ctx), 0.15), // prov: assumed, wider ±15% band for heel (tier B)
     leewayDeg: tiered(eq.leewayDeg, tierFor('leeway', ctx), 0.25), // prov: assumed, wider ±25% band for leeway (tier B)
@@ -74,6 +75,7 @@ export function trimmed(
       aero: eq.aero,
       shape,
       bsKt: eq.bsKt,
+      bsTier,
       heelDeg: eq.heelDeg,
     }),
     residuals: eq.residuals,

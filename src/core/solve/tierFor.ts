@@ -23,6 +23,16 @@ export function tierFor(
   return t;
 }
 
+/**
+ * The lower-confidence of two tiers. A derived quantity can never be more
+ * confident than the worst input it is built from, so a ratio, a cap or a
+ * fold-in routes through here rather than hand-rolling the compare
+ * ('A' < 'B' < 'C' by letter, which is the confidence order).
+ */
+export function lowerTier(a: Tier, b: Tier): Tier {
+  return a > b ? a : b;
+}
+
 /** Wrap a value with its tier and, for B, a band of ±`bandFrac`. */
 // prov: assumed, default ±5% uncertainty band for tier B outputs
 export function tiered(value: number, tier: Tier, bandFrac = 0.05, sign?: -1 | 0 | 1): Tiered {

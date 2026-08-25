@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import j70 from '../../../data/boats/j70.json';
-import type { BoatDefinition } from '../types';
+import type { BoatDefinition, SailSet } from '../types';
 import { polarTarget, POLAR_TWS } from '../reference/polar';
 import { sheetingDeviation, sheetingEffect, TWIST_TO_AOA } from '../shape/sheeting';
 import { baseDock, baseRace } from '../shape/base';
@@ -15,6 +15,7 @@ import {
   LEECH_STALL_BAND,
   STRIPE_INCHES,
   helmLoad,
+  PCT_POLAR_BAND,
 } from './instruments';
 
 const boat = j70 as unknown as BoatDefinition;
@@ -200,5 +201,41 @@ describe('helm load', () => {
     const heelDeg = 15;
     const fxN = HELM_REF_NM / (3.6 * Math.sin((heelDeg * Math.PI) / 180));
     expect(helmLoad(fxN, 3.6, heelDeg)).toBeCloseTo(1, 12);
+  });
+});
+
+/**
+ * `pctPolar` is a ratio, and a ratio is no more confident than its numerator
+ * (audit docs-consistency-01 M-07). The grid tier on its own printed A under
+ * the kite, where the boat speed it divides is tier B.
+ */
+describe('pctPolar tier never beats its numerator', () => {
+  const solve = (sailset: SailSet, twsKt: number, twaDeg: number) =>
+    trimmed(
+      boat,
+      { dock: baseDock(), race: baseRace() },
+      { twsKt, twaDeg, seaState: 1, crewKg: 300, sailset },
+      geometryFor(boat),
+    );
+
+  it('is tier A with no band under the jib, in grid', () => {
+    expect(polarTarget(10, 42, 'jib').inGrid).toBe(true);
+    const r = solve('jib', 10, 42);
+    expect(r.bsKt.tier).toBe('A');
+    expect(r.instruments.pctPolar.tier).toBe('A');
+    expect(r.instruments.pctPolar.band).toBeUndefined();
+  });
+
+  it('is tier B under the kite, in grid, and keeps its band', () => {
+    expect(polarTarget(12, 140, 'asym').inGrid).toBe(true);
+    const r = solve('asym', 12, 140);
+    expect(r.bsKt.tier).toBe('B');
+    const p = r.instruments.pctPolar;
+    expect(p.tier).toBe('B');
+    expect(p.band).toEqual([p.value - PCT_POLAR_BAND, p.value + PCT_POLAR_BAND]);
+  });
+
+  it('is tier C outside the polar TWS range even under the jib', () => {
+    expect(solve('jib', 24, 42).instruments.pctPolar.tier).toBe('C');
   });
 });

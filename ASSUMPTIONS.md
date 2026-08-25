@@ -307,8 +307,14 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 - **`pctPolar` band** ±3 percentage points, assumed: the slack in
   interpolating a table printed 2 kt apart. It is not a claim about the
   model's accuracy — `validation/report.md` records fit-row boat-speed
-  residuals up to 10.8 % — and the value is tier A only inside the printed
-  TWS range and TWA grid for the sail being carried, tier C outside it.
+  residuals up to 10.8 %. **Tier (decided 2026-08-26, audit
+  docs-consistency-01 M-07):** the ratio takes the *lower* of the grid tier
+  (A inside the printed TWA grid for the sail being carried, C outside it)
+  and the tier of the boat speed it divides (`tierFor('bs')`), so it can
+  never read more confident than its own numerator — tier A under the jib
+  inside the polar's 6–20 kt range, tier B under the kite, tier C off the
+  grid or outside that range. The band is drawn only when the tier is B or C;
+  a tier-A `pctPolar` carries no band, as `tiered()` does everywhere else.
 - **Verdict thresholds** (`src/ui/race/verdict.ts`, presentation only):
   stall > 0.7 reads stalled, < 0.3 upwind reads under-trimmed, stripe < 0.5
   reads hooked, |helm| > 1.2 reads heavy, and a gap under 0.02 kt reads on
