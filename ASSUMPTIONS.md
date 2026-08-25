@@ -66,9 +66,10 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   one for a revealed hint) — `src/lib/spacing.ts`.
 - **Dock forecast pmf**: triangular on a 1-kt grid with a floor of 5 % of the
   peak weight before normalisation (≈1 % probability after it, so the range
-  ends count but lightly; `src/core/solve/dock.ts`, ADR 0009, assumed —
-  audit docs-consistency-01 M-05: whether 5 % probability was meant is an
-  open owner decision).
+  ends count but lightly; `src/core/solve/dock.ts`, ADR 0009, assumed).
+  Decided 2026-08-26 (audit docs-consistency-01 M-05): kept as coded — the
+  floor is there so the ends never vanish, not so they carry 5 % of the
+  weight.
 - **Plan-view drawing** (`src/ui/race/boat.ts`, presentation only, not in the
   solver): mast step at 0.45·LOA; boom angle = clamp(6° + 0.0085·(100 − mainsheet)²
   − traveller·0.08°, 2°, 90°) — quadratic so 70 % sheet is ~12° and 0 % reaches
