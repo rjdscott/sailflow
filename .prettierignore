@@ -3,6 +3,8 @@ node_modules
 pnpm-lock.yaml
 docs
 validation/report.md
+# Vitest golden snapshots: generated, and not valid TS.
+*.snap
 
 # owned by other agents / template surfaces, not part of this app scaffold
 .github

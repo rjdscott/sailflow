@@ -1,35 +1,46 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Layout smoke only (cockpit phase 01). Vitest owns the logic; this exists to
- * catch the one class of bug a jsdom test cannot see — a real viewport, real
- * CSS, and something wider than it.
+ * UI smoke tests. One project, headless Chromium on its **default
+ * SwiftShader** — software rendering is what we want, not a workaround:
+ * GitHub-hosted runners have no GPU, and SwiftShader renders the same pixels
+ * on every machine (research 2026-08-25-cockpit/03, sources 18 and 19).
  *
- * Chromium alone: the failures worth catching here are box-model, not engine
- * quirks, and a second browser doubles CI for a class of bug we do not have.
- *
- * The server is `vite preview`, so the smoke runs against the same bundle
- * that ships. It needs `dist/` — run `pnpm build` first (CI does; locally
- * `pnpm build && pnpm test:ui`).
+ * Baselines are keyed `*-chromium-linux`, so regenerate them inside
+ * `mcr.microsoft.com/playwright:v1.62.1-noble` — the tag CI pins — or they
+ * will not match. See `docs/plans/2026-08-25-cockpit/phase-04-three-d-hero.md`.
  */
-// Overridable so a second checkout (or a preview you left running) does not
-// collide: PREVIEW_PORT=4174 pnpm test:ui
-const PORT = Number(process.env.PREVIEW_PORT ?? 4173);
-
 export default defineConfig({
-  testDir: './tests/ui',
+  testDir: 'tests/ui',
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: 0,
-  reporter: process.env.CI ? 'list' : 'html',
+  retries: process.env.CI ? 1 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: `http://localhost:${PORT}`,
-    trace: 'on-first-retry',
+    baseURL: 'http://127.0.0.1:4318',
+    // Fixed, so a retina laptop and a CI runner agree on the pixels.
+    deviceScaleFactor: 1,
+    trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  expect: {
+    toHaveScreenshot: { animations: 'disabled' },
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 } },
+    },
+  ],
   webServer: {
-    command: `pnpm preview --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    // npx, not pnpm: the pinned playwright docker image has node but no pnpm.
+    // An odd port, and never reuse whatever already holds it: a `vite preview`
+    // left running by another checkout on the usual 4173 will happily serve a
+    // different build of this app, and the failure looks like a UI bug rather
+    // than a port clash (incident 2026-08-25).
+    command: 'npx vite preview --host 127.0.0.1 --port 4318 --strictPort',
+    url: 'http://127.0.0.1:4318',
+    reuseExistingServer: false,
     timeout: 60_000,
   },
 });

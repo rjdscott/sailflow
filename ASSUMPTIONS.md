@@ -61,6 +61,36 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   solver): mast step at 0.45·LOA; boom angle ≈ 6° + (100 − mainsheet)·0.25° +
   traveller·0.08°; jib sheeting angle ≈ 7° + jibLead·0.4° + (100 − jibSheet)·0.15°.
   Sign-correct, magnitude assumed; the figcaption says so.
+- **3D hero loft: head and foot sections** (`src/ui/three/loft.ts`,
+  presentation only, not in the solver). The solver reports flying shape at the
+  quarter, half and three-quarter heights only, and the two ends it does not
+  report dominate the silhouette people judge (ADR 0014). Chords at both ends
+  are published — Class Rules G.3/G.4.3 foot and top widths — but the shape is
+  extrapolated:
+  - **Foot**: the quarter section's camber, draft position and entry, and
+    `FOOT_TWIST_RAD` = 0. Assumed. The foot is on the boom or between tack and
+    lead, so the sheeting angle *is* its angle; the core's own per-height twist
+    multipliers [0.3, 0.65, 1.0] extrapolate to −0.05 there, so this agrees
+    with the solver to within a degree.
+  - **Head**: `HEAD_CAMBER_FACTOR` = 0.6 of the three-quarter camber, with
+    entry scaled by the same factor (the core's entry is
+    `atan(2·camber/draftPos)`, near-linear in camber at these depths), the
+    three-quarter draft position, and twist extrapolated linearly off the
+    half-to-three-quarter ramp. All assumed. 0.6 keeps the head visibly flatter
+    than the ¾ section without collapsing it to a plane; nothing published
+    gives a J/70 head camber.
+- **3D hero: first-frame budget** 50 ms (`FIRST_FRAME_BUDGET_MS`,
+  `src/ui/three/SailHero.svelte`). Assumed, and committed in ADR 0014: over it,
+  the 2D plan view keeps the hero slot. Three frames at 60 Hz is the most a
+  picture may cost before it reads as a stall on the screen you drag sliders
+  on. Not a measurement — no phone was profiled. `?freeze=1` exempts the view
+  so the CI screenshot is deterministic under software rendering.
+- **3D hero: forestay sag direction** `SAG_FORWARD_FRACTION` = 0.35
+  (`src/ui/three/rig3d.ts`). Assumed. Sag is jib-load driven and bows the stay
+  forward as well as to leeward; only the two directions are claimed, not the
+  split. Illustrative hull stations, spar radii and scene colours in
+  `src/ui/three/{hull,rig3d,SailView3D}.svelte` are drawing furniture, tagged
+  `prov: assumed` at each literal, and the caption labels the hull illustrative.
 
 ### Cockpit instruments (`src/core/solve/instruments.ts`, all tier C but `pctPolar`)
 
