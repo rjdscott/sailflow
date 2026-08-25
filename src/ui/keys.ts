@@ -11,12 +11,16 @@ export type KeyAction =
   | { type: 'pointOfSail'; index: number }
   | { type: 'applyOptimum' }
   | { type: 'undo' }
+  /** Swap between the two trims being compared (cockpit phase 05). */
+  | { type: 'abCompare' }
+  /** Play a gust through the trim on screen, or stop the one playing. */
+  | { type: 'puffReplay' }
   /** Jump to a sail panel's first control (cockpit phase 03). */
   | { type: 'focusPanel'; panel: PanelId }
   | { type: 'help' };
 
 /** Panels the keyboard can jump to, and the id of each one's control column. */
-export type PanelId = 'mainsail' | 'headsail';
+export type PanelId = 'mainsail' | 'headsail' | 'helm';
 
 /** The element the `m` / `j` jump looks inside for a control to focus. */
 export function panelControlsId(panel: PanelId): string {
@@ -53,6 +57,8 @@ export function keyAction(stroke: KeyStroke, typing: boolean): KeyAction | null 
   }
   if (stroke.key === 'o') return { type: 'applyOptimum' };
   if (stroke.key === 'u') return { type: 'undo' };
+  if (stroke.key === 'b') return { type: 'abCompare' };
+  if (stroke.key === 'p') return { type: 'puffReplay' };
   if (stroke.key === 'm') return { type: 'focusPanel', panel: 'mainsail' };
   if (stroke.key === 'j') return { type: 'focusPanel', panel: 'headsail' };
   if (stroke.key === '?') return { type: 'help' };
@@ -68,5 +74,7 @@ export const SHORTCUTS: { keys: string; what: string }[] = [
   { keys: 'j', what: 'Jump to the Headsail controls' },
   { keys: 'o', what: 'Apply optimum' },
   { keys: 'u', what: 'Back to my trim' },
+  { keys: 'b', what: 'A/B: swap to the other trim' },
+  { keys: 'p', what: 'Replay a gust (again to stop)' },
   { keys: '?', what: 'This list' },
 ];

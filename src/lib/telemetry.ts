@@ -22,6 +22,9 @@ export const TELEMETRY_EVENTS = [
   'drill.started',
   'drill.checked',
   'race.applyOptimum',
+  'race.abCompare',
+  'race.puffReplay',
+  'race.mode',
   'dock.commit',
   'log.saved',
 ] as const;
@@ -39,6 +42,9 @@ export const TELEMETRY_LABELS: Record<TelemetryEvent, string> = {
   'drill.started': 'Drills started',
   'drill.checked': 'Drills checked',
   'race.applyOptimum': 'Apply optimum used',
+  'race.abCompare': 'A/B compares',
+  'race.puffReplay': 'Puff replays',
+  'race.mode': 'Modes chosen',
   'dock.commit': 'Rig committed',
   'log.saved': 'Log entries saved',
 };

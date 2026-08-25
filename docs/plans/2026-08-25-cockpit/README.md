@@ -53,7 +53,7 @@ each panel keeps its visual beside its controls.
 | 02 | [Core instrument outputs and the instrument bar](phase-02-instruments.md) | 🟢 Completed | 2026-08-25 |
 | 03 | [Mainsail and Headsail panels](phase-03-sail-panels.md) | 🟢 Completed | 2026-08-25 |
 | 04 | [3D hero view](phase-04-three-d-hero.md) | 🟢 Completed | 2026-08-25 |
-| 05 | [Helm and Rig panels, actions, puff replay](phase-05-helm-rig-actions.md) | 🔵 Not started | none |
+| 05 | [Helm and Rig panels, actions, puff replay](phase-05-helm-rig-actions.md) | 🟢 Completed | 2026-08-25 |
 | 06 | [Phone, restyle, audit ux-03, close-out](phase-06-phone-restyle-audit.md) | 🔵 Not started | none |
 
 Order: 00 → 01 → 02 ∥ 04 → 03 → 05 → 06. Cut order under pressure: puff

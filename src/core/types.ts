@@ -114,6 +114,8 @@ export interface BoatDefinition {
   sails: Record<SailId, SailDef>;
   crew: CrewDef;
   controls: Record<string, ControlSpec>;
+  /** The base race trim, read by `shape/base.ts` and by Race mode alike. */
+  baseRace: RaceControls;
   /** Every fitted free parameter, flat namespace, e.g. "hydro.rrMul.fn30". */
   calibration: Record<string, number>;
   provenance: Record<string, ProvenanceEntry>;
