@@ -101,7 +101,7 @@
     {/key}
     {#if m.target}
       <span class="target">
-        <span aria-hidden="true">·</span> target {m.target.text}
+        target {m.target.text}
         <span class="delta tabular-nums">{m.target.delta}</span>
         <ConfidenceBadge tier={OPTIMUM_TIER} reason={OPTIMUM_REASON} />
       </span>
@@ -184,12 +184,13 @@
 
   /* Ink, not valence: the gap to the optimum is information, not a score. */
   .target {
-    display: inline-flex;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-1);
+    gap: 0 var(--space-1);
+    min-width: 0;
     font-size: var(--text-xs);
     color: var(--ink-2);
-    white-space: nowrap;
   }
 
   .delta {
