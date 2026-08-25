@@ -50,7 +50,7 @@ each panel keeps its visual beside its controls.
 |----|-------|--------|-------------|
 | 00 | [Research and decisions](phase-00-research-and-decisions.md) | 🟢 Completed | 2026-08-25 |
 | 01 | [Tokens v2 and cockpit primitives](phase-01-tokens-and-primitives.md) | 🟢 Completed | 2026-08-25 |
-| 02 | [Core instrument outputs and the instrument bar](phase-02-instruments.md) | 🔵 Not started | none |
+| 02 | [Core instrument outputs and the instrument bar](phase-02-instruments.md) | 🟢 Completed | 2026-08-25 |
 | 03 | [Mainsail and Headsail panels](phase-03-sail-panels.md) | 🔵 Not started | none |
 | 04 | [3D hero view](phase-04-three-d-hero.md) | 🔵 Not started | none |
 | 05 | [Helm and Rig panels, actions, puff replay](phase-05-helm-rig-actions.md) | 🔵 Not started | none |

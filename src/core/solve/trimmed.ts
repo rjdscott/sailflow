@@ -15,6 +15,7 @@ import { flyingShape } from '../shape/flying';
 import { shapeToOrc } from '../shape/toOrc';
 import { boomAngle, jibSheetAngle } from '../shape/sheeting';
 import { geometryFor, solveEquilibrium } from './equilibrium';
+import { instrumentsFor } from './instruments';
 import { tierFor, tiered } from './tierFor';
 import type { AeroGeometry } from '../aero/orc/forces';
 import { KT_TO_MS } from '../internal';
@@ -67,6 +68,14 @@ export function trimmed(
     aero: eq.aero,
     rig,
     shape,
+    // Every solve carries the instrument block: `optimal()` and the dock
+    // scorer both come through here, so Race, Drills and Dock all get it.
+    instruments: instrumentsFor(boat, controls, condition, {
+      aero: eq.aero,
+      shape,
+      bsKt: eq.bsKt,
+      heelDeg: eq.heelDeg,
+    }),
     residuals: eq.residuals,
   };
 }

@@ -62,6 +62,48 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   traveller·0.08°; jib sheeting angle ≈ 7° + jibLead·0.4° + (100 − jibSheet)·0.15°.
   Sign-correct, magnitude assumed; the figcaption says so.
 
+### Cockpit instruments (`src/core/solve/instruments.ts`, all tier C but `pctPolar`)
+
+- **Main leech stall fraction.** `1 − exp(−3·dev / (band + 2·stallScale))` on
+  the sheeting model's over-trim deviation, zero anywhere the sail is not
+  over-trimmed. The two constants are assumed: the deviation at which the
+  whole leech counts as stalled is two stall e-folds past the groove band,
+  and the exponent 3 puts the reading at 0.95 there. **Known ceiling:** with
+  the fitted `aero.sheet.stallScaleDeg` of 30° the reachable upwind range is
+  about 0 to 0.11 — mainsheet hard on at 20 kt reads 0.11 — so the North
+  guide's 50–70 % band shown on the gauge is not reachable upwind and the
+  reading is a "more trimmed / less trimmed" direction, not a percentage to
+  hit. Downwind, where the boom cannot go far enough out, it reaches ~0.96
+  and behaves as intended. Upgrade path: give the stall meter its own scale
+  (the twist range across the leech) rather than borrowing the lift-loss
+  e-fold, once there is evidence for one.
+- **Jib leech spreader stripe.** Athwartships offset of the leech at the
+  spreader height = jib chord there × sin(clew sheeting angle + twist at ¾
+  height), with the luff taken as on the centreline; the index is linear
+  between the painted 18" and 20" stripes. The chord comes from the class
+  girth stations (published), the two angles from the invented sheeting and
+  flying-shape layers, and the straight-chord geometry is assumed. Only the
+  direction is claimed — lead aft and sheet eased both open the leech
+  outboard. At the base trim the model reads about −0.6 (inside the 18"
+  stripe), so the absolute inches are not calibrated against a boat.
+- **Helm load reference** `HELM_REF_NM` = 300 N·m, assumed: the yaw moment of
+  a well-powered J/70 upwind at 12–14 kt with the crew hiking, chosen so 1.0
+  reads "firm" and the cockpit's 1.2 "heavy helm" threshold trips when heel
+  runs away. The target bug on the helm bar sits at 0.3, likewise assumed.
+  The lever itself — `ceHeight · sin(heel)` — is geometry; what is assumed is
+  that a yaw moment scaled this way reads as helm feel at all, and it is only
+  diagnostic while heel is steady (North Speed Guide), which is why the heel
+  gauge is beside it.
+- **`pctPolar` band** ±3 percentage points, assumed: the slack in
+  interpolating a table printed 2 kt apart. It is not a claim about the
+  model's accuracy — `validation/report.md` records fit-row boat-speed
+  residuals up to 10.8 % — and the value is tier A only inside the printed
+  TWS range and TWA grid for the sail being carried, tier C outside it.
+- **Verdict thresholds** (`src/ui/race/verdict.ts`, presentation only):
+  stall > 0.7 reads stalled, < 0.3 upwind reads under-trimmed, stripe < 0.5
+  reads hooked, |helm| > 1.2 reads heavy, and a gap under 0.02 kt reads on
+  target. All assumed, all above or below the bands the guides publish.
+
 <!-- generated: do not edit below this line -->
 
 ## Assumed boat parameters

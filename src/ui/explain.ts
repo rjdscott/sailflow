@@ -61,6 +61,13 @@ export const READOUT_EXPLAIN: Record<string, string> = {
     'The angle between where the bow points and where the boat actually goes: the keel needs some slip to make side force. It grows as you slow down or load up, so a big number in chop usually means the boat is being sailed too high for the sea state.',
   awa: 'Apparent wind angle — the wind the sails actually see, which is the true wind combined with the boat’s own motion. It is always tighter than TWA, and it is what the trim is set to, which is why the sheeting angle upwind looks so narrow.',
   flat: 'The ORC VPP depowering parameter: one is the sail plan at full power, and anything lower is the model flattening the sails to keep the boat on its feet. It is a model internal rather than something you can read on the boat — watch it fall as the breeze builds and the rig depowers.',
+  pctPolar:
+    'Your boat speed as a percentage of what the ORC Speed Guide prints for this wind speed, this angle and the sail you are carrying — 100 % is the published number, and the guide’s own jib and kite columns differ, so the target changes when the sail does. Inside the printed grid it is tier A, a number you may quote. Pinch inside the guide’s VMG angle, or sail above 20 knots, and the lookup is off the end of the table: it drops to tier C, a direction only.',
+  helm: 'How hard the rudder is working, as a proxy: heel carries the sails’ centre of effort out to leeward, and the drive acting on that lever is the moment you hold with the tiller. One is a firm helm, zero is numb, and past about 1.2 the blade is braking rather than steering. Tier C — direction only, and it is only diagnostic while heel is steady, which is why the heel gauge sits beside it.',
+  leechStall:
+    'How much of the main’s leech the model has stalled, from how far the boom is trimmed inside the angle the apparent wind wants. The tuning guides ask for 50–70 % stalled at maximum trim and clean flow while you are building speed, which is the band marked on the gauge. Tier C — direction only, and with this calibration the reading upwind stays well below the band, so read it as “more trimmed” and “less trimmed”, not as a percentage to hit.',
+  jibStripe:
+    'Where the jib leech crosses the spreader, against the three stripes painted at 18, 20 and 22 inches from the mast: 0 is the inner stripe, 2 the outer. Below zero the leech is hooked inside the inner stripe and the slot is choked; lead aft or ease to open it. Tier C — the geometry is sign-correct, the absolute inches are not calibrated.',
 };
 
 interface Move {

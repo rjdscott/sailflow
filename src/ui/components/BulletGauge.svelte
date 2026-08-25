@@ -20,6 +20,9 @@
     unit = '',
     decimals = 0,
     tier,
+    symbol,
+    id,
+    onexplain,
   }: {
     label: string;
     value: number;
@@ -32,10 +35,20 @@
     unit?: string;
     decimals?: number;
     tier?: Tier;
+    /**
+     * Force the value mark instead of a bar. `bulletScale` already does this
+     * for a scale that starts above zero; a signed scale centred on zero
+     * needs it too, and only the caller knows that is what it is.
+     */
+    symbol?: boolean;
+    /** Key into the caller's explain copy; stable across label renames. */
+    id?: string;
+    onexplain?: (id: string) => void;
   } = $props();
 
   const scale = $derived(bulletScale({ min, max, value, target, ranges, betterIs }));
   const bands = $derived(bulletBands(scale.rangePcts, betterIs));
+  const asSymbol = $derived(symbol ?? scale.symbolMode);
 
   /** A degree sign hangs off the digits; every other unit takes a space. */
   const show = (n: number): string =>
@@ -51,7 +64,13 @@
 <div class="gauge">
   <span class="head">
     <span class="section-title">
-      {label}
+      {#if onexplain && id}
+        <button type="button" class="explain" onclick={() => onexplain?.(id)}>
+          {label}<span aria-hidden="true" class="q">?</span>
+        </button>
+      {:else}
+        {label}
+      {/if}
       {#if tier}<ConfidenceBadge {tier} />{/if}
     </span>
     <span class="v tabular-nums">{show(value)}</span>
@@ -78,7 +97,7 @@
       />
     {/each}
 
-    {#if scale.symbolMode}
+    {#if asSymbol}
       <!-- The scale does not start at zero, so a bar from the left would read
            as a ratio it does not have: mark the value instead. -->
       <line
@@ -119,6 +138,22 @@
     align-items: baseline;
     justify-content: space-between;
     gap: var(--space-3);
+  }
+
+  .explain {
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+  }
+
+  .q {
+    margin-left: 3px;
+    color: var(--accent);
   }
 
   .v {

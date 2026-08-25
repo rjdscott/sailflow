@@ -46,6 +46,12 @@ function solve(bsKt: number): SolveResult {
       lowerN: 1,
     },
     shape: {},
+    instruments: {
+      leechStallFrac: { value: 0.4, tier: 'C', sign: 1 },
+      jibLeechStripe: { value: 1, tier: 'C', sign: 1 },
+      helmLoad: { value: 0.5, tier: 'C', sign: 1 },
+      pctPolar: { value: 98, tier: 'A' },
+    },
     residuals: [0, 0, 0],
   };
 }
