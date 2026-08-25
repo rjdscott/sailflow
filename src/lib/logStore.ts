@@ -11,20 +11,70 @@
 
 import type { DockControls, RaceControls, SeaState } from '../core/types';
 
+/**
+ * A number the sailor may not have recorded. `null` is "not recorded" — 0
+ * cannot say that, because 0 kt and 0 kg are values a form can produce by
+ * accident and an export cannot tell apart from data (audit ux-02 H-05).
+ * `dock` is exempt: 0 turns / 0 mm is the base tune, a real setting.
+ */
+export type LogNumber = number | null;
+
+/**
+ * `draft` — filed by a Dock commit, wind and outcome still to come.
+ * `complete` — the sailor has been through the form and saved it.
+ */
+export type LogStatus = 'draft' | 'complete';
+
+/** What happened. Empty strings / null until the racing is over. */
+export interface LogOutcome {
+  /** Free text: "3, 1, 7" or "mid-fleet upwind, good downwind". */
+  result: string;
+  /** Overall placing for the day, when there is one. */
+  placing: LogNumber;
+}
+
+export const LOG_SCHEMA_VERSION = 2;
+
 export interface LogEntry {
   id: string;
-  v: 1;
+  v: 2;
   date: string;
   venue: string;
-  forecast: { minKt: number; likelyKt: number; maxKt: number };
-  actual: { minKt: number; maxKt: number };
+  forecast: { minKt: LogNumber; likelyKt: LogNumber; maxKt: LogNumber };
+  actual: { minKt: LogNumber; maxKt: LogNumber };
   seaState: SeaState;
-  crewKg: number;
+  crewKg: LogNumber;
   dock: DockControls;
   race?: RaceControls;
   notes: string;
+  /** What was fast — the outcome field the form has always had. */
   fast: string;
+  status: LogStatus;
+  outcome: LogOutcome;
   createdAt: string;
+}
+
+/**
+ * v1 → v2: add `status` and `outcome`. Applied on read rather than as an
+ * IndexedDB version bump — the keyPath and store shape are unchanged, so
+ * there is nothing for `onupgradeneeded` to do, and migrating on read also
+ * covers rows arriving from an old export. Idempotent: a v2 row passes
+ * through untouched.
+ */
+export function migrateEntry(raw: unknown): LogEntry {
+  const e = raw as LogEntry & { v: number };
+  if (e.v === LOG_SCHEMA_VERSION && e.status && e.outcome) return e;
+  return {
+    ...e,
+    v: LOG_SCHEMA_VERSION,
+    status: e.status ?? 'complete',
+    outcome: e.outcome ?? { result: '', placing: null },
+  };
+}
+
+/** One entry per committed day, so a second commit updates rather than duplicates. */
+export function draftId(date: string): string {
+  return `draft-${date}`;
 }
 
 export interface LogStore {
@@ -53,19 +103,19 @@ function readAll(key: string): LogEntry[] {
       console.warn(`logStore: corrupt data at ${key} (not an array), resetting`);
       return [];
     }
-    return parsed as LogEntry[];
+    return parsed.map(migrateEntry);
   } catch (err) {
     console.warn(`logStore: failed to read ${key}`, err);
     return [];
   }
 }
 
+/**
+ * Throws on failure. It used to swallow into a console.warn, which let the
+ * UI toast "Entry saved" over a write that never happened (audit ux-02 M-07).
+ */
 function writeAll(key: string, entries: LogEntry[]): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(entries));
-  } catch (err) {
-    console.warn(`logStore: failed to write ${key}`, err);
-  }
+  localStorage.setItem(key, JSON.stringify(entries));
 }
 
 export function localStorageLogStore(key = 'sailflow.log.v1'): LogStore {
@@ -163,7 +213,7 @@ export function indexedDbLogStore(dbName = 'sailflow', lsKey = 'sailflow.log.v1'
     async list(): Promise<LogEntry[]> {
       const conn = await db();
       const store = conn.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME);
-      return idbRequest(store.getAll());
+      return (await idbRequest(store.getAll())).map(migrateEntry);
     },
     async put(e: LogEntry): Promise<void> {
       const conn = await db();

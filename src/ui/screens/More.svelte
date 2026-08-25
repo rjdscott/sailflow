@@ -15,6 +15,7 @@
     TELEMETRY_LABELS,
     type TelemetryCounts,
   } from '../../lib/telemetry';
+  import { logStoreUi } from '../log/store.svelte';
   import { GUIDE_LABELS, referenceStatus, type GuideId } from '../../lib/reference';
 
   const VERSION = import.meta.env.VITE_APP_VERSION;
@@ -46,6 +47,20 @@
     await resetTelemetry();
     counts = await snapshot();
     say('Usage counts reset.');
+  }
+
+  /* Two taps, same pattern as unlocking the rig and deleting an entry — no
+     native confirm(), which a PWA renders as a browser chrome dialog. */
+  let resetArmed = $state(false);
+
+  async function resetLog(): Promise<void> {
+    if (!resetArmed) {
+      resetArmed = true;
+      return;
+    }
+    resetArmed = false;
+    const ok = await logStoreUi.reset();
+    say(ok ? 'Log reset — every entry deleted' : (logStoreUi.error ?? 'Reset failed'));
   }
 </script>
 
@@ -81,10 +96,26 @@
           <dd>{s.loaded ? `loaded, ${s.revision || 'no revision stated'}` : 'not loaded'}</dd>
         {/each}
       </dl>
-      <p class="note">Export JSON, export CSV and import live in the log toolbar.</p>
-      <button type="button" class="quiet" onclick={() => router.navigate('log')}>
-        Open the log
-      </button>
+      <p class="note">Export, import and backup live under Backup in the log toolbar.</p>
+      <div class="data-actions">
+        <button type="button" class="quiet" onclick={() => router.navigate('log')}>
+          Open the log
+        </button>
+        <button
+          type="button"
+          class="danger"
+          class:armed={resetArmed}
+          onclick={() => void resetLog()}
+        >
+          {resetArmed ? 'Tap again to delete every entry' : 'Reset log'}
+        </button>
+      </div>
+      {#if resetArmed}
+        <p class="warn" role="alert">
+          This deletes every log entry on this device. There is no undo and no cloud copy — export
+          first if you might want them.
+        </p>
+      {/if}
     </section>
   </div>
 
@@ -176,6 +207,35 @@
   .rows dd {
     margin: 0;
     color: var(--ink);
+  }
+
+  .data-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .warn {
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-xs);
+    color: var(--bad);
+  }
+
+  .danger {
+    min-height: var(--hit-min);
+    margin-block-start: var(--space-2);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--bad);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--bad);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .danger.armed {
+    background: var(--bad);
+    color: var(--bg);
   }
 
   .quiet {

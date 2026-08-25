@@ -22,7 +22,7 @@ function mockLocalStorage(initial: Record<string, string> = {}) {
 function makeEntry(id: string): LogEntry {
   return {
     id,
-    v: 1,
+    v: 2,
     date: '2026-08-25',
     venue: 'Sandringham',
     forecast: { minKt: 8, likelyKt: 12, maxKt: 16 },
@@ -32,6 +32,8 @@ function makeEntry(id: string): LogEntry {
     dock: { upperTurns: 6, lowerTurns: 4, forestayMm: 0 },
     notes: 'flat water, good pace upwind',
     fast: 'more lower tension in the puffs',
+    status: 'complete',
+    outcome: { result: '3, 1, 7', placing: 4 },
     createdAt: '2026-08-25T10:00:00.000Z',
   };
 }
@@ -118,7 +120,7 @@ describe('localStorageLogStore', () => {
     warn.mockRestore();
   });
 
-  it('does not throw when localStorage access throws (private mode etc.)', async () => {
+  it('reads as empty but reports a blocked write, rather than swallowing it', async () => {
     vi.stubGlobal('localStorage', {
       getItem: () => {
         throw new Error('blocked');
@@ -130,7 +132,31 @@ describe('localStorageLogStore', () => {
     const { localStorageLogStore } = await import('./logStore');
     const store = localStorageLogStore();
     await expect(store.list()).resolves.toEqual([]);
-    await expect(store.put(makeEntry('a'))).resolves.toBeUndefined();
+    // A save that stored nothing used to resolve, so the UI toasted "Entry
+    // saved" over a lost entry (audit ux-02 M-07).
+    await expect(store.put(makeEntry('a'))).rejects.toThrow('blocked');
+  });
+
+  it('migrates a stored v1 row to v2 on read', async () => {
+    const v1 = { ...makeEntry('old') } as Record<string, unknown>;
+    v1.v = 1;
+    delete v1.status;
+    delete v1.outcome;
+    mockLocalStorage({ 'sailflow.log.v1': JSON.stringify([v1]) });
+    const { localStorageLogStore } = await import('./logStore');
+    const [entry] = await localStorageLogStore().list();
+    expect(entry.v).toBe(2);
+    expect(entry.status).toBe('complete');
+    expect(entry.outcome).toEqual({ result: '', placing: null });
+    // everything else survives untouched
+    expect(entry.venue).toBe('Sandringham');
+    expect(entry.dock).toEqual({ upperTurns: 6, lowerTurns: 4, forestayMm: 0 });
+  });
+
+  it('leaves an already-migrated v2 row alone', async () => {
+    mockLocalStorage({ 'sailflow.log.v1': JSON.stringify([makeEntry('new')]) });
+    const { localStorageLogStore } = await import('./logStore');
+    expect(await localStorageLogStore().list()).toEqual([makeEntry('new')]);
   });
 
   it('respects a custom key', async () => {
@@ -232,6 +258,19 @@ describe('indexedDbLogStore', () => {
     raw.set(lsKey, JSON.stringify([makeEntry('first'), makeEntry('second')]));
     const list = await indexedDbLogStore(dbName, lsKey).list();
     expect(list.map((e) => e.id)).toEqual(['first']);
+  });
+
+  it('migrates a v1 row carried over from localStorage', async () => {
+    const lsKey = 'sailflow.log.v1';
+    const v1 = { ...makeEntry('old') } as Record<string, unknown>;
+    v1.v = 1;
+    delete v1.status;
+    delete v1.outcome;
+    mockLocalStorage({ [lsKey]: JSON.stringify([v1]) });
+    const { indexedDbLogStore } = await import('./logStore');
+    const [entry] = await indexedDbLogStore(uniqueDbName(), lsKey).list();
+    expect(entry.v).toBe(2);
+    expect(entry.status).toBe('complete');
   });
 
   it('leaves the db empty when localStorage has nothing to migrate', async () => {

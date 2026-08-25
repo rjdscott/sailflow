@@ -47,7 +47,7 @@ describe('snap', () => {
 describe('windLine', () => {
   const entry = (over: Partial<LogEntry> = {}): LogEntry => ({
     id: 'a',
-    v: 1,
+    v: 2,
     date: '2026-08-25',
     venue: 'Sydney',
     forecast: { minKt: 6, likelyKt: 9, maxKt: 14 },
@@ -57,6 +57,8 @@ describe('windLine', () => {
     dock: { upperTurns: 2, lowerTurns: 1, forestayMm: 15 },
     notes: '',
     fast: '',
+    status: 'complete',
+    outcome: { result: '', placing: null },
     createdAt: '2026-08-25T00:00:00.000Z',
     ...over,
   });
@@ -71,6 +73,27 @@ describe('windLine', () => {
 
   it('keeps a half-recorded actual rather than mixing the two sources', () => {
     expect(windLine(entry({ actual: { minKt: 0, maxKt: 11 } }))).toBe('0–11 kt · chop · 300 kg');
+  });
+
+  it('treats an unrecorded actual as absent, not as 0 kt', () => {
+    expect(windLine(entry({ actual: { minKt: null, maxKt: null } }))).toBe(
+      '6–14 kt · chop · 300 kg',
+    );
+  });
+
+  it('says so rather than inventing a band when no wind was recorded at all', () => {
+    expect(
+      windLine(
+        entry({
+          forecast: { minKt: null, likelyKt: null, maxKt: null },
+          actual: { minKt: null, maxKt: null },
+        }),
+      ),
+    ).toBe('wind not recorded · chop · 300 kg');
+  });
+
+  it('drops crew weight when it was never recorded', () => {
+    expect(windLine(entry({ crewKg: null }))).toBe('8–12 kt · chop');
   });
 
   it('names every sea state', () => {

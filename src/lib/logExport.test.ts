@@ -5,7 +5,7 @@ import type { LogEntry } from './logStore';
 function makeEntry(overrides: Partial<LogEntry> = {}): LogEntry {
   return {
     id: 'a',
-    v: 1,
+    v: 2,
     date: '2026-08-25',
     venue: 'Sandringham',
     forecast: { minKt: 8, likelyKt: 12, maxKt: 16 },
@@ -15,6 +15,8 @@ function makeEntry(overrides: Partial<LogEntry> = {}): LogEntry {
     dock: { upperTurns: 6, lowerTurns: 4, forestayMm: 0 },
     notes: 'flat water',
     fast: 'more lower tension',
+    status: 'complete',
+    outcome: { result: '3, 1, 7', placing: 4 },
     createdAt: '2026-08-25T10:00:00.000Z',
     ...overrides,
   };
@@ -43,6 +45,7 @@ describe('toCsv', () => {
         'v',
         'date',
         'venue',
+        'status',
         'forecast.minKt',
         'forecast.likelyKt',
         'forecast.maxKt',
@@ -66,6 +69,8 @@ describe('toCsv', () => {
         'race.jibHalyard',
         'notes',
         'fast',
+        'outcome.result',
+        'outcome.placing',
         'createdAt',
       ].join(','),
     );
@@ -134,10 +139,51 @@ describe('fromJson', () => {
 
   it('drops rows with the wrong schema version, keeping the reason', () => {
     const good = makeEntry({ id: 'a' });
-    const bad = { ...makeEntry({ id: 'b' }), v: 2 };
+    const bad = { ...makeEntry({ id: 'b' }), v: 3 };
     const { entries, reasons } = fromJson(JSON.stringify([good, bad]));
     expect(entries).toEqual([good]);
-    expect(reasons).toEqual(['row 1: unsupported version 2']);
+    expect(reasons).toEqual(['row 1: unsupported version 3']);
+  });
+
+  it('accepts a v1 export and migrates it to v2 on the way in', () => {
+    const v1 = { ...makeEntry({ id: 'old' }) } as Record<string, unknown>;
+    v1.v = 1;
+    delete v1.status;
+    delete v1.outcome;
+    const { entries, reasons } = fromJson(JSON.stringify([v1]));
+    expect(reasons).toEqual([]);
+    expect(entries[0].v).toBe(2);
+    expect(entries[0].status).toBe('complete');
+    expect(entries[0].outcome).toEqual({ result: '', placing: null });
+  });
+
+  it('keeps an unrecorded number as null through the round trip', () => {
+    const blank = makeEntry({
+      id: 'blank',
+      actual: { minKt: null, maxKt: null },
+      crewKg: null,
+    });
+    const { entries, reasons } = fromJson(toJson([blank]));
+    expect(reasons).toEqual([]);
+    expect(entries[0].actual).toEqual({ minKt: null, maxKt: null });
+    expect(entries[0].crewKg).toBeNull();
+  });
+
+  it('exports an unrecorded number as an empty CSV cell, never as 0', () => {
+    const csv = toCsv([
+      makeEntry({
+        crewKg: null,
+        actual: { minKt: null, maxKt: null },
+        // no comma in the free text, so the naive split below stays honest
+        outcome: { result: 'mid-fleet', placing: 4 },
+      }),
+    ]);
+    const [header, row] = csv.split('\r\n');
+    const cols = header.split(',');
+    const vals = row.split(',');
+    expect(vals[cols.indexOf('crewKg')]).toBe('');
+    expect(vals[cols.indexOf('actual.minKt')]).toBe('');
+    expect(vals[cols.indexOf('outcome.placing')]).toBe('4');
   });
 
   it('drops malformed rows and reports one reason per row', () => {

@@ -43,7 +43,14 @@
       <p class="hero-number">
         {fmt(score.expectedRegretSPerMile.value, 1)}<span class="unit">s/mi</span>
       </p>
-      <ConfidenceBadge tier={score.expectedRegretSPerMile.tier} />
+      <!-- A number that can only rise is not an A, whatever the full solve
+           will grade it (audit ux-02 M-11). -->
+      <ConfidenceBadge
+        tier={provisional ? 'B' : score.expectedRegretSPerMile.tier}
+        reason={provisional
+          ? 'Provisional: measured against five reference setups so far, so this number can only rise.'
+          : undefined}
+      />
     </div>
     {#if provisional}
       <p class="note">

@@ -5,9 +5,20 @@
   import Sheet from '../components/Sheet.svelte';
   import Toast from '../components/Toast.svelte';
   import NumberField from '../log/NumberField.svelte';
-  import { logStoreUi } from '../log/store.svelte';
+  import { logStoreUi, type ImportPreview } from '../log/store.svelte';
+  import {
+    deltaLine,
+    DOCK_KEYS,
+    draftLabel,
+    emptyRace,
+    outcomeLine,
+    prefillEntry,
+    RACE_KEYS,
+    SPECS,
+  } from '../log/logic';
   import { nextId, type LogEntry } from '../../lib/logStore';
   import type { RaceControls, SeaState } from '../../core/types';
+  import { rigLock } from '../stores/rigLock.svelte';
   import { SEA_LABELS, windLine } from '../format';
   import { describeSetup } from '../dock/logic';
 
@@ -16,63 +27,21 @@
     label: SEA_LABELS[v],
   }));
 
-  const RACE_FIELDS: { key: keyof RaceControls; label: string }[] = [
-    { key: 'backstay', label: 'Backstay' },
-    { key: 'mainsheet', label: 'Mainsheet' },
-    { key: 'traveller', label: 'Traveller' },
-    { key: 'cunningham', label: 'Cunningham' },
-    { key: 'outhaul', label: 'Outhaul' },
-    { key: 'vang', label: 'Vang' },
-    { key: 'jibSheet', label: 'Jib sheet' },
-    { key: 'jibLead', label: 'Jib lead' },
-    { key: 'inhauler', label: 'Inhauler' },
-    { key: 'mainHalyard', label: 'Main halyard' },
-    { key: 'jibHalyard', label: 'Jib halyard' },
-  ];
-
-  function emptyEntry(): LogEntry {
-    return {
-      id: '',
-      v: 1,
-      date: new Date().toISOString().slice(0, 10),
-      venue: '',
-      forecast: { minKt: 0, likelyKt: 0, maxKt: 0 },
-      actual: { minKt: 0, maxKt: 0 },
-      seaState: 0,
-      crewKg: 0,
-      dock: { upperTurns: 0, lowerTurns: 0, forestayMm: 0 },
-      race: undefined,
-      notes: '',
-      fast: '',
-      createdAt: '',
-    };
-  }
-
-  function emptyRace(): RaceControls {
-    return {
-      backstay: 0,
-      mainsheet: 0,
-      traveller: 0,
-      cunningham: 0,
-      outhaul: 0,
-      vang: 0,
-      jibSheet: 0,
-      jibLead: 0,
-      inhauler: 0,
-      mainHalyard: 0,
-      jibHalyard: 0,
-    };
-  }
+  /** Same clock the rig lock stamps its commit with, so "today" agrees. */
+  const today = new Date().toISOString().slice(0, 10);
 
   let editorOpen = $state(false);
   let editingId: string | null = $state(null);
-  let form: LogEntry = $state(emptyEntry());
+  let form: LogEntry = $state(prefillEntry({ today }));
   let includeRace = $state(false);
   let raceForm: RaceControls = $state(emptyRace());
   let deleteArmed = $state(false);
   let fileInputEl: HTMLInputElement | undefined = $state();
   let toastMessage = $state('');
   let toastOpen = $state(false);
+  /** Parsed import waiting on merge/replace/cancel (audit ux-02 M-21). */
+  let pendingImport: ImportPreview | null = $state.raw(null);
+  let importOpen = $state(false);
 
   // ponytail: a media query decides this, not a resize handler — the editor is
   // a modal <dialog> below lg and an inline card above it, and no CSS makes a
@@ -97,22 +66,33 @@
     toastOpen = true;
   }
 
-  function openNew(): void {
-    editingId = null;
-    form = { ...emptyEntry(), ...logStoreUi.draft };
+  function loadForm(entry: LogEntry): void {
+    // $state.snapshot deep-clones out of the proxy, structuredClone makes it
+    // ours: the form must never alias a stored entry, the Dock draft, or the
+    // committed rig (audit ux-02 H-06).
+    form = structuredClone($state.snapshot(entry)) as LogEntry;
     includeRace = !!form.race;
     raceForm = form.race ? { ...form.race } : emptyRace();
     deleteArmed = false;
     editorOpen = true;
   }
 
+  function openNew(): void {
+    editingId = null;
+    loadForm({
+      ...prefillEntry({
+        lock: rigLock.lockedToday ? rigLock.locked : null,
+        last: logStoreUi.entries.find((e) => e.venue) ?? null,
+        today,
+      }),
+      // Another screen may have handed us a partial entry (e.g. a trim to log).
+      ...($state.snapshot(logStoreUi.draft) as Partial<LogEntry>),
+    });
+  }
+
   function openEdit(entry: LogEntry): void {
     editingId = entry.id;
-    form = { ...entry };
-    includeRace = !!entry.race;
-    raceForm = entry.race ? { ...entry.race } : emptyRace();
-    deleteArmed = false;
-    editorOpen = true;
+    loadForm(entry);
   }
 
   function closeEditor(): void {
@@ -123,19 +103,19 @@
 
   async function handleSave(): Promise<void> {
     const entry: LogEntry = {
-      ...form,
-      v: 1,
+      ...$state.snapshot(form),
+      v: 2,
       id: editingId ?? nextId(),
+      // Going through the form is what finishes a Dock draft (ux-02 M-04).
+      status: 'complete',
       createdAt: editingId ? form.createdAt : new Date().toISOString(),
-      race: includeRace ? { ...raceForm } : undefined,
+      race: includeRace ? { ...$state.snapshot(raceForm) } : undefined,
     };
-    if (editingId) {
-      await logStoreUi.update(entry);
-      notify('Entry updated');
-    } else {
-      await logStoreUi.add(entry);
-      notify('Entry saved');
-    }
+    const ok = editingId ? await logStoreUi.update(entry) : await logStoreUi.add(entry);
+    // On failure the editor stays open with the typed entry, and the error
+    // line above the list says what happened (ux-02 M-07).
+    if (!ok) return;
+    notify(editingId ? 'Entry updated' : 'Entry saved');
     closeEditor();
   }
 
@@ -145,7 +125,7 @@
       deleteArmed = true;
       return;
     }
-    await logStoreUi.remove(editingId);
+    if (!(await logStoreUi.remove(editingId))) return;
     notify('Entry deleted');
     closeEditor();
   }
@@ -159,10 +139,19 @@
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
-    const text = await file.text();
-    const summary = await logStoreUi.import(text);
+    pendingImport = logStoreUi.parseImport(await file.text());
+    importOpen = true;
+  }
+
+  async function runImport(mode: 'merge' | 'replace'): Promise<void> {
+    if (!pendingImport) return;
+    const summary = await logStoreUi.applyImport(pendingImport, mode);
+    pendingImport = null;
+    importOpen = false;
+    if (logStoreUi.error) return;
     const skipped = summary.reasons.length ? `, ${summary.reasons.length} skipped` : '';
-    notify(`Imported ${summary.added} ${summary.added === 1 ? 'entry' : 'entries'}${skipped}`);
+    const verb = mode === 'replace' ? 'Replaced with' : 'Imported';
+    notify(`${verb} ${summary.added} ${summary.added === 1 ? 'entry' : 'entries'}${skipped}`);
   }
 </script>
 
@@ -185,15 +174,15 @@
 
     <h3 class="section-title">Forecast</h3>
     <div class="row">
-      <NumberField label="Min" bind:value={form.forecast.minKt} unit="kt" />
-      <NumberField label="Likely" bind:value={form.forecast.likelyKt} unit="kt" />
-      <NumberField label="Max" bind:value={form.forecast.maxKt} unit="kt" />
+      <NumberField label="Min" bind:value={form.forecast.minKt} unit="kt" step={1} min={0} />
+      <NumberField label="Likely" bind:value={form.forecast.likelyKt} unit="kt" step={1} min={0} />
+      <NumberField label="Max" bind:value={form.forecast.maxKt} unit="kt" step={1} min={0} />
     </div>
 
     <h3 class="section-title">Actual</h3>
     <div class="row">
-      <NumberField label="Min" bind:value={form.actual.minKt} unit="kt" />
-      <NumberField label="Max" bind:value={form.actual.maxKt} unit="kt" />
+      <NumberField label="Min" bind:value={form.actual.minKt} unit="kt" step={1} min={0} />
+      <NumberField label="Max" bind:value={form.actual.maxKt} unit="kt" step={1} min={0} />
     </div>
 
     <h3 class="section-title">Sea state</h3>
@@ -205,14 +194,31 @@
     />
 
     <div class="row">
-      <NumberField label="Crew weight" bind:value={form.crewKg} unit="kg" step={1} />
+      <NumberField label="Crew weight" bind:value={form.crewKg} unit="kg" step={1} min={0} />
     </div>
 
     <h3 class="section-title">Dock setup</h3>
     <div class="row">
-      <NumberField label="Upper" bind:value={form.dock.upperTurns} unit="turns" step={0.5} />
-      <NumberField label="Lower" bind:value={form.dock.lowerTurns} unit="turns" step={0.5} />
-      <NumberField label="Forestay" bind:value={form.dock.forestayMm} unit="mm" step={1} />
+      {#each DOCK_KEYS as key (key)}
+        {@const spec = SPECS[key]}
+        <NumberField
+          label={spec.label}
+          bind:value={() => form.dock[key], (v) => (form.dock[key] = v ?? 0)}
+          unit={spec.unit}
+          min={spec.min}
+          max={spec.max}
+          step={spec.step}
+        />
+      {/each}
+    </div>
+
+    <h3 class="section-title">Result</h3>
+    <label class="field">
+      <span>Result</span>
+      <input type="text" bind:value={form.outcome.result} placeholder="3, 1, 7" />
+    </label>
+    <div class="row">
+      <NumberField label="Placing" bind:value={form.outcome.placing} step={1} min={1} />
     </div>
 
     <details>
@@ -222,9 +228,17 @@
         <span>Record race settings for this entry</span>
       </label>
       {#if includeRace}
-        <div class="row wrap">
-          {#each RACE_FIELDS as f (f.key)}
-            <NumberField label={f.label} bind:value={raceForm[f.key]} />
+        <div class="row">
+          {#each RACE_KEYS as key (key)}
+            {@const spec = SPECS[key]}
+            <NumberField
+              label={spec.label}
+              bind:value={() => raceForm[key], (v) => (raceForm[key] = v ?? 0)}
+              unit={spec.unit}
+              min={spec.min}
+              max={spec.max}
+              step={spec.step}
+            />
           {/each}
         </div>
       {/if}
@@ -259,11 +273,23 @@
     <div class="toolbar">
       <button type="button" class="new" onclick={openNew}>New entry</button>
       <span class="spacer"></span>
-      <button type="button" class="quiet" onclick={() => logStoreUi.exportJson()}
-        >Export JSON</button
-      >
-      <button type="button" class="quiet" onclick={() => logStoreUi.exportCsv()}>Export CSV</button>
-      <button type="button" class="quiet" onclick={triggerImport}>Import</button>
+      <!-- Backup is a disclosure, not three peer buttons: on a phone they took
+           the top third of the screen and Import (destructive) read the same
+           as Export CSV (audit ux-02 M-23). -->
+      <details class="backup">
+        <summary>Backup</summary>
+        <div class="backup-menu">
+          {#if logStoreUi.entries.length > 0}
+            <button type="button" class="quiet" onclick={() => logStoreUi.exportJson()}
+              >Export JSON</button
+            >
+            <button type="button" class="quiet" onclick={() => logStoreUi.exportCsv()}
+              >Export CSV</button
+            >
+          {/if}
+          <button type="button" class="quiet" onclick={triggerImport}>Import a log file</button>
+        </div>
+      </details>
       <input
         bind:this={fileInputEl}
         type="file"
@@ -273,26 +299,39 @@
       />
     </div>
 
-    {#if logStoreUi.entries.length === 0}
+    {#if logStoreUi.error}
+      <p class="error" role="alert">{logStoreUi.error}</p>
+    {/if}
+
+    {#if logStoreUi.entries.length === 0 && !logStoreUi.error}
       <section class="card empty">
         <h2 class="section-title">No entries yet</h2>
         <p>Record the wind, the rig you sailed and what was fast, while you still remember it.</p>
+        <button type="button" class="new" onclick={openNew}>Start today's entry</button>
+        <p class="sub">Or restore a log you exported before, under Backup.</p>
       </section>
     {:else}
       <ul class="entries">
         {#each logStoreUi.entries as entry (entry.id)}
+          {@const draft = draftLabel(entry, today)}
+          {@const delta = deltaLine(entry)}
+          {@const outcome = outcomeLine(entry)}
           <li>
             <button
               type="button"
               class="card entry"
               class:selected={editingId === entry.id}
+              class:draft
               onclick={() => openEdit(entry)}
             >
               <span class="entry-title">
+                {#if draft}<span class="pill">{draft}</span>{/if}
                 {entry.date} · {entry.venue || 'Unnamed venue'}
               </span>
               <span class="entry-line tabular-nums">{windLine(entry)}</span>
+              {#if delta}<span class="entry-line tabular-nums">{delta}</span>{/if}
               <span class="entry-line tabular-nums">{describeSetup(entry.dock)}</span>
+              {#if outcome}<span class="entry-line">{outcome}</span>{/if}
               {#if entry.notes}<span class="entry-notes">{entry.notes}</span>{/if}
             </button>
           </li>
@@ -321,6 +360,39 @@
   </Sheet>
 {/if}
 
+<Sheet bind:open={importOpen} title="Import log">
+  {#if pendingImport}
+    <p class="import-count">
+      This file has {pendingImport.entries.length}
+      {pendingImport.entries.length === 1 ? 'entry' : 'entries'}{pendingImport.reasons.length
+        ? `, and ${pendingImport.reasons.length} row${pendingImport.reasons.length === 1 ? '' : 's'} that cannot be read`
+        : ''}. You have {logStoreUi.entries.length} now.
+    </p>
+    <div class="actions">
+      <button type="button" class="primary" onclick={() => void runImport('merge')}>
+        Merge into my log
+      </button>
+      <button type="button" class="danger" onclick={() => void runImport('replace')}>
+        Replace my log
+      </button>
+      <button
+        type="button"
+        class="quiet"
+        onclick={() => {
+          pendingImport = null;
+          importOpen = false;
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+    <p class="sub">
+      Merge keeps what you have and updates any entry with a matching id. Replace deletes every
+      entry first.
+    </p>
+  {/if}
+</Sheet>
+
 <Toast bind:open={toastOpen} message={toastMessage} />
 
 <style>
@@ -335,12 +407,27 @@
     flex: 1;
   }
 
-  .toolbar button {
+  .toolbar button,
+  .backup summary {
     min-height: var(--hit-min);
     padding: 0 var(--space-3);
     border-radius: var(--radius);
     font-size: var(--text-sm);
     cursor: pointer;
+  }
+
+  .backup summary {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
+    color: var(--ink-2);
+  }
+
+  .backup-menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block-start: var(--space-2);
   }
 
   .new {
@@ -365,10 +452,39 @@
     white-space: nowrap;
   }
 
+  .error {
+    margin: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--bad);
+    border-radius: var(--radius);
+    color: var(--bad);
+    font-size: var(--text-sm);
+  }
+
   .empty p {
     margin: 0;
     font-size: var(--text-sm);
     color: var(--ink-2);
+  }
+
+  .empty .new {
+    min-height: var(--hit-min);
+    margin-block-start: var(--space-3);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .sub {
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  .import-count {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-sm);
   }
 
   .entries {
@@ -392,6 +508,23 @@
 
   .entry.selected {
     border-color: var(--accent);
+  }
+
+  .entry.draft {
+    border-color: var(--accent);
+    border-style: dashed;
+  }
+
+  .pill {
+    display: inline-block;
+    margin-inline-end: var(--space-2);
+    padding: 0 var(--space-2);
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    vertical-align: middle;
   }
 
   .entry-title {
@@ -433,6 +566,8 @@
     flex-direction: column;
     gap: var(--space-1);
     font-size: var(--text-sm);
+    /* Form controls floor at their intrinsic width otherwise. */
+    min-width: 0;
   }
 
   .field.checkbox {
@@ -444,6 +579,7 @@
 
   .field input,
   .field textarea {
+    width: 100%;
     min-height: var(--hit-min);
     padding: var(--space-2);
     border: 1px solid var(--line, color-mix(in srgb, var(--ink-2) 25%, transparent));
@@ -454,16 +590,17 @@
   }
 
   .field.checkbox input {
+    width: auto;
     min-height: 0;
   }
 
+  /* auto-fit, not flex: three kt fields wrap to one column on a 390 px phone
+     and sit in a row on desktop, with no page-level sideways scroll at any
+     width (audit ux-02 H-05). */
   .row {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
     gap: var(--space-2);
-  }
-
-  .row.wrap {
-    flex-wrap: wrap;
   }
 
   summary {

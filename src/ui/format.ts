@@ -4,7 +4,7 @@
  * a component.
  */
 import type { SeaState } from '../core/types';
-import type { LogEntry } from '../lib/logStore';
+import type { LogEntry, LogNumber } from '../lib/logStore';
 
 /** Round to `decimals` places, avoiding float artefacts like 0.1 + 0.2. */
 export function round(value: number, decimals: number): number {
@@ -62,8 +62,16 @@ export const SEA_LABELS: Record<SeaState, string> = {
  */
 export function windLine(entry: LogEntry): string {
   const { actual, forecast } = entry;
-  const measured = actual.minKt !== 0 || actual.maxKt !== 0;
+  // null (never recorded) and 0 are both "no actual wind here"; a half-recorded
+  // actual still wins over the forecast, rather than mixing the two sources.
+  const measured = !!actual.minKt || !!actual.maxKt;
   const lo = measured ? actual.minKt : forecast.minKt;
   const hi = measured ? actual.maxKt : forecast.maxKt;
-  return `${fmt(lo, 0)}–${fmt(hi, 0)} kt · ${SEA_LABELS[entry.seaState]} · ${fmt(entry.crewKg, 0, 'kg')}`;
+  const kt = (v: LogNumber): string => (v === null ? '?' : fmt(v, 0));
+  const parts = [
+    lo === null && hi === null ? 'wind not recorded' : `${kt(lo)}–${kt(hi)} kt`,
+    SEA_LABELS[entry.seaState],
+  ];
+  if (entry.crewKg !== null) parts.push(fmt(entry.crewKg, 0, 'kg'));
+  return parts.join(' · ');
 }
