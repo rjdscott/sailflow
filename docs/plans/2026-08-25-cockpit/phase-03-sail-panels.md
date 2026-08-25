@@ -119,3 +119,4 @@ canonical base trim, `src/core/shape/base.ts` `baseRace()` upwind at 10 kt /
   assertion belongs with phases 04–06, and the Playwright test says so.
 - Chevrons are analyse-tier only now, by CSS. Nothing tests the tier gating —
   it is a stylesheet rule, and a jsdom test of it would assert the CSS text.
+- **2026-08-25 — merged onto main after phase 04.** Entry baseline rebased 110,701 → 115,207 B gzip for the two panels (first-load UI by design). Conflicts: Race.svelte imports (ControlPanel gone, hero owned by phase 04), ASSUMPTIONS.md (both sides kept), plan README table.
