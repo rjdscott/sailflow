@@ -11,12 +11,14 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "test": "vitest run",
+    "test:ui": "playwright test",
     "calibrate": "tsx calibration/fit.ts",
     "golden": "tsx calibration/golden.ts",
     "validate": "vitest run --config vitest.polar.config.ts; tsx validation/report.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@types/node": "^26.2.0",
     "eslint": "^10.9.0",

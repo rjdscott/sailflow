@@ -28,7 +28,7 @@
   import { logStoreUi } from '../log/store.svelte';
   import { track } from '../../lib/telemetry';
 
-  const advanced = $derived(settings.mode === 'advanced');
+  const advanced = $derived(settings.advanced);
   const model = new ModelOptimumStore(getClient());
   $effect(() => {
     if (advanced) model.request(conditions.twsKt, conditions.seaState, conditions.crewKg);
