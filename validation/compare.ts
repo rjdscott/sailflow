@@ -83,10 +83,15 @@ function sha8(s: string): string {
   return createHash('sha256').update(s).digest('hex').slice(0, 8);
 }
 
-/** Hash of everything in the boat file except the fitted calibration block. */
-export function boatHash(): string {
-  const { calibration: _drop, ...rest } = boat;
-  void _drop;
+/**
+ * Hash of the boat data the solver reads: everything except the fitted
+ * calibration block and the provenance prose. A note edit is not a geometry
+ * change (#84 regenerated the corpus over one), so `provenance` and `sources`
+ * stay out; `boat/validate.ts` checks them, the solver never reads them.
+ */
+export function boatHash(b: BoatDefinition = boat): string {
+  const { calibration: _c, provenance: _p, sources: _s, ...rest } = b;
+  void [_c, _p, _s];
   return sha8(JSON.stringify(rest));
 }
 

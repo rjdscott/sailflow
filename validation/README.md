@@ -98,7 +98,9 @@ are solved as such.
 ```
 
 - `boatHash` / `calibHash` come from `boatHash()` / `calibHash()` in
-  `compare.ts`. Both are optional, and a stale one is treated differently:
+  `compare.ts`. `boatHash` covers the data the solver reads and leaves out
+  the `provenance` and `sources` prose, so a note edit does not move it.
+  Both are optional, and a stale one is treated differently:
   - a stale **`calibHash`** **skips** the file with "run `pnpm golden`". A
     recalibration is a deliberate re-fit of every knob, so every number in
     the corpus is expected to move and a skip is not hiding anything.
