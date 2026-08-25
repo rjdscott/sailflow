@@ -48,8 +48,8 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - run: make setup
-      - run: pnpm build
+      # The Playwright image has no make; test:ui builds first.
+      - run: pnpm install --frozen-lockfile
       - run: pnpm test:ui
 
   # The polar hold-out gate currently FAILs on known rows (ADR 0007,
