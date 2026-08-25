@@ -80,6 +80,13 @@ than wrapping them.
 **Revisit when:** audit ux-03 finds novices fail the Learn tier, or a fifth
 panel is proposed (the cap is four; a fifth means the grouping is wrong).
 
+**2026-08-26 note (audit docs-consistency-01 M-11):** "every non-text
+component meets 3:1" means the components `scripts/contrast_check.mjs` gates —
+`--line-strong`, `--muted`, `--accent`, `--bug`, `--focus`, `--good`,
+`--warn`, `--bad`, and the confidence badge on the accent button. The
+`--range-*` bullet-gauge bands are a decorative backdrop and are outside the
+gate by choice: the marker and the printed value carry the meaning.
+
 ## Related
 
 - Research: [01-instrument-and-simulator-ux](../research/2026-08-25-cockpit/01-instrument-and-simulator-ux.md),
