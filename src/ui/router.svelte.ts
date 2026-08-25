@@ -25,10 +25,22 @@ export const TITLES: Record<Route, string> = {
   kit: 'Kit',
 };
 
-/** `kit` is a design-system scratch screen with invented numbers: dev only. */
-const LIVE_ROUTES: readonly string[] = import.meta.env.DEV
-  ? ROUTES
-  : ROUTES.filter((r) => r !== 'kit');
+/**
+ * `kit` is a design-system scratch screen with invented numbers, so it is not
+ * part of the app a visitor can navigate to: dev builds always, production
+ * only when the query string opts in with `?kit=1`.
+ *
+ * The opt-in exists for the Playwright layout smoke (`tests/ui/kit.spec.ts`),
+ * which runs against a real `pnpm build` — the gallery is the one screen that
+ * puts every primitive on the page at once, so it is where a horizontal
+ * overflow shows up first. `?kit=1` (not the hash) because the hash is the
+ * router's own namespace. Kit is still a dynamic import in App.svelte, so a
+ * normal production visit never fetches the chunk.
+ */
+export const KIT_ENABLED: boolean =
+  import.meta.env.DEV || (typeof location !== 'undefined' && location.search.includes('kit=1'));
+
+const LIVE_ROUTES: readonly string[] = KIT_ENABLED ? ROUTES : ROUTES.filter((r) => r !== 'kit');
 
 export type Params = Record<string, string>;
 

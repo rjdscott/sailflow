@@ -114,13 +114,13 @@ export class DrillStore {
   }
 
   /**
-   * Simple mode hides tier 3 — the multi-control puzzles are noise until the
+   * The Learn tier hides tier 3 — the multi-control puzzles are noise until the
    * basics are automatic. `next()` and the list read the same getter, so the
    * end-of-drill button can no longer walk into content the list hides
    * (audit ux-02 M-03).
    */
   get visible(): DrillTemplate[] {
-    return settings.mode === 'simple' ? this.templates.filter((t) => t.tier <= 2) : this.templates;
+    return settings.advanced ? this.templates : this.templates.filter((t) => t.tier <= 2);
   }
 
   /** Re-read the attempt history: best-per-template, the spacing queue, the streak. */
@@ -213,10 +213,9 @@ export class DrillStore {
     const following = list[i + 1];
     if (!following) {
       this.close();
-      this.endNote =
-        settings.mode === 'simple'
-          ? 'Tier 1 and 2 complete — switch to Advanced for tier 3.'
-          : 'That is every drill in the set. Pick one to run again.';
+      this.endNote = settings.advanced
+        ? 'That is every drill in the set. Pick one to run again.'
+        : 'Tier 1 and 2 complete — switch to Race for tier 3.';
       return;
     }
     void this.open(following);

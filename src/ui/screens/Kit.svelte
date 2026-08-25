@@ -2,7 +2,7 @@
   import Slider from '../components/Slider.svelte';
   import Readout from '../components/Readout.svelte';
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
-  import Toggle from '../components/Toggle.svelte';
+  import DensityToggle from '../components/DensityToggle.svelte';
   import Segmented from '../components/Segmented.svelte';
   import Sheet from '../components/Sheet.svelte';
   import Toast from '../components/Toast.svelte';
@@ -100,8 +100,8 @@
     </section>
 
     <section class="card">
-      <h2 class="section-title">Toggle and segmented</h2>
-      <p><Toggle /></p>
+      <h2 class="section-title">Density toggle and segmented</h2>
+      <p><DensityToggle /></p>
       <Segmented
         ariaLabel="Kit example"
         options={[

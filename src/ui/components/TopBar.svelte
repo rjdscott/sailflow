@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import Toggle from './Toggle.svelte';
+  import DensityToggle from './DensityToggle.svelte';
 
   let {
     title,
@@ -11,7 +11,7 @@
     title: string;
     lock?: Snippet;
     tier?: Snippet;
-    /** Show the Simple/Advanced chip. Opt-in: it is a global setting that
+    /** Show the density-tier chip. Opt-in: it is a global setting that
         lives in More, and on a screen it does not change it reads as broken
         (audit ux-02 M-12). */
     mode?: boolean;
@@ -25,7 +25,7 @@
   </div>
   <div class="right">
     {#if tier}{@render tier()}{/if}
-    {#if mode}<Toggle />{/if}
+    {#if mode}<DensityToggle />{/if}
   </div>
 </header>
 

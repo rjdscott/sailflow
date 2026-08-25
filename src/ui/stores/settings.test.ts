@@ -16,34 +16,34 @@ beforeEach(() => {
 });
 
 describe('settings store', () => {
-  it('defaults to simple mode and auto theme with no stored value', async () => {
+  it('defaults to the race tier and auto theme with no stored value', async () => {
     mockLocalStorage();
     const { settings } = await import('./settings.svelte');
-    expect(settings.mode).toBe('simple');
+    expect(settings.mode).toBe('race');
     expect(settings.theme).toBe('auto');
   });
 
   it('reads a previously stored mode and theme', async () => {
-    mockLocalStorage({ 'sailflow.mode': 'advanced', 'sailflow.theme': 'dark' });
+    mockLocalStorage({ 'sailflow.mode': 'analyse', 'sailflow.theme': 'dark' });
     const { settings } = await import('./settings.svelte');
-    expect(settings.mode).toBe('advanced');
+    expect(settings.mode).toBe('analyse');
     expect(settings.theme).toBe('dark');
   });
 
   it('ignores a garbage stored value and falls back to the default', async () => {
     mockLocalStorage({ 'sailflow.mode': 'nonsense' });
     const { settings } = await import('./settings.svelte');
-    expect(settings.mode).toBe('simple');
+    expect(settings.mode).toBe('race');
   });
 
   it('persists writes through setMode/setTheme', async () => {
     const store = mockLocalStorage();
     const { settings } = await import('./settings.svelte');
-    settings.setMode('advanced');
+    settings.setMode('analyse');
     settings.setTheme('light');
-    expect(store.get('sailflow.mode')).toBe('advanced');
+    expect(store.get('sailflow.mode')).toBe('analyse');
     expect(store.get('sailflow.theme')).toBe('light');
-    expect(settings.mode).toBe('advanced');
+    expect(settings.mode).toBe('analyse');
     expect(settings.theme).toBe('light');
   });
 
@@ -57,7 +57,41 @@ describe('settings store', () => {
       },
     });
     const { settings } = await import('./settings.svelte');
-    expect(settings.mode).toBe('simple');
-    expect(() => settings.setMode('advanced')).not.toThrow();
+    expect(settings.mode).toBe('race');
+    expect(() => settings.setMode('learn')).not.toThrow();
+  });
+
+  // --- v1 Simple/Advanced -> density tiers --------------------------------
+
+  it('migrates a stored "simple" to learn and writes the new name back', async () => {
+    const store = mockLocalStorage({ 'sailflow.mode': 'simple' });
+    const { settings } = await import('./settings.svelte');
+    expect(settings.mode).toBe('learn');
+    expect(store.get('sailflow.mode')).toBe('learn');
+  });
+
+  it('migrates a stored "advanced" to race and writes the new name back', async () => {
+    const store = mockLocalStorage({ 'sailflow.mode': 'advanced' });
+    const { settings } = await import('./settings.svelte');
+    expect(settings.mode).toBe('race');
+    expect(store.get('sailflow.mode')).toBe('race');
+  });
+
+  it('does not write anything back when there was nothing stored', async () => {
+    const store = mockLocalStorage();
+    const { settings } = await import('./settings.svelte');
+    expect(settings.mode).toBe('race');
+    expect(store.has('sailflow.mode')).toBe(false);
+  });
+
+  it('exposes `advanced` for the two dense tiers only', async () => {
+    mockLocalStorage();
+    const { settings } = await import('./settings.svelte');
+    settings.setMode('learn');
+    expect(settings.advanced).toBe(false);
+    settings.setMode('race');
+    expect(settings.advanced).toBe(true);
+    settings.setMode('analyse');
+    expect(settings.advanced).toBe(true);
   });
 });
