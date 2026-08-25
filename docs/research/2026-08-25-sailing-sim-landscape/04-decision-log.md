@@ -52,3 +52,12 @@ with minimal disruption.
 | 32 | When the model's optimum contradicts a tuning guide inside a drill: show both, grade on the model, flag the disagreement on the score sheet | plan phase 00 (H-04), phase 02 |
 | 33 | Rig elevation redrawn to scale from the class rules and ORC certificate; freeboard, mast-step and gooseneck heights are assumptions listed in the phase-00 log | PR #47 |
 | 34 | Boat hero cropped to the hull with a wind rose off the bow; heel shown by the hull tilt, inset removed | PR #42 |
+| 35 | Fourth autonomous block, 2026-08-25: Race mode remodelled as a cockpit / control centre. Deep research first, then a phased plan, ambitious scope | research `2026-08-25-cockpit`, plan `2026-08-25-cockpit` |
+| 36 | Desktop-first cockpit, one screen with no scroll at ≥1280 px; phone gets the same panels stacked | ADR 0015 |
+| 37 | Controls grouped by sail system (Mainsail / Headsail / Helm & Conditions / Rig), not by effect and not by crew seat; backstay lives with Mainsail, its headstay effect shown on Headsail; Rig is dock-gated | ADR 0015, research 02 |
+| 38 | Dark-first instrument look (B&G / Sailmon language, not gamer); light theme kept as the secondary theme through the same tokens | ADR 0015 |
+| 39 | Scope is Race plus the shared shell and tokens; Dock, Log, Drills, More are restyled to match, not redesigned | plan 2026-08-25-cockpit |
+| 40 | WebGL 3D sail and rig view now, via raw three.js + OrbitControls in a lazily loaded chunk, behind a measured performance gate with the 2D plan view as fallback. Supersedes ADR 0011 | ADR 0014, research 03 |
+| 41 | One cockpit with three density tiers (Learn / Race / Analyse) replacing Simple / Advanced; the tier is an attribute on the panels, not three component trees | ADR 0015 |
+| 42 | Steady-state solver stays; "live" feel is eased tweens, telltale flutter, heel tilt and a deterministic scripted puff replay. Real time-domain physics remains Epic 2 | plan phase 05 |
+| 43 | Owner runs the cockpit block fully autonomously (research → ADRs → plan → build → merge → Pages), stopping only at forks costing more than a day to unwind | this log |
