@@ -30,7 +30,13 @@ const TWA_ITERS = 16; // prov: assumed; ~0.2° on a 30° bracket
 const TWA_UP: [number, number] = [35, 60]; // prov: ORC Speed Guide beat angles fall inside
 const TWA_DN: [number, number] = [120, 178]; // prov: ORC Speed Guide run angles fall inside
 
-/** Map an ORC flat value onto the backstay control so the rig responds. prov: assumed */
+/**
+ * Map an ORC flat value onto the backstay control so the rig responds.
+ * Deliberately one function of flat for both sailsets — the jib floor stays
+ * the denominator, so under the kite (floor 0.53) the map simply stops short
+ * of 100 rather than re-scaling the rig's response to the sail carried.
+ * prov: assumed
+ */
 export function backstayFromFlat(flat: number): number {
   const fmin = flatMin();
   return Math.round(((1 - flat) / (1 - fmin)) * 100);
@@ -77,7 +83,9 @@ export function optimal(
       const vmg = v * Math.cos((twaDeg * Math.PI) / 180);
       return upwind ? vmg : -vmg;
     };
-    const g = goldenMax(objective, flatMin(), 1, flatIters);
+    // The search bracket is the sailset's own ORC floor: under the kite that
+    // is 0.53, so the optimiser cannot pick a de-power the VPP forbids.
+    const g = goldenMax(objective, flatMin(1, condition.sailset), 1, flatIters);
     return { flat: g.x, score: g.fx };
   };
 

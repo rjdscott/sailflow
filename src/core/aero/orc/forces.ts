@@ -281,7 +281,7 @@ export function aeroForces(
   for (const id of ids) geo[id] = geom?.[id] ?? fallbackGeometry(boat, id);
 
   // ---- de-powering -------------------------------------------------------
-  const flat = clampFlat(input.tune.flat);
+  const flat = clampFlat(input.tune.flat, 1, input.sailset);
   const reef = Math.min(1, Math.max(0, input.tune.reef));
   const red = reduction(reef, input.sailset);
   const areaScale: Record<string, number> = {

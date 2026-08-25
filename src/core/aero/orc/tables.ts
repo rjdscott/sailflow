@@ -112,6 +112,18 @@ export const TABLES: Record<OrcSail, CoeffTable> = {
 export const FLAT_MIN_BASE = 0.42;
 
 /**
+ * Baseline minimum flat with a spinnaker or a headsail set flying. ORC raised
+ * this floor to 0.53 in 2024, so it is the one constant in this file that does
+ * NOT come from the 2023 edition: the 2023 text states only the 0.42 upwind
+ * baseline and gives no separate offwind floor. Carried anyway, because 0.42
+ * downwind lets the solver de-power past what ORC permits; the mixed edition
+ * is recorded in PROVENANCE.md rather than hidden. Read against the 2026 text
+ * in docs/research/2026-08-25-spinnaker/01-asymmetric-aerodynamics.md §2.4.
+ * prov: ORC VPP Documentation 2026 §5.1, footnote 3 (changed in 2024)
+ */
+export const FLAT_MIN_SPINNAKER = 0.53;
+
+/**
  * fcdmult: non-linear correction to the Cd-vs-Cl^2 de-powering line, indexed
  * by flat. Note the value at flat = 1.00 is 1.06, not 1.00 — the published
  * curve rises at both ends (full power and heavily de-powered).
