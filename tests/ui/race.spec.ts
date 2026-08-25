@@ -555,3 +555,45 @@ test('a keyboard reaches a trim control before the whole-trim actions', async ({
   );
   expect(actionsBefore, 'no whole-trim action may come before the first trim control').toEqual([]);
 });
+
+/**
+ * The plan view and the 3D hero draw the same kite through the same
+ * projection, so they must not disagree about the leech. Until #80's
+ * `leechAt` was sampled here the plan drew one straight `L` from head to clew
+ * — 10 points, a triangle — while the hero showed the bulge (audit
+ * docs-consistency-01 M-25b). Both edges are sampled now.
+ */
+test('the plan view draws the kite leech bulged, not straight', async ({ page }) => {
+  await raceTier(page);
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('sailflow.hero.v1', 'plan');
+    } catch {
+      // ignore: storage disabled, the plan view is the fallback anyway
+    }
+  });
+  await page.setViewportSize(VIEWPORTS[1]);
+  await page.goto('/#/race?set=asym&twa=150');
+
+  const kite = page.locator('.hero-boat path.sail.kite');
+  await expect(kite).toBeVisible();
+  const d = (await kite.getAttribute('d')) ?? '';
+
+  // 9 luff samples + 8 leech samples. The straight leech was 9 + the clew.
+  const pts = d
+    .replace('M ', '')
+    .replace(' Z', '')
+    .split(' L ')
+    .map((p) => p.split(' ').map(Number) as [number, number]);
+  expect(pts.length, `plan-view kite path was "${d}"`).toBeGreaterThan(10);
+  expect(pts).toHaveLength(17);
+
+  // The bulge is off the head→clew line: a straight leech would put every
+  // sampled point on it. Compare a mid-leech sample against the chord.
+  const [head, clew, mid] = [pts[8], pts[16], pts[12]];
+  const t = (mid[1] - head[1]) / (clew[1] - head[1] || 1);
+  const onChord = head[0] + t * (clew[0] - head[0]);
+  expect(Math.abs(mid[0] - onChord), 'mid-leech must stand off the head→clew chord').toBeGreaterThan(
+    1,
+  );
+});
