@@ -137,7 +137,7 @@
   /**
    * The strip's one line. It says which of the four states this is and nothing
    * else; the sentence it stands in for, and the numbers behind it, are in the
-   * sheet the "Compare in full" button opens (audit ux-03 H-03).
+   * sheet the "Full table" button opens (audit ux-03 H-03).
    */
   const COMPACT_VERDICT: Record<ReturnType<typeof verdict>, string> = {
     comparing: 'Comparing…',
@@ -433,11 +433,19 @@
     border-radius: 0;
   }
 
+  /* Wraps: the cockpit's bottom-right cell is ~330 px wide, and three cells
+     with their units and deltas do not fit on one line beside the row label. */
   .panel.compact .row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--space-1) var(--space-3);
     padding: 0;
+  }
+
+  .panel.compact .row > .cell {
+    flex: 0 1 auto;
+    min-width: 0;
   }
 
   .panel.compact .rowlabel {

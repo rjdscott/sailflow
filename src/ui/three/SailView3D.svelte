@@ -211,6 +211,8 @@
   let onScreen = true;
   /** `performance.now()` at mount; the first-frame gate is measured from here. */
   let mountedAt = 0;
+  /** Synchronous cost of `onMount`, the first half of the perf-gate measure. */
+  let setupMs = 0;
 
   /**
    * Frozen telltales and jump-cut camera: the Playwright shot wants this, and
@@ -242,17 +244,21 @@
     const tweening = tween !== null && stepTween(t);
     if (!still) telltaleMat.uniforms.uTime.value = t / 1000;
     if (dirty || moving || tweening || !still) {
+      const t0 = performance.now();
       renderer.render(scene, camera);
       dirty = false;
       if (frames < 2) {
         frames++;
         if (frames === 1) {
-          // The gate is wall-clock from mount to the first frame the user
-          // could see: context creation, shader compiles and geometry upload
-          // are the cost, and they all land here. Timing a *second* render
-          // instead measured GPU command submission on a warm context, which
-          // is ~1 ms on any device and never tripped (ux-03 H-12).
-          onready?.(performance.now() - mountedAt);
+          // The gate is the work the device did, not the clock: the
+          // synchronous mount (context creation, geometry build) plus this
+          // first render (shader compiles, upload). Timing a *second* render
+          // measured GPU command submission on a warm context, ~1 ms anywhere,
+          // and never tripped (ux-03 H-12). Timing mount → now on the wall
+          // clock instead also counted every millisecond a background or
+          // occluded tab spent not rendering at all, and tripped a desktop
+          // GPU on a tab opened behind another window.
+          onready?.(setupMs + (performance.now() - t0));
           // This frame drew at the renderer's default size: `ResizeObserver`
           // callbacks run after animation frames, so the real canvas size only
           // lands now. Ask for one more, and call *that* one ready.
@@ -508,6 +514,7 @@
 
     goTo(preset, true);
     rebuild();
+    setupMs = performance.now() - mountedAt;
 
     // `ResizeObserver`, not window.resize: layout-driven resizes and the
     // mobile URL-bar collapse never fire the window event.

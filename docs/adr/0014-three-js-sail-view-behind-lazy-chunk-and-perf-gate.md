@@ -94,16 +94,24 @@ is GPU command submission and costs ~1 ms on any device. It therefore passed at
 every CPU throttle rate up to 20×, the 2D fallback was unreachable, and the
 revisit trigger above could never fire.
 
-The gate now measures wall-clock from `onMount` to the first presented frame,
-which is the quantity the ADR meant: geometry build, context creation, shader
-compilation and upload. Re-measured in `mcr.microsoft.com/playwright:v1.62.1-noble`
+The gate now measures the work of `onMount` plus the first render — geometry
+build, context creation, shader compilation and upload — which is the quantity
+the ADR meant. It is not wall-clock: the wait between the two for a rendering
+step is excluded, because a tab opened behind another window gets no rendering
+steps at all and a wall-clock measure judged a desktop GPU "too slow" for
+having been hidden (found on the live deploy the same day). Re-measured in `mcr.microsoft.com/playwright:v1.62.1-noble`
 at 1440×900 and 390×844 — 61–65 ms unthrottled, 137 ms in a 2-core container
 (the CI worst case), 115–119 ms at 4× CPU, 272–279 ms at 10×, 605–609 ms at
-20×. **The budget is 350 ms** (`src/ui/three/SailHero.svelte`): it sits in the
-gap between the 10× class, which still renders acceptably, and the 20× stand-in
-for a low-end Android that the fallback exists for, with ~2.6× headroom over
-the slowest fast-path measurement so no desktop and no CI runner trips it. Full
-table in
+20×. Those are SwiftShader numbers; a real GPU adds a driver shader compile on
+a cold cache that SwiftShader never shows — 315 ms on the first visit, 52 ms
+warm, on an RTX 4070 Ti through Chrome/ANGLE on the live deploy the same day —
+so the 350 ms first picked from the table left a top desktop 35 ms clear and
+would have parked a mid laptop in 2D on every first visit. **The budget is
+800 ms** (`src/ui/three/SailHero.svelte`): over twice the cold desktop cost, a
+one-off well under a second on a screen then used for minutes, and still under
+the 20× SwiftShader stand-in only by the width of that cold compile — the
+low-end phone this exists for is judged on real hardware, not the table, when
+one is to hand. Full table in
 [plan phase 06](../plans/2026-08-25-cockpit/phase-06-phone-restyle-audit.md).
 
 Amended rather than superseded, deliberately: the choice this ADR records — 3D

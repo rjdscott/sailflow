@@ -24,20 +24,25 @@
    * before the 3D view is judged too heavy for this device and the 2D view
    * keeps the slot.
    *
-   * prov: assumed 350 ms — ADR 0014's gate, re-picked 2026-08-25 against
-   * measured wall-clock (see the ADR's Consequences amendment). ADR 0014's
+   * prov: assumed 800 ms — ADR 0014's gate, re-picked 2026-08-25 against
+   * measured mount + first-render work (see the ADR's Consequences amendment;
+   * the wait for a rendering step is excluded, so a tab opened behind another
+   * window is not judged slow for having been hidden). ADR 0014's
    * 50 ms was three frames at 60 Hz, but it was applied to a *warm second
    * render* — GPU command submission, ~1 ms everywhere — so it never tripped
    * (ux-03 H-12). This times the whole cost instead: geometry build, context
    * creation, shader compiles and upload. Measured in the pinned Playwright
    * image, mount → first frame: 60–137 ms unthrottled (the 137 is a 2-core
    * container, the CI worst case), 115–119 ms at 4× CPU, 271–279 ms at 10×,
-   * 605–609 ms at 20×. 350 ms sits in the gap between the 10× class, which
-   * still renders acceptably, and the 20× stand-in for a low-end Android that
-   * the fallback exists for, with ~2.6× headroom over the slowest fast-path
-   * measurement so no desktop and no CI runner trips it.
+   * 605–609 ms at 20×. Those are SwiftShader numbers. A real GPU pays a
+   * driver shader compile on a cold cache that SwiftShader never shows:
+   * measured 315 ms on the first visit and 52 ms warm on an RTX 4070 Ti
+   * (Chrome/ANGLE, live deploy, 2026-08-25), so a 350 ms budget left a top
+   * desktop 35 ms clear and would have parked a mid laptop in 2D on every
+   * first visit. 800 ms: over twice the cold desktop cost, and a one-off
+   * under a second is not a stall on a screen you then use for minutes.
    */
-  const FIRST_FRAME_BUDGET_MS = 350;
+  const FIRST_FRAME_BUDGET_MS = 800;
   /** Test seam: `sailflow.hero.budget` overrides the budget, so the gate can
    *  be exercised on any machine instead of only on one slow enough. */
   function budgetMs(): number {
@@ -148,6 +153,8 @@
   });
 
   function onready(ms: number): void {
+    // Readable from the console on a live deploy, like `__sailViewReady`.
+    (window as unknown as { __sailFirstFrameMs?: number }).__sailFirstFrameMs = ms;
     if (!freeze && ms > budgetMs()) tooSlow = true;
   }
 </script>

@@ -154,7 +154,7 @@ test('the first-frame gate falls back to 2D when the hero is too slow to mount',
   // submission, ~1 ms — and passed at every throttle rate, so nothing could
   // ever reach the 2D fallback it guards. Mount → first frame is 60–600 ms
   // depending on the machine, so the budget is pinned to 1 ms through the
-  // test seam rather than trusting a CPU throttle to beat 350 ms everywhere.
+  // test seam rather than trusting a CPU throttle to beat the budget everywhere.
   await page.addInitScript(() => {
     try {
       localStorage.setItem('sailflow.hero.v1', '3d');
