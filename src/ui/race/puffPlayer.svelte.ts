@@ -30,8 +30,8 @@ import { race } from './store.svelte';
  */
 export const PUFF_STEP_MS = 1600;
 
-/** Poll interval and cap while waiting for the optimum to settle. prov: assumed. */
-const WAIT_MS = 200;
+/** Poll interval and cap while waiting for the step's solve to settle. prov: assumed. */
+export const WAIT_MS = 200;
 const MAX_WAIT_MS = 3000;
 
 const TWA_MIN = 20;
@@ -49,6 +49,8 @@ export class PuffPlayer {
   #at = 0;
   #stepMs = PUFF_STEP_MS;
   #waited = 0;
+  /** This step's solve has landed and its cue is on screen. */
+  #settled = false;
   #timer: ReturnType<typeof setTimeout> | undefined;
 
   get playing(): boolean {
@@ -100,24 +102,38 @@ export class PuffPlayer {
       conditions.twaDeg = Math.min(TWA_MAX, Math.max(TWA_MIN, base.twaDeg + step.twaOffsetDeg));
     }
     this.step = step;
-    // The state is read off the solve on screen — the answer to the *previous*
-    // step, since this one has only just been asked. That is also what a
-    // sailor has: the boat you are on, not the boat the puff will make.
-    const r = race.result;
-    this.power = r
-      ? powerState({ flat: r.aero.flat, heelDeg: r.heelDeg.value, twsKt: conditions.twsKt })
-      : null;
-    this.lit = this.power ? panelOrder(this.power) : [];
+    // No cue until the solve for *this* condition has landed. Reading the
+    // previous step's solve mixed the new wind with the old heel, so the gust
+    // peak read "underpowered" at 15° of heel (audit ux-03 H-05).
+    this.power = null;
+    this.lit = [];
     this.#at++;
     this.#waited = 0;
-    this.#timer = setTimeout(() => this.#next(), this.#stepMs);
+    this.#settled = false;
+    this.#timer = setTimeout(() => this.#next(), WAIT_MS);
   }
 
-  /** Step on once the ghost bugs are answering this step, or give up waiting. */
+  /**
+   * Two jobs, in order: wait for this step's solve and light the panels off
+   * it, then hold the step for what is left of its dwell and move on. Giving
+   * up after `MAX_WAIT_MS` shows whatever is on screen rather than stalling.
+   */
   #next(): void {
-    if ((optimum.busy || optimum.stale) && this.#waited < MAX_WAIT_MS) {
+    if (!this.#settled) {
       this.#waited += WAIT_MS;
-      this.#timer = setTimeout(() => this.#next(), WAIT_MS);
+      if ((race.busy || optimum.busy || optimum.stale) && this.#waited < MAX_WAIT_MS) {
+        this.#timer = setTimeout(() => this.#next(), WAIT_MS);
+        return;
+      }
+      this.#settled = true;
+      const r = race.result;
+      this.power = r
+        ? powerState({ flat: r.aero.flat, heelDeg: r.heelDeg.value, twsKt: conditions.twsKt })
+        : null;
+      this.lit = this.power ? panelOrder(this.power) : [];
+      // The settle is spent out of the step's own dwell, so a sequence still
+      // runs at one step per `stepMs` when the solver keeps up.
+      this.#timer = setTimeout(() => this.#next(), Math.max(0, this.#stepMs - this.#waited));
       return;
     }
     if (this.#at < this.#steps.length) this.#playStep();

@@ -360,9 +360,9 @@
 
 <style>
   /* ---------------------------------------------------------------- phone */
-  /* Below 720 the cockpit is one column in DOM order: conditions, instrument
-     bar, the coach and its actions, the tab strip, the hero, the four
-     panels. */
+  /* Below 720 the cockpit is one column, ordered by the `order` block further
+     down rather than by DOM order: conditions, hero, the tab strip, the
+     instrument bar, the coach and its actions, the four panels. */
   .cockpit {
     display: flex;
     flex-direction: column;
@@ -450,6 +450,56 @@
     font-size: var(--text-sm);
     line-height: 1.55;
     color: var(--ink-2);
+  }
+
+  /* ----------------------------------------------------- phone: hero first */
+  /* The plan README's phone layout is "same panels stacked, hero first, sticky
+     panel tabs", and what shipped put the hero 1045 px down, under a sticky
+     strip whose every tab scrolls past it (audit ux-03 H-11). The column is
+     flex below 720, so `order` fixes it without touching the DOM — which also
+     leaves the desktop grid free to order the same elements its own way. */
+  @media (max-width: 719px) {
+    .head {
+      order: 0;
+    }
+
+    .hero-boat {
+      order: 1;
+    }
+
+    /* Right under the hero, so the one navigation control on the screen no
+       longer sits above the thing it skips past. Still sticky. */
+    .cockpit :global(.tabs) {
+      order: 2;
+    }
+
+    .bar {
+      order: 3;
+    }
+
+    .insight {
+      order: 4;
+    }
+
+    .p-main {
+      order: 5;
+    }
+
+    .p-jib {
+      order: 6;
+    }
+
+    .p-helm {
+      order: 7;
+    }
+
+    .p-rig {
+      order: 8;
+    }
+
+    .disagree {
+      order: 9;
+    }
   }
 
   /* --------------------------------------------------------------- tablet */
