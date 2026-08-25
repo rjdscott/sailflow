@@ -257,9 +257,18 @@ export function kiteGeometry(down: DownControls, rig: KiteRig, side: Side): Kite
   const sections = (shape: SailShape): Section[] => {
     const stack = sectionStack(shape, KITE_CHORDS);
     const hs = stack.map((k) => k.h);
-    const camber = pchip(hs, stack.map((k) => k.camber));
-    const draftPos = pchip(hs, stack.map((k) => k.draftPos));
-    const entry = pchip(hs, stack.map((k) => k.entryRad));
+    const camber = pchip(
+      hs,
+      stack.map((k) => k.camber),
+    );
+    const draftPos = pchip(
+      hs,
+      stack.map((k) => k.draftPos),
+    );
+    const entry = pchip(
+      hs,
+      stack.map((k) => k.entryRad),
+    );
     const KNOTS = 17;
     return Array.from({ length: KNOTS }, (_, i) => {
       const h = i / (KNOTS - 1);

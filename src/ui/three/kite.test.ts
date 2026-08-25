@@ -17,7 +17,7 @@ import {
   KITE_CHORDS,
   TACK_MIN_M,
 } from './kite';
-import { buildSail, gridRow, sectionStack } from './loft';
+import { buildSail, gridRow } from './loft';
 import { rig3d } from './rig3d';
 import type { RigState } from '../../core/types';
 
@@ -212,7 +212,10 @@ describe('the lofted kite', () => {
         const L2 = Math.hypot(...d2);
         const w2 = [q[0] - g.tack[0], q[1] - g.tack[1], q[2] - g.tack[2]];
         const t2 = (w2[0] * d2[0] + w2[1] * d2[1] + w2[2] * d2[2]) / (L2 * L2);
-        maxLuffBow = Math.max(maxLuffBow, Math.hypot(...([0, 1, 2].map((k) => w2[k] - t2 * d2[k]) as Vec3)));
+        maxLuffBow = Math.max(
+          maxLuffBow,
+          Math.hypot(...([0, 1, 2].map((k) => w2[k] - t2 * d2[k]) as Vec3)),
+        );
       }
       // The leech sits on its line to within the loft's interpolation between
       // seventeen knots; the luff bows by metres.

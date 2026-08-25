@@ -35,7 +35,12 @@ export const BASE_DOCK: DockControls = { upperTurns: 0, lowerTurns: 0, forestayM
  * before the sheet is touched. Tack line and sheet mid-range, to be trimmed.
  * prov: assumed — class practice, sailmaker guides (research 2026-08-25-spinnaker).
  */
-export const BASE_DOWN: DownControls = { kiteHalyard: 100, tackLine: 50, kiteSheet: 50, sprit: 100 };
+export const BASE_DOWN: DownControls = {
+  kiteHalyard: 100,
+  tackLine: 50,
+  kiteSheet: 50,
+  sprit: 100,
+};
 
 export const DEBOUNCE_MS = 80;
 
