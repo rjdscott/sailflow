@@ -31,8 +31,11 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   shape-derived `flat`, so a dock setup enters only as a small coefficient
   perturbation and the setup ranking is nearly wind-independent. Stage 4 could
   not separate the North 8–10 and 12–16 kt bands; all six rig/shape knobs sit
-  on their bounds. Dock-mode regrets are therefore small and tier-B in
-  practice until race controls are optimised through the shape layer.
+  on their bounds. Dock-mode regrets are therefore small, and the score is
+  **tier B, by design** (decided 2026-08-26, audit docs-consistency-01 M-06):
+  the regret sums an upwind leg the model fits and a downwind leg it does
+  not, so it is capped at B in `dock.ts` however good the upwind half is.
+  Above 20 kt it is tier C, as `tierFor` already says.
 - `hydro.heelDragK` fitted at ~2× the value `hydro/resistance.ts` assumes;
   `aero.hbiM` pinned at its 1.4 m upper bound (the fit wanted more heeling
   arm). Both are the fit compensating for missing physics, not measurements.

@@ -17,6 +17,8 @@ export function tierFor(
   let t: Tier;
   if (ctx.sailset === 'jib') t = q === 'bs' || q === 'vmg' ? 'A' : 'B';
   else t = q === 'bs' || q === 'vmg' ? 'B' : 'C';
+  // `dockRegret`'s A is the *upwind* half's tier. `dock.ts` caps the score it
+  // builds from it at B, because the other half is a downwind leg (M-06).
   if (q === 'dockRegret') t = ctx.twsKt > POLAR_MAX_TWS ? 'C' : ctx.sailset === 'jib' ? 'A' : 'B';
   if (ctx.twsKt > POLAR_MAX_TWS || ctx.twsKt < POLAR_MIN_TWS) t = demote(t);
   if (ctx.deltas && shapeInfluence(ctx.deltas) > SHAPE_DEMOTE_THRESHOLD) t = demote(t);

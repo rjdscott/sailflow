@@ -19,7 +19,7 @@ import type {
 } from '../types';
 import { geometryFor } from './equilibrium';
 import { optimal } from './optimal';
-import { tierFor, tiered } from './tierFor';
+import { lowerTier, tierFor, tiered } from './tierFor';
 import type { AeroGeometry } from '../aero/orc/forces';
 
 /** Triangular pmf on a 1-kt grid. ponytail: triangular; user-supplied bins if asked. */
@@ -155,10 +155,14 @@ export function scoreDockSetups(
     }));
     const expected = perTws.reduce((a, r, j) => a + pmf[j].p * r.regretSPerMile, 0);
     const worst = perTws.reduce((a, r) => (r.regretSPerMile > a.regretSPerMile ? r : a), perTws[0]);
-    const tier = tierFor('dockRegret', { sailset: 'jib', twsKt: forecast.maxKt });
+    // Capped at B by design: `T(S, w)` sums an upwind leg the model is fitted
+    // to and a downwind leg it is not (`tierFor('bs')` is B under `asym`), so
+    // the regret is never a tier-A number however good the upwind half is.
+    // Cap, not demote — above 20 kt `tierFor` already says C, and that stands.
+    const tier = lowerTier(tierFor('dockRegret', { sailset: 'jib', twsKt: forecast.maxKt }), 'B');
     return {
       setup,
-      expectedRegretSPerMile: tiered(expected, tier, 0.2), // prov: assumed, wider uncertainty band for dock regret (tier B)
+      expectedRegretSPerMile: tiered(expected, tier, 0.2), // prov: assumed, wider ±20% uncertainty band for dock regret (tier B)
       atMin: perTws[0],
       atMax: perTws[perTws.length - 1],
       worst,
