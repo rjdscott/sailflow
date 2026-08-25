@@ -8,6 +8,8 @@ findings closed, and the docs say where things stand.
 
 ## Tasks
 
+- [x] **Desktop cockpit grid**: README layout at ≥ 1280 px, duplicated section/rig cards removed, one screen at 1280×720 in Race tier asserted by Playwright.
+- [x] Phone (< 720 px): panels stacked, hero first, sticky panel tabs, instrument band collapsed behind More.
 - [x] Dock, Log, Drills, More restyled to tokens v2: cards, chips, sliders, badges pick up the new tokens with no IA change; `DisagreePanel` uses InstrumentCell for its numbers.
 - [ ] `/audit ux-03` — lenses: novice (Learn tier), expert (Analyse tier), accessibility (contrast, keyboard, reduced motion, screen reader on cells), phone, performance (3D on a throttled CPU). Evidence screenshots. C/H findings fixed in this phase; M/L to `todo.md`.
 - [ ] `CHANGELOG.md` entry; runbooks: `deploy-to-github-pages` (Playwright job), any touched.
