@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { SectionShape } from '../../core/types';
 import {
+  arrowLength,
   boomAngle,
   clewAt,
   deck,
   DIMS,
+  drawnHeel,
   hullPath,
+  MAX_DRAWN_HEEL,
   jibSheetAngle,
   openBy,
   sailPath,
@@ -308,5 +311,51 @@ describe('telltales and traveller sign', () => {
   it('main leech stalls when over-sheeted with little twist and streams when eased', () => {
     expect(leechRibbon(26, boomAngle(100, 40), 3)).toBe('stalled');
     expect(leechRibbon(26, boomAngle(55, 0), 12)).not.toBe('stalled');
+  });
+
+  // The state is the CSS class: PlanView writes `class="ribbon {state}"` and
+  // styles .streaming/.lifting/.stalled, so a renamed state loses its flutter.
+  it('only ever returns a state the stylesheet animates', () => {
+    const classes = new Set(['streaming', 'lifting', 'stalled']);
+    for (let aoa = -40; aoa <= 60; aoa += 1) {
+      expect(classes.has(luffRibbon(aoa))).toBe(true);
+      expect(classes.has(leechRibbon(aoa, 12, 8))).toBe(true);
+    }
+  });
+});
+
+describe('arrowLength', () => {
+  it('grows with wind speed and clamps outside the app range', () => {
+    expect(arrowLength(4)).toBeLessThan(arrowLength(12));
+    expect(arrowLength(12)).toBeLessThan(arrowLength(25));
+    expect(arrowLength(1)).toBe(arrowLength(4));
+    expect(arrowLength(60)).toBe(arrowLength(25));
+  });
+
+  it('keeps the longest arrow inside the viewBox at every angle', () => {
+    const len = arrowLength(25);
+    for (let deg = 0; deg <= 180; deg += 2) {
+      for (const side of [1, -1] as Side[]) {
+        const { tail } = windArrow(side * deg, HUB, { ...TWA_RING, len });
+        expect(tail.x, `tail x at ${deg}°`).toBeGreaterThan(0);
+        expect(tail.x).toBeLessThan(VIEW.w);
+        expect(tail.y, `tail y at ${deg}°`).toBeGreaterThan(0);
+        expect(tail.y).toBeLessThan(VIEW.h);
+      }
+    }
+  });
+});
+
+describe('drawnHeel', () => {
+  it('tips the deck to leeward, mirrored by tack', () => {
+    expect(drawnHeel(18, 1)).toBeLessThan(0);
+    expect(drawnHeel(18, -1)).toBeGreaterThan(0);
+    expect(drawnHeel(18, -1)).toBe(-drawnHeel(18, 1));
+    expect(drawnHeel(10, 1)).toBe(-10);
+  });
+
+  it('is capped, so a broach does not spin the drawing', () => {
+    expect(Math.abs(drawnHeel(90, 1))).toBe(MAX_DRAWN_HEEL);
+    expect(Math.abs(drawnHeel(-90, 1))).toBe(MAX_DRAWN_HEEL);
   });
 });

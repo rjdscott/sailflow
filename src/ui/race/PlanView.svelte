@@ -1,17 +1,21 @@
 <script lang="ts">
+  import { cubicOut } from 'svelte/easing';
+  import { prefersReducedMotion, Tween } from 'svelte/motion';
   import type { AeroState, SailShape } from '../../core/types';
   import {
+    arrowLength,
     boomAngle,
     clewAt,
     deck,
     DIMS,
+    drawnHeel,
+    MAX_DRAWN_HEEL,
     jibSheetAngle,
     openBy,
     sailPath,
     sailPoints,
     tackSide,
     windArrow,
-    type Ring,
     localAoa,
     luffRibbon,
     leechRibbon,
@@ -19,6 +23,7 @@
   } from './boat';
   import type { Pt } from './geometry';
   import { race } from './store.svelte';
+  import { conditions } from '../stores/conditions.svelte';
 
   let {
     aero,
@@ -55,9 +60,18 @@
   // bowsprit and the transom at every angle. The two tags sit on opposite
   // sides of their arrows, which is what keeps them apart when TWA and AWA
   // are only a few degrees apart. boat.test.ts holds both clearances.
-  const RING = { rx: 110, ry: 100, len: 18 };
-  const TWA_RING: Ring = { ...RING, tagOff: 28 };
-  const AWA_RING: Ring = { ...RING, tagOff: -28 };
+  const RING = { rx: 110, ry: 100 };
+
+  /**
+   * Solves land in steps; the drawing shouldn't. prov: assumed 250 ms.
+   * `duration` is a function so it is re-read on every set: flip the OS
+   * setting mid-session and the next solve snaps. 1 ms, not 0, mirrors the
+   * kill switch in tokens.css and keeps the first frame off the zero divide.
+   */
+  const EASE = {
+    duration: () => (prefersReducedMotion.current ? 1 : 250),
+    easing: cubicOut,
+  };
 
   const side = $derived(tackSide(twaDeg));
   /** Bottom corner to windward: the one place the wind arrows never sweep. */
@@ -65,8 +79,12 @@
   const ctl = $derived(race.controls.race);
   const main = $derived(race.result?.shape.main);
 
-  const boomDeg = $derived(boomAngle(ctl.mainsheet, ctl.traveller));
-  const jibDeg = $derived(jibSheetAngle(ctl.jibLead, ctl.jibSheet));
+  // Tween the two sheeting angles, not the path strings they feed: every
+  // shape hanging off a spar (sail, ghost, telltale) swings with it.
+  const boom = Tween.of(() => boomAngle(ctl.mainsheet, ctl.traveller), EASE);
+  const jibSheet = Tween.of(() => jibSheetAngle(ctl.jibLead, ctl.jibSheet), EASE);
+  const boomDeg = $derived(boom.current);
+  const jibDeg = $derived(jibSheet.current);
 
   const boomTip = $derived(clewAt(MAST, boomDeg, D.boomPx, side));
   const jibClew = $derived(clewAt(TACK, jibDeg, D.jibFootPx, side));
@@ -84,8 +102,14 @@
   );
   const jibGhost = $derived(jib ? ghost(TACK, jibDeg, D.jibFootPx * DIMS.headChord.jib, jib) : '');
 
-  const twa = $derived(windArrow(twaDeg, HUB, TWA_RING));
-  const awa = $derived(windArrow(side * aero.awaDeg, HUB, AWA_RING));
+  // Both arrows carry the true wind's strength: the apparent arrow says where
+  // the wind is, not how hard it blows, so two lengths would read as two winds.
+  const armLen = $derived(arrowLength(conditions.twsKt));
+  const twa = $derived(windArrow(twaDeg, HUB, { ...RING, len: armLen, tagOff: 28 }));
+  const awa = $derived(windArrow(side * aero.awaDeg, HUB, { ...RING, len: armLen, tagOff: -28 }));
+
+  /** Plan view has no third axis: the tilt is a metaphor, and it is capped. */
+  const tiltDeg = $derived(drawnHeel(heelDeg, side));
 
   // Target entry AoA; the shape's entryDeg mixes datums (camber + inhauler) so it is not used here.
   const entryDeg = 12; // prov: assumed
@@ -188,61 +212,70 @@
       </text>
     </g>
 
-    <!-- Deck plan. Drawn in the hull frame: stem at the origin, +y aft. -->
-    <g transform="translate({ORIGIN.x} {ORIGIN.y.toFixed(2)})">
-      <path class="hull" d={D.hull} />
-      <path class="hull-shade" d={D.hull} transform={SHADE} />
-      <path class="centreline" d={D.centreline} />
-      <path class="well" d={D.cabin} />
-      <path class="well" d={D.cockpit} />
-      <path class="sprit" d={D.sprit} />
-      {#each D.chainplates as c, i (i)}
-        <circle class="chainplate" cx={c.x.toFixed(2)} cy={c.y.toFixed(2)} r="1.7" />
+    <!-- Everything that heels: deck, sails and the ribbons flying off them,
+         leaning to leeward about the middle of the boat. -->
+    <g
+      class="boat"
+      style="transform-origin: {HUB.x}px {HUB.y}px; transform: rotate({tiltDeg.toFixed(2)}deg)"
+    >
+      <!-- Deck plan. Drawn in the hull frame: stem at the origin, +y aft. -->
+      <g transform="translate({ORIGIN.x} {ORIGIN.y.toFixed(2)})">
+        <path class="hull" d={D.hull} />
+        <path class="hull-shade" d={D.hull} transform={SHADE} />
+        <path class="centreline" d={D.centreline} />
+        <path class="well" d={D.cabin} />
+        <path class="well" d={D.cockpit} />
+        <path class="sprit" d={D.sprit} />
+        {#each D.chainplates as c, i (i)}
+          <circle class="chainplate" cx={c.x.toFixed(2)} cy={c.y.toFixed(2)} r="1.7" />
+        {/each}
+        <circle class="mast-step" cx="0" cy={D.mast.y.toFixed(2)} r="3" />
+      </g>
+
+      <!-- Sails. Ghost of the twisted ¾ section behind the half-height shape. -->
+      <g class="sails">
+        <path class="ghost" d={mainGhost} />
+        <path class="ghost" d={jibGhost} />
+        <path class="sail" d={mainSail} />
+        <path class="sail" d={jibSail} />
+        <line
+          class="boom"
+          x1={MAST.x}
+          y1={MAST.y}
+          x2={boomTip.x.toFixed(2)}
+          y2={boomTip.y.toFixed(2)}
+        />
+      </g>
+
+      {#each telltales as t (t.at)}
+        <g
+          transform="translate({t.p.x.toFixed(2)} {t.p.y.toFixed(2)}) rotate({streamDeg.toFixed(
+            2,
+          )}) scale(1 {side})"
+        >
+          <circle class="tt-dot" r="1.8" />
+          <rect class="ribbon {t.state}" x="3.5" y="-1.3" width="13" height="2.6" rx="1.3" />
+        </g>
       {/each}
-      <circle class="mast-step" cx="0" cy={D.mast.y.toFixed(2)} r="3" />
+
+      {#each mainTelltales as t (t.at)}
+        <g
+          transform="translate({t.p.x.toFixed(2)} {t.p.y.toFixed(2)}) rotate({boomStreamDeg.toFixed(
+            2,
+          )}) scale(1 {side})"
+        >
+          <circle class="tt-dot" r="1.8" />
+          <rect class="ribbon {t.state}" x="3.5" y="-1.3" width="13" height="2.6" rx="1.3" />
+        </g>
+      {/each}
     </g>
-
-    <!-- Sails. Ghost of the twisted ¾ section behind the half-height shape. -->
-    <g class="sails">
-      <path class="ghost" d={mainGhost} />
-      <path class="ghost" d={jibGhost} />
-      <path class="sail" d={mainSail} />
-      <path class="sail" d={jibSail} />
-      <line
-        class="boom"
-        x1={MAST.x}
-        y1={MAST.y}
-        x2={boomTip.x.toFixed(2)}
-        y2={boomTip.y.toFixed(2)}
-      />
-    </g>
-
-    {#each telltales as t (t.at)}
-      <g
-        transform="translate({t.p.x.toFixed(2)} {t.p.y.toFixed(2)}) rotate({streamDeg.toFixed(
-          2,
-        )}) scale(1 {side})"
-      >
-        <circle class="tt-dot" r="1.8" />
-        <rect class="ribbon {t.state}" x="3.5" y="-1.3" width="13" height="2.6" rx="1.3" />
-      </g>
-    {/each}
-
-    {#each mainTelltales as t (t.at)}
-      <g
-        transform="translate({t.p.x.toFixed(2)} {t.p.y.toFixed(2)}) rotate({boomStreamDeg.toFixed(
-          2,
-        )}) scale(1 {side})"
-      >
-        <circle class="tt-dot" r="1.8" />
-        <rect class="ribbon {t.state}" x="3.5" y="-1.3" width="13" height="2.6" rx="1.3" />
-      </g>
-    {/each}
 
     <!-- Heel, seen from astern, parked clear of the plan. -->
     <g class="heel" transform="translate({heelX} 226)">
       <line class="water" x1="-30" y1="0" x2="30" y2="0" />
-      <g transform="rotate({(-side * heelDeg).toFixed(2)})">
+      <!-- The inset shows the real angle, uncapped; only the plan-view tilt
+           is a metaphor. Rotation is a CSS transform so it can ease. -->
+      <g class="heel-boat" style="transform: rotate({(-side * heelDeg).toFixed(2)}deg)">
         <path class="keel" d="M -2 5 L -1.4 20 L 1.4 20 L 2 5 Z" />
         <path class="hull" d="M -22 -8 C -21 0 -15 6 0 6 C 15 6 21 0 22 -8 Z" />
         <line class="mast" x1="0" y1="-8" x2="0" y2="-40" />
@@ -253,7 +286,8 @@
 
   <figcaption>
     Bow up, {side === 1 ? 'starboard' : 'port'} tack. Camber, twist, heel and the wind angles are solved;
-    boom and jib sheeting angles are read off the sheet controls, not from sheet loads.
+    boom and jib sheeting angles are read off the sheet controls, not from sheet loads. The lean of the
+    plan view is illustrative and capped at {MAX_DRAWN_HEEL}°; the inset carries the solved heel.
   </figcaption>
 </figure>
 
@@ -443,19 +477,42 @@
     fill: var(--muted);
   }
 
-  /* Motion ---------------------------------------------------------------- */
+  /* Motion -----------------------------------------------------------------
+
+     transform/opacity only, so nothing here can trigger layout, and every rule
+     lives under `no-preference`. tokens.css also kills animation and
+     transition duration globally under `prefers-reduced-motion: reduce`; the
+     tweens read the same media query through svelte/motion. */
+
+  .boat {
+    transform-box: view-box;
+  }
+
+  /* Its local origin is already the waterline it pivots on; the CSS default
+     of 50% would swing it out of the inset. */
+  .heel-boat {
+    transform-box: view-box;
+    transform-origin: 0 0;
+  }
 
   @media (prefers-reduced-motion: no-preference) {
+    .boat,
+    .heel-boat {
+      transition: transform 300ms ease-out;
+    }
+
+    /* Streaming ribbons wave; a lifting one flicks up off the luff; a stalled
+       one hangs drooped and shivers. Durations are the read, not physics. */
     .ribbon.streaming {
-      animation: flutter 1.4s ease-in-out infinite;
+      animation: flutter 1.2s ease-in-out infinite;
     }
 
     .ribbon.lifting {
-      animation: lift 0.7s ease-in-out infinite;
+      animation: lift 0.5s ease-in-out infinite;
     }
 
     .ribbon.stalled {
-      animation: stall 2.4s ease-in-out infinite;
+      animation: stall 0.3s ease-in-out infinite;
     }
   }
 
@@ -472,20 +529,20 @@
   @keyframes lift {
     0%,
     100% {
-      transform: rotate(-25deg);
+      transform: rotate(-22deg);
     }
-    50% {
-      transform: rotate(-45deg);
+    35% {
+      transform: rotate(-52deg);
     }
   }
 
   @keyframes stall {
     0%,
     100% {
-      transform: rotate(40deg);
+      transform: rotate(46deg);
     }
     50% {
-      transform: rotate(70deg);
+      transform: rotate(54deg);
     }
   }
 

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { cubicOut } from 'svelte/easing';
+  import { prefersReducedMotion, Tween } from 'svelte/motion';
   import type { SailShape, SectionShape } from '../../core/types';
   import { SECTION_LAYOUT as L, sectionPath, twistRelativeDeg } from './geometry';
 
@@ -10,19 +12,48 @@
     jib?: SailShape;
   } = $props();
 
-  // The path `d` of a Bezier cannot be CSS-transitioned, so a control change
-  // simply re-renders the sections. Nothing here animates.
+  // A Bezier `d` cannot be CSS-transitioned, so the tween runs on the numbers
+  // behind it — draft, draft position, twist — and the path is rebuilt each
+  // frame from the eased shape. prov: assumed 250 ms, the same as the plan view.
+  // 1 ms rather than 0 under reduced motion: same trick as tokens.css, and it
+  // keeps the first frame off a zero divide inside Tween.
+  const EASE = {
+    duration: () => (prefersReducedMotion.current ? 1 : 250),
+    easing: cubicOut,
+  };
+  /** Tween start for a sail that is not in the solve yet: a flat, untwisted section. */
+  const FLAT_SECTION: SectionShape = {
+    draft: 0,
+    draftPos: 0.5,
+    twistDeg: 0,
+    entryDeg: 0,
+    exitDeg: 0,
+  };
+  const FLAT: SailShape = {
+    quarter: FLAT_SECTION,
+    half: FLAT_SECTION,
+    threeQuarter: FLAT_SECTION,
+  };
+  const mainT = Tween.of(() => main ?? FLAT, EASE);
+  const jibT = Tween.of(() => jib ?? FLAT, EASE);
+
   const ROWS: { key: keyof SailShape; label: string }[] = [
     { key: 'threeQuarter', label: '¾' },
     { key: 'half', label: '½' },
     { key: 'quarter', label: '¼' },
   ];
 
-  const sails = $derived(
+  /** `shape` is the solve, `drawn` the eased shape: the table never shows a mid-tween number. */
+  interface Sail {
+    name: string;
+    shape: SailShape;
+    drawn: SailShape;
+  }
+  const sails: Sail[] = $derived(
     [
-      { name: 'Main', shape: main },
-      { name: 'Jib', shape: jib },
-    ].filter((s): s is { name: string; shape: SailShape } => s.shape !== undefined),
+      { name: 'Main', shape: main, drawn: mainT.current },
+      { name: 'Jib', shape: jib, drawn: jibT.current },
+    ].filter((s): s is Sail => s.shape !== undefined),
   );
 
   /** SVG rotates clockwise, so the negative sign twists the leech open (up). */
@@ -47,11 +78,11 @@
         <line class="luff" x1={x} y1={L.luffTop} x2={x} y2={L.rowY[2]} />
 
         {#each ROWS as row, ri (row.key)}
-          {@const s = sail.shape[row.key]}
+          {@const s = sail.drawn[row.key]}
           <g transform="translate({x} {L.rowY[ri]})">
             <!-- Reference: this sail's ¼ section, unrotated, behind every row. -->
-            <path class="ref" d={sectionPath(sail.shape.quarter, L.chord)} />
-            <g transform="rotate({twist(s, sail.shape.quarter)} 0 0)">
+            <path class="ref" d={sectionPath(sail.drawn.quarter, L.chord)} />
+            <g transform="rotate({twist(s, sail.drawn.quarter)} 0 0)">
               <line class="chord" x1="0" y1="0" x2={L.chord} y2="0" />
               <path class="camber" d={sectionPath(s, L.chord)} />
             </g>
