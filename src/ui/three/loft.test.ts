@@ -11,6 +11,7 @@ import {
   buildSail,
   chordFraction,
   nearestColumn,
+  ribbonAnchor,
   DEFAULT_M,
   DEFAULT_N,
   gridRow,
@@ -322,5 +323,35 @@ describe('chord columns', () => {
     expect(Math.abs(chordFraction(j, M) - 0.15)).toBeLessThan(0.03);
     expect(nearestColumn({ M }, 0)).toBe(0);
     expect(nearestColumn({ M }, 1)).toBe(M - 1);
+  });
+});
+
+describe('ribbonAnchor', () => {
+  const shape: SailShape = {
+    quarter: { draft: 0.1, draftPos: 0.4, twistDeg: 3, entryDeg: 20, exitDeg: 8 },
+    half: { draft: 0.11, draftPos: 0.42, twistDeg: 8, entryDeg: 22, exitDeg: 9 },
+    threeQuarter: { draft: 0.09, draftPos: 0.45, twistDeg: 14, entryDeg: 18, exitDeg: 7 },
+  };
+  const chords: SailChords = { foot: 3, quarter: 2.6, half: 2.1, threeQuarter: 1.4, head: 0.3 };
+  const mesh = buildSail(sectionStack(shape, chords), (h) => [0, h * 8, 0], 0.15, 1);
+
+  it('a leech ribbon roots exactly on the leech and streams aft', () => {
+    for (const row of mesh.stripeRows) {
+      const { root, along } = ribbonAnchor(mesh, row, mesh.M - 1, 0);
+      const leech = gridRow(mesh, row)[mesh.M - 1];
+      expect(root).toEqual(leech);
+      expect(along[0]).toBeLessThan(0); // aft is −x
+      expect(Math.hypot(...along)).toBeCloseTo(1, 9);
+    }
+  });
+
+  it('a lifted ribbon sits `lift` off the cloth, horizontally, never buried', () => {
+    const j = nearestColumn(mesh, 0.15);
+    for (const row of mesh.stripeRows) {
+      const on = gridRow(mesh, row)[j];
+      const { root } = ribbonAnchor(mesh, row, j, 0.04);
+      expect(root[1]).toBe(on[1]);
+      expect(Math.hypot(root[0] - on[0], root[2] - on[2])).toBeCloseTo(0.04, 6);
+    }
   });
 });

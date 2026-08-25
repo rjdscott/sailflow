@@ -378,6 +378,32 @@ export function nearestColumn(mesh: { M: number }, x: number): number {
   return best;
 }
 
+/**
+ * Where a telltale ribbon roots and which way it streams: grid point `j` on
+ * `row`, lifted `lift` metres off the cloth along the chord's horizontal
+ * normal (so a mid-chord ribbon is not buried in the surface), streaming aft
+ * along the local chord read luff-ward from `j - 3`. A leech ribbon hangs off
+ * the edge and takes `lift` 0.
+ */
+export function ribbonAnchor(
+  mesh: SailMesh,
+  row: number,
+  j: number,
+  lift: number,
+): { root: Vec3; along: Vec3 } {
+  const pts = gridRow(mesh, row);
+  const back = pts[Math.max(0, j - 3)];
+  const d: Vec3 = [pts[j][0] - back[0], pts[j][1] - back[1], pts[j][2] - back[2]];
+  const l = Math.hypot(...d) || 1;
+  const along: Vec3 = [d[0] / l, d[1] / l, d[2] / l];
+  const ol = Math.hypot(along[2], along[0]) || 1;
+  const out: Vec3 = [along[2] / ol, 0, -along[0] / ol];
+  return {
+    root: [pts[j][0] + out[0] * lift, pts[j][1], pts[j][2] + out[2] * lift],
+    along,
+  };
+}
+
 /** One row of the grid as `Vec3`s — draft stripes, leech and luff lines. */
 export function gridRow(mesh: SailMesh, i: number): Vec3[] {
   return Array.from({ length: mesh.M }, (_, j) => vertexOf(mesh, i, j));

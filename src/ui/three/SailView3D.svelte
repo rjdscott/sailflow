@@ -47,6 +47,7 @@
     gridColumn,
     gridRow,
     nearestColumn,
+    ribbonAnchor,
     sectionStack,
     type SailMesh,
   } from './loft';
@@ -351,25 +352,10 @@
       n += (SEGS + 1) * 2;
     };
 
-    const unit = (v: Vec3): Vec3 => {
-      const l = Math.hypot(...v) || 1;
-      return [v[0] / l, v[1] / l, v[2] / l];
-    };
     let ph = 0;
-    /**
-     * Ribbon streaming aft from grid point `j` on `row`. Direction is the local
-     * chord read luff-ward (`j - 3` → `j`), so it points aft on every sail.
-     * `lift` pushes the root a few cm off the cloth so a mid-chord ribbon is
-     * not buried in the surface; leech ribbons hang off the edge and need none.
-     */
     const ribbon = (mesh: SailMesh, row: number, j: number, lift: number): void => {
-      const pts = gridRow(mesh, row);
-      const back = pts[Math.max(0, j - 3)];
-      const along = unit([pts[j][0] - back[0], pts[j][1] - back[1], pts[j][2] - back[2]]);
-      // Horizontal normal to the chord: to leeward on the leeward face.
-      const out = unit([along[2], 0, -along[0]]);
-      const anchor: Vec3 = [pts[j][0] + out[0] * lift, pts[j][1], pts[j][2] + out[2] * lift];
-      add(anchor, along, [0, 1, 0], ph);
+      const { root, along } = ribbonAnchor(mesh, row, j, lift);
+      add(root, along, [0, 1, 0], ph);
       ph += 1.7; // prov: assumed phase offset, so the ribbons do not beat as one
     };
     if (jib) {
@@ -381,8 +367,7 @@
       // Upper leech ribbons: the cue North's jib guide reads (flow 90–100 %).
       for (const row of jib.stripeRows.slice(1)) ribbon(jib, row, jib.M - 1, 0);
     }
-    if (main)
-      for (const row of main.stripeRows) ribbon(main, row, gridRow(main, row).length - 1, -1);
+    if (main) for (const row of main.stripeRows) ribbon(main, row, main.M - 1, 0);
 
     telltales.visible = n > 0;
     telltales.geometry.dispose();
@@ -398,6 +383,13 @@
     g.boundingSphere = null;
     telltales.frustumCulled = false;
     telltales.geometry = g;
+    if (import.meta.env.DEV)
+      (window as unknown as { __sail?: unknown }).__sail = {
+        mainSail,
+        jibSail,
+        telltales,
+        stripes,
+      };
   }
 
   function rebuild(): void {
