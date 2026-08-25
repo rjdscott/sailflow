@@ -112,6 +112,53 @@
     min-width: 0;
   }
 
+  /* Desktop cockpit: label, value and track on one 36 px line rather than two
+     stacked halves. Eight of these have to fit a panel column on a 720 px-tall
+     screen, and the label-above-track stack costs 72 px a row for nothing a
+     mouse needs (research §3 principle 25 — one spacing module, integer px).
+     It reaches into `Slider`'s own markup on purpose: the compaction is this
+     screen's, not the component's, and Dock and Log keep the tall rows. */
+  @media (min-width: 1280px) {
+    .grow :global(.slider-row) {
+      display: grid;
+      grid-template-columns: minmax(96px, 1.2fr) minmax(104px, 1fr);
+      align-items: center;
+      column-gap: var(--space-2);
+      padding-block: 0;
+    }
+
+    /* One line for the name, whatever its length: the parenthetical half of
+       "Traveller (+ up to windward)" is in the range's accessible name and in
+       the `?` sheet, and wrapping it here would cost the row its 36 px. */
+    .grow :global(.slider-row .label) {
+      display: block;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-size: var(--text-xs);
+    }
+
+    .grow :global(.slider-row > .lock-note),
+    .grow :global(.slider-row > .hint) {
+      grid-column: 1 / -1;
+    }
+
+    .grow :global(.track-wrap),
+    .grow :global(.range),
+    .grow :global(.step) {
+      height: 36px;
+    }
+
+    .grow :global(.step) {
+      width: 28px;
+    }
+
+    .info {
+      width: 28px;
+      height: 28px;
+    }
+  }
+
   .side {
     display: flex;
     align-items: center;

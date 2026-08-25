@@ -4,17 +4,15 @@
   import type { RaceControls } from '../../core/types';
   import { TRIM_CONTROLS } from '../../worker/protocol';
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
-  import Tabs from '../components/Tabs.svelte';
   import TopBar from '../components/TopBar.svelte';
   import ActionsBar from '../race/ActionsBar.svelte';
   import ConditionsStrip from '../race/ConditionsStrip.svelte';
   import Headsail from '../race/panels/Headsail.svelte';
   import Helm from '../race/panels/Helm.svelte';
   import Mainsail from '../race/panels/Mainsail.svelte';
+  import PanelTabs from '../race/PanelTabs.svelte';
   import Rig from '../race/panels/Rig.svelte';
   import InstrumentBar from '../race/InstrumentBar.svelte';
-  import RigElevation from '../race/RigElevation.svelte';
-  import SailSections from '../race/SailSections.svelte';
   import SailHero from '../three/SailHero.svelte';
   import {
     CONTROLS,
@@ -37,7 +35,7 @@
   import { ModelOptimumStore } from '../disagree/store.svelte';
   import { getClient } from '../race/client';
   import ShortcutsSheet from '../components/ShortcutsSheet.svelte';
-  import { isTypingTarget, keyAction, panelControlsId, type PanelId } from '../keys';
+  import { isTypingTarget, keyAction, panelControlsId, panelSection, type PanelId } from '../keys';
   import { router } from '../router.svelte';
   import { logStoreUi } from '../log/store.svelte';
   import { track } from '../../lib/telemetry';
@@ -174,8 +172,13 @@
 
   let shortcutsOpen = $state(false);
 
-  /** `m` / `j`: the first control of a sail panel, wherever it sits on screen. */
+  /**
+   * `m` / `j` / `h` / `r`: bring a panel into view and put the caret on its
+   * first slider. Rig has no slider once the day's tune is committed — it is
+   * a table then — so there the scroll is the whole jump.
+   */
   function focusPanel(panel: PanelId): void {
+    panelSection(panel)?.scrollIntoView({ block: 'nearest' });
     document
       .getElementById(panelControlsId(panel))
       ?.querySelector<HTMLInputElement>('input[type="range"]')
@@ -218,39 +221,41 @@
       'this angle',
   );
 
-  const TABS = ['Sections', 'Rig', 'Plan'] as const;
-  const TAB_KEY = 'sailflow.race.tab.v1';
-  /** Plan carries the telltales, the only visual flow cue (audit ux-01 M-10). */
-  const DEFAULT_TAB = TABS.indexOf('Plan');
-
-  function readTab(): number {
-    try {
-      const raw = localStorage.getItem(TAB_KEY);
-      const n = raw === null ? NaN : Number(raw);
-      return Number.isInteger(n) && n >= 0 && n < TABS.length ? n : DEFAULT_TAB;
-    } catch {
-      return DEFAULT_TAB; // private mode, or storage disabled
-    }
-  }
-
-  let tab = $state(readTab());
-
-  function selectTab(i: number): void {
-    tab = i;
-    try {
-      localStorage.setItem(TAB_KEY, String(i));
-    } catch {
-      // ignore: no persistence available, the tab still switches
-    }
-  }
-
   /** The settled-trim line quotes the store's own threshold, not a round number. */
   const settled = `Trim is balanced: no single control gains more than ${GAIN_EPS.toFixed(3)} kt.`;
 </script>
 
-<!-- One definition, two positions: on a phone the coach line leads the page,
-     from 720 px the two-column layout puts it beside the controls (M-04). -->
-{#snippet insight()}
+<svelte:window onkeydown={onKeydown} />
+
+<!-- The cockpit (ADR 0015): one grid, four panels around the hero, named
+     areas per breakpoint. From 1280 px the grid is capped to the viewport and
+     the panels scroll inside themselves, so the primary screen never scrolls
+     (research §3 principle 4) and every widget keeps its place across tiers
+     and sessions (principle 19). -->
+<div class="cockpit">
+  <div class="head">
+    <TopBar title="Race" mode />
+    <p class="lede">Trim for the wind in front of you, and see what the move is worth.</p>
+    <ConditionsStrip />
+  </div>
+
+  <div class="bar">
+    {#if race.result}
+      <InstrumentBar
+        result={race.result}
+        twaDeg={conditions.twaDeg}
+        objective={objectiveId}
+        busy={race.busy}
+        target={optimumTargets}
+        history={race.history}
+        twsKt={conditions.twsKt}
+        coach={race.coach?.text}
+      />
+    {/if}
+  </div>
+
+  <!-- The coach line and everything that rewrites the whole trim, in one
+       card. Every button in it previews the sliders it would move (phase 05). -->
   <section class="card insight" class:busy={race.busy}>
     <div class="insight-head">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" class="icon">
@@ -276,8 +281,7 @@
         {/if}
       </p>
     </div>
-    <!-- Everything that rewrites the whole trim lives in one bar, and every
-         button in it previews the sliders it would move (phase 05). -->
+
     <ActionsBar
       {canApply}
       onapply={applyOptimum}
@@ -286,6 +290,7 @@
       onreset={resetTrim}
       onlog={logTrim}
     />
+
     {#if applied?.length}
       <ul class="moved">
         {#each applied as m (m.label)}
@@ -295,6 +300,7 @@
         {/each}
       </ul>
     {/if}
+
     <details>
       <summary>Why</summary>
       <p>
@@ -314,211 +320,80 @@
       </p>
     </details>
   </section>
-{/snippet}
 
-<svelte:window onkeydown={onKeydown} />
+  <!-- Phone only: the four panels are a scroll apart, so they get a tab strip
+       that also says which one you are in. -->
+  <PanelTabs />
 
-<TopBar title="Race" mode />
-
-<p class="lede">
-  Trim the boat for the wind in front of you and see what it costs: Sailflow solves the same rig the
-  Dock committed, tells you the one move worth making, and shows how much it is worth.
-</p>
-
-<ConditionsStrip />
-
-<div class="screen">
-  <div class="col-primary stack">
-    <!-- Phone: the instruction comes before the picture. -->
-    <div class="coach-sm">{@render insight()}</div>
-
-    <!-- Phone and tablet: hero readouts, then one tabbed picture card. -->
-    <div class="lg-hide">
-      {#if race.result}
-        <InstrumentBar
-          result={race.result}
-          twaDeg={conditions.twaDeg}
-          objective={objectiveId}
-          busy={race.busy}
-          target={optimumTargets}
-          history={race.history}
-          twsKt={conditions.twsKt}
-          coach={race.coach?.text}
-        />
-      {/if}
-    </div>
-
-    <section class="card lg-hide">
-      <Tabs
-        tabs={TABS}
-        bind:selected={() => tab, (i) => selectTab(i)}
-        ariaLabel="Pictures"
-        idPrefix="pic"
-      />
-
-      <div
-        class="pane"
-        role="tabpanel"
-        id="pic-pane-0"
-        aria-labelledby="pic-tab-0"
-        tabindex="0"
-        hidden={tab !== 0}
-      >
-        <SailSections main={race.result?.shape.main} jib={race.result?.shape.jib} />
-      </div>
-      <div
-        class="pane"
-        role="tabpanel"
-        id="pic-pane-1"
-        aria-labelledby="pic-tab-1"
-        tabindex="0"
-        hidden={tab !== 1}
-      >
-        {#if race.result}<RigElevation rig={race.result.rig} />{/if}
-      </div>
-      <div
-        class="pane"
-        role="tabpanel"
-        id="pic-pane-2"
-        aria-labelledby="pic-tab-2"
-        tabindex="0"
-        hidden={tab !== 2}
-      >
-        {#if race.result}
-          <SailHero result={race.result} twaDeg={conditions.twaDeg} />
-        {/if}
-      </div>
-    </section>
-
-    <!-- Desktop: the boat is the hero, the two diagrams sit under it. -->
-    <div class="lg-only stack">
-      <section class="card hero-boat">
-        <h2 class="section-title">The boat</h2>
-        {#if race.result}
-          <SailHero result={race.result} twaDeg={conditions.twaDeg} />
-        {/if}
-      </section>
-
-      <div class="pic-pair">
-        <section class="card">
-          <h2 class="section-title">Sail sections</h2>
-          <SailSections main={race.result?.shape.main} jib={race.result?.shape.jib} />
-        </section>
-        <section class="card">
-          <h2 class="section-title">Rig elevation</h2>
-          {#if race.result}<RigElevation rig={race.result.rig} />{/if}
-        </section>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-secondary stack">
-    <div class="lg-only metrics-dock">
-      {#if race.result}
-        <InstrumentBar
-          result={race.result}
-          twaDeg={conditions.twaDeg}
-          objective={objectiveId}
-          busy={race.busy}
-          target={optimumTargets}
-          history={race.history}
-          twsKt={conditions.twsKt}
-          coach={race.coach?.text}
-        />
-      {/if}
-    </div>
-
-    <div class="coach-md">{@render insight()}</div>
-
-    <Mainsail result={race.result} />
-    <Headsail result={race.result} flying={conditions.sailset === 'jib'} />
-    <Helm result={race.result} />
-    <Rig result={race.result} />
-
-    {#if advanced}
-      <section class="card">
-        <details>
-          <summary>Model vs tuning guides</summary>
-          <Panel
-            twsKt={conditions.twsKt}
-            seaState={conditions.seaState}
-            crewKg={conditions.crewKg}
-            modelOptimum={model.optimum}
-            busy={model.busy}
-            stale={model.stale}
-            error={model.error}
-          />
-        </details>
-      </section>
+  <section class="card hero-boat">
+    {#if race.result}
+      <SailHero result={race.result} twaDeg={conditions.twaDeg} />
     {/if}
+  </section>
+
+  <div class="p-main"><Mainsail result={race.result} /></div>
+  <div class="p-jib">
+    <Headsail result={race.result} flying={conditions.sailset === 'jib'} />
   </div>
+  <div class="p-helm"><Helm result={race.result} /></div>
+  <div class="p-rig"><Rig result={race.result} /></div>
+
+  {#if advanced}
+    <section class="card disagree">
+      <details>
+        <summary>Model vs tuning guides</summary>
+        <Panel
+          twsKt={conditions.twsKt}
+          seaState={conditions.seaState}
+          crewKg={conditions.crewKg}
+          modelOptimum={model.optimum}
+          busy={model.busy}
+          stale={model.stale}
+          error={model.error}
+        />
+      </details>
+    </section>
+  {/if}
 </div>
 
 <ShortcutsSheet bind:open={shortcutsOpen} />
 
 <style>
-  /* Same lede as the drills list: one line, before the instrument. */
+  /* ---------------------------------------------------------------- phone */
+  /* Below 720 the cockpit is one column in DOM order: conditions, instrument
+     bar, the coach and its actions, the tab strip, the hero, the four
+     panels. */
+  .cockpit {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+
+  .head,
+  .bar,
+  .insight,
+  .disagree {
+    min-width: 0;
+  }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
   .lede {
-    margin: 0 0 var(--space-4);
+    margin: 0;
     font-size: var(--text-sm);
     color: var(--ink-2);
-    max-width: 68ch;
   }
 
-  .pane[hidden] {
-    display: none;
-  }
-
-  /* The coach card renders in both columns; the breakpoint picks one. 720 px is
-     where .screen becomes two columns, so it is this pair's breakpoint, not the
-     1024 px of .lg-only/.lg-hide. */
-  .coach-md {
-    display: none;
-  }
-
-  @media (min-width: 720px) {
-    .coach-sm {
-      display: none;
-    }
-
-    .coach-md {
-      display: block;
-    }
-  }
-
-  .pic-pair {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-4);
-    align-items: start;
-  }
-
-  .pic-pair .card,
   .hero-boat {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
-  }
-
-  /* The boat is the thing you watch while you drag a slider, so it owns the
-     card's height and nothing else in it gets a minimum. PlanView crops its
-     own viewBox to the hull and sizes its own svg, which is what takes this
-     card from ~660 px to ~430 px at 1440×900 (owner feedback, 2026-08-25) —
-     enough that Sail sections and Rig elevation sit below it unscrolled. */
-
-  /* Between 1024 and 1280 the primary column is too narrow to read two
-     diagrams side by side, so they stack instead of shrinking. */
-  @media (max-width: 1279px) {
-    .pic-pair {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  /* ponytail: static, not sticky. Sticky in a flex column slid over the
-     slider rows beneath it (audit ux-01 H-02). Pin the whole primary column
-     instead if the readouts must stay in view. */
-  .metrics-dock {
-    position: static;
+    min-height: 0;
+    padding: var(--space-3);
   }
 
   .insight {
@@ -530,21 +405,6 @@
 
   .insight.busy {
     opacity: 0.7;
-  }
-
-  .moved {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1) var(--space-4);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    font-size: var(--text-xs);
-    color: var(--ink-2);
-  }
-
-  .moved-label {
-    color: var(--ink);
   }
 
   .insight-head {
@@ -565,6 +425,21 @@
     color: var(--ink);
   }
 
+  .moved {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  .moved-label {
+    color: var(--ink);
+  }
+
   details summary {
     font-size: var(--text-sm);
     font-weight: 600;
@@ -575,5 +450,240 @@
     font-size: var(--text-sm);
     line-height: 1.55;
     color: var(--ink-2);
+  }
+
+  /* --------------------------------------------------------------- tablet */
+  /* 720–1023: one column of full-width bands, but wide enough to put the
+     panels 2-up under the hero. */
+  @media (min-width: 720px) {
+    .cockpit {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-areas:
+        'head head'
+        'bar bar'
+        'act act'
+        'hero hero'
+        'main jib'
+        'helm rig'
+        'dis dis';
+      align-items: start;
+    }
+
+    .head {
+      grid-area: head;
+    }
+
+    .bar {
+      grid-area: bar;
+    }
+
+    .insight {
+      grid-area: act;
+    }
+
+    .hero-boat {
+      grid-area: hero;
+    }
+
+    .p-main {
+      grid-area: main;
+    }
+
+    .p-jib {
+      grid-area: jib;
+    }
+
+    .p-helm {
+      grid-area: helm;
+    }
+
+    .p-rig {
+      grid-area: rig;
+    }
+
+    .disagree {
+      grid-area: dis;
+    }
+  }
+
+  /* -------------------------------------------------------------- desktop */
+  /* 1024–1279: what you watch on the left, what you touch on the right. One
+     panel per row over there rather than 2-up: split at this width each panel
+     is ~210 px, narrower than one slider row wants. */
+  @media (min-width: 1024px) {
+    .cockpit {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      grid-template-areas:
+        'head head'
+        'bar main'
+        'hero jib'
+        'act helm'
+        'dis rig';
+      gap: var(--space-4) var(--space-5);
+    }
+  }
+
+  /* --------------------------------------------------------- cockpit grid */
+  /* From 1280 px, the README's layout: conditions rail, instrument bar, the
+     hero flanked by the two sail panels, helm and rig beneath, actions along
+     the bottom. The grid is capped to the viewport and the panels scroll
+     inside themselves, which is what makes "one screen" true at 1280×720
+     without hiding a control (research §3 principle 4).
+     prov: assumed 56 px of chrome — the shell's own padding-block (2 × 24 px)
+     plus a hairline, the only page furniture outside this grid. */
+  @media (min-width: 1280px) {
+    .cockpit {
+      --cockpit-chrome: 56px;
+      height: calc(100dvh - var(--cockpit-chrome));
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
+      /* The hero row takes what the viewport leaves, never under 300 px;
+         the Helm/Rig row gets the rest and scrolls inside. prov: assumed
+         floors — a 3D sail under 300 px is a thumbnail, not an instrument. */
+      grid-template-rows: auto auto minmax(300px, 1fr) minmax(150px, 0.55fr) auto;
+      grid-template-areas:
+        'head head head'
+        'bar bar bar'
+        'main hero jib'
+        'helm helm rig'
+        'act act dis';
+      gap: var(--space-3);
+      align-items: stretch;
+    }
+
+    /* A short window (a 720-tall laptop with browser chrome) cannot hold five
+       bands and a hero worth looking at. Below 800 px the page scrolls and
+       the hero keeps a fixed height instead; the one-screen promise is for
+       900 px and up. prov: assumed 800 px threshold. */
+    @media (max-height: 799px) {
+      .cockpit {
+        height: auto;
+        grid-template-rows: auto auto 360px auto auto;
+      }
+    }
+
+    /* Title, lede and the conditions rail on one line; the chips wrap only
+       when they run out of room, and the hero row pays for it, not the page. */
+    .head {
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-2) var(--space-4);
+    }
+
+    /* The rail is chips, and chips are what the cockpit reads. The sentence
+       is for someone arriving on a phone; here it is a wrapped paragraph
+       wedged between the title and the wind, and the row it costs comes
+       straight off the hero. */
+    .lede {
+      display: none;
+    }
+
+    /* The title row's own furniture at mouse size: the density toggle is the
+       only control in it, and a 44 px one turns the rail into two lines. */
+    .head :global(.screen-head) {
+      min-height: 0;
+    }
+
+    .head :global(.segmented button) {
+      min-height: 28px;
+    }
+
+    /* The coach line, the actions and the "why" on one row: the bottom band
+       is a strip, not a card of prose. */
+    .insight {
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-2) var(--space-4);
+      padding: var(--space-2) var(--space-3);
+      overflow: hidden;
+    }
+
+    .insight-head {
+      flex: 1 1 24ch;
+      min-width: 0;
+      align-items: center;
+    }
+
+    .line {
+      font-size: var(--text-sm);
+    }
+
+    .disagree {
+      padding: var(--space-2) var(--space-3);
+      overflow: hidden;
+    }
+
+    .hero-boat {
+      overflow: hidden;
+    }
+
+    /* Panels take their row's height and scroll their own body. The heading
+       stays put, so a panel never loses its name. */
+    .p-main,
+    .p-jib,
+    .p-helm,
+    .p-rig {
+      display: flex;
+      min-height: 0;
+    }
+
+    .p-main :global(.panel),
+    .p-jib :global(.panel),
+    .p-helm :global(.panel),
+    .p-rig :global(.panel) {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .p-main :global(.panel > .grid),
+    .p-jib :global(.panel > .grid),
+    .p-helm :global(.panel > .grid),
+    .p-rig :global(.panel > .grid) {
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+    }
+
+    /* The caption repeats the chip titles; in the cockpit the hero's height
+       is the scarce thing. The text stays in the DOM for assistive tech. */
+    .hero-boat :global(.caption) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    /* A picture that grew with its panel would push the controls out of the
+       scroll box; these are glance cues, so they are capped.
+       prov: assumed 220 px — two section stacks side by side stay legible. */
+    .p-main :global(.visual),
+    .p-jib :global(.visual),
+    .p-rig :global(.visual) {
+      max-height: 220px;
+      overflow: hidden;
+    }
+
+    /* Controls first, picture under them. `Panel` leads with the picture when
+       it is narrow because a thumb is still finding the control; in the
+       cockpit the hero is already the thing you are looking at, and what the
+       column is for is the sliders. */
+    .p-main :global(.panel > .grid > .controls),
+    .p-jib :global(.panel > .grid > .controls),
+    .p-helm :global(.panel > .grid > .controls),
+    .p-rig :global(.panel > .grid > .controls) {
+      order: 0;
+    }
+
+    .p-main :global(.panel > .grid > .visual),
+    .p-jib :global(.panel > .grid > .visual),
+    .p-helm :global(.panel > .grid > .visual),
+    .p-rig :global(.panel > .grid > .visual) {
+      order: 1;
+    }
   }
 </style>

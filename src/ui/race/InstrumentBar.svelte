@@ -87,9 +87,18 @@
     explaining = id;
     sheetOpen = true;
   }
+
+  /**
+   * Phone only: the band keeps BSP · %POLAR · VMG · HEEL and puts the rest
+   * behind this. Four cells and a gauge are what fits above the fold on a
+   * 390 px screen; the others are a tap away rather than a scroll away.
+   * The extras are hidden by CSS at this width only, so every other width
+   * has the whole band and this button is not there at all.
+   */
+  let more = $state(false);
 </script>
 
-<section class="card bar" class:stale={!result.converged} aria-live="off">
+<section class="card bar" class:more class:stale={!result.converged} aria-live="off">
   {#if busy}<span class="progress" aria-hidden="true"></span>{/if}
 
   <div class="cells">
@@ -124,7 +133,7 @@
       trend={trend.vmg}
       onexplain={explain}
     />
-    <div class="race-only">
+    <div class="race-only phone-extra">
       <InstrumentCell
         label="TWA"
         id="height"
@@ -134,6 +143,10 @@
         onexplain={explain}
       />
     </div>
+
+    <button type="button" class="more-btn" aria-expanded={more} onclick={() => (more = !more)}>
+      {more ? 'Less' : 'More'}
+    </button>
   </div>
 
   <!-- Side by side on purpose: the Speed Guide's point is that helm feel only
@@ -152,7 +165,7 @@
       tier={result.heelDeg.tier}
       onexplain={explain}
     />
-    <div class="race-only">
+    <div class="race-only phone-extra">
       <BulletGauge
         label="HELM"
         id="helm"
@@ -168,7 +181,7 @@
     </div>
   </div>
 
-  <div class="cells analyse-only">
+  <div class="cells analyse-only phone-extra">
     <InstrumentCell
       label="LEECH STALL"
       id="leechStall"
@@ -218,6 +231,77 @@
     gap: var(--space-3) var(--space-4);
     padding-top: var(--space-3);
     border-top: 1px solid var(--line);
+  }
+
+  /* Phone: BSP · %POLAR · VMG · HEEL, and the rest behind the button. The
+     collapsed rule is scoped to this width, so no other layout can lose a
+     reading to it. */
+  .more-btn {
+    display: none;
+    align-self: center;
+    min-height: var(--hit-min);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: var(--text-xs);
+    cursor: pointer;
+  }
+
+  @media (max-width: 719px) {
+    .more-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bar:not(.more) .phone-extra {
+      display: none;
+    }
+  }
+
+  /* Desktop cockpit: the whole band on one line — measurements, the pair of
+     gauges, then the verdict — so the instrument row costs ~90 px of a
+     720 px screen instead of ~190 (research §4 pattern 2). */
+  @media (min-width: 1280px) {
+    .bar {
+      flex-direction: row;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-3) var(--space-4);
+    }
+
+    /* Flex, not the auto-fit grid: an auto-fit track list inside a flex item
+       has no definite width to fit against and collapses to one column —
+       which is the instrument band as a tower, 360 px of a 720 px screen. */
+    .cells {
+      display: flex;
+      flex: none;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .gauges {
+      display: flex;
+      flex: 0 1 340px;
+      gap: var(--space-4);
+      padding-top: 0;
+      padding-left: var(--space-4);
+      border-top: none;
+      border-left: 1px solid var(--line);
+    }
+
+    .gauges > * {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .verdict {
+      flex: 1 1 20ch;
+      min-width: 0;
+      font-size: var(--text-sm);
+    }
   }
 
   .verdict {

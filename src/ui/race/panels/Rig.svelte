@@ -7,6 +7,7 @@
   import Segmented from '../../components/Segmented.svelte';
   import Sheet from '../../components/Sheet.svelte';
   import { fmt } from '../../format';
+  import { panelControlsId } from '../../keys';
   import { GUIDE_IDS, GUIDE_LABELS, type GuideId } from '../../../lib/reference';
   import { conditions } from '../../stores/conditions.svelte';
   import { rigLock } from '../../stores/rigLock.svelte';
@@ -57,7 +58,7 @@
 >
   {#snippet controls()}
     {#if !locked}
-      <div class="dock-cta">
+      <div class="dock-cta" id={panelControlsId('rig')}>
         <p class="lede">
           Nothing committed today, so these three are free to explore — and they are
           <em>not</em> what you will be sailing unless you commit them.

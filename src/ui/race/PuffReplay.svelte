@@ -65,6 +65,15 @@
     gap: var(--space-1);
   }
 
+  /* Same mouse size as the actions beside it in the cockpit strip. */
+  @media (min-width: 1280px) {
+    .ghost,
+    .chip {
+      min-height: 32px;
+      padding: 0 var(--space-2);
+    }
+  }
+
   .chip {
     min-height: var(--hit-min);
     padding: 0 var(--space-2);
