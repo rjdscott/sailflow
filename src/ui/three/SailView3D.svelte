@@ -42,7 +42,14 @@
   import { settings } from '../stores/settings.svelte';
   import { DEG2RAD, heelRad, lee, tackSide, type Side, type Vec3 } from './conventions';
   import { deckMesh, hullMesh, WATER_Y } from './hull';
-  import { buildSail, gridColumn, gridRow, sectionStack, type SailMesh } from './loft';
+  import {
+    buildSail,
+    gridColumn,
+    gridRow,
+    nearestColumn,
+    sectionStack,
+    type SailMesh,
+  } from './loft';
   import { JIB_CHORDS, MAIN_CHORDS, rig3d, type Rig3D } from './rig3d';
   import { PRESETS, type PresetId } from './presets';
 
@@ -312,7 +319,12 @@
     return new TubeGeometry(curve, Math.max(2, pts.length), radius, 8, false);
   }
 
-  /** Telltale roots: three up the jib luff, three down the main leech. */
+  /** prov: assumed — luff telltales a hand aft of the luff, sailmaker practice. */
+  const LUFF_TELLTALE_CHORD = 0.15;
+  /** prov: assumed — 4 cm off the cloth, enough to clear it at any camber. */
+  const LUFF_TELLTALE_LIFT = 0.04;
+
+  /** Telltale roots: jib luff pair (aft of the wire) and upper leech, main leech. */
   function buildTelltales(main: SailMesh | null, jib: SailMesh | null): void {
     const root: number[] = [];
     const dir: number[] = [];
@@ -344,26 +356,33 @@
       return [v[0] / l, v[1] / l, v[2] / l];
     };
     let ph = 0;
-    for (const [mesh, col] of [
-      [jib, 1],
-      [main, -1],
-    ] as const) {
-      if (!mesh) continue;
-      for (const row of mesh.stripeRows) {
-        const pts = gridRow(mesh, row);
-        const j = col === 1 ? 1 : pts.length - 1;
-        const anchor = pts[j];
-        const back = pts[col === 1 ? 3 : pts.length - 4];
-        // Streaming aft along the local chord, ribbons hanging across it.
-        const along = unit([
-          (anchor[0] - back[0]) * col,
-          (anchor[1] - back[1]) * col,
-          (anchor[2] - back[2]) * col,
-        ]);
-        add(anchor, col === 1 ? along : [-along[0], -along[1], -along[2]], [0, 1, 0], ph);
-        ph += 1.7; // prov: assumed phase offset, so six ribbons do not beat as one
-      }
+    /**
+     * Ribbon streaming aft from grid point `j` on `row`. Direction is the local
+     * chord read luff-ward (`j - 3` → `j`), so it points aft on every sail.
+     * `lift` pushes the root a few cm off the cloth so a mid-chord ribbon is
+     * not buried in the surface; leech ribbons hang off the edge and need none.
+     */
+    const ribbon = (mesh: SailMesh, row: number, j: number, lift: number): void => {
+      const pts = gridRow(mesh, row);
+      const back = pts[Math.max(0, j - 3)];
+      const along = unit([pts[j][0] - back[0], pts[j][1] - back[1], pts[j][2] - back[2]]);
+      // Horizontal normal to the chord: to leeward on the leeward face.
+      const out = unit([along[2], 0, -along[0]]);
+      const anchor: Vec3 = [pts[j][0] + out[0] * lift, pts[j][1], pts[j][2] + out[2] * lift];
+      add(anchor, along, [0, 1, 0], ph);
+      ph += 1.7; // prov: assumed phase offset, so the ribbons do not beat as one
+    };
+    if (jib) {
+      // Luff telltales sit a hand's width aft of the luff, not on the wire:
+      // prov: assumed 15 % of chord (sailmaker practice; the forestay itself
+      // carries none). Cosine-clustered columns, so find the nearest.
+      const luffCol = nearestColumn(jib, LUFF_TELLTALE_CHORD);
+      for (const row of jib.stripeRows) ribbon(jib, row, luffCol, LUFF_TELLTALE_LIFT);
+      // Upper leech ribbons: the cue North's jib guide reads (flow 90–100 %).
+      for (const row of jib.stripeRows.slice(1)) ribbon(jib, row, jib.M - 1, 0);
     }
+    if (main)
+      for (const row of main.stripeRows) ribbon(main, row, gridRow(main, row).length - 1, -1);
 
     telltales.visible = n > 0;
     telltales.geometry.dispose();
@@ -448,7 +467,11 @@
     orbit.dampingFactor = 0.06;
     orbit.minDistance = 5;
     orbit.maxDistance = 30;
-    orbit.maxPolarAngle = Math.PI * 0.495;
+    // Looking up from the cockpit puts the camera below its target, which is a
+    // polar angle past 90°; the old 0.495π clamp forced the helm preset to
+    // hover above the masthead instead. 0.9π still stops the orbit going
+    // through the seabed.
+    orbit.maxPolarAngle = Math.PI * 0.9;
     // Accidental two-finger pan is the number one phone annoyance.
     orbit.enablePan = !window.matchMedia('(pointer: coarse)').matches;
     orbit.addEventListener('change', invalidate);
