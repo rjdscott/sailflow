@@ -3,6 +3,9 @@
   import { NAV_ITEMS } from './navItems';
 </script>
 
+<!-- The product name, once, above the tabs (audit ux-02 M-01). -->
+<p class="wordmark">Sailflow</p>
+
 <nav class="bottom-nav" aria-label="Primary">
   {#each NAV_ITEMS as tab (tab.route)}
     <button
@@ -30,11 +33,21 @@
 </nav>
 
 <style>
+  .wordmark {
+    margin: 0;
+    padding: 2px 0;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    color: var(--ink-2);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-align: center;
+  }
+
   .bottom-nav {
     display: flex;
     height: 56px;
     background: var(--surface);
-    border-top: 1px solid var(--line);
     padding-bottom: env(safe-area-inset-bottom);
   }
 

@@ -2,7 +2,8 @@
   import TopBar from '../components/TopBar.svelte';
   import Segmented from '../components/Segmented.svelte';
   import Toast from '../components/Toast.svelte';
-  import { settings, type Theme } from '../stores/settings.svelte';
+  import Sheet from '../components/Sheet.svelte';
+  import { settings, type Mode, type Motion, type Theme } from '../stores/settings.svelte';
   import { router } from '../router.svelte';
   import { logStoreEngine } from '../../lib/logStore';
   import { download } from '../../lib/logExport';
@@ -18,8 +19,34 @@
   import { logStoreUi } from '../log/store.svelte';
   import { GUIDE_LABELS, referenceStatus, type GuideId } from '../../lib/reference';
 
+  // Bundled at build time so the honesty documents open on a dock with no
+  // signal, which is where the app says it works (audit ux-02 M-22). The
+  // GitHub links stay for anyone who wants the rendered, linkable version.
+  import provenanceMd from '../../../PROVENANCE.md?raw';
+  import assumptionsMd from '../../../ASSUMPTIONS.md?raw';
+  import validationMd from '../../../validation/report.md?raw';
+
   const VERSION = import.meta.env.VITE_APP_VERSION;
   const REPO = 'https://github.com/rjdscott/sailflow/blob/main';
+
+  const DOCS = [
+    { id: 'provenance', title: 'Provenance', file: 'PROVENANCE.md', text: provenanceMd },
+    { id: 'assumptions', title: 'Assumptions', file: 'ASSUMPTIONS.md', text: assumptionsMd },
+    {
+      id: 'validation',
+      title: 'Validation report',
+      file: 'validation/report.md',
+      text: validationMd,
+    },
+  ];
+
+  let openDoc: (typeof DOCS)[number] | null = $state(null);
+  let docOpen = $state(false);
+
+  function readInApp(doc: (typeof DOCS)[number]): void {
+    openDoc = doc;
+    docOpen = true;
+  }
 
   const engine = logStoreEngine();
   const status = referenceStatus();
@@ -69,23 +96,85 @@
 <div class="screen">
   <div class="col-primary">
     <section class="card">
-      <h2 class="section-title">Appearance</h2>
-      <Segmented
-        ariaLabel="Theme"
-        options={[
-          { value: 'auto', label: 'Auto' },
-          { value: 'light', label: 'Light' },
-          { value: 'dark', label: 'Dark' },
-        ]}
-        value={settings.theme}
-        onchange={(v: Theme) => settings.setTheme(v)}
-      />
-      <p class="note">
-        Auto follows the system. Animation is reduced automatically when your system's reduce-motion
-        setting is on.
+      <h2 class="section-title">About</h2>
+      <p class="lead">
+        A practice tool, not a measurement — every number tells you how much to trust it.
       </p>
+      <p class="version tabular-nums">
+        Sailflow v{VERSION} — <a href="{REPO}/CHANGELOG.md">what's new</a>
+      </p>
+      <p class="honesty">
+        Sailflow implements the documented ORC VPP parametric aero model, plus an explicitly
+        invented rig-bend-to-sail-shape sensitivity layer for which there is no public evidence base
+        on a J/70. It is calibrated against the ORC J/70 Speed Guide polar with held-out points, and
+        parametric VPPs are known to under-predict boat speed against CFD-based tools. Every output
+        carries a confidence tier — A is a number, B is a direction and a band, C is a direction
+        only — because this is a decision-rehearsal tool, not a wind tunnel.
+      </p>
+      <ul class="links">
+        {#each DOCS as doc (doc.id)}
+          <li>
+            <button type="button" class="linkish" onclick={() => readInApp(doc)}>
+              {doc.title} — read here
+            </button>
+            <a href="{REPO}/{doc.file}" rel="noopener noreferrer">on GitHub</a>
+          </li>
+        {/each}
+      </ul>
+      <p class="note">The three documents are bundled with the app, so they open offline.</p>
     </section>
 
+    <section class="card">
+      <h2 class="section-title">Settings</h2>
+      <div class="setting">
+        <span>Detail</span>
+        <Segmented
+          ariaLabel="Simple or Advanced mode"
+          options={[
+            { value: 'simple', label: 'Simple' },
+            { value: 'advanced', label: 'Advanced' },
+          ]}
+          value={settings.mode}
+          onchange={(v: Mode) => settings.setMode(v)}
+        />
+      </div>
+      <p class="note first">
+        Advanced adds the eleven-control panel, the per-wind-speed regret table, the model-vs-guides
+        comparison and the tier-3 drills. It applies everywhere, not just on this screen.
+      </p>
+      <div class="setting">
+        <span>Theme</span>
+        <Segmented
+          ariaLabel="Theme"
+          options={[
+            { value: 'auto', label: 'Auto' },
+            { value: 'light', label: 'Light' },
+            { value: 'dark', label: 'Dark' },
+          ]}
+          value={settings.theme}
+          onchange={(v: Theme) => settings.setTheme(v)}
+        />
+      </div>
+      <div class="setting">
+        <span>Motion</span>
+        <Segmented
+          ariaLabel="Motion"
+          options={[
+            { value: 'system', label: 'System' },
+            { value: 'on', label: 'On' },
+            { value: 'off', label: 'Reduced' },
+          ]}
+          value={settings.motion}
+          onchange={(v: Motion) => settings.setMotion(v)}
+        />
+      </div>
+      <p class="note">
+        System follows your device's reduce-motion setting; the other two override it here.
+      </p>
+    </section>
+  </div>
+
+  <div class="col-secondary">
     <section class="card">
       <h2 class="section-title">Data</h2>
       <dl class="rows">
@@ -117,28 +206,6 @@
         </p>
       {/if}
     </section>
-  </div>
-
-  <div class="col-secondary">
-    <section class="card">
-      <h2 class="section-title">About</h2>
-      <p class="version tabular-nums">
-        Sailflow v{VERSION} — <a href="{REPO}/CHANGELOG.md">what's new</a>
-      </p>
-      <p class="honesty">
-        Sailflow implements the documented ORC VPP parametric aero model, plus an explicitly
-        invented rig-bend-to-sail-shape sensitivity layer for which there is no public evidence base
-        on a J/70. It is calibrated against the ORC J/70 Speed Guide polar with held-out points, and
-        parametric VPPs are known to under-predict boat speed against CFD-based tools. Every output
-        carries a confidence tier — A is a number, B is a direction and a band, C is a direction
-        only — because this is a decision-rehearsal tool, not a wind tunnel.
-      </p>
-      <ul class="links">
-        <li><a href="{REPO}/PROVENANCE.md">Provenance of every third-party number</a></li>
-        <li><a href="{REPO}/ASSUMPTIONS.md">Assumptions, and where the model is weak</a></li>
-        <li><a href="{REPO}/validation/report.md">Validation report</a></li>
-      </ul>
-    </section>
 
     <section class="card">
       <h2 class="section-title">Improve Sailflow</h2>
@@ -167,9 +234,54 @@
   </div>
 </div>
 
+<Sheet bind:open={docOpen} title={openDoc?.title ?? ''}>
+  <!-- Raw markdown, monospaced. A renderer is a dependency for three files
+       nobody edits in the app; the source is legible as it is. -->
+  <pre class="doc">{openDoc?.text ?? ''}</pre>
+</Sheet>
+
 <Toast message={toast} bind:open={toastOpen} />
 
 <style>
+  .lead {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-md);
+    color: var(--ink);
+  }
+
+  .setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    padding-block: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .linkish {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  /* The sheet is the only scrolling surface on the screen; the document is
+     long and must not push the page. */
+  .doc {
+    max-height: 60vh;
+    overflow: auto;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    color: var(--ink);
+  }
+
   .note {
     margin: var(--space-3) 0 0;
     font-size: var(--text-xs);
@@ -276,10 +388,18 @@
     font-size: var(--text-sm);
   }
 
+  .links li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--hit-min);
+  }
+
   .links a {
     display: inline-flex;
     align-items: center;
     min-height: var(--hit-min);
-    color: var(--accent);
+    color: var(--ink-2);
+    white-space: nowrap;
   }
 </style>

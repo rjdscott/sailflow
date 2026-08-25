@@ -10,7 +10,8 @@
   import SuggestButton from '../dock/SuggestButton.svelte';
   import CommitButton from '../dock/CommitButton.svelte';
   import { fmt } from '../format';
-  import { candidateSetups, shortSetup, signed } from '../dock/logic';
+  import { candidateSetups, guideBand, guideSource, shortSetup, signed } from '../dock/logic';
+  import { track } from '../../lib/telemetry';
   import Panel from '../disagree/Panel.svelte';
   import { ModelOptimumStore } from '../disagree/store.svelte';
   import { getClient } from '../dock/client';
@@ -28,11 +29,16 @@
    * has something to show (audit ux-02 M-04).
    */
   function commit(): void {
+    track('dock.commit');
     void logStoreUi.startDraft(dock.commit());
   }
 
   const advanced = $derived(settings.mode === 'advanced');
   const score = $derived(dock.score);
+  /** The guide's band for the likely wind, so the printed card carries the
+      published numbers next to the modelled ones (audit ux-02 M-25). */
+  const band = $derived(guideBand(dock.forecast.likelyKt));
+  const printedOn = new Date().toLocaleDateString();
   /** Phone: the bar arms first, so the setup can be read before it is locked. */
   const commitLabel = $derived(`Commit ${shortSetup(dock.setup)} for today`);
 
@@ -148,8 +154,75 @@
     <div class="commit-slot" class:hide-sm={!rigLock.lockedToday}>
       <CommitButton setup={dock.setup} oncommit={commit} />
     </div>
+
+    <!-- The output of a week of study is a sheet for the bulkhead (M-25). -->
+    <button type="button" class="quiet" onclick={() => window.print()}>Print tuning card</button>
   </div>
 </div>
+
+<!-- One card, screen-hidden, that is the entire printout: the sheet that goes
+     on the bulkhead (audit ux-02 M-25). Outside .dock-screen so the print
+     stylesheet can hide the live screen wholesale. -->
+<section class="print-card">
+  <h1>Sailflow tuning card</h1>
+  <p class="print-sub">
+    {printedOn} · {rigLock.lockedToday ? 'committed' : 'not committed'} · J/70
+  </p>
+
+  <h2>Rig</h2>
+  <dl class="print-rows tabular-nums">
+    <dt>Uppers</dt>
+    <dd>{signed(dock.setup.upperTurns)} turns</dd>
+    <dt>Lowers</dt>
+    <dd>{signed(dock.setup.lowerTurns)} turns</dd>
+    <dt>Forestay</dt>
+    <dd>{fmt(dock.setup.forestayMm, 0, 'mm')}</dd>
+    <dt>{guideSource}</dt>
+    <dd>
+      {band.label}: uppers {signed(band.uppersTurns)}, lowers {signed(band.lowersTurns)}
+    </dd>
+  </dl>
+
+  <h2>Forecast</h2>
+  <p class="tabular-nums">
+    {fmt(dock.forecast.minKt, 0)}–{fmt(dock.forecast.maxKt, 0)} kt, likely {fmt(
+      dock.forecast.likelyKt,
+      0,
+      'kt',
+    )} · sea state {dock.forecast.seaState} · crew {fmt(dock.forecast.crewKg, 0, 'kg')}
+  </p>
+
+  {#if score && score.perTws.length > 0}
+    <h2>What this setup costs across the band</h2>
+    <table class="per-tws tabular-nums">
+      <thead>
+        <tr>
+          <th scope="col">TWS</th>
+          <th scope="col">Slower by</th>
+          <th scope="col">Best setup here</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each score.perTws as p, i (i)}
+          <tr>
+            <td>{fmt(p.twsKt, 0, 'kt')}</td>
+            <td>{fmt(p.regretSPerMile, 1)} s/mi</td>
+            <td>
+              {signed(p.optimum.upperTurns)} / {signed(p.optimum.lowerTurns)} / {fmt(
+                p.optimum.forestayMm,
+                0,
+                'mm',
+              )}
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  {/if}
+  <p class="print-foot">
+    Modelled, not measured. Tiers and provenance: see More → About in the app.
+  </p>
+</section>
 
 {#if !rigLock.lockedToday}
   <div class="commit-bar">
@@ -170,6 +243,63 @@
 {/if}
 
 <style>
+  /* Screen: nothing. Print: the only thing. */
+  .print-card {
+    display: none;
+  }
+
+  @media print {
+    .print-card {
+      display: block;
+      color: #000;
+    }
+
+    .print-card h1 {
+      margin: 0;
+      font-size: 18pt;
+    }
+
+    .print-card h2 {
+      margin: 16pt 0 4pt;
+      font-size: 11pt;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .print-rows {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 2pt 12pt;
+      margin: 0;
+    }
+
+    .print-rows dd {
+      margin: 0;
+    }
+
+    .print-sub,
+    .print-foot {
+      color: #444;
+      font-size: 9pt;
+    }
+
+    .print-card .per-tws {
+      width: 100%;
+      border-collapse: collapse;
+    }
+  }
+
+  .quiet {
+    min-height: var(--hit-min);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
   .locked-chip {
     display: inline-flex;
     color: var(--ink-2);

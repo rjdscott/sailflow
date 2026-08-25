@@ -2,6 +2,8 @@
   import type { SolveResult, Tier } from '../../core/types';
   import { fmt, targetOf } from '../format';
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
+  import Sheet from '../components/Sheet.svelte';
+  import { READOUT_EXPLAIN } from '../explain';
   import { OPTIMUM_REASON, OPTIMUM_TIER } from './optimum.svelte';
   import type { Objective } from './store.svelte';
 
@@ -28,6 +30,8 @@
 
   interface Metric {
     label: string;
+    /** Key into `READOUT_EXPLAIN`; stable across label renames. */
+    id: string;
     text: string;
     unit: string;
     tier?: Tier;
@@ -49,14 +53,16 @@
   const big: Metric[] = $derived([
     {
       label: 'BSP',
+      id: 'bsp',
       text: fmt(result.bsKt.value, 1),
       unit: 'kt',
       tier: result.bsKt.tier,
       target: targetOf(result.bsKt.value, target?.bsKt, 1),
     },
-    { label: 'Height', text: fmt(twaDeg, 0), unit: '°' },
+    { label: 'Height', id: 'height', text: fmt(twaDeg, 0), unit: '°' },
     {
       label: 'VMG',
+      id: 'vmg',
       text: fmt(result.vmgKt.value, 2),
       unit: 'kt',
       tier: result.vmgKt.tier,
@@ -67,6 +73,7 @@
   const quiet: Metric[] = $derived([
     {
       label: 'Heel',
+      id: 'heel',
       text: fmt(result.heelDeg.value, 0),
       unit: '°',
       tier: result.heelDeg.tier,
@@ -74,19 +81,31 @@
     },
     {
       label: 'Leeway',
+      id: 'leeway',
       text: fmt(result.leewayDeg.value, 1),
       unit: '°',
       tier: result.leewayDeg.tier,
     },
-    { label: 'AWA', text: fmt(result.aero.awaDeg, 0), unit: '°' },
-    { label: 'Flat', text: fmt(result.aero.flat, 2), unit: '' },
+    { label: 'AWA', id: 'awa', text: fmt(result.aero.awaDeg, 0), unit: '°' },
+    // "Flat" collided with the flat sea state, one chip away (audit ux-02 M-10).
+    { label: 'Depower (flat)', id: 'flat', text: fmt(result.aero.flat, 2), unit: '' },
   ]);
+
+  let explaining: Metric | null = $state(null);
+  let sheetOpen = $state(false);
+
+  function explain(m: Metric): void {
+    explaining = m;
+    sheetOpen = true;
+  }
 </script>
 
 {#snippet cell(m: Metric, size: 'lg' | 'sm')}
   <div class="cell">
     <span class="section-title">
-      {m.label}
+      <button type="button" class="explain" onclick={() => explain(m)}>
+        {m.label}<span aria-hidden="true" class="q">?</span>
+      </button>
       {#if m.tier}<ConfidenceBadge tier={m.tier} />{/if}
     </span>
     <!-- Re-keying on the text restarts the fade, so a metric that did not move
@@ -123,6 +142,10 @@
     </div>
   {/if}
 
+  <Sheet bind:open={sheetOpen} title={explaining?.label ?? ''}>
+    <p class="explainer">{explaining ? READOUT_EXPLAIN[explaining.id] : ''}</p>
+  </Sheet>
+
   {#if !result.converged}
     <p class="note">Solver did not converge at this state — numbers are the last iterate.</p>
   {/if}
@@ -155,6 +178,31 @@
   .strip-grid {
     grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
     gap: var(--space-3) var(--space-4);
+  }
+
+  /* The label is the affordance: a quiet ? on a text button, so the band
+     still reads as numbers rather than as a row of controls. */
+  .explain {
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+  }
+
+  .q {
+    margin-left: 3px;
+    color: var(--accent);
+  }
+
+  .explainer {
+    margin: 0;
+    font-size: var(--text-md);
+    line-height: 1.55;
+    color: var(--ink);
   }
 
   .cell {
