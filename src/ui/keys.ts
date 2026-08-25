@@ -20,12 +20,34 @@ export type KeyAction =
   | { type: 'help' };
 
 /** Panels the keyboard can jump to, and the id of each one's control column. */
-export type PanelId = 'mainsail' | 'headsail' | 'helm';
+export type PanelId = 'mainsail' | 'headsail' | 'helm' | 'rig';
 
-/** The element the `m` / `j` jump looks inside for a control to focus. */
+/** The element the `m` / `j` / `h` / `r` jump looks inside for a control. */
 export function panelControlsId(panel: PanelId): string {
   return `${panel}-controls`;
 }
+
+/** The id of a panel's heading. `Panel` labels the section by it. */
+export function panelTitleId(panel: PanelId): string {
+  return `${panel}-title`;
+}
+
+/**
+ * The panel's own `<section>`, found through the heading that labels it —
+ * the keyboard jump and the phone tab strip both scroll it into view, and
+ * neither should have to know the panels' markup.
+ */
+export function panelSection(panel: PanelId): HTMLElement | null {
+  return document.getElementById(panelTitleId(panel))?.closest('section') ?? null;
+}
+
+/** The four panels, in cockpit order, with the phone tab strip's labels. */
+export const PANELS: { id: PanelId; short: string }[] = [
+  { id: 'mainsail', short: 'Main' },
+  { id: 'headsail', short: 'Jib' },
+  { id: 'helm', short: 'Helm' },
+  { id: 'rig', short: 'Rig' },
+];
 
 /** The keystroke fields the mapping reads. A `KeyboardEvent` satisfies it. */
 export interface KeyStroke {
@@ -61,6 +83,8 @@ export function keyAction(stroke: KeyStroke, typing: boolean): KeyAction | null 
   if (stroke.key === 'p') return { type: 'puffReplay' };
   if (stroke.key === 'm') return { type: 'focusPanel', panel: 'mainsail' };
   if (stroke.key === 'j') return { type: 'focusPanel', panel: 'headsail' };
+  if (stroke.key === 'h') return { type: 'focusPanel', panel: 'helm' };
+  if (stroke.key === 'r') return { type: 'focusPanel', panel: 'rig' };
   if (stroke.key === '?') return { type: 'help' };
   return null;
 }
@@ -72,6 +96,8 @@ export const SHORTCUTS: { keys: string; what: string }[] = [
   { keys: '←  →', what: 'Nudge the focused slider one step' },
   { keys: 'm', what: 'Jump to the Mainsail controls' },
   { keys: 'j', what: 'Jump to the Headsail controls' },
+  { keys: 'h', what: 'Jump to the Helm panel' },
+  { keys: 'r', what: 'Jump to the Rig panel' },
   { keys: 'o', what: 'Apply optimum' },
   { keys: 'u', what: 'Back to my trim' },
   { keys: 'b', what: 'A/B: swap to the other trim' },

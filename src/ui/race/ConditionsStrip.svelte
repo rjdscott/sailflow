@@ -193,6 +193,20 @@
     text-align: center;
   }
 
+  /* Cockpit rail: the stepper is drawn at mouse size so the whole rail is one
+     line beside the title (app.css does the same for the plain chips). The
+     44 px hit area is a phone requirement and it stays on the phone. */
+  @media (min-width: 1280px) {
+    .stepper {
+      min-height: 28px;
+    }
+
+    .step {
+      width: 28px;
+      min-height: 28px;
+    }
+  }
+
   .presets {
     display: flex;
     flex-wrap: wrap;

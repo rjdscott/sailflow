@@ -13,6 +13,31 @@ undiagnosable.
 
 ## [Unreleased]
 
+### Changed
+
+- **Race is the cockpit grid now** (ADR 0015). From 1280 px: a conditions rail
+  beside the title, the instrument band on one line across the top, then
+  Mainsail | 3D hero | Headsail, Helm & conditions | Rig beneath, and the
+  coach line with every whole-trim action along the bottom. The grid is capped
+  to the viewport and each panel scrolls its own body, so the primary screen
+  does not scroll at 1280×720 or 1440×900 — asserted by Playwright at both.
+  1024–1279 puts the hero and the instruments left, the panels right; 720–1023
+  stacks the hero over 2-up panels. The duplicate "Sail sections" and "Rig
+  elevation" cards are gone: each sail's section stack lives in its own panel
+  and the rig elevation in the Rig panel, which is where the controls that
+  move them are.
+- Phone: the same four panels stacked under a sticky **Main · Jib · Helm ·
+  Rig** strip that scrolls to a panel and marks the one you are in, and an
+  instrument band trimmed to BSP · %POLAR · VMG · HEEL with the rest behind
+  **More**.
+- Keyboard: `h` and `r` join `m` and `j`, so every panel is one key away; all
+  four now scroll their panel into view as well as focusing its first slider.
+- 3D hero: hull and deck lifted well clear of the water with a cold rim light
+  behind them, water a shade lighter than the sky fading into a faint horizon
+  band, warmer sail cloth with deeper draft stripes, telltale ribbons half as
+  long again, and the leeward preset aimed 0.8 m lower so the sheerline is in
+  the frame. The hero's height is the grid cell's rather than a fixed 360 px.
+
 ### Fixed
 
 - 3D hero: jib luff telltales sat on the forestay wire; they now sit 15 % aft of the luff, and the jib carries upper-leech ribbons (the North jib cue) alongside the main's. New "Helm" camera preset: from the cockpit looking up the main. Orbit may now look upward (polar clamp relaxed).

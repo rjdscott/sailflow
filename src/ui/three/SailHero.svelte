@@ -215,15 +215,47 @@
     color: var(--ink-2);
   }
 
-  /* Reserves the picture's height so the 2D-to-3D swap, and the fallback,
-     never move the rest of the page. */
+  /* One height for both pictures, published as a custom property: the 3D
+     stage and the plan view's svg both read `--hero-h`, so the 2D-to-3D swap
+     and the perf fallback never move the rest of the page.
+     Phone: about 4:3 against a 390 px screen's card. */
   .slot {
-    min-height: 340px;
+    --hero-h: clamp(220px, 66vw, 320px);
+    min-height: var(--hero-h);
   }
 
   @media (min-width: 1024px) {
     .slot {
-      min-height: 360px;
+      --hero-h: 360px;
+    }
+  }
+
+  /* Cockpit: the view chips are drawn at mouse size, on one line. Every row
+     of chips that wraps here is a row taken off the picture they frame. */
+  @media (min-width: 1280px) {
+    .hero-head {
+      gap: var(--space-1) var(--space-2);
+      margin-bottom: var(--space-1);
+    }
+
+    .chips button,
+    .hero-head :global(.segmented button) {
+      min-height: 28px;
+      padding: 0 var(--space-2);
+    }
+  }
+
+  /* In the cockpit grid the hero's height is the cell's, not a number: the
+     slot becomes a size container and `--hero-h` is simply all of it, so the
+     picture grows with the viewport and never overflows the one screen. */
+  @media (min-width: 1280px) {
+    .slot {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      container-type: size;
+      --hero-h: 100cqh;
+      min-height: 0;
     }
   }
 </style>

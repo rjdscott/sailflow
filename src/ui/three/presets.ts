@@ -39,7 +39,10 @@ export const PRESETS: Record<PresetId, Pose> = {
   // main's leech towards the top batten.
   helm: { position: [-3.4, 1.0, -0.9], target: [-1.3, 5.5, 0.3] },
   astern: { position: [-12.5, 4.4, 1.4], target: [-1.2, 4.2, 0] },
-  leeward: { position: [-6.6, 4.2, 10.2], target: [-0.9, 4.4, 0] },
+  // Aimed 0.8 m lower than the first cut, which framed the sails and left the
+  // hull on the bottom edge: the leeward quarter is the view that says "this
+  // is a boat, heeled this far", and it cannot say it without the sheerline.
+  leeward: { position: [-6.6, 3.9, 10.2], target: [-0.9, 3.6, 0] },
   luff: { position: [4.2, 0.9, 1.1], target: [-0.6, 6.2, 0] },
   // Not straight down: a vertical camera makes the up-vector degenerate and
   // the boat spins on its own axis as you orbit. Steeply from astern reads

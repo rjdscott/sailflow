@@ -220,4 +220,20 @@
   :global([data-tier='analyse']) .diff {
     display: block;
   }
+
+  /* Cockpit: mouse-sized buttons, so the actions strip is one line at the
+     bottom of the grid rather than two rows of thumb padding taken off the
+     hero. Phones and tablets keep the 44 px rows. */
+  @media (min-width: 1280px) {
+    .actions {
+      gap: var(--space-2);
+    }
+
+    .apply,
+    .ab,
+    .ghost {
+      min-height: 32px;
+      padding: 0 var(--space-2);
+    }
+  }
 </style>
