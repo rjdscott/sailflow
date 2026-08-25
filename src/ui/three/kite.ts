@@ -319,7 +319,7 @@ export const BARE_SPAR: KiteRig = {
  * Two conditions — that offset is `FOOT_M` long, and its projection on the
  * tack→head axis is fixed by the two radii — leave a quadratic in `r` with one
  * root aft and to leeward. No root finder, and it reproduces doc 02 §6's
- * solved table to the centimetre.
+ * solved table to within 5 cm (the measured spread is 3.6–4.3 cm).
  *
  * The visible consequence, and the reason this is worth the algebra: **easing
  * the sheet lifts the clew**, ~0.3 m per 10° of ease. The old construction
@@ -365,9 +365,12 @@ export interface KiteGeometry {
   /** Eased past `CURL_EASE_THRESHOLD`: the luff is unloaded and curling. */
   curl: boolean;
   /**
-   * The loft's sections: chord and twist per height taken from the bowed
-   * luff to the *straight* leech, so the leech runs head → clew as a line
-   * and only the luff bows. Camber and draft position are `shape.asym`'s.
+   * The loft's sections: chord and twist per height taken from the bowed luff
+   * to `leechAt`, the bulged leech. Both edges bow, and they bow
+   * independently — the luff on its own parabola, the leech on
+   * `leechBulgeProfile` — which is the point: carrying one edge's bow into
+   * the other is what made the sail read as a banana from astern. Camber and
+   * draft position are `shape.asym`'s.
    */
   sections: (shape: SailShape) => Section[];
   /** The leech point at height `y` (clamped to the clew→head span). */
@@ -406,7 +409,7 @@ export function kiteGeometry(
 
   // Luff sag from the surplus cloth. A parabola of maximum deflection d over a
   // chord c is about c·(1 + 8/3·(d/c)²) long, which inverts in closed form —
-  // no root finder, and within about 2 % of the exact arc at the deflections
+  // no root finder, and within about 3 % of the exact arc at the deflections
   // this reaches. Same reduction as the forestay's (`rig3d.ts`), same reason.
   const chordVec = sub(head, tack);
   const c = Math.hypot(...chordVec) || 1;
@@ -434,12 +437,13 @@ export function kiteGeometry(
   const clew = clewOnCircle(tack, head, sheetRad, side, leechChord);
   const bulgeDir = norm([LEECH_BULGE_FORWARD_FRACTION, 0, lee(side)]);
 
-  // The leech is a straight line from head to clew — a gennaker's leech is
-  // held by the sheet and stands nearly straight, while the luff is the free
-  // edge that bows. Lofting each section as luff point + a fixed chord vector
+  // The leech runs head → clew and then stands off that line by its own
+  // bulge, most of all in the upper half where the shoulders are. It is not
+  // the luff's bow: the two edges are shaped independently, which is the
+  // whole point. Lofting each section as luff point + a fixed chord vector
   // carried the luff's bow into the leech too, and the sail read as a banana
-  // from astern. Each section here spans from the bowed luff to the leech
-  // point at the same height, so the loft's chord and twist follow the line.
+  // from astern. Each section here spans from the bowed luff to `leechAt` at
+  // the same height, so the loft's chord and twist follow the real leech.
   //
   // Now that the clew is on the leech/foot circle it no longer sits at exactly
   // the tack's height: trimmed it hangs a little below, eased it climbs above.

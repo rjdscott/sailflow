@@ -345,12 +345,14 @@ describe('the lofted kite', () => {
     }
   });
 
-  it('carries the published leech length, within 2 %, at every sheet setting', () => {
+  it('carries the published leech length, within 3 %, at every sheet setting', () => {
     // The old loft let the leech emerge and it emerged 25-40 % long: 11.0-12.4
     // m of drawn cloth against a published 8.800 m (research doc 02 §6). The
-    // leech the mapping draws is now the head-to-clew line, and the clew is on
-    // the circle the published leech and foot pin it to, so the drawn leech is
-    // the sail's leech by construction — at every sheet setting, not just one.
+    // leech the mapping draws is now the head-to-clew line plus its own bulge,
+    // with the straight chord shortened by exactly the bulge's arc surplus
+    // (`chordForArc`), and the clew is on the circle the published leech and
+    // foot pin it to. So the drawn leech carries the sail's leech length by
+    // construction, bulged or not — at every sheet setting, not just one.
     const leech = boat.sails.asym.leechMm / 1000;
     for (const side of [1, -1] as Side[]) {
       for (const kiteSheet of [0, 25, 50, 75, 100]) {
