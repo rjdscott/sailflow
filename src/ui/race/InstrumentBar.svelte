@@ -120,123 +120,135 @@
   });
 </script>
 
-<section class="card bar" class:more class:stale={!result.converged}>
-  {#if busy}<span class="progress" aria-hidden="true"></span>{/if}
+<!-- The band sizes off the column it is mounted in, not the viewport: on Drills
+     it lives in a ~500 px secondary column, where a viewport-width media query
+     threw the verdict and two gauges outside its own `overflow: hidden`
+     (audit ux-03 H-02). A container query cannot ask about the element that
+     declares it, so the containment lives on this wrapper. -->
+<div class="bar-host">
+  <section class="card bar" class:more class:stale={!result.converged}>
+    {#if busy}<span class="progress" aria-hidden="true"></span>{/if}
 
-  <div class="cells">
-    <InstrumentCell
-      label="BSP"
-      id="bsp"
-      size="lg"
-      unit="kt"
-      value={fmt(result.bsKt.value, 1)}
-      tier={result.bsKt.tier}
-      target={gapTo(result.bsKt.value, target?.bsKt, 1)}
-      trend={trend.bs}
-      onexplain={explain}
-    />
-    <InstrumentCell
-      label="%POLAR"
-      id="pctPolar"
-      size="lg"
-      unit="%"
-      value={fmt(result.instruments.pctPolar.value, 0)}
-      tier={result.instruments.pctPolar.tier}
-      onexplain={explain}
-    />
-    <InstrumentCell
-      label="VMG"
-      id="vmg"
-      size="lg"
-      unit="kt"
-      value={fmt(result.vmgKt.value, 2)}
-      tier={result.vmgKt.tier}
-      target={gapTo(result.vmgKt.value, target?.vmgKt, 2, vmgBetter)}
-      trend={trend.vmg}
-      onexplain={explain}
-    />
-    <div class="race-only phone-extra">
+    <div class="cells">
       <InstrumentCell
-        label="TWA"
-        id="height"
-        size="md"
-        unit="°"
-        value={fmt(twaDeg, 0)}
+        label="BSP"
+        id="bsp"
+        size="lg"
+        unit="kt"
+        value={fmt(result.bsKt.value, 1)}
+        tier={result.bsKt.tier}
+        target={gapTo(result.bsKt.value, target?.bsKt, 1)}
+        trend={trend.bs}
         onexplain={explain}
       />
+      <InstrumentCell
+        label="%POLAR"
+        id="pctPolar"
+        size="lg"
+        unit="%"
+        value={fmt(result.instruments.pctPolar.value, 0)}
+        tier={result.instruments.pctPolar.tier}
+        onexplain={explain}
+      />
+      <InstrumentCell
+        label="VMG"
+        id="vmg"
+        size="lg"
+        unit="kt"
+        value={fmt(result.vmgKt.value, 2)}
+        tier={result.vmgKt.tier}
+        target={gapTo(result.vmgKt.value, target?.vmgKt, 2, vmgBetter)}
+        trend={trend.vmg}
+        onexplain={explain}
+      />
+      <div class="race-only phone-extra">
+        <InstrumentCell
+          label="TWA"
+          id="height"
+          size="md"
+          unit="°"
+          value={fmt(twaDeg, 0)}
+          onexplain={explain}
+        />
+      </div>
+
+      <button type="button" class="more-btn" aria-expanded={more} onclick={() => (more = !more)}>
+        {more ? 'Less' : 'More'}
+      </button>
     </div>
 
-    <button type="button" class="more-btn" aria-expanded={more} onclick={() => (more = !more)}>
-      {more ? 'Less' : 'More'}
-    </button>
-  </div>
-
-  <!-- Side by side on purpose: the Speed Guide's point is that helm feel only
-       tells the truth while heel is steady, so a helm bar without a heel gauge
-       beside it is a cue that lies (research §2.3). -->
-  <div class="gauges">
-    <BulletGauge
-      label="HEEL"
-      id="heel"
-      unit="°"
-      value={Math.abs(result.heelDeg.value)}
-      min={0}
-      max={HEEL_SCALE_MAX}
-      target={heel.target}
-      ranges={[heel.lo, heel.hi]}
-      tier={result.heelDeg.tier}
-      onexplain={explain}
-    />
-    <div class="race-only phone-extra">
+    <!-- Side by side on purpose: the Speed Guide's point is that helm feel only
+         tells the truth while heel is steady, so a helm bar without a heel gauge
+         beside it is a cue that lies (research §2.3). -->
+    <div class="gauges">
       <BulletGauge
-        label="HELM"
-        id="helm"
-        value={result.instruments.helmLoad.value}
-        min={-1.5}
-        max={1.5}
-        target={HELM_TARGET}
-        decimals={2}
-        symbol
-        tier={result.instruments.helmLoad.tier}
+        label="HEEL"
+        id="heel"
+        unit="°"
+        value={Math.abs(result.heelDeg.value)}
+        min={0}
+        max={HEEL_SCALE_MAX}
+        target={heel.target}
+        ranges={[heel.lo, heel.hi]}
+        tier={result.heelDeg.tier}
         onexplain={explain}
       />
+      <div class="race-only phone-extra">
+        <BulletGauge
+          label="HELM"
+          id="helm"
+          value={result.instruments.helmLoad.value}
+          min={-1.5}
+          max={1.5}
+          target={HELM_TARGET}
+          decimals={2}
+          symbol
+          tier={result.instruments.helmLoad.tier}
+          onexplain={explain}
+        />
+      </div>
     </div>
-  </div>
 
-  <div class="cells analyse-only phone-extra">
-    <InstrumentCell
-      label="LEECH STALL"
-      id="leechStall"
-      size="sm"
-      unit="%"
-      value={fmt(result.instruments.leechStallFrac.value * 100, 0)}
-      tier={result.instruments.leechStallFrac.tier}
-      onexplain={explain}
-    />
-    {#if result.instruments.jibLeechStripe}
+    <div class="cells analyse-only phone-extra">
       <InstrumentCell
-        label="JIB STRIPE"
-        id="jibStripe"
+        label="LEECH STALL"
+        id="leechStall"
         size="sm"
-        value={fmt(result.instruments.jibLeechStripe.value, 1)}
-        tier={result.instruments.jibLeechStripe.tier}
+        unit="%"
+        value={fmt(result.instruments.leechStallFrac.value * 100, 0)}
+        tier={result.instruments.leechStallFrac.tier}
         onexplain={explain}
       />
-    {/if}
-  </div>
+      {#if result.instruments.jibLeechStripe}
+        <InstrumentCell
+          label="JIB STRIPE"
+          id="jibStripe"
+          size="sm"
+          value={fmt(result.instruments.jibLeechStripe.value, 1)}
+          tier={result.instruments.jibLeechStripe.tier}
+          onexplain={explain}
+        />
+      {/if}
+    </div>
 
-  <p class="verdict">{line}</p>
+    <p class="verdict">{line}</p>
 
-  <!-- Read out, not drawn: the cells beside it already show these three, and
-       announcing each one as it lands would talk over the drag. -->
-  <p class="sr-only" role="status">{announce}</p>
+    <!-- Read out, not drawn: the cells beside it already show these three, and
+         announcing each one as it lands would talk over the drag. -->
+    <p class="sr-only" role="status">{announce}</p>
 
-  <Sheet bind:open={sheetOpen} title={explaining ? (TITLES[explaining] ?? '') : ''}>
-    <p class="explainer">{explaining ? READOUT_EXPLAIN[explaining] : ''}</p>
-  </Sheet>
-</section>
+    <Sheet bind:open={sheetOpen} title={explaining ? (TITLES[explaining] ?? '') : ''}>
+      <p class="explainer">{explaining ? READOUT_EXPLAIN[explaining] : ''}</p>
+    </Sheet>
+  </section>
+</div>
 
 <style>
+  .bar-host {
+    container-type: inline-size;
+    min-width: 0;
+  }
+
   .bar {
     position: relative;
     overflow: hidden;
@@ -289,8 +301,10 @@
 
   /* Desktop cockpit: the whole band on one line — measurements, the pair of
      gauges, then the verdict — so the instrument row costs ~90 px of a
-     720 px screen instead of ~190 (research §4 pattern 2). */
-  @media (min-width: 1280px) {
+     720 px screen instead of ~190 (research §4 pattern 2). Keyed on the band's
+     own width, not the viewport's: this is what fits when the band has ~1000 px
+     to itself, which the Drills column never has (audit ux-03 H-02). */
+  @container (min-width: 1000px) {
     .bar {
       flex-direction: row;
       align-items: center;

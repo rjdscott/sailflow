@@ -33,6 +33,7 @@
     busy = false,
     stale = false,
     error = null,
+    compact = false,
   }: {
     twsKt: number;
     seaState: SeaState;
@@ -42,6 +43,12 @@
     /** Numbers are on screen but a newer solve is in flight. */
     stale?: boolean;
     error?: string | null;
+    /**
+     * The summary alone: the verdict sentence and the uppers row, Model /
+     * North / Quantum with the delta. For the cockpit's bottom band, where
+     * the full table has nowhere to go and was silently clipped (ux-03 H-03).
+     */
+    compact?: boolean;
   } = $props();
 
   const recs = $derived(
@@ -127,6 +134,18 @@
     return Object.entries(rec.race).filter((e): e is [string, string] => typeof e[1] === 'string');
   }
 
+  /**
+   * The strip's one line. It says which of the four states this is and nothing
+   * else; the sentence it stands in for, and the numbers behind it, are in the
+   * sheet the "Compare in full" button opens (audit ux-03 H-03).
+   */
+  const COMPACT_VERDICT: Record<ReturnType<typeof verdict>, string> = {
+    comparing: 'Comparing…',
+    unknown: 'Nothing to compare yet.',
+    disagree: 'These disagree.',
+    agree: 'Agree within the noise.',
+  };
+
   const RACE_LABELS: Record<string, string> = {
     backstay: 'Backstay',
     mainsheet: 'Mainsheet',
@@ -191,7 +210,7 @@
   </span>
 {/snippet}
 
-<section class="panel card" class:stale aria-busy={busy}>
+<section class="panel card" class:stale class:compact aria-busy={busy}>
   <header>
     <h2 class="section-title">Model vs guides</h2>
     <!-- The chip claims the model is calibrated *here*; it waits for the model. -->
@@ -205,6 +224,8 @@
 
   {#if error}
     <p class="copy err" role="alert">The model could not be solved: {error}</p>
+  {:else if compact}
+    <p class="copy verdict">{COMPACT_VERDICT[headline]}</p>
   {:else if headline === 'comparing'}
     <p class="copy verdict">Comparing the model with the guides&hellip;</p>
   {:else if headline === 'unknown'}
@@ -219,7 +240,9 @@
       Model and guides agree within the noise: no gap is larger than {NOISE} in the units shown.
     </p>
   {/if}
-  <p class="copy legend">&Delta; = model &minus; guide, in the guide's units.</p>
+  {#if !compact}
+    <p class="copy legend">&Delta; = model &minus; guide, in the guide's units.</p>
+  {/if}
 
   <!-- No column-header row: every cell carries its own source name, which is
        what the instrument-cell contract already asks for and what lets four
@@ -266,104 +289,108 @@
       1,
       'turns',
     )}
-    {@render numberRow(
-      'lowers',
-      'Lowers',
-      modelOptimum?.dock.lowerTurns ?? null,
-      (r) => r.lowersTurns,
-      1,
-      'turns',
-    )}
-
-    <!-- Rake is prose in every guide, so only the model's half is a number. -->
-    <div class="row" role="row">
-      <span class="rowlabel" role="rowheader">Rake</span>
-      {@render modelCell(
-        'rake',
-        modelOptimum?.dock.forestayMm ?? null,
-        modelOptimum ? signed(modelOptimum.dock.forestayMm, 0, '') : '',
-        'mm forestay',
+    {#if !compact}
+      {@render numberRow(
+        'lowers',
+        'Lowers',
+        modelOptimum?.dock.lowerTurns ?? null,
+        (r) => r.lowersTurns,
+        1,
+        'turns',
       )}
-      {#each recs as { id, rec } (id)}
-        <span class="cell" role="cell">
-          <span class="section-title">{GUIDE_LABELS[id]}</span>
-          {#if !rec}
-            <span class="missing">not loaded</span>
-          {:else if rec.rakeNote === null || rec.rakeNote === undefined}
-            {@render noValue('no published value in this guide')}
-          {:else}
-            <span class="prose">{rec.rakeNote}</span>
-          {/if}
-        </span>
-      {/each}
-    </div>
 
-    {@render numberRow(
-      'bsp',
-      'Target BSP',
-      modelOptimum?.bsKt.value ?? null,
-      (r) => r.targets.bsKt,
-      2,
-      'kt',
-      modelOptimum?.bsKt.tier,
-    )}
-    {@render numberRow(
-      'heel',
-      'Target heel',
-      modelOptimum?.heelDeg.value ?? null,
-      (r) => r.targets.heelDeg,
-      0,
-      '°',
-      modelOptimum?.heelDeg.tier,
-    )}
+      <!-- Rake is prose in every guide, so only the model's half is a number. -->
+      <div class="row" role="row">
+        <span class="rowlabel" role="rowheader">Rake</span>
+        {@render modelCell(
+          'rake',
+          modelOptimum?.dock.forestayMm ?? null,
+          modelOptimum ? signed(modelOptimum.dock.forestayMm, 0, '') : '',
+          'mm forestay',
+        )}
+        {#each recs as { id, rec } (id)}
+          <span class="cell" role="cell">
+            <span class="section-title">{GUIDE_LABELS[id]}</span>
+            {#if !rec}
+              <span class="missing">not loaded</span>
+            {:else if rec.rakeNote === null || rec.rakeNote === undefined}
+              {@render noValue('no published value in this guide')}
+            {:else}
+              <span class="prose">{rec.rakeNote}</span>
+            {/if}
+          </span>
+        {/each}
+      </div>
+
+      {@render numberRow(
+        'bsp',
+        'Target BSP',
+        modelOptimum?.bsKt.value ?? null,
+        (r) => r.targets.bsKt,
+        2,
+        'kt',
+        modelOptimum?.bsKt.tier,
+      )}
+      {@render numberRow(
+        'heel',
+        'Target heel',
+        modelOptimum?.heelDeg.value ?? null,
+        (r) => r.targets.heelDeg,
+        0,
+        '°',
+        modelOptimum?.heelDeg.tier,
+      )}
+    {/if}
   </div>
 
-  {#each recs as { id, guide, rec } (id)}
-    {#if rec && guide}
-      <details class="notes">
-        <summary>{GUIDE_LABELS[id]} race notes &mdash; {rec.band.label}</summary>
-        <dl>
-          {#each raceNotes(rec) as [key, value] (key)}
-            <dt>{RACE_LABELS[key] ?? key}</dt>
-            <dd>{value}</dd>
-          {/each}
-        </dl>
-      </details>
-    {:else}
-      <p class="missing">
-        {GUIDE_LABELS[id]}: reference tables not loaded &mdash;
-        <code>data/tuning/{id}-j70.json</code>
-      </p>
-    {/if}
-  {/each}
+  {#if !compact}
+    {#each recs as { id, guide, rec } (id)}
+      {#if rec && guide}
+        <details class="notes">
+          <summary>{GUIDE_LABELS[id]} race notes &mdash; {rec.band.label}</summary>
+          <dl>
+            {#each raceNotes(rec) as [key, value] (key)}
+              <dt>{RACE_LABELS[key] ?? key}</dt>
+              <dd>{value}</dd>
+            {/each}
+          </dl>
+        </details>
+      {:else}
+        <p class="missing">
+          {GUIDE_LABELS[id]}: reference tables not loaded &mdash;
+          <code>data/tuning/{id}-j70.json</code>
+        </p>
+      {/if}
+    {/each}
 
-  <details class="notes" bind:open={historyOpen}>
-    <summary>Divergence history</summary>
-    {#if history.rows.length === 0}
-      <p class="muted">Nothing logged yet.</p>
-    {:else}
-      <ul class="summary">
-        {#each Object.entries(history.summary) as [id, s] (id)}
-          {#if s}
+    <details class="notes" bind:open={historyOpen}>
+      <summary>Divergence history</summary>
+      {#if history.rows.length === 0}
+        <p class="muted">Nothing logged yet.</p>
+      {:else}
+        <ul class="summary">
+          {#each Object.entries(history.summary) as [id, s] (id)}
+            {#if s}
+              <li>
+                {GUIDE_LABELS[id as GuideId]}: {s.count} logged, mean
+                {signed(s.meanUppers, 1, '')} uppers / {signed(s.meanLowers, 1, '')} lowers
+              </li>
+            {/if}
+          {/each}
+        </ul>
+        <ul class="rows tabular-nums">
+          {#each history.rows as row (row.at + row.guide)}
             <li>
-              {GUIDE_LABELS[id as GuideId]}: {s.count} logged, mean
-              {signed(s.meanUppers, 1, '')} uppers / {signed(s.meanLowers, 1, '')} lowers
+              {row.at.slice(0, 16).replace('T', ' ')} &middot; {fmt(row.twsKt, 0, 'kt')} &middot;
+              {GUIDE_LABELS[row.guide]} &middot;
+              <span class={deltaClass(row.delta.uppers)}>{signed(row.delta.uppers, 1, '')}</span> /
+              <span class={deltaClass(row.delta.lowers)}>{signed(row.delta.lowers, 1, '')}</span>
             </li>
-          {/if}
-        {/each}
-      </ul>
-      <ul class="rows tabular-nums">
-        {#each history.rows as row (row.at + row.guide)}
-          <li>
-            {row.at.slice(0, 16).replace('T', ' ')} &middot; {fmt(row.twsKt, 0, 'kt')} &middot;
-            {GUIDE_LABELS[row.guide]} &middot;
-            <span class={deltaClass(row.delta.uppers)}>{signed(row.delta.uppers, 1, '')}</span> /
-            <span class={deltaClass(row.delta.lowers)}>{signed(row.delta.lowers, 1, '')}</span>
-          </li>
-        {/each}
-      </ul>
-    {/if}
-  </details>
+          {/each}
+        </ul>
+      {/if}
+    </details>
+  {/if}
 </section>
 
 <style>
@@ -371,6 +398,50 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+  }
+
+  /* Compact: a strip, not a card. The verdict and one row of Model / North /
+     Quantum + delta on one line, which is what the cockpit's bottom band has
+     room for (audit ux-03 H-03). */
+  .panel.compact {
+    gap: var(--space-1);
+    padding: 0;
+    background: none;
+    border: none;
+    overflow: hidden;
+  }
+
+  /* The heading stays for assistive tech — the strip's two lines are spent on
+     the sentence and the numbers. The "calibrated here" chip goes with it; it
+     is on the full comparison, one click away. */
+  .panel.compact header {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .panel.compact .copy.verdict {
+    font-size: var(--text-sm);
+    font-weight: 400;
+  }
+
+  .panel.compact .grid {
+    border: none;
+    border-radius: 0;
+  }
+
+  .panel.compact .row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: 0;
+  }
+
+  .panel.compact .rowlabel {
+    flex: none;
   }
 
   header {

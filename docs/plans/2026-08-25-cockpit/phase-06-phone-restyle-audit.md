@@ -314,3 +314,65 @@ device" note, no canvas, and the 2D view in the slot.
 
 **Screenshot baseline unchanged** — no regeneration needed; `race-3d-leeward`
 still passes in the pinned image.
+### 2026-08-25 — audit ux-03 High findings on the cockpit: H-01, H-02, H-03, H-04, H-07
+
+Five of the audit's High findings fixed; all five carry a Playwright assertion
+in `tests/ui/race.spec.ts` that fails without the fix. `make check` green,
+`pnpm test:ui` 19/19 (76/76 over four repeats), `bundle_check` OK at +445 B
+against a 2 KB headroom, so `bundle_baseline.json` was left alone.
+
+- **H-01 — every sail-shape visual rendered in a 0 px box.** `.panel > .grid`
+  is `overflow-y: auto` in the cockpit, and an auto row track inside an
+  overflow container resolves to zero height, so the Mainsail, Headsail and Rig
+  drawings were clipped away while their SVG children measured 200–333 px —
+  which is why every test that queried the SVG passed. One floor,
+  `min-height: 140px` beside the existing 220 px cap on
+  `.p-main/.p-jib/.p-rig :global(.visual)` (the refuter-verified value). The new
+  test measures the box, not the drawing, at 1280×720 and 1440×900.
+- **H-02 — the instrument band clipped its verdict and two gauges on Drills.**
+  The one-line desktop layout was on a `@media (min-width: 1280px)` viewport
+  query while `DrillView` mounts the band in a ~500 px column. A container
+  query cannot ask about the element that declares it, so `InstrumentBar` grew
+  a `.bar-host` wrapper carrying `container-type: inline-size` and the block
+  became `@container (min-width: 1000px)`. Every future reuse of the band is
+  fixed with it. The phone rule stays a viewport query — it is about the
+  device, not the column.
+- **H-03 — the model-vs-guides panel was 87 % clipped.** In the cockpit the
+  panel now renders a `compact` summary — the state in one line, then Uppers:
+  Model / North / Quantum with Δ — beside a *Compare in full* button that opens
+  the whole table in the existing `Sheet`. Below 1280 px the old `<details>`
+  path is untouched, and Dock is unaffected. `compact` lives on
+  `src/ui/disagree/Panel.svelte`, not in a second component. The strip measures
+  94 px, exactly what the actions strip beside it already needed, so the bottom
+  band costs the hero nothing.
+- **H-04 — the committed Rig panel was a header over zero rows.** The panel
+  gets ~150 px of body in the cockpit and the chart wants 7 rows, so it spent
+  all of it on the header. The in-panel table is now `windowed`: the lit band
+  and one either side, with the full chart (and the guide's base line, which
+  wrapped to its own row in a ~350 px column) behind the `Sheet`. The
+  Helm/Rig grid row went `0.55fr → 0.7fr` and the panel's guide picker takes
+  the cockpit's 28 px button height. Measured after: lit row bottom 716 px in a
+  scroller ending at 746 px.
+- **H-07 — no trim control until tab stop 41.** `<section class="card insight">`
+  moved after `<div class="p-rig">` in the DOM; the grid areas keep its screen
+  position at every width. First trim control is stop 31 now, and the test
+  asserts the ordering rather than the number: no `.insight` control may be
+  focused before the first slider.
+
+**Verified at 390 px, and one deliberate consequence.** The phone stack reads
+head → instrument band (which carries the verdict) → tab strip → hero → four
+panels → coach and actions → model-vs-guides. Moving the actions card in the
+DOM moves it to the bottom of the phone stack, where *Apply optimum* is now a
+long scroll away. An `order` override would put it back visually but would
+recreate the DOM-versus-visual mismatch on the one surface that did not have
+one, which is the WCAG 2.4.3 problem H-07 is about — so the move stands and
+the phone cost is recorded here rather than papered over. If it bites, the fix
+is a second actions affordance in the sticky panel strip, not a reorder.
+
+**Drive-by.** `the phone instrument band keeps four readings` was a ~1-in-6
+flake before this change: `.bar` text-matching `VMG` also matched the verdict
+sentence whenever the coach happened to name the metric. It is scoped to
+`.cells, .gauges` now.
+
+**Not fixed here.** H-05 (puff replay's power cue one step behind), H-06, H-08,
+H-09, H-10 and every M/L finding are untouched — out of this block's scope.
