@@ -60,12 +60,24 @@ describe('golden corpus', () => {
 
   for (const name of found) {
     const file = JSON.parse(readFileSync(`${DIR}/${name}`, 'utf8')) as GoldenFile;
-    const stale =
-      (file.boatHash !== undefined && file.boatHash !== expectedBoat) ||
-      (file.calibHash !== undefined && file.calibHash !== expectedCalib);
 
-    if (stale) {
-      it.skip(`${name}: recorded against a different boat — run pnpm golden`, () => {});
+    // A recalibration is a deliberate re-fit of the knobs, and every number
+    // here is expected to move: skipping is the documented behaviour.
+    if (file.calibHash !== undefined && file.calibHash !== expectedCalib) {
+      it.skip(`${name}: recorded against calibration ${file.calibHash} — run pnpm golden`, () => {});
+      continue;
+    }
+
+    // A boat-geometry edit is not a recalibration. Skipping one turned the
+    // regression net off for two PRs (#79, #80) while `make check` stayed
+    // green, so a stale boatHash fails and says how to fix it.
+    if (file.boatHash !== undefined && file.boatHash !== expectedBoat) {
+      it(`${name}: recorded against boat ${file.boatHash}, current is ${expectedBoat}`, () => {
+        throw new Error(
+          `${name} was recorded against boat geometry ${file.boatHash} but data/boats/j70.json now hashes to ${expectedBoat}. ` +
+            `A geometry edit is not a recalibration: review the intended change, then run \`pnpm golden\` and commit the corpus.`,
+        );
+      });
       continue;
     }
 

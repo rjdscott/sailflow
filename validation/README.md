@@ -98,8 +98,19 @@ are solved as such.
 ```
 
 - `boatHash` / `calibHash` come from `boatHash()` / `calibHash()` in
-  `compare.ts`. Both are optional; when present and stale, the file is
-  **skipped** with "run `pnpm golden`" rather than failed, because a
-  deliberate recalibration should not look like a regression.
+  `compare.ts`. Both are optional, and a stale one is treated differently:
+  - a stale **`calibHash`** **skips** the file with "run `pnpm golden`". A
+    recalibration is a deliberate re-fit of every knob, so every number in
+    the corpus is expected to move and a skip is not hiding anything.
+  - a stale **`boatHash`** (with `calibHash` current) **fails**, naming
+    `pnpm golden` in the message. A geometry or boat-file edit is not a
+    recalibration: it is exactly the class of change the corpus exists to
+    catch. Skipping one turned the regression net off silently from #79
+    (which added `baseRaceDown` to `data/boats/j70.json` without
+    regenerating) through #80's kite-geometry change, while `make check`
+    stayed green and proved nothing about solver stability.
+
+  So: change the boat file deliberately, confirm the diff to the corpus is
+  the change you meant, then run `pnpm golden` and commit it in the same PR.
 - Numbers must match within **1e-6 relative**; strings and booleans exactly.
 - An empty `golden/` skips the whole suite.
