@@ -12,8 +12,12 @@
     tackSide,
     windArrow,
     type Ring,
+    localAoa,
+    luffRibbon,
+    leechRibbon,
+    type Ribbon,
   } from './boat';
-  import { telltaleState, type Pt, type TelltaleState } from './geometry';
+  import type { Pt } from './geometry';
   import { race } from './store.svelte';
 
   let {
@@ -83,19 +87,46 @@
   const twa = $derived(windArrow(twaDeg, HUB, TWA_RING));
   const awa = $derived(windArrow(side * aero.awaDeg, HUB, AWA_RING));
 
-  const entryDeg = $derived(jib?.half.entryDeg ?? aero.awaDeg);
+  // Target entry AoA; the shape's entryDeg mixes datums (camber + inhauler) so it is not used here.
+  const entryDeg = 10; // prov: assumed
   /** Ribbons stream along the chord; the group's own rotation is the flow. */
   const streamDeg = $derived((Math.atan2(jibClew.y - TACK.y, jibClew.x - TACK.x) * 180) / Math.PI);
-  // One entry angle for the whole luff, so the four differ only by the band
-  // they are read against: the low telltales stall first, the leech last.
-  const telltales: { at: number; p: Pt; state: TelltaleState }[] = $derived(
+  const boomStreamDeg = $derived(
+    (Math.atan2(boomTip.y - MAST.y, boomTip.x - MAST.x) * 180) / Math.PI,
+  );
+  // Jib luff telltales at ¼ ½ ¾ and the head: local AoA = AWA − sheeting angle
+  // − twist at that height, read against the sail's entry angle.
+  const telltales: { at: number; p: Pt; state: Ribbon }[] = $derived(
     jib
       ? sailPoints(TACK, jibClew, jib.half, side, 4)
           .slice(1)
           .map((p, i) => {
             const at = (i + 1) / 4;
-            return { at, p, state: telltaleState(aero.awaDeg, entryDeg + (at - 0.5) * 8) };
+            const aoa = localAoa(aero.awaDeg, jibDeg, jib.threeQuarter.twistDeg, at);
+            return { at, p, state: luffRibbon(aoa, entryDeg) };
           })
+      : [],
+  );
+  // Main leech telltales: top batten (¾ ghost head) and the boom end.
+  const mainTelltales: { at: number; p: Pt; state: Ribbon }[] = $derived(
+    main
+      ? [
+          {
+            at: 0.75,
+            p: openBy(
+              MAST,
+              clewAt(MAST, boomDeg, D.boomPx * DIMS.headChord.main, side),
+              main.threeQuarter.twistDeg,
+              side,
+            ),
+            state: leechRibbon(aero.awaDeg, boomDeg, main.threeQuarter.twistDeg, 0.75),
+          },
+          {
+            at: 0.25,
+            p: boomTip,
+            state: leechRibbon(aero.awaDeg, boomDeg, main.threeQuarter.twistDeg, 0.25),
+          },
+        ]
       : [],
   );
 
@@ -189,6 +220,17 @@
     {#each telltales as t (t.at)}
       <g
         transform="translate({t.p.x.toFixed(2)} {t.p.y.toFixed(2)}) rotate({streamDeg.toFixed(
+          2,
+        )}) scale(1 {side})"
+      >
+        <circle class="tt-dot" r="1.8" />
+        <rect class="ribbon {t.state}" x="3.5" y="-1.3" width="13" height="2.6" rx="1.3" />
+      </g>
+    {/each}
+
+    {#each mainTelltales as t (t.at)}
+      <g
+        transform="translate({t.p.x.toFixed(2)} {t.p.y.toFixed(2)}) rotate({boomStreamDeg.toFixed(
           2,
         )}) scale(1 {side})"
       >
