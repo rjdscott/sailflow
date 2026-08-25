@@ -146,14 +146,17 @@ export function optimalTrim(
    * Under the kite the mainsheet is a cue, not a solve, and the search says so
    * instead of handing back the trim it was given as if it were an answer.
    *
-   * The sheet's only route into a downwind solve is `sheetingEffect`'s
-   * multiplier on the main's CLmax, and past ~150° AWA the ORC main makes
-   * almost no lift (research `2026-08-25-spinnaker` doc 01 §2.6: for a sloop
-   * there is no downwind blanketing anywhere in the model, and the deep-angle
-   * collapse lives in the coefficient tables); the stall-drag term is switched
-   * off past 90° AWA on purpose, because past there drag is drive. So the
-   * descent has no boom-angle gradient worth the name out here — what it
-   * actually climbs is leech twist, and it labels the result "mainsheet".
+   * The sheet has two routes into a downwind solve, and neither is a boom
+   * angle the descent can climb. `sheetingEffect`'s multiplier on the main's
+   * CLmax is the direct one, and past ~150° AWA the ORC main makes almost no
+   * lift for it to scale (research `2026-08-25-spinnaker` doc 01 §2.6: for a
+   * sloop there is no downwind blanketing anywhere in the model, and the
+   * deep-angle collapse lives in the coefficient tables); the stall-drag term
+   * is switched off past 90° AWA on purpose, because past there drag is
+   * drive. The other route is the shape layer — sheet ease opens the leech,
+   * and `shape/toOrc.ts` scores that twist against the sail set's base trim.
+   * So the descent has no boom-angle gradient worth the name out here — what
+   * it actually climbs is leech twist, and it labels the result "mainsheet".
    * Measured (2026-08-25): from 165° out, and at 165°/20 kt, that handed back
    * mainsheet 100 with vang 100 — the boom pinned on the centreline on a dead
    * run — for 0.006 kt.

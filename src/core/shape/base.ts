@@ -7,7 +7,14 @@
  * point for every monotonicity sweep.
  */
 import boatJson from '../../../data/boats/j70.json';
-import type { BoatDefinition, DockControls, RaceControls, SailId, SailShape } from '../types';
+import type {
+  BoatDefinition,
+  DockControls,
+  RaceControls,
+  SailId,
+  SailSet,
+  SailShape,
+} from '../types';
 import { rigState } from '../rig/state';
 import { flyingShape } from './flying';
 
@@ -33,12 +40,34 @@ export function baseRace(): RaceControls {
   return { ...(boatJson.baseRace as RaceControls) };
 }
 
-/** Flying shapes at the base state, for the sails asked for. */
+/**
+ * Race base under the kite: the same trim with the mainsheet eased to
+ * `baseRaceDown.mainsheet` — the boom out past the corner of the boat.
+ *
+ * The deltas in `toOrc.ts` claim to be "relative to the guide's base setup",
+ * and downwind that setup is not a beat's mainsheet. Measured from the upwind
+ * datum the correctly eased boom reads as ~2.2° of invented twist deviation,
+ * which is enough `shapeInfluence` to demote the downwind default's own
+ * outputs to tier C (ADR 0006). The reference was wrong, not the rule.
+ *
+ * Only `mainsheet` is picked across: `baseRaceDown` also carries the four
+ * gennaker controls, which are not `RaceControls`. Same pick-key-by-key
+ * reason as `BASE_RACE_DOWN` in `src/ui/stores/conditions.svelte.ts`.
+ */
+export function baseRaceDown(): RaceControls {
+  return { ...baseRace(), mainsheet: boatJson.baseRaceDown.mainsheet };
+}
+
+/**
+ * Flying shapes at the base state, for the sails asked for. `sailset` picks
+ * the datum: upwind trim under the jib, the eased-main trim under the kite.
+ */
 export function referenceShapes(
   boat: BoatDefinition,
   sails: readonly SailId[],
+  sailset: SailSet = 'jib',
 ): Partial<Record<SailId, SailShape>> {
-  const race = baseRace();
+  const race = sailset === 'asym' ? baseRaceDown() : baseRace();
   const rig = rigState(boat, baseDock(), race.backstay);
   const out: Partial<Record<SailId, SailShape>> = {};
   for (const s of sails) out[s] = flyingShape(boat, rig, race, s);

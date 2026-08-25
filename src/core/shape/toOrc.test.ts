@@ -65,12 +65,26 @@ describe('the base state is the datum', () => {
     expect(r.reef).toBe(1);
   });
 
-  it('is the datum for the downwind sail set too', () => {
-    const { shapes, race } = shapesAt({}, baseDock(), ['main', 'asym']);
+  it('is the datum for the downwind sail set too, at the downwind base trim', () => {
+    const { shapes, race } = shapesAt({ mainsheet: boat.baseRaceDown.mainsheet }, baseDock(), [
+      'main',
+      'asym',
+    ]);
     const r = shapeToOrc(boat, shapes, race, 'asym');
     expect(Math.abs(r.deltas.dCLmax)).toBe(0);
     expect(Math.abs(r.deltas.dTwistDeg)).toBe(0);
     expect(r.flat).toBe(1);
+  });
+
+  /**
+   * The datum is the sail set's own base trim, not one shared datum. A beat's
+   * mainsheet under the kite draws a boom near the centreline, and that is a
+   * real deviation from the downwind base, not the zero point.
+   */
+  it('does not zero the downwind deltas at the upwind base trim', () => {
+    const { shapes, race } = shapesAt({}, baseDock(), ['main', 'asym']);
+    const r = shapeToOrc(boat, shapes, race, 'asym');
+    expect(Math.abs(r.deltas.dTwistDeg)).toBeGreaterThan(1);
   });
 });
 

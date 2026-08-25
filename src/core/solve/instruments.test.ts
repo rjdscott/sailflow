@@ -210,10 +210,20 @@ describe('helm load', () => {
  * the kite, where the boat speed it divides is tier B.
  */
 describe('pctPolar tier never beats its numerator', () => {
-  const solve = (sailset: SailSet, twsKt: number, twaDeg: number) =>
+  // Each sail set at its own base trim: under the kite that is the eased
+  // main (`baseRaceDown.mainsheet`), which is what the app's downwind default
+  // actually loads and what the shape deltas are measured from.
+  const solve = (sailset: SailSet, twsKt: number, twaDeg: number, mainsheet?: number) =>
     trimmed(
       boat,
-      { dock: baseDock(), race: baseRace() },
+      {
+        dock: baseDock(),
+        race: {
+          ...baseRace(),
+          ...(sailset === 'asym' ? { mainsheet: boat.baseRaceDown.mainsheet } : {}),
+          ...(mainsheet === undefined ? {} : { mainsheet }),
+        },
+      },
       { twsKt, twaDeg, seaState: 1, crewKg: 300, sailset },
       geometryFor(boat),
     );
@@ -237,5 +247,26 @@ describe('pctPolar tier never beats its numerator', () => {
 
   it('is tier C outside the polar TWS range even under the jib', () => {
     expect(solve('jib', 24, 42).instruments.pctPolar.tier).toBe('C');
+  });
+
+  /**
+   * The downwind default is not a shape-layer excursion. The app loads
+   * `baseRaceDown.mainsheet` the moment the kite goes up, and measured
+   * against the upwind datum that correct ease read as ~2.2° of invented
+   * twist deviation — enough `shapeInfluence` to demote both speed and
+   * `pctPolar` to C on a screen the sailor never touched.
+   */
+  it('does not demote the downwind default under the kite', () => {
+    expect(polarTarget(12, 150, 'asym').inGrid).toBe(true);
+    const r = solve('asym', 12, 150, boat.baseRaceDown.mainsheet);
+    expect(r.bsKt.tier).toBe('B');
+    expect(r.instruments.pctPolar.tier).toBe('B');
+  });
+
+  /** The demote rule still fires for a main genuinely pinned on a run. */
+  it('still demotes a mainsheet pinned on the centreline on a run', () => {
+    const r = solve('asym', 12, 150, 100);
+    expect(r.bsKt.tier).toBe('C');
+    expect(r.instruments.pctPolar.tier).toBe('C');
   });
 });

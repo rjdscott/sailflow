@@ -19,7 +19,7 @@ import type {
 } from '../types';
 import { goldenMax } from '../math';
 import { flatMin } from '../aero/orc/depower';
-import { baseRace } from '../shape/base';
+import { baseRace, baseRaceDown } from '../shape/base';
 import { geometryFor } from './equilibrium';
 import { trimmed } from './trimmed';
 import type { SailId } from '../types';
@@ -61,7 +61,11 @@ export function optimal(
   opts: OptimalOptions,
   geom: Record<SailId, AeroGeometry> = geometryFor(boat),
 ): OptimalResult {
-  const baseRaceCtl = opts.race ?? baseRace();
+  // "Race controls held at the guide base" — and under the kite the guide's
+  // base is the eased main, not a beat's mainsheet. Same datum the shape
+  // deltas are measured against (`shape/base.ts`), so a downwind VPP row sits
+  // at zero shape deviation instead of carrying the whole ease as one.
+  const baseRaceCtl = opts.race ?? (condition.sailset === 'asym' ? baseRaceDown() : baseRace());
   const flatIters = opts.iters?.flat ?? FLAT_ITERS;
   const twaIters = opts.iters?.twa ?? TWA_ITERS;
   const upwind = Math.abs(condition.twaDeg) < 90; // prov: assumed, upwind/downwind split at 90° TWA

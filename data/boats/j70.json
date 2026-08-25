@@ -941,7 +941,7 @@
     "baseRaceDown.mainsheet": {
       "source": "app-convention",
       "kind": "assumed",
-      "note": "the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, inside the 60-87 degree band the solver's own downwind descent reaches between 135 and 165 degrees TWA (plan 2026-08-25-desktop-kite phase 04 log, app-convention); research 2026-08-25-spinnaker doc 03 section 2.1 (T3) supplies only the qualitative cue, out past the corner of the boat. Tier C cue, not a solve: see core/solve/optimalTrim notSolved"
+      "note": "the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, inside the 60-87 degree band the solver's own downwind descent reaches between 135 and 165 degrees TWA (plan 2026-08-25-desktop-kite phase 04 log, app-convention); research 2026-08-25-spinnaker doc 03 section 2.1 (T3) supplies only the qualitative cue, out past the corner of the boat. Tier C cue, not a solve: see core/solve/optimalTrim notSolved. Also the downwind shape datum: core/shape/base.ts baseRaceDown() measures the toOrc deltas from this mainsheet under the kite, so the correct ease is zero deviation instead of enough shapeInfluence to demote the downwind default to tier C (ASSUMPTIONS.md)"
     },
     "baseRaceDown.kiteHalyard": {
       "source": "app-convention",
