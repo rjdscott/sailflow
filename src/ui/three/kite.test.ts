@@ -25,7 +25,7 @@ import {
   SHEET_TRIM_DEG,
   TACK_MIN_M,
 } from './kite';
-import { buildSail, gridColumn, gridRow } from './loft';
+import { buildSail, gridRow } from './loft';
 import { rig3d } from './rig3d';
 import type { RigState } from '../../core/types';
 
@@ -58,7 +58,6 @@ const RIG: RigState = {
 };
 
 const len = (a: Vec3, b: Vec3): number => Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
-const sub3 = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 
 /** Arc length of the spine, sampled fine enough that the parabola is resolved. */
 function luffLength(spine: (h: number) => Vec3, n = 400): number {
@@ -183,7 +182,11 @@ describe('kiteGeometry', () => {
                 side,
                 AWA_RUN,
               );
-              expect(len(g.head, g.clew) / leech).toBeCloseTo(1, 2);
+              // The straight head→clew distance is the leech less its bulge's
+              // arc surplus; the cloth length itself is the drawn-leech test.
+              expect(len(g.head, g.clew) / g.leechChord).toBeCloseTo(1, 2);
+              expect(g.leechChord).toBeLessThan(leech);
+              expect(g.leechChord / leech).toBeGreaterThan(0.95);
               expect(len(g.tack, g.clew) / foot).toBeCloseTo(1, 2);
             }
           }
@@ -223,7 +226,9 @@ describe('kiteGeometry', () => {
       ).clew[1];
     const rise = at(0) - at(100);
     expect(rise).toBeGreaterThan(0.9);
-    expect(rise).toBeLessThan(1.5);
+    // Up to 1.6: the leech bulge shortens the head→clew chord as the sheet
+    // eases, which lifts the clew a little more than the straight-leech circle.
+    expect(rise).toBeLessThan(1.6);
   });
 
   it('bows the luff to leeward reaching and to windward running, crossing once', () => {
@@ -308,36 +313,32 @@ describe('the lofted kite', () => {
     return { g, mesh: buildSail(g.sections(SHAPE), g.spine, g.sheetRad, side) };
   };
 
-  it('flies a straight leech from head to clew while the luff bows', () => {
+  it('bows the leech out to leeward, most in the upper half, and more as the sheet eases', () => {
     for (const side of [1, -1] as Side[]) {
-      const { g, mesh } = build(side);
-      const dir = [g.head[0] - g.clew[0], g.head[1] - g.clew[1], g.head[2] - g.clew[2]] as Vec3;
-      const L = Math.hypot(...dir);
-      let maxOff = 0;
-      let maxLuffBow = 0;
-      for (let i = 0; i < mesh.N; i++) {
-        const row = gridRow(mesh, i);
-        // Leech point: distance from the head→clew line.
-        const p = row[mesh.M - 1];
-        const w = [p[0] - g.clew[0], p[1] - g.clew[1], p[2] - g.clew[2]];
-        const t = (w[0] * dir[0] + w[1] * dir[1] + w[2] * dir[2]) / (L * L);
-        const off = Math.hypot(...([0, 1, 2].map((k) => w[k] - t * dir[k]) as Vec3));
-        maxOff = Math.max(maxOff, off);
-        // Luff point: distance from the tack→head line.
-        const q = row[0];
-        const d2 = [g.head[0] - g.tack[0], g.head[1] - g.tack[1], g.head[2] - g.tack[2]];
-        const L2 = Math.hypot(...d2);
-        const w2 = [q[0] - g.tack[0], q[1] - g.tack[1], q[2] - g.tack[2]];
-        const t2 = (w2[0] * d2[0] + w2[1] * d2[1] + w2[2] * d2[2]) / (L2 * L2);
-        maxLuffBow = Math.max(
-          maxLuffBow,
-          Math.hypot(...([0, 1, 2].map((k) => w2[k] - t2 * d2[k]) as Vec3)),
-        );
-      }
-      // The leech sits on its line to within the loft's interpolation between
-      // seventeen knots; the luff bows by metres.
-      expect(maxOff).toBeLessThan(0.1);
-      expect(maxLuffBow).toBeGreaterThan(1);
+      const offAt = (over: Partial<DownControls>) => {
+        const { g, mesh } = build(side, over);
+        const dir = [g.head[0] - g.clew[0], g.head[1] - g.clew[1], g.head[2] - g.clew[2]] as Vec3;
+        const L = Math.hypot(...dir);
+        let lower = 0;
+        let upper = 0;
+        for (let i = 0; i < mesh.N; i++) {
+          const p = gridRow(mesh, i)[mesh.M - 1];
+          const w = [p[0] - g.clew[0], p[1] - g.clew[1], p[2] - g.clew[2]];
+          const t = (w[0] * dir[0] + w[1] * dir[1] + w[2] * dir[2]) / (L * L);
+          const off = [0, 1, 2].map((k) => w[k] - t * dir[k]) as Vec3;
+          const d = Math.hypot(...off);
+          // Leeward, never windward (the foot row's outboard end sits a few
+          // centimetres off the line where the clew hangs below the tack).
+          if (d > 0.05 && t > 0.1 && t < 0.9) expect(Math.sign(off[2])).toBe(lee(side));
+          if (t < 0.45) lower = Math.max(lower, d);
+          else upper = Math.max(upper, d);
+        }
+        return { lower, upper };
+      };
+      const trimmed = offAt({ kiteSheet: 100 });
+      const eased = offAt({ kiteSheet: 0 });
+      expect(trimmed.upper).toBeGreaterThan(trimmed.lower);
+      expect(eased.upper).toBeGreaterThan(trimmed.upper + 0.5);
     }
   });
 
@@ -351,20 +352,19 @@ describe('the lofted kite', () => {
     for (const side of [1, -1] as Side[]) {
       for (const kiteSheet of [0, 25, 50, 75, 100]) {
         const { g, mesh } = build(side, { kiteSheet });
-        expect(len(g.head, g.clew) / leech).toBeGreaterThan(0.98);
-        expect(len(g.head, g.clew) / leech).toBeLessThan(1.02);
-        // And the loft's own leech column stays on that line to within 2 % of
-        // its length, so the drawn sail cannot quietly put back the cloth the
-        // constraint removed. (The residual is the loft interpolating chord
-        // and twist independently between knots, not a longer leech.)
-        const dir = sub3(g.head, g.clew);
-        const L2 = dir[0] ** 2 + dir[1] ** 2 + dir[2] ** 2;
-        for (const p of gridColumn(mesh, mesh.M - 1)) {
-          const w = sub3(p, g.clew);
-          const t = (w[0] * dir[0] + w[1] * dir[1] + w[2] * dir[2]) / L2;
-          const off = [0, 1, 2].map((k) => w[k] - t * dir[k]);
-          expect(Math.hypot(...off)).toBeLessThan(0.02 * leech);
+        // Cloth length: the drawn leech column's arc, within 3 % of published.
+        // From the clew up: the rows below the clew's height end under it
+        // (the foot wedge), which is foot, not leech.
+        let arc = 0;
+        let prev: Vec3 = g.clew;
+        for (let i = 0; i < mesh.N; i++) {
+          const p = gridRow(mesh, i)[mesh.M - 1];
+          if (p[1] < g.clew[1] - 1e-6) continue;
+          arc += len(prev, p);
+          prev = p;
         }
+        expect(arc / leech).toBeGreaterThan(0.97);
+        expect(arc / leech).toBeLessThan(1.03);
       }
     }
   });

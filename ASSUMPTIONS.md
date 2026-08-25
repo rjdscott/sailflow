@@ -150,6 +150,16 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     corroborated** — within **3 %** of the exact circular-arc sagitta at every
     control state (doc 02 §3.1). `SAG_MAX_FRACTION` = 0.3 of the luff is still
     assumed and does almost no work; the arc bound is looser nearly everywhere.
+  - **Leech bulge** (`leechBulgeProfile`, `chordForArc`): the leech stands
+    out to leeward and forward of the straight head→clew line by
+    `LEECH_BULGE_MIN_M` = 0.4 m trimmed, plus `LEECH_BULGE_TRAVEL_M` = 0.7 m
+    at full ease, on `sin(π·t^1.5)` (peak ~63 % of the leech), 0.4 of it
+    forward. **Assumed** — read off the owner's J/70 photographs (2026-08-26)
+    and the twist-opens-with-ease direction in research doc 02 §5; no measured
+    leech profile exists. A straight leech into the masthead made every upper
+    section hook inboard, so the top read closed and the sheet could not open
+    it. The cloth length stays the published 8.8 m: the straight head→clew
+    chord is solved numerically from the bulged arc (`chordForArc`).
   - **Luff bow direction** (`luffLateral`): the athwartships share of the bow
     runs **+1 (leeward) at AWA 64°** to **−1 (windward, across the centreline)
     at AWA 141°**. **Published for the two endpoints** — Deparday has "the
