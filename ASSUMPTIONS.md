@@ -91,6 +91,50 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   split. Illustrative hull stations, spar radii and scene colours in
   `src/ui/three/{hull,rig3d,SailView3D}.svelte` are drawing furniture, tagged
   `prov: assumed` at each literal, and the caption labels the hull illustrative.
+- **Gennaker geometry from the downwind controls** (`src/ui/three/kite.ts`,
+  presentation only, not in the solver; ADR 0017). The solver switches its aero
+  tables under `sailset = 'asym'` but `shape.asym` is a set of constants and no
+  `DownControls` value reaches it, so the four downwind controls move the
+  drawn sail and nothing else. Tier C throughout, and both pictures say so in
+  their captions. What is claimed is the direction of each control and the sign
+  conventions (`kite.test.ts`); every number is assumed:
+  - **Chords**: the ORC spinnaker girth parabola through (0, foot 5.700 m),
+    (½, half width 5.560 m), (1, 0) — the same distribution
+    `core/geometry/sailplan.ts` integrates for the rated area, so the drawn
+    silhouette and the solver's area agree by construction — scaled by
+    `FLYING_CHORD_FRACTION` = 0.85. Assumed: the sail definition is flat
+    dimensions and a spinnaker is cut with shape a flat measurement cannot see,
+    so the flying chord is shorter. Only "shorter, never longer" is claimed.
+    The head chord is zero, which is the parabola's own answer.
+  - **Tack**: on the bowsprit at `sprit`% of `bowspritOuterMm` (1.495 m), and
+    `TACK_MIN_M` = 0.05 m above it at full tack-line tension, rising by
+    `TACK_TRAVEL_M` = 0.6 m as it is eased. Assumed. At full tension that is
+    0.8 m over the assumed 0.75 m freeboard, which is `geom.asymTackHeightM`
+    (0.7 m, itself assumed) to within that freeboard.
+  - **Head**: at the masthead at `kiteHalyard` = 100, dropping
+    `HALYARD_DROP_M` = 1.2 m down the spar at 0. Assumed; its visible effect is
+    the sag it adds, not the drop.
+  - **Luff sag**: the drawn luff carries the sail's own luff length (10.800 m,
+    published), so the surplus over the tack-to-head distance is what bows it.
+    Magnitude inverts the parabola arc-length approximation
+    `L ≈ c(1 + 8/3·(d/c)²)` — within ~2 % of the exact arc at these
+    deflections, and the same reduction `rig3d.ts` uses for forestay sag —
+    capped at `SAG_MAX_FRACTION` = 0.3 of the luff. Direction:
+    `SAG_FORWARD_FRACTION` = 0.6 forward per unit to leeward, assumed, larger
+    than the forestay's 0.35 because nothing holds a free luff. Only the two
+    directions are claimed.
+  - **Sheeting angle**: linear from `SHEET_TRIM_DEG` = 25° at full trim to
+    `SHEET_EASE_DEG` = 60° at full ease. Assumed. Claimed: eased puts the clew
+    forward and outboard, trimmed puts it aft and inboard, monotonically.
+  - **Luff curl**: `CURL_EASE_THRESHOLD` = 0.55 of sheet travel. Assumed, and a
+    geometric threshold rather than an aero one — nothing in the solver knows
+    when a luff curls. It drives the limp luff ribbons in the 3D hero and the
+    dashed outline in the plan view, and both captions say it is direction only.
+  - **Plan-view projection** (`src/ui/race/PlanView.svelte`): athwartships at
+    the plan's own scale, fore-and-aft anchored at the mast and the bowsprit
+    tip, because the plan's assumed mast station (0.45·LOA) is not the rig's J.
+    The kite hangs off a straight, unraked spar there: a plan view has no third
+    axis. Presentation only.
 - **Leech-profile drawing** (`src/ui/race/geometry.ts` `leechProfile`,
   presentation only): the main's chord at the foot, ¼, ½ and ¾ heights is
   taken as 1 / 0.78 / 0.56 / 0.34 of the foot — assumed, a roughly triangular

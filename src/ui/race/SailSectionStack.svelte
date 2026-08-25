@@ -17,13 +17,13 @@
     shape,
     table = true,
   }: {
-    sail: 'main' | 'jib';
+    sail: 'main' | 'jib' | 'asym';
     shape?: SailShape;
     /** The numbers under the drawing. Off where the panel's cells carry them. */
     table?: boolean;
   } = $props();
 
-  const NAME = { main: 'Main', jib: 'Jib' } as const;
+  const NAME = { main: 'Main', jib: 'Jib', asym: 'Kite' } as const;
 
   // A Bezier `d` cannot be CSS-transitioned, so the tween runs on the numbers
   // behind it — draft, draft position, twist — and the path is rebuilt each
@@ -95,6 +95,10 @@
     <figcaption>
       Live shape in accent, the ¼ section repeated behind it as a reference. Sections are rotated by
       their twist relative to ¼.
+      {#if sail === 'asym'}
+        The kite's sections are the solver's constants: they do not answer the downwind controls,
+        which move where the sail flies, not how deep it is.
+      {/if}
     </figcaption>
   </figure>
 

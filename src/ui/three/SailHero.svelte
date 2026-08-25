@@ -9,7 +9,7 @@
    * while the chunk downloads — so there is nothing to fall back *from*.
    */
   import { onMount, type Component } from 'svelte';
-  import type { SolveResult } from '../../core/types';
+  import type { DownControls, SolveResult } from '../../core/types';
   import Segmented from '../components/Segmented.svelte';
   import PlanView from '../race/PlanView.svelte';
   import { race } from '../race/store.svelte';
@@ -111,6 +111,8 @@
     preset?: PresetId;
     freeze?: boolean;
     jibUp?: boolean;
+    kiteUp?: boolean;
+    down?: DownControls;
     onready?: (ms: number) => void;
   }>;
 
@@ -202,6 +204,8 @@
       bind:preset
       {freeze}
       jibUp={conditions.sailset === 'jib'}
+      kiteUp={conditions.sailset === 'asym'}
+      down={race.controls.down}
       {onready}
     />
   {:else}

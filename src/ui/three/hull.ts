@@ -13,7 +13,13 @@
  * +x forward, +y up, +z to starboard.
  */
 import boat from '../../../data/boats/j70.json';
+import { SPRIT_TIP_X, STEM_X } from './conventions';
 import { gridIndices, gridNormals } from './loft';
+
+// The fore-and-aft datums moved to `conventions.ts` when the plan view needed
+// them too: it draws the kite from the same mapping, and it must not drag the
+// whole 3D chunk into the first-load bundle to get at one number.
+export { SPRIT_TIP_X, STEM_X };
 
 export interface Mesh {
   positions: Float32Array;
@@ -23,7 +29,6 @@ export interface Mesh {
 
 const LOA = boat.hull.loaM;
 const HALF_BEAM = boat.hull.beamM / 2;
-const J = boat.rig.jM;
 
 /**
  * Sheer above the waterline, m. prov: assumed — the same 0.75 m
@@ -67,10 +72,7 @@ const GIRTH = 9;
 /** Waterline height in the boat frame: the sheer is the datum, so it is below. */
 export const WATER_Y = -FREEBOARD_M;
 
-/** Stem at +J forward of the mast heel — the reduction `rigLayout.ts` uses. */
-export const STEM_X = J;
-export const TRANSOM_X = J - LOA;
-export const SPRIT_TIP_X = J + boat.rig.bowspritOuterMm / 1000;
+export const TRANSOM_X = STEM_X - LOA;
 
 function stationX(t: number): number {
   return STEM_X - t * LOA;
