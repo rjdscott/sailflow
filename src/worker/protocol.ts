@@ -77,6 +77,12 @@ export interface OptimalTrimRequest extends Base {
   type: 'optimalTrim';
   controls: ControlState;
   condition: Condition;
+  /**
+   * Controls the descent must hold at their incoming value — a drill's locked
+   * controls, so the key is the optimum of the boat the learner is sailing
+   * (audit ux-02 H-01). Additive: omitting it optimises all `TRIM_CONTROLS`.
+   */
+  fixed?: readonly TrimControl[];
 }
 
 export interface DockScoreRequest extends Base {

@@ -12,6 +12,10 @@ safe, the Race optimum honest about its path.
 - [ ] H-02 `scripts`/test: every drill start must lose ≥ 3 % (prov: assumed) against its optimum, else the test fails; medal bands widened to ≥ the held-out error and combined with control distance (interim, before v2).
 - [ ] H-03 Remove or re-author the four drills on unfelt controls (halyards, inhauler, cunningham-only, kite); keep the count ≥ 8.
 - [x] H-04 Investigate light-air backstay (model wants 80 % at 6 kt flat): sweep `trimmed` over backstay × twist at 6 kt, compare to North "backstay off below 8 kt"; either a shape-layer knob fix with a test, or a documented disagreement surfaced on the score sheet.
+- [x] H-01 Drill store requests `optimalTrim` from the drill start with locked controls held (add `fixed?: string[]` to the request or filter `TRIM_CONTROLS` by `drill.free`); answer key = that result.
+- [x] H-02 `scripts`/test: every drill start must lose ≥ 3 % (prov: assumed) against its optimum, else the test fails; medal bands widened to ≥ the held-out error and combined with control distance (interim, before v2).
+- [x] H-03 Remove or re-author the four drills on unfelt controls (halyards, inhauler, cunningham-only, kite); keep the count ≥ 8.
+- [ ] H-04 Investigate light-air backstay (model wants 80 % at 6 kt flat): sweep `trimmed` over backstay × twist at 6 kt, compare to North "backstay off below 8 kt"; either a shape-layer knob fix with a test, or a documented disagreement surfaced on the score sheet.
 - [ ] H-05 Log form: number rows wrap (`flex-wrap`, `min-width: 0`, `NumberField` width), no page-level horizontal scroll at 390/720/1440; new entry prefilled from committed rig + last forecast instead of zeros.
 - [ ] H-06 Log editor deep-copies (`structuredClone` / `$state.snapshot`) on open; Cancel discards; Dock draft never aliases a committed entry. Test.
 - [x] H-07 Race optimum: key includes race sliders (debounced), descent seeded from both current and base and the better kept; "Why" copy says "from where your sliders are now, and from the base tune". Closed 2026-08-25, with M-09 and M-26 on the same card.
@@ -180,3 +184,27 @@ evidence. `make check` green (730 tests).
   regression tests in `src/ui/log/store.test.ts` ("never aliases the committed
   rig") and `src/ui/log/logic.test.ts` ("does not alias the lock"). The other
   H-lines in this phase belong to the drills/Race agents and stay unticked.
+- **2026-08-25 — H-01, H-02, H-03 closed, inside the phase-01 v2 rewrite.**
+  The three drill defects were fixed by the v2 schema rather than by patching
+  v1, so there was no interim step: see the phase-01 log for detail.
+  - H-01: `OptimalTrimRequest` / `OptimalTrimOptions` gained an additive
+    `fixed?` list of controls the descent must hold, the worker passes it
+    through, and the drill store sends `fixedControls(drill.free)`. The answer
+    key is now `optimalTrim` from the drill's own start with every locked
+    control held. The `optimal` request is gone from the drill path.
+  - H-02: `generateDrillAsync` walks seeds until the start converges *and*
+    loses ≥ `START_LOSS_MIN_PCT` (3 %, prov: assumed) against that key, and
+    `drills.test.ts` runs the real solver over every template to prove one
+    exists in the first eight seeds. A second test asserts the untouched start
+    never scores gold. Medals are now distance-first with the loss bands as a
+    second gate.
+  - H-03: fault and free controls are restricted to `TRIM_CONTROLS` by a test
+    over the templates file; the halyard, inhauler and gennaker drills were
+    dropped or re-authored, and `cunningham`/`vang` were dropped from every
+    free list as sub-band controls. Nine templates, all three tiers.
+  - H-04 (light-air backstay) is **not** closed here — the model still
+    disagrees with the guides. Per decision-log row 32 the score sheet now
+    carries a `guideNote` naming both answers instead of resolving it, and the
+    light-air template was re-authored off backstay onto controls the model
+    can separate. The physics investigation remains open.
+  - Not touched by this pass: H-05, H-06, H-07 (Log form and Race optimum).

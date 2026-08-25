@@ -62,7 +62,7 @@ not a five-minute edit.
    As of this writing that's `src/ui/race/RigElevation.svelte`,
    `src/ui/drills/DrillView.svelte`, `src/ui/race/store.svelte.ts`,
    `src/ui/race/ConditionsStrip.svelte`, `src/ui/drills/client.ts`,
-   `src/ui/dock/logic.ts`, and `src/lib/drills.ts`. `data/drills/j70-static.json`
+   `src/ui/dock/logic.ts`, and `src/lib/drills.ts`. `data/drills/j70-templates.json`
    (`add-a-drill.md`) and the tuning tables in `data/tuning/*-j70.json`
    (loaded by `src/lib/reference.ts`) are also J/70-specific and would need
    class-scoped equivalents.

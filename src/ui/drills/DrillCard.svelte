@@ -1,46 +1,49 @@
 <script lang="ts">
-  import { medalFor, type Drill } from '../../lib/drills';
+  import type { DrillTemplate } from '../../lib/drills';
+  import type { DrillBest } from '../../lib/drillHistory';
   import { SEA_LABELS } from '../format';
 
   let {
-    drill,
+    template,
     best,
+    due = false,
     onopen,
   }: {
-    drill: Drill;
-    /** Best VMG loss percent recorded for this drill, if any. */
-    best?: number;
-    onopen: (drill: Drill) => void;
+    template: DrillTemplate;
+    /** Roll-up of every recorded attempt at this template, if any. */
+    best?: DrillBest;
+    /** The spacing schedule says this one is up today. */
+    due?: boolean;
+    onopen: (template: DrillTemplate) => void;
   } = $props();
 
-  const medal = $derived(best === undefined ? undefined : medalFor(best));
   const MEDAL_GLYPH = { gold: '🥇', silver: '🥈', bronze: '🥉', none: '—' };
 
   const condition = $derived(
     [
-      `${drill.condition.twsKt} kt`,
-      SEA_LABELS[drill.condition.seaState],
-      `TWA ${drill.condition.twaDeg}°`,
-      drill.condition.sailset === 'asym' ? 'gennaker' : 'jib',
+      `${template.conditions.twsKt[0]}–${template.conditions.twsKt[1]} kt`,
+      template.conditions.seaState.map((s) => SEA_LABELS[s]).join('/'),
+      template.conditions.sailset === 'asym' ? 'gennaker' : 'jib',
     ].join(' · '),
   );
 </script>
 
-<button type="button" class="card drill" onclick={() => onopen(drill)}>
+<button type="button" class="card drill" onclick={() => onopen(template)}>
   <span class="head">
-    <span class="dots" aria-label="Tier {drill.tier}">
+    <span class="dots" aria-label="Tier {template.tier}">
       {#each [1, 2, 3] as n (n)}
-        <span class="dot" class:on={n <= drill.tier}></span>
+        <span class="dot" class:on={n <= template.tier}></span>
       {/each}
     </span>
-    {#if medal}
-      <span class="medal" title="Best: {best?.toFixed(1)} % VMG loss">{MEDAL_GLYPH[medal]}</span>
+    {#if best}
+      <span class="medal" title="{best.attempts} attempts">{MEDAL_GLYPH[best.medal]}</span>
     {/if}
   </span>
-  <span class="title">{drill.title}</span>
+  <span class="title">{template.title}</span>
   <span class="meta tabular-nums">
     {condition}
-    {#if drill.cTier}<span class="ctier">C</span>{/if}
+    {#if due}<span class="ctier">due</span>{/if}
+    {#if template.cTier}<span class="ctier">C</span>{/if}
   </span>
 </button>
 

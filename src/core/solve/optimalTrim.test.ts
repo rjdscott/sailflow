@@ -117,6 +117,38 @@ describe('optimalTrim', () => {
     }
   });
 
+  it('holds every control named in `fixed`, and still optimises the rest', () => {
+    // Drills need the optimum of the boat the learner is sailing: only the
+    // free controls may move (audit ux-02 H-01).
+    const free = ['mainsheet', 'traveller'] as const;
+    const fixed = TRIM_CONTROLS.filter((c) => !(free as readonly string[]).includes(c));
+    const base = trimmed(boat, from(mistrim), up, GEOM);
+    const o = optimalTrim(boat, from(mistrim), up, { fixed }, GEOM);
+    for (const c of fixed) {
+      expect(o.race[c], c).toBe(snap(boat.controls[c], mistrim[c]));
+      expect(o.moved).not.toContain(c);
+    }
+    expect(o.moved.every((c) => (free as readonly string[]).includes(c))).toBe(true);
+    expect(o.result.vmgKt.value).toBeGreaterThan(base.vmgKt.value);
+    // And it is no better than the unrestricted search over the same start.
+    const all = optimalTrim(boat, from(mistrim), up, {}, GEOM);
+    expect(o.result.vmgKt.value).toBeLessThanOrEqual(all.result.vmgKt.value + 1e-9);
+  });
+
+  it('moves nothing when `fixed` names every trim control', () => {
+    const o = optimalTrim(boat, from(mistrim), up, { fixed: TRIM_CONTROLS }, GEOM);
+    expect(o.moved).toEqual([]);
+    expect(o.result.vmgKt.value).toBeCloseTo(
+      trimmed(boat, from(mistrim), up, GEOM).vmgKt.value,
+      12,
+    );
+  });
+
+  it('ignores a name in `fixed` that is not a trim control', () => {
+    const o = optimalTrim(boat, from(mistrim), up, { fixed: ['inhauler', 'nonsense'] }, GEOM);
+    expect(o).toEqual(optimalTrim(boat, from(mistrim), up, {}, GEOM));
+  });
+
   it('respects the sweep budget: fewer sweeps, fewer solves, no worse than the start', () => {
     const base = trimmed(boat, from(mistrim), up, GEOM);
     const small = optimalTrim(boat, from(mistrim), up, { sweeps: 1 }, GEOM);

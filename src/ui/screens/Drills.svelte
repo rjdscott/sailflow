@@ -3,7 +3,6 @@
   import DrillCard from '../drills/DrillCard.svelte';
   import DrillView from '../drills/DrillView.svelte';
   import { drills } from '../drills/store.svelte';
-  import { settings } from '../stores/settings.svelte';
   import type { DrillTier } from '../../lib/drills';
 
   const TIER_NAME: Record<DrillTier, string> = {
@@ -12,28 +11,42 @@
     3: 'Tier 3 — the whole rig',
   };
 
-  // Simple mode hides tier 3: the C-tier downwind drill and the seven-control
-  // depower puzzles are noise until the basics are automatic.
-  const tiers = $derived<DrillTier[]>(settings.mode === 'simple' ? [1, 2] : [1, 2, 3]);
+  const tiers: DrillTier[] = [1, 2, 3];
+  // The store owns the mode filter, so "Next drill" and this list walk the
+  // same sequence (audit ux-02 M-03).
+  const dueIds = $derived(
+    new Set(drills.due.filter((s) => s.overdueDays >= 0).map((s) => s.templateId)),
+  );
 </script>
 
 <TopBar title="Drills" />
 
-{#if drills.current}
+{#if drills.loading && !drills.current}
+  <p class="lede">Generating a drill…</p>
+{:else if drills.current}
   <DrillView drill={drills.current} onback={() => drills.close()} />
 {:else}
   <p class="lede">
-    Each drill is a real condition with a deliberately wrong setup. Trim the free controls, hit
-    Check, and the solver's optimum tells you what it cost.
+    Each drill is a real condition with a deliberately wrong setup, generated fresh from the day's
+    seed. Trim the free controls, hit Check, and the solver's optimum from where you started tells
+    you how far off the shape was.
   </p>
+  {#if drills.endNote}
+    <p class="lede">{drills.endNote}</p>
+  {/if}
   {#each tiers as tier (tier)}
-    {@const inTier = drills.list.filter((d) => d.tier === tier)}
+    {@const inTier = drills.visible.filter((t) => t.tier === tier)}
     {#if inTier.length}
       <section>
         <h2 class="section-title">{TIER_NAME[tier]}</h2>
         <div class="cards">
-          {#each inTier as drill (drill.id)}
-            <DrillCard {drill} best={drills.best[drill.id]} onopen={(d) => drills.open(d)} />
+          {#each inTier as template (template.id)}
+            <DrillCard
+              {template}
+              best={drills.best[template.id]}
+              due={dueIds.has(template.id)}
+              onopen={(t) => void drills.open(t)}
+            />
           {/each}
         </div>
       </section>
