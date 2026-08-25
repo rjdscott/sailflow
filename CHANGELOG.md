@@ -13,6 +13,11 @@ undiagnosable.
 
 ## [Unreleased]
 
+### Fixed
+
+- 3D hero perf gate timed the first render, which includes context creation and shader compiles, so it fell back to the plan view on every device (seen on a desktop GPU). It now times a warm second frame.
+- Default theme is dark (ADR 0015 dark-first); Auto and Light remain selectable on More.
+
 ### Added
 
 - Race mode's controls are two task-named cockpit panels (ADR 0015).

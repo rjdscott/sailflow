@@ -16,11 +16,11 @@ beforeEach(() => {
 });
 
 describe('settings store', () => {
-  it('defaults to the race tier and auto theme with no stored value', async () => {
+  it('defaults to the race tier and dark theme with no stored value', async () => {
     mockLocalStorage();
     const { settings } = await import('./settings.svelte');
     expect(settings.mode).toBe('race');
-    expect(settings.theme).toBe('auto');
+    expect(settings.theme).toBe('dark');
   });
 
   it('reads a previously stored mode and theme', async () => {
