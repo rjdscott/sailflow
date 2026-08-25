@@ -88,11 +88,15 @@
     min-width: 0;
   }
 
+  /* Wraps rather than pushing the value out of the gauge: in the cockpit's
+     instruments rail the name cannot shrink and `.v` is `nowrap`, so the
+     number ended up outside the panel (same fault as `BulletGauge`). */
   .head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: var(--space-3);
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
   }
 
   .explain {

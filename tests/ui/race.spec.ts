@@ -1,15 +1,23 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * Layout smoke for the cockpit. The desktop cockpit is meant to be one screen
- * (ADR 0015, research §3 principle 4), and the four panels each carry a
- * control column, a picture and an instrument rail — which is exactly the
- * arrangement that pushes a card past its column, or the page past its fold.
- * Vitest cannot see either; a real viewport can.
+ * Layout smoke for the cockpit. From ADR 0016 the cockpit sizes to its content
+ * and the *page* scrolls: no panel scrolls inside itself, and every control and
+ * gauge is on the page at full size. The four panels each carry a control
+ * column, a picture and an instrument rail — exactly the arrangement that
+ * pushes a card past its column, or hides a slider behind an ancestor's
+ * `overflow`. Vitest cannot see either; a real viewport can.
  */
 const VIEWPORTS = [
   { width: 1280, height: 720 },
   { width: 1440, height: 900 },
+];
+
+/** The sizes ADR 0016 makes first-class, plus the floor of the desktop grid. */
+const DESKTOP = [
+  { width: 1280, height: 720 },
+  { width: 1536, height: 864 },
+  { width: 1920, height: 1080 },
 ];
 
 const PHONE = { width: 390, height: 844 };
@@ -43,8 +51,13 @@ async function settled(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: /Apply optimum/ })).toBeEnabled();
 }
 
-for (const viewport of VIEWPORTS) {
-  test(`race fits ${viewport.width}x${viewport.height} with no scroll in either axis`, async ({
+/**
+ * (a) The page scrolls down, never sideways. A cockpit column that cannot hold
+ * a slider row pushes the whole grid past the window, and the symptom is a
+ * horizontal scrollbar rather than anything obviously broken.
+ */
+for (const viewport of DESKTOP) {
+  test(`the cockpit has no horizontal scroll at ${viewport.width}x${viewport.height}`, async ({
     page,
   }) => {
     await raceTier(page);
@@ -55,26 +68,146 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByRole('heading', { name: 'Headsail' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Helm & conditions' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Rig', exact: true })).toBeVisible();
-    await heroDrawn(page);
+    await settled(page);
 
     const overflow = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
-      scrollHeight: document.documentElement.scrollHeight,
       innerWidth: window.innerWidth,
-      innerHeight: window.innerHeight,
     }));
     expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.innerWidth);
-    // One screen from 800 px tall: the panels scroll inside themselves, the
-    // document does not. Shorter windows scroll the page and keep the hero a
-    // fixed 360 px instead (Race.svelte, the max-height rule).
-    if (overflow.innerHeight >= 800) {
-      expect(overflow.scrollHeight).toBeLessThanOrEqual(overflow.innerHeight + 1);
-    } else {
-      const hero = await page.locator('canvas, .hero-boat svg').first().boundingBox();
-      expect(hero?.height ?? 0).toBeGreaterThanOrEqual(250);
-    }
   });
 }
+
+/**
+ * (b) ADR 0016's strong property, replacing ADR 0015's "no page scroll" proxy:
+ * nothing in the cockpit is hidden. Every control, every button and every
+ * drawing has a real box, and no ancestor with an `overflow` other than
+ * `visible` cuts it off — which is what the four panel scrollers used to do to
+ * 54–81 % of each panel with no affordance (audit ux-03 M-01), and what
+ * silently rendered every sail drawing in a 0 px box (H-01). The one allowed
+ * scroller is the Rig gear chart's `.scroller`, which scrolls a wide table
+ * sideways on purpose, plus anything inside an open `dialog` (the sheets).
+ */
+for (const viewport of DESKTOP) {
+  test(`nothing in the cockpit is clipped or collapsed at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    await raceTier(page);
+    await page.setViewportSize(viewport);
+    await page.goto('/#/race');
+    await settled(page);
+
+    const hidden = await page.evaluate(() => {
+      const out: string[] = [];
+      const targets = document.querySelectorAll<HTMLElement>(
+        '.cockpit input[type="range"], .cockpit button, .cockpit svg[role="img"], .cockpit canvas',
+      );
+      for (const el of targets) {
+        if (!el.checkVisibility({ visibilityProperty: true })) continue;
+        if (el.closest('dialog, .scroller')) continue;
+        const name = (el.getAttribute('aria-label') ?? el.className ?? el.tagName).toString();
+        const r = el.getBoundingClientRect();
+        if (r.width < 1 || r.height < 1) {
+          out.push(`${name}: collapsed to ${Math.round(r.width)}x${Math.round(r.height)}`);
+          continue;
+        }
+        for (let p = el.parentElement; p && p !== document.documentElement; p = p.parentElement) {
+          if (p.matches('dialog, .scroller')) break;
+          const style = getComputedStyle(p);
+          if (style.overflowX === 'visible' && style.overflowY === 'visible') continue;
+          const box = p.getBoundingClientRect();
+          if (
+            r.top < box.top - 1 ||
+            r.bottom > box.bottom + 1 ||
+            r.left < box.left - 1 ||
+            r.right > box.right + 1
+          ) {
+            out.push(`${name}: clipped by .${p.className || p.tagName}`);
+            break;
+          }
+        }
+      }
+      return out;
+    });
+
+    expect(hidden, 'no cockpit control, button or drawing may be clipped away').toEqual([]);
+
+    // …and no panel body is a scroller with content below its own fold.
+    const scrollers = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('.cockpit .panel *')]
+        .filter((el) => {
+          const style = getComputedStyle(el);
+          const scrolls = style.overflowY === 'auto' || style.overflowY === 'scroll';
+          return scrolls && el.scrollHeight > el.clientHeight + 1;
+        })
+        .map((el) => el.className),
+    );
+    expect(scrollers, 'no panel may hide its content behind an internal scroll').toEqual([]);
+  });
+}
+
+/**
+ * (c) The 1920×1080 monitor ADR 0016 makes a first-class target. The hero is
+ * ≥ 480 px tall and the whole cockpit is within one short scroll.
+ *
+ * ADR 0016 aimed at "the document fits 1080". It does not: measured 1384 px,
+ * against 1959 px for the same content with the panel scrollers removed and
+ * nothing else changed, and 1160 px for a variant whose control names measured
+ * 0 px wide. What remains is the title rail, the instrument band and the
+ * actions band — ~290 px of full-width chrome around a 1048 px block of hero
+ * and panels — so closing the gap means moving content, not CSS. See the phase
+ * 01 progress log in `docs/plans/2026-08-25-desktop-kite/`. The bound is pinned
+ * so a regression that puts the panels back into a tower fails here.
+ */
+test('at 1920x1080 the cockpit is one short scroll and the hero is worth looking at', async ({
+  page,
+}) => {
+  await raceTier(page);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/#/race');
+  await settled(page);
+
+  const hero = await page.locator('.hero-boat').boundingBox();
+  expect(hero?.height ?? 0, 'ADR 0016: the hero is at least 480 px tall').toBeGreaterThanOrEqual(
+    480,
+  );
+
+  const doc = await page.evaluate(() => document.documentElement.scrollHeight);
+  // 1522 measured: instrument bar, actions strip and a 768 × 1112 hero
+  // with two-column panels beside it. Apply optimum is above the fold; the
+  // Helm/Rig row and the disagreement strip are the short scroll.
+  expect(
+    doc,
+    'the cockpit must stay within one short scroll of a 1080 px window',
+  ).toBeLessThanOrEqual(1600);
+});
+
+/**
+ * (d) The 14" laptop, the other first-class size: the instrument band, the hero
+ * and both sail panels' first controls are in the first viewport, and the rest
+ * is one scroll away.
+ */
+test('at 1536x864 the band, the hero and the first sail controls are in the first viewport', async ({
+  page,
+}) => {
+  await raceTier(page);
+  await page.setViewportSize({ width: 1536, height: 864 });
+  await page.goto('/#/race');
+  await settled(page);
+
+  await expect(page.locator('.cockpit > .bar')).toBeInViewport();
+  await expect(page.locator('.hero-boat')).toBeInViewport();
+
+  for (const panel of ['.p-main', '.p-jib']) {
+    const box = await page.locator(`${panel} input[type="range"]`).first().boundingBox();
+    expect(box, `${panel} must have a first slider`).not.toBeNull();
+    expect(box!.y, `${panel}'s first control starts on the first screen`).toBeGreaterThanOrEqual(0);
+    expect(
+      box!.y + box!.height,
+      `${panel}'s first control fits the first screen`,
+    ).toBeLessThanOrEqual(864);
+  }
+});
 
 test('the cockpit panels are labelled sections a screen reader can jump between', async ({
   page,
@@ -335,13 +468,11 @@ test('the committed Rig panel shows the lit gear-chart row, not a header over no
   const lit = panel.locator('.gear.windowed tr.here');
   await expect(lit).toBeVisible();
 
-  // In view means inside the panel's own scroll box, not merely in the DOM.
-  const inside = await lit.evaluate((row) => {
-    const box = row.getBoundingClientRect();
-    const scroller = row.closest('.grid')!.getBoundingClientRect();
-    return box.top >= scroller.top - 1 && box.bottom <= scroller.bottom + 1;
-  });
-  expect(inside, 'the lit row must be in view without scrolling the panel').toBe(true);
+  // The panel no longer scrolls inside itself (ADR 0016), so "in view" is just
+  // a real box on the page — the clause that checked it against the panel's own
+  // scroll box went with the scroller.
+  const box = await lit.boundingBox();
+  expect(box?.height ?? 0, 'the lit row must be a real box').toBeGreaterThan(0);
 
   const rows = await panel.locator('.gear.windowed tbody tr:visible').count();
   expect(rows).toBeGreaterThanOrEqual(2);

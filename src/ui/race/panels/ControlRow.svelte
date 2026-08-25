@@ -112,30 +112,35 @@
     min-width: 0;
   }
 
-  /* Desktop cockpit: label, value and track on one 36 px line rather than two
-     stacked halves. Eight of these have to fit a panel column on a 720 px-tall
-     screen, and the label-above-track stack costs 72 px a row for nothing a
-     mouse needs (research §3 principle 25 — one spacing module, integer px).
-     It reaches into `Slider`'s own markup on purpose: the compaction is this
-     screen's, not the component's, and Dock and Log keep the tall rows. */
-  @media (min-width: 1280px) {
+  /* Wide control column: name and value on the left, the track on the right,
+     one row rather than two stacked halves (research §3 principle 25 — one
+     spacing module, integer px). It reaches into `Slider`'s own markup on
+     purpose: the compaction is this panel's, not the component's, and Dock
+     and Log keep the tall rows.
+
+     This used to key off a 1280 px *viewport* and ellipsise the name to fit —
+     "Upper s…", "Jib lead ca…", the Learn tier hiding the names of the things
+     it exists to teach (audit ux-03 M-04). Worse, `.top` holds the name *and*
+     the value, so in a 270 px cockpit column the name measured 0 px wide. It
+     keys off the control column now: one line where the column can hold a
+     full name, a 5-character value and a track a mouse can aim at, and the
+     two-line form — which spends height to give the name the whole width —
+     everywhere else. prov: assumed 420 px = 180 name + 50 value + 160 track
+     and their gaps. */
+  @container (min-width: 420px) {
     .grow :global(.slider-row) {
       display: grid;
-      grid-template-columns: minmax(96px, 1.2fr) minmax(104px, 1fr);
+      grid-template-columns: minmax(48px, auto) minmax(160px, 1fr);
       align-items: center;
-      column-gap: var(--space-2);
-      padding-block: 0;
+      column-gap: var(--space-3);
+      padding-block: 2px;
     }
 
-    /* One line for the name, whatever its length: the parenthetical half of
-       "Traveller (+ up to windward)" is in the range's accessible name and in
-       the `?` sheet, and wrapping it here would cost the row its 36 px. */
     .grow :global(.slider-row .label) {
-      display: block;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      font-size: var(--text-xs);
+      display: flex;
+      flex-wrap: wrap;
+      font-size: var(--text-sm);
+      line-height: 1.25;
     }
 
     .grow :global(.slider-row > .lock-note),

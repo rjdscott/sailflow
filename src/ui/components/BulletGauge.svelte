@@ -133,11 +133,16 @@
     min-width: 0;
   }
 
+  /* The value wraps under the name rather than out of the gauge. In a narrow
+     instruments rail the name will not shrink (a flex item's automatic minimum
+     size) and `.v` is `nowrap`, so the number was pushed past the panel and
+     off the right of the page (measured 10 px past a 1920 viewport). */
   .head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: var(--space-3);
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
   }
 
   .explain {

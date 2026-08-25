@@ -344,6 +344,25 @@
     }
   }
 
+  /* With a full monitor behind it the band has ~1800 px and the three primary
+     readings are still set at the size they take on a 390 px phone. The
+     numbers are what you read at a glance from a metre away, so they take the
+     room (ADR 0016). prov: assumed 1400 px / 52 px — one step past
+     `--text-2xl`, which is where the row still fits its gauges and verdict. */
+  @container (min-width: 1400px) {
+    .cells :global(.hero-number) {
+      font-size: clamp(var(--text-2xl), 3.4cqw, 52px);
+    }
+
+    .gauges {
+      flex: 0 1 420px;
+    }
+
+    .verdict {
+      font-size: var(--text-md);
+    }
+  }
+
   .verdict {
     margin: 0;
     font-size: var(--text-md);

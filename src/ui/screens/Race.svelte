@@ -636,39 +636,92 @@
   /* --------------------------------------------------------- cockpit grid */
   /* From 1280 px, the README's layout: conditions rail, instrument bar, the
      hero flanked by the two sail panels, helm and rig beneath, actions along
-     the bottom. The grid is capped to the viewport and the panels scroll
-     inside themselves, which is what makes "one screen" true at 1280×720
-     without hiding a control (research §3 principle 4).
-     prov: assumed 56 px of chrome — the shell's own padding-block (2 × 24 px)
-     plus a hairline, the only page furniture outside this grid. */
+     the bottom.
+
+     ADR 0016: the grid sizes to its content and the *page* scrolls. It used to
+     be capped to the viewport with each panel scrolling inside itself, which
+     made "one screen" true by hiding 54–81 % of every panel behind a scroller
+     with no affordance (audit ux-03 M-01) — a hidden control is further away
+     than a control one wheel-notch down. Every row is `auto` now, every panel
+     body is `overflow: visible`, and the grid fills the window past the rail
+     up to `--cockpit-max`, so the room goes into the components instead. */
   @media (min-width: 1280px) {
+    /* 1280–1599 (a 14" laptop): the hero is a full-width band under the
+       instrument bar and the actions strip, and the four panels sit 2×2
+       beneath it, each wide enough for controls beside their picture. Three
+       columns here gave 435 px panels that stacked to 1000 px each. */
     .cockpit {
-      --cockpit-chrome: 56px;
-      height: calc(100dvh - var(--cockpit-chrome));
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
-      /* The hero row takes what the viewport leaves, never under 300 px;
-         the Helm/Rig row gets the rest and scrolls inside. prov: assumed
-         floors — a 3D sail under 300 px is a thumbnail, not an instrument. */
-      grid-template-rows: auto auto minmax(300px, 1fr) minmax(150px, 0.7fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      /* Every row takes exactly what is in it; only the hero states a height,
+         because it is the one cell with no intrinsic size. */
+      /* The band is 48 % of the window, floored at 400 px: on an 864-tall
+         laptop that leaves the first sail controls on the first screen
+         (ADR 0016), and a wide-landscape hero frames the boat well. */
+      grid-template-rows: auto auto auto minmax(400px, 48vh) auto auto auto;
       grid-template-areas:
-        'head head head'
-        'bar bar bar'
-        'main hero jib'
-        'helm helm rig'
-        'act act dis';
+        'head head'
+        'bar bar'
+        'act act'
+        'hero hero'
+        'main jib'
+        'helm rig'
+        'dis dis';
       gap: var(--space-3);
       align-items: stretch;
     }
 
-    /* A short window (a 720-tall laptop with browser chrome) cannot hold five
-       bands and a hero worth looking at. Below 800 px the page scrolls and
-       the hero keeps a fixed height instead; the one-screen promise is for
-       900 px and up. prov: assumed 800 px threshold. */
-    @media (max-height: 799px) {
+    /* prov: assumed 480 px — ADR 0016's floor; a 3D sail below it is a
+       thumbnail rather than an instrument. */
+    .hero-boat {
+      min-height: 480px;
+    }
+
+    /* The section-stack prose ("live shape in accent…") is a phone caption;
+       in the cockpit the `?` on each cell carries it and the room is for the
+       drawing. Kept in the DOM for assistive tech. */
+    .p-main :global(figcaption),
+    .p-jib :global(figcaption),
+    .p-rig :global(figcaption) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    /* From ~1600 px the panel columns are wide enough for `Panel`'s
+       three-column step, and a panel stops being the *sum* of its controls,
+       its picture and its numbers — around 400 px tall rather than 890. With
+       panels that short the hero can span both panel rows instead of taking a
+       band of its own, so the five bands share one budget of height: measured
+       1959 px of document at 1920×1080 before, 1177 after, with the hero
+       507 × 837 rather than 731 × 605 (ADR 0016). */
+    @media (min-width: 1600px) {
       .cockpit {
-        height: auto;
-        grid-template-rows: auto auto 360px auto auto;
+        /* The hero gets the width: it is the thing you look at, and a 3D sail
+           in a portrait slot is a thumbnail of one. prov: assumed 1.6fr —
+           the owner's call on the first desktop build ("allocate more
+           real estate to the 3D and plan section"). */
+        /* 504 px is the least a panel can be and still put its picture
+           beside its controls (`Panel` steps at a 470 px container plus its
+           32 px of padding); everything else is hero. */
+        grid-template-columns: minmax(504px, 1fr) minmax(0, 1.6fr) minmax(504px, 1fr);
+        grid-template-rows: auto auto auto auto auto auto;
+        grid-template-areas:
+          'head head head'
+          'bar bar bar'
+          'act act act'
+          'main hero jib'
+          'helm hero rig'
+          'dis dis dis';
       }
+    }
+
+    /* Both pictures side by side whatever the column does. Left to `auto-fit`
+       they drop to one column under 252 px and the panel doubles in height,
+       which is the opposite of what a narrower column wants. */
+    .p-main :global(.pictures) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     /* Title, lede and the conditions rail on one line; the chips wrap only
@@ -707,7 +760,6 @@
       flex-wrap: wrap;
       gap: var(--space-2) var(--space-4);
       padding: var(--space-2) var(--space-3);
-      overflow: hidden;
     }
 
     .insight-head {
@@ -728,7 +780,6 @@
       align-items: flex-start;
       gap: var(--space-1);
       padding: var(--space-2) var(--space-3);
-      overflow: hidden;
     }
 
     .disagree :global(.panel.compact) {
@@ -754,14 +805,13 @@
       overflow: hidden;
     }
 
-    /* Panels take their row's height and scroll their own body. The heading
-       stays put, so a panel never loses its name. */
+    /* Panels are as tall as what is in them. Nothing clips, nothing scrolls
+       inside itself; the page carries the remainder (ADR 0016). */
     .p-main,
     .p-jib,
     .p-helm,
     .p-rig {
       display: flex;
-      min-height: 0;
     }
 
     .p-main :global(.panel),
@@ -769,18 +819,7 @@
     .p-helm :global(.panel),
     .p-rig :global(.panel) {
       flex: 1;
-      min-height: 0;
-      overflow: hidden;
-    }
-
-    .p-main :global(.panel > .grid),
-    .p-jib :global(.panel > .grid),
-    .p-helm :global(.panel > .grid),
-    .p-rig :global(.panel > .grid) {
-      min-height: 0;
-      overflow-y: auto;
-      overflow-x: hidden;
-      overscroll-behavior: contain;
+      overflow: visible;
     }
 
     /* The caption repeats the chip titles; in the cockpit the hero's height
@@ -793,40 +832,50 @@
       clip: rect(0 0 0 0);
     }
 
-    /* A picture that grew with its panel would push the controls out of the
-       scroll box; these are glance cues, so they are capped.
-       prov: assumed 220 px — two section stacks side by side stay legible.
+    /* The cap and the clip are gone with the scroller that needed them (ADR
+       0016): a picture that grows with its panel no longer pushes a control
+       anywhere, because there is no box for it to be pushed out of. Each
+       drawing is `width: 100%; height: auto` inside its own `max-height`, so
+       the row is exactly the drawing's aspect and can never letterbox.
 
-       The floor is not decoration: `.panel > .grid` above is `overflow-y: auto`,
-       and an auto row track inside an overflow container resolves the visual's
-       row to zero, so every sail-shape drawing rendered in a 0 px box with its
-       full-size SVG children clipped away (audit ux-03 H-01). 140 px is the
-       measured floor that restores all three.
+       The floor stays. It is not decoration: an auto row track resolved the
+       visual's row to zero and every sail-shape drawing rendered in a 0 px box
+       while its SVG children measured full size (audit ux-03 H-01), so the
+       test that catches a regression is a measured box, and this is the floor
+       it measures against.
        prov: assumed 140 px — refuter-verified in ux-03 H-01. */
     .p-main :global(.visual),
     .p-jib :global(.visual),
     .p-rig :global(.visual) {
       min-height: 140px;
-      max-height: 220px;
-      overflow: hidden;
     }
 
-    /* Controls first, picture under them. `Panel` leads with the picture when
-       it is narrow because a thumb is still finding the control; in the
-       cockpit the hero is already the thing you are looking at, and what the
-       column is for is the sliders. */
-    .p-main :global(.panel > .grid > .controls),
-    .p-jib :global(.panel > .grid > .controls),
-    .p-helm :global(.panel > .grid > .controls),
-    .p-rig :global(.panel > .grid > .controls) {
-      order: 0;
-    }
+    /* Controls first, picture under them, in the columns too narrow for
+       `Panel`'s side-by-side steps. `Panel` leads with the picture when it is
+       narrow because a thumb is still finding the control; in the cockpit the
+       hero is already the thing you are looking at, and what the column is
+       for is the sliders. */
+    /* Scoped to the widths where `Panel` is still a single stack, so it cannot
+       outrank the side-by-side steps on specificity. */
+    @container (max-width: 469px) {
+      .p-main :global(.panel > .grid),
+      .p-jib :global(.panel > .grid),
+      .p-helm :global(.panel > .grid),
+      .p-rig :global(.panel > .grid) {
+        grid-template-areas:
+          'controls'
+          'visual';
+      }
 
-    .p-main :global(.panel > .grid > .visual),
-    .p-jib :global(.panel > .grid > .visual),
-    .p-helm :global(.panel > .grid > .visual),
-    .p-rig :global(.panel > .grid > .visual) {
-      order: 1;
+      .p-main :global(.panel > .grid.with-instruments),
+      .p-jib :global(.panel > .grid.with-instruments),
+      .p-helm :global(.panel > .grid.with-instruments),
+      .p-rig :global(.panel > .grid.with-instruments) {
+        grid-template-areas:
+          'controls'
+          'visual'
+          'instruments';
+      }
     }
   }
 </style>
