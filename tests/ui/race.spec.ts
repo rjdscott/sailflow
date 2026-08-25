@@ -53,8 +53,15 @@ for (const viewport of VIEWPORTS) {
       innerHeight: window.innerHeight,
     }));
     expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.innerWidth);
-    // One screen: the panels scroll inside themselves, the document does not.
-    expect(overflow.scrollHeight).toBeLessThanOrEqual(overflow.innerHeight + 1);
+    // One screen from 800 px tall: the panels scroll inside themselves, the
+    // document does not. Shorter windows scroll the page and keep the hero a
+    // fixed 360 px instead (Race.svelte, the max-height rule).
+    if (overflow.innerHeight >= 800) {
+      expect(overflow.scrollHeight).toBeLessThanOrEqual(overflow.innerHeight + 1);
+    } else {
+      const hero = await page.locator('canvas, .hero-boat svg').first().boundingBox();
+      expect(hero?.height ?? 0).toBeGreaterThanOrEqual(250);
+    }
   });
 }
 

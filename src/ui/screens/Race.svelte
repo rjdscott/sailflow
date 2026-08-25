@@ -537,7 +537,10 @@
       --cockpit-chrome: 56px;
       height: calc(100dvh - var(--cockpit-chrome));
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
-      grid-template-rows: auto auto minmax(0, 1.6fr) minmax(0, 0.9fr) auto;
+      /* The hero row takes what the viewport leaves, never under 300 px;
+         the Helm/Rig row gets the rest and scrolls inside. prov: assumed
+         floors — a 3D sail under 300 px is a thumbnail, not an instrument. */
+      grid-template-rows: auto auto minmax(300px, 1fr) minmax(150px, 0.55fr) auto;
       grid-template-areas:
         'head head head'
         'bar bar bar'
@@ -546,6 +549,17 @@
         'act act dis';
       gap: var(--space-3);
       align-items: stretch;
+    }
+
+    /* A short window (a 720-tall laptop with browser chrome) cannot hold five
+       bands and a hero worth looking at. Below 800 px the page scrolls and
+       the hero keeps a fixed height instead; the one-screen promise is for
+       900 px and up. prov: assumed 800 px threshold. */
+    @media (max-height: 799px) {
+      .cockpit {
+        height: auto;
+        grid-template-rows: auto auto 360px auto auto;
+      }
     }
 
     /* Title, lede and the conditions rail on one line; the chips wrap only
@@ -630,7 +644,18 @@
     .p-rig :global(.panel > .grid) {
       min-height: 0;
       overflow-y: auto;
+      overflow-x: hidden;
       overscroll-behavior: contain;
+    }
+
+    /* The caption repeats the chip titles; in the cockpit the hero's height
+       is the scarce thing. The text stays in the DOM for assistive tech. */
+    .hero-boat :global(.caption) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
     }
 
     /* A picture that grew with its panel would push the controls out of the

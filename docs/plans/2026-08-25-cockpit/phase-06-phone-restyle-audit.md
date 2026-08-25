@@ -176,3 +176,4 @@ plan view's svg read it, so the swap between them still moves nothing.
 - Dock / Log / Drills / More restyle and the disagreement panel are the
   concurrent half of this phase; audit ux-03 and the plan README state
   section are still open.
+- **2026-08-25 — grid rebalanced after a live look.** At a 715 px viewport the agent's equal-ish rows left the 3D stage 112 px tall and every panel with a horizontal scrollbar. Now: hero row `minmax(300px, 1fr)`, Helm/Rig row `minmax(150px, 0.55fr)`, panel bodies clip horizontally, the hero caption is visually hidden in the cockpit; and below 800 px viewport height the page scrolls with a fixed 360 px hero row instead of a one-screen lock (prov: assumed threshold). Playwright asserts one-screen only at ≥ 800 px tall and a ≥ 250 px hero below it. Measured: 1388×715 → page 1421 px, hero 296 px; 1468×815 → one screen, hero 236 px.
