@@ -88,7 +88,7 @@
   const awa = $derived(windArrow(side * aero.awaDeg, HUB, AWA_RING));
 
   // Target entry AoA; the shape's entryDeg mixes datums (camber + inhauler) so it is not used here.
-  const entryDeg = 10; // prov: assumed
+  const entryDeg = 12; // prov: assumed
   /** Ribbons stream along the chord; the group's own rotation is the flow. */
   const streamDeg = $derived((Math.atan2(jibClew.y - TACK.y, jibClew.x - TACK.x) * 180) / Math.PI);
   const boomStreamDeg = $derived(
@@ -107,7 +107,7 @@
           })
       : [],
   );
-  // Main leech telltales: top batten (¾ ghost head) and the boom end.
+  // Main leech telltales: top batten (¾ ghost head) and mid-leech.
   const mainTelltales: { at: number; p: Pt; state: Ribbon }[] = $derived(
     main
       ? [
@@ -122,9 +122,9 @@
             state: leechRibbon(aero.awaDeg, boomDeg, main.threeQuarter.twistDeg, 0.75),
           },
           {
-            at: 0.25,
-            p: boomTip,
-            state: leechRibbon(aero.awaDeg, boomDeg, main.threeQuarter.twistDeg, 0.25),
+            at: 0.5,
+            p: clewAt(MAST, boomDeg, D.boomPx * 0.88, side),
+            state: leechRibbon(aero.awaDeg, boomDeg, main.threeQuarter.twistDeg, 0.5),
           },
         ]
       : [],
