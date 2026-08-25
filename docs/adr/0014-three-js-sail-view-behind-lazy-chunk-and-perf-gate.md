@@ -86,8 +86,7 @@ continuous render loop.
 
 The Decision above is unchanged and stands. What follows corrects a number in
 it, and what that number measures, after audit ux-03 found the control inert
-(H-12, `docs/audits/2026-08-25-ux-03/04-performance-3d.md`, landing on a
-separate branch).
+([H-12](../audits/2026-08-25-ux-03/04-performance-3d.md#h-12)).
 
 The 50 ms in the Decision was three frames at 60 Hz, but the implementation
 applied it to the **second** render — a warm context, where `renderer.render`
@@ -116,7 +115,7 @@ same thing as this one with one number different.
 Also closed in the same change: the Consequences' `prefers-reduced-motion`
 commitment was never wired to the media query, so it only held for the
 non-default `motion = 'off'` setting
-(H-09, `docs/audits/2026-08-25-ux-03/02-accessibility.md`). Both halves —
+([H-09](../audits/2026-08-25-ux-03/02-accessibility.md#h-09)). Both halves —
 frozen telltales and jump-cut presets — are now driven by
 `prefersReducedMotion` on the `'system'` default, with a Playwright case that
 runs with the setting unset.
