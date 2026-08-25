@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import j70 from '../../../data/boats/j70.json';
 import type { BoatDefinition, RaceControls } from '../types';
 import { baseDock, baseRace } from '../shape/base';
+import { boomAngle } from '../shape/sheeting';
 import { geometryFor } from './equilibrium';
 import { trimmed } from './trimmed';
 import { TRIM_CONTROLS, optimalTrim, snap } from './optimalTrim';
@@ -215,12 +216,81 @@ describe('optimalTrim sheeting sanity (ux follow-up)', () => {
     expect(o.race.mainsheet).toBeLessThan(race.mainsheet);
     expect(o.race.jibSheet).toBeLessThan(race.jibSheet);
   });
-  it('eases the main on a run rather than pinning it', () => {
+  /**
+   * Under the kite the search used to answer the mainsheet, and from 165° out
+   * it answered "100 % — boom on the centreline on a dead run" for 0.006 kt,
+   * because the only downwind main gradient the model has is leech twist
+   * (`optimalTrim`, `notSolved`). It declines now, and the value it hands back
+   * is the one it was given: unmoved, unclaimed, and not drawable as a target.
+   */
+  it('declines the mainsheet under the kite instead of answering it', () => {
+    for (const twaDeg of [110, 135, 149, 165, 175]) {
+      for (const twsKt of [6, 10, 20]) {
+        const o = optimalTrim(
+          boat,
+          { dock, race, down },
+          { ...sea, twsKt, twaDeg, sailset: 'asym' },
+        );
+        expect(o.notSolved, `${twaDeg}° ${twsKt} kt`).toEqual(['mainsheet']);
+        expect(o.race.mainsheet, `${twaDeg}° ${twsKt} kt`).toBe(race.mainsheet);
+        expect(o.moved, `${twaDeg}° ${twsKt} kt`).not.toContain('mainsheet');
+      }
+    }
+  });
+
+  it('still solves the mainsheet upwind and on a reach', () => {
+    for (const twaDeg of [38, 90, 120]) {
+      const o = optimalTrim(
+        boat,
+        { dock, race, down },
+        { ...sea, twsKt: 12, twaDeg, sailset: 'jib' },
+      );
+      expect(o.notSolved, `${twaDeg}°`).toEqual([]);
+    }
+  });
+
+  /** A drill that pins the mainsheet keeps it pinned, not "not solved". */
+  it('leaves a fixed mainsheet to `fixed`, which already holds it', () => {
     const o = optimalTrim(
       boat,
       { dock, race, down },
       { ...sea, twsKt: 10, twaDeg: 149, sailset: 'asym' },
+      { fixed: ['mainsheet'] },
     );
-    expect(o.race.mainsheet).toBeLessThan(40);
+    expect(o.notSolved).toEqual([]);
+    expect(o.race.mainsheet).toBe(race.mainsheet);
+  });
+});
+
+/**
+ * The cue that replaces the solve: `baseRaceDown.mainsheet` is the mainsheet
+ * the guides describe under the kite, and it has to land in the eased band the
+ * drawn boom is judged by — out past the corner of the boat, leech on the
+ * leeward shroud, roughly 60-80° off the centreline (research
+ * `2026-08-25-spinnaker` doc 03 §2.1 `T3`, §2.2 `T2`). Both the plan view and
+ * the 3D hero draw the boom through this mapping, so if the number and the
+ * mapping ever drift apart the picture goes wrong before any solve does.
+ */
+describe('baseRaceDown.mainsheet', () => {
+  it('draws a boom in the 60-80° eased band, not an upwind one', () => {
+    const boom = boomAngle(boat.baseRaceDown.mainsheet, boat.baseRace.traveller);
+    expect(boom).toBeGreaterThanOrEqual(60);
+    expect(boom).toBeLessThanOrEqual(80);
+    // And it is a real ease off the upwind trim, not a relabelling of it.
+    expect(boom).toBeGreaterThan(boomAngle(boat.baseRace.mainsheet, boat.baseRace.traveller) + 30);
+  });
+
+  it('stays in the band across the traveller range', () => {
+    for (const traveller of [-100, -50, 0, 50, 100]) {
+      const boom = boomAngle(boat.baseRaceDown.mainsheet, traveller);
+      expect(boom, `traveller ${traveller}`).toBeGreaterThanOrEqual(59);
+      expect(boom, `traveller ${traveller}`).toBeLessThanOrEqual(80);
+    }
+  });
+
+  it('is on the mainsheet control grid', () => {
+    expect(snap(boat.controls.mainsheet, boat.baseRaceDown.mainsheet)).toBe(
+      boat.baseRaceDown.mainsheet,
+    );
   });
 });

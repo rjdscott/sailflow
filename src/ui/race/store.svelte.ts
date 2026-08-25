@@ -20,7 +20,7 @@ import type { OptimalRequest, TrimmedRequest } from '../../worker/protocol';
 import { coachSentence, type Dir } from '../explain';
 import { snap } from '../format';
 import { History } from '../instruments/history';
-import { BASE_RACE, conditions, type Preset } from '../stores/conditions.svelte';
+import { BASE_RACE, BASE_RACE_DOWN, conditions, type Preset } from '../stores/conditions.svelte';
 import { getClient, type Client } from './client';
 import { optimum } from './optimum.svelte';
 import { POINTS_OF_SAIL } from './pointOfSail';
@@ -406,6 +406,24 @@ export class RaceStore {
   }
 
   /**
+   * The kite goes up: ease the main to the shroud, and nothing else.
+   *
+   * You cannot fly a spinnaker with the boom strapped on the centreline, and
+   * until this existed nothing in the app moved the sheet when the sail plan
+   * changed — so a beat's mainsheet came downwind with you and the plan view
+   * and the 3D hero drew a ~20° boom under a kite at 150° TWA (owner report,
+   * 2026-08-25). Only the controls in `BASE_RACE_DOWN`, undoable, and only on
+   * the crossing: the rest of the trim is the sailor's. Tier C cue from the
+   * sailmaker guides, not a solved value — `optimalTrim` declines to solve the
+   * mainsheet under the kite and says so.
+   */
+  hoistKite(): void {
+    this.remember();
+    // Mutate in place: the panel's sliders bind to this object.
+    Object.assign(this.controls.race, BASE_RACE_DOWN);
+  }
+
+  /**
    * Point-of-sail chip: sailset and angle in one tap. The reaches are fixed
    * angles and land immediately; Close-hauled and Run show their nominal angle,
    * then adopt the VMG optimum for the current wind and committed rig when the
@@ -415,6 +433,7 @@ export class RaceStore {
     const p = POINTS_OF_SAIL.find((x) => x.id === id);
     if (!p) return;
     const seq = ++this.#posSeq;
+    if (p.sailset === 'asym' && conditions.sailset !== 'asym') this.hoistKite();
     conditions.sailset = p.sailset;
     conditions.twaDeg = p.twaDeg;
     this.pointOfSail = { id, twaDeg: p.twaDeg };

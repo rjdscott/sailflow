@@ -12,6 +12,7 @@
   import LeechProfile from '../LeechProfile.svelte';
   import SailSectionStack from '../SailSectionStack.svelte';
   import { puffPlayer } from '../puffPlayer.svelte';
+  import { conditions } from '../../stores/conditions.svelte';
   import { race } from '../store.svelte';
   import ControlRow from './ControlRow.svelte';
   import { explainText, explainTitle } from './copy';
@@ -35,6 +36,18 @@
   const boomDeg = $derived(boomAngle(values.mainsheet, values.traveller));
   const stall = $derived(result?.instruments.leechStallFrac);
 
+  /**
+   * Under the kite the two hands swap jobs: the sheet is out past the corner
+   * of the boat and the vang is what holds the leech, so a cue about mainsheet
+   * leech load is coaching the wrong rope (research `2026-08-25-spinnaker`
+   * doc 03 §2.1 `T3`, §2.2 `T2`).
+   */
+  const cue = $derived(
+    conditions.sailset === 'asym'
+      ? 'Under the kite the vang owns twist and the sheet is out past the corner of the boat, leech on the leeward shroud. Ease to the leech ribbons, and gear-change with the main rather than the kite sheet.'
+      : 'Leech ribbons stalling about half the time is right; flowing all the time means you are building speed.',
+  );
+
   let explaining: string | null = $state(null);
   let sheetOpen = $state(false);
 
@@ -44,12 +57,7 @@
   }
 </script>
 
-<Panel
-  title="Mainsail"
-  id="mainsail-title"
-  lit={puffPlayer.litIndex('mainsail')}
-  cue="Leech ribbons stalling about half the time is right; flowing all the time means you are building speed."
->
+<Panel title="Mainsail" id="mainsail-title" lit={puffPlayer.litIndex('mainsail')} {cue}>
   {#snippet controls()}
     <div class="rows" id={panelControlsId('mainsail')}>
       {#each IDS as id (id)}

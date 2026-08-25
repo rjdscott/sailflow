@@ -36,6 +36,19 @@ undiagnosable.
 
 ### Fixed
 
+- **The mainsail eases with the point of sail, and the optimum says what it
+  does not solve.** Hoisting the kite — a point-of-sail chip or a scenario
+  link naming `set=asym` with no trim of its own — eases the mainsheet to
+  `baseRaceDown.mainsheet`, the boom out past the corner of the boat at about
+  67° (tier C cue, research `2026-08-25-spinnaker` doc 03; undoable). The plan
+  view and the 3D hero drew a beat's boom, ~20° off the centreline, under a
+  spinnaker at 150° TWA. Under the kite `optimalTrim` no longer answers the
+  mainsheet at all: its only downwind route into a solve is the main's CLmax,
+  which is near nothing past 150° AWA, so from 165° out the search was
+  climbing leech twist and calling it "mainsheet" — it returned the boom
+  pinned on the centreline on a dead run for 0.006 kt. The row now carries the
+  cue in words and no target bug, and the Mainsail panel coaches the vang
+  downwind. Polar and hold-out gate unchanged.
 - Spinnaker `flatmin` is 0.53 per ORC (the 0.42 upwind floor was applied to
   every sailset); asym ORC table label 5.7; the ORC VPP edition pinned in
   `PROVENANCE.md` with the 2026 coefficient change recorded (#75). Hold-out

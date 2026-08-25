@@ -95,6 +95,7 @@ own docblock.
 | `baseRace.outhaul` | 50 | assumed | `app-convention` | see baseRace.backstay |
 | `baseRace.traveller` | 0 | assumed | `app-convention` | see baseRace.backstay |
 | `baseRace.vang` | 30 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRaceDown.mainsheet` | 15 | assumed | `app-convention` | the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, mid the 60-80 degree band of research 2026-08-25-spinnaker doc 03 sections 2.1 (T3) and 2.2 (T2). Tier C cue, not a solve: see core/solve/optimalTrim notSolved |
 | `controls.backstay.max` | 100 | derived | `app-convention` | app control range; 0-100% travel |
 | `controls.backstay.min` | 0 | derived | `app-convention` | app control range; 0-100% travel |
 | `controls.backstay.purchaseMax` | 4 | published | `class-rules-2026` | Class Rules F.4.2: Backstay Control purchase maximum 4:1 |

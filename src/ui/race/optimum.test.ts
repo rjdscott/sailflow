@@ -57,7 +57,13 @@ function solve(bsKt: number): SolveResult {
 }
 
 function optimalTrim(bsKt: number, moved: string[] = ['backstay']): OptimalTrimResult {
-  return { race: { ...BASE_RACE, backstay: 55 }, result: solve(bsKt), moved, iters: 42 };
+  return {
+    race: { ...BASE_RACE, backstay: 55 },
+    result: solve(bsKt),
+    moved,
+    notSolved: [],
+    iters: 42,
+  };
 }
 
 /** Records every request and hands back its resolver, so ordering is the test's. */
@@ -141,6 +147,26 @@ describe('OptimumStore.request', () => {
     calls[1].resolve(optimalTrim(6.2));
     await vi.advanceTimersByTimeAsync(0);
     expect(store.stale).toBe(false);
+  });
+
+  /**
+   * `ControlRow` draws a target only where the search claims one. Under the
+   * kite it claims nothing for the mainsheet, and `race.mainsheet` there is
+   * the trim that went in — so the list has to survive the round trip or the
+   * row would present the upwind value as a downwind answer.
+   */
+  it('carries the search’s not-solved list through to the row', async () => {
+    const { client, calls } = deferredClient();
+    const store = new OptimumStore(client);
+    expect(store.notSolved).toEqual([]); // nothing answered yet
+
+    store.request(controls(), CONDITION);
+    await vi.advanceTimersByTimeAsync(OPTIMUM_DEBOUNCE_MS);
+    calls[0].resolve({ ...optimalTrim(6.0), notSolved: ['mainsheet'] });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(store.notSolved).toEqual(['mainsheet']);
+    expect(store.race?.mainsheet).toBe(BASE_RACE.mainsheet);
   });
 
   it('does not re-search when a halyard or the inhauler moves', async () => {

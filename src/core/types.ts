@@ -116,6 +116,13 @@ export interface BoatDefinition {
   controls: Record<string, ControlSpec>;
   /** The base race trim, read by `shape/base.ts` and by Race mode alike. */
   baseRace: RaceControls;
+  /**
+   * What changes about the base race trim once the kite is up: the overrides
+   * that go on top of `baseRace`, not a second full trim. Currently one entry
+   * — the mainsheet eased to the shroud — because that is the only control
+   * whose upwind value draws an outright wrong picture downwind.
+   */
+  baseRaceDown: Partial<RaceControls> & { mainsheet: number };
   /** Every fitted free parameter, flat namespace, e.g. "hydro.rrMul.fn30". */
   calibration: Record<string, number>;
   provenance: Record<string, ProvenanceEntry>;
@@ -283,6 +290,12 @@ export interface OptimalTrimResult {
   result: SolveResult;
   /** Race controls whose value changed, in `TRIM_CONTROLS` order. */
   moved: string[];
+  /**
+   * Race controls the search deliberately did not solve, in `TRIM_CONTROLS`
+   * order. Their value in `race` is the incoming one, untouched — it is not an
+   * answer, and a caller must not draw it as a target. See `optimalTrim`.
+   */
+  notSolved: string[];
   /** `trimmed()` evaluations spent — the cost measure for the UI's budget. */
   iters: number;
 }
