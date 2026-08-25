@@ -1,6 +1,6 @@
 # 0001. Tiered docs scaffold with machine enforcement
 
-- **Status:** Accepted
+- **Status:** Accepted; the branch-protection consequence superseded by [0002](0002-branch-rules-stay-honour-code.md)
 - **Date:** 2026-08-07
 
 ## Context
@@ -88,6 +88,14 @@ cause it.
 that it wants to be a real tool rather than a script), or when a project
 inheriting this template is not Python and has to port it. Either is the
 signal that the enforcement layer has outgrown a 200 line script.
+
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+Branch protection was never enabled: ADR 0002 decided to leave `main`
+unprotected, so "never push to `main`" is honour code, not a machine gate
+(H-17). The revisit trigger's "200-line script" is also outgrown —
+`scripts/docs_index.py` is 274 lines and `make docs-check` runs four scripts;
+the trigger that still matters is the second non-trivial feature (L-08).
 
 ## Related
 

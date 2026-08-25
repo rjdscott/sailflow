@@ -1,6 +1,6 @@
 # 0016. The cockpit sizes to its content and the page scrolls; no panel scrolls inside itself
 
-- **Status:** Accepted
+- **Status:** Accepted; the "1920×1080 holds the whole cockpit" target amended 2026-08-26
 - **Date:** 2026-08-25
 
 ## Context
@@ -75,6 +75,16 @@ findings cite it.
 **Revisit when:** the owner reports the instrument bar out of view as a
 problem while trimming (add the sticky readout), or a viewport survey shows
 most sessions under 864 px tall.
+
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+Measured after phase 01 and the live walk: the document is 1522–1539 px
+tall at 1920×1080 — ~290 px of full-width chrome (title rail, instrument
+band, actions strip, gaps) above a 1112 px hero flanked by two-column panels.
+Closing the last ~450 px means moving content, not CSS. The promise is
+restated as: **one short scroll at 1920×1080, hero ≥ 480 px, Apply optimum
+above the fold, nothing clipped**, pinned by `tests/ui/race.spec.ts` at
+≤ 1600 px (H-06). The 1536×864 promise holds as written.
 
 ## Related
 

@@ -68,6 +68,13 @@ speed is lost.
 
 **Revisit when:** any trigger above fires, or Epic 3 planning starts.
 
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+The reopen trigger is conditioned on "precomputing the dock sweep in CI",
+which was never built — the dock perf work landed as a worker-side
+provisional pass (#35). Read the trigger as: a measured interaction over
+100 ms on a throttled Playwright run (L-08).
+
 ## Related
 
 - Research: [02-market-and-physics §Web tech](../research/2026-08-25-sailing-sim-landscape/02-market-and-physics.md), decision-log rows 4–5

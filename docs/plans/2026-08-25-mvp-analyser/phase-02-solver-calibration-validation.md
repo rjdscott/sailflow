@@ -22,7 +22,7 @@ A deterministic 3-DOF VPP for the J/70 that passes solver invariants in CI and r
 - [x] `validation/invariants.test.ts` (12 invariants) [O]
 - [x] `validation/polar.test.ts` hold-out gate + `validation/report.ts` → `report.md` [O]
 - [x] ADRs 0006 (aero split + tiers), 0007 (calibration/validation split + tolerances)
-- [ ] Runbook run-validation-and-recalibrate
+- [x] Runbook run-validation-and-recalibrate
 
 ## Verification
 

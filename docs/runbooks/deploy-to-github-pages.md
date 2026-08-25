@@ -83,7 +83,8 @@ verifying and troubleshooting, not for triggering one by hand.
 
 ## Last verified
 
-- **Last verified:** 2026-08-25 against 44212a3 (step 1's CI gate and step 4 re-run after PR #65). Earlier pass, against a55d993: Step 2's build and grep were
+- **Last verified:** 2026-08-25 against 44212a3.
+- Detail: step 1's CI gate and step 4 re-run after PR #65. Earlier pass, against a55d993: Step 2's build and grep were
   run locally. Steps 3 and 4 were confirmed against the live repo: Pages is
   enabled with source `{"branch":"main","path":"/"}` at
   `https://rjdscott.github.io/sailflow/`, and `gh run list --workflow=pages.yml`

@@ -10,7 +10,7 @@ M-24, M-11.
 ## Tasks
 
 - [x] Commit creates a persisted draft entry (IndexedDB) and the Log shows it as "Today, in progress".
-- [ ] Race: "Log this trim" button; conditions strip offers the committed forecast band as a chip.
+- [x] Race: "Log this trim" button; conditions strip offers the committed forecast band as a chip.
       _(Left for the Race agent — `src/ui/race/**` and `Race.svelte` are owned
       elsewhere. The seam is ready: `logStoreUi.setDraft({ race, … })` is kept
       and `openNew()` merges the draft over the prefill.)_

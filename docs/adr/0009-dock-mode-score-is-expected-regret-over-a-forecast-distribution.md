@@ -55,6 +55,16 @@ setup, making regret slightly optimistic.
 **Revisit when:** dock scoring exceeds one second on a mid-range phone after
 caching, or users ask for a non-triangular forecast.
 
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+Two details differ from the Decision's wording (M-04, M-05): `T*(w)` is the
+minimum over the grid **and** the setups being scored (`dock.ts:132`), so the
+"grid may miss a better setup" risk is mitigated and a user setup better than
+every grid point scores exactly 0; and the pmf's "5 % floor" is 5 % of the
+peak weight before normalisation (≈1 % probability after). The Cons figure
+"several hundred VMG solves" is ~2,400 for an 8–18 kt forecast (L-05). Whether
+either should change is an open owner decision.
+
 ## Related
 
 - Research: [03-innovation-candidates §2](../research/2026-08-25-sailing-sim-landscape/03-innovation-candidates.md)

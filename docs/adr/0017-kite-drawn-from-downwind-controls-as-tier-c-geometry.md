@@ -1,6 +1,6 @@
 # 0017. The gennaker is drawn from the downwind controls by a UI-side, tier-C geometry mapping, not by the solver
 
-- **Status:** Accepted
+- **Status:** Accepted; luff direction, leech and core scope amended 2026-08-26
 - **Date:** 2026-08-25
 
 ## Context
@@ -68,6 +68,21 @@ solver output is a one-file swap at the loft boundary.
 **Revisit when:** a downwind shape dataset exists (photographs with sheet
 positions, or a class coach's curl-onset table), at which point the mapping
 moves into the solver under ADR 0006's tiering.
+
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+Three clauses of the Decision are no longer what the code does (H-07):
+the luff bows **to windward across the centreline past ~102° AWA**
+(`luffLateral`, published endpoints 64°/141°, #76), not to leeward
+unconditionally; the leech **bulges to leeward and forward** on a profile
+peaking at ~63 % height so the head opens as the sheet eases (#80); and
+`src/core` **was** touched under the same plan — `asymShape`'s camber, draft
+position and twist were re-based on measured flying shapes (#76) and the
+spinnaker `flatmin` set to ORC's 0.53 (#75), each with the hold-out report
+diffed. Tags are now per constant (`published`/`derived`/`assumed`, see
+`ASSUMPTIONS.md`), not uniformly assumed. The revisit trigger has partly
+fired: a measured shape-vs-AWA dataset exists (Deparday, `F1`) and was
+applied; curl onset versus sheet is still unmeasured and stays tier C.
 
 ## Related
 

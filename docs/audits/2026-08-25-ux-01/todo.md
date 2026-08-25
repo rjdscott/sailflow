@@ -35,8 +35,8 @@ Priority: **P0** ship-blocker, **P1** before public release, **P2** soon,
 - [ ] **M-12** (P2, M) Simple mode hides sliders but keeps every hard concept — show only BSP/Height/VMG, collapse the section table, single Boat view.
 - [x] **M-14** (P2, S) Dock columns missing `.stack`, so cards butt into one grey slab — add `stack` at `Dock.svelte:59` and `:117`.
 - [x] **M-16** (P2, S) Emoji padlocks ignore the theme tokens — one stroked 16 px `currentColor` padlock in `--ink-2`.
-- [ ] **M-18** (P2, M) No helm or rudder-angle readout — surface the solver's balance term as an eighth tier-badged readout, or state its absence.
-- [ ] **M-19** (P2, M) No before/after compare — "Pin this trim" storing one `$state.snapshot`, drawn as the `.ref` path with pinned-vs-live deltas.
+- [x] **M-18** (#52, #58: HELM load in the instrument bar and Helm panel) No helm or rudder-angle readout — surface the solver's balance term as an eighth tier-badged readout, or state its absence.
+- [x] **M-19** (#58: A/B compare in the actions bar) No before/after compare — "Pin this trim" storing one `$state.snapshot`, drawn as the `.ref` path with pinned-vs-live deltas.
 - [ ] **M-20** (P2, M) Shroud turns with no picture of how to measure — one own-drawn rig elevation SVG on the Dock RIG card, reusing `RigElevation` geometry.
 - [x] **M-21** (P2, S) Wind arrows the same length at all TWS — scale `RING.len` with `twsKt`, clamped.
 - [x] **M-22** (P2, S) Downwind preset in Simple mode has no kite controls — drive `race.downwind` off `conditions.sailset` and show the kite controls in Simple under the existing C-tier banner.

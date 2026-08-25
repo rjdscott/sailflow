@@ -66,6 +66,12 @@ validation = held-out TWS 8/14 + TWA 60/90/120. Dock score = expected regret
 - Research: [2026-08-25-sailing-sim-landscape](../../research/2026-08-25-sailing-sim-landscape/)
 - ADRs: 0003 core/UI boundary, 0004 TS now / Rust at Epic 3, 0005 Svelte, 0006 aero split + tiers, 0007 calibration/validation, 0008 third-party data committed, 0009 dock scoring, 0010 persistence, 0011 2D only (written in the phase that first needs each)
 
+## Later blocks
+
+This plan is Epic 1 only. Blocks 2–5 (#41–#80) live in the dated plans listed
+in `docs/plans/README.md`; the gate figures below are as of #11 and the
+current verdict is in `validation/report.md` (ADR 0012 split).
+
 ## State at end of the first autonomous run (2026-08-25)
 
 PRs #1–#11 merged; https://rjdscott.github.io/sailflow/ is live and installable.

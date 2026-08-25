@@ -53,6 +53,14 @@ solver, several days at MVP size.
 solver access (e.g. a 60 Hz time-domain loop in Epic 2 may move the loop
 itself into the worker rather than reverse this decision).
 
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+The rule as enforced is one clause narrower than written: `src/ui` may
+import **types only** from `src/core/types` (the shared DOM-free contract),
+enforced by `no-restricted-imports` in `eslint.config.js`; ~35 UI files rely
+on it. Verified 2026-08-26: every UI→core import is `import type … from
+'…/core/types'`; `src/core` imports nothing from `src/ui` (M-17).
+
 ## Related
 
 - Research: [01-adversarial-review §15–16](../research/2026-08-25-sailing-sim-landscape/01-adversarial-review.md)

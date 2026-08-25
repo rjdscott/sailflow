@@ -63,8 +63,10 @@ already exists as `optimal` with `optimiseTwa: false`).
 ## State at end of the second autonomous block (2026-08-25)
 
 Phases 00–05 merged as PRs #26–#35; phase 06 (content and comparison) is
-🔵 and the lowest priority. Punchlist: 1 C, 5 H and 19 M closed; open are
-M-12, M-18, M-19, M-20, M-23 (all phase 06), L-01, L-03.
+🔵 and the lowest priority. Punchlist: 1 C, 5 H and 21 M closed (M-18 helm
+load and M-19 A/B compare landed with the cockpit, #52/#58); open are M-12,
+M-20, M-23 (all phase 06, to be re-scoped against the density tiers that
+replaced Simple mode), L-01, L-03.
 
 Still owed by a human with a phone: the on-device pass (phase 02 and 03
 budgets were measured on desktop only) and the offline reload from the MVP

@@ -87,7 +87,8 @@ rather than shipping a drill nobody can lose.
 
 ## Last verified
 
-- **Last verified:** 2026-08-25 on the drills-and-loop phase-01 branch. The
+- **Last verified:** 2026-08-25 on the drills-and-loop phase-01 branch.
+- Detail: The
   nine committed templates were re-authored through this exact procedure —
   bases read off `optimalTrim`, faults sized against measured single-control
   cost surfaces — and `make check` is green with the validity gate running the

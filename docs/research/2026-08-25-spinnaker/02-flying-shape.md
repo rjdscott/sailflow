@@ -374,8 +374,10 @@ at exactly the tack's height at every sheet setting, because `chordDir` has no
 vertical component.
 
 And this construction is independently corroborated: over its 25°–60° range it
-raises the clew **1.28 m**, against Deparday's measured **1.4 m** of clew rise
-from AWA 64° to 141° (`F1`). Two entirely different routes to the same number.
+raises the clew **1.08 m** (the table's 1.28 m is the 63° *height*, not the
+range rise — corrected 2026-08-26, audit docs-consistency-01 M-20), against
+Deparday's measured **1.4 m** of clew rise from AWA 64° to 141° (`F1`). Two
+entirely different routes to about the same number.
 
 ---
 

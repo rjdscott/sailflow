@@ -98,8 +98,7 @@ a choice of arc, not an invented clew distance.
 
 Good news first. `kite.ts` inverts a parabolic arc-length approximation and
 lands **within 3 %** of the exact circular-arc sagitta at every control state
-([`02`](02-flying-shape.md) §3.1). The file's own claim of "within about 2 %"
-checks out. Keep it.
+([`02`](02-flying-shape.md) §3.1); the file now says 3 % too. Keep it.
 
 `SAG_MAX_FRACTION = 0.3` of the luff (3.24 m) is looser than the circular-arc
 bound at every state except halyard-eased, where it binds slightly. It is

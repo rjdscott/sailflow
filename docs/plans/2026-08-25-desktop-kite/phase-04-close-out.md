@@ -6,7 +6,7 @@ Live walk of both features on Pages at the two target sizes; docs current.
 
 ## Tasks
 
-- [x] Pages live-verified at 1920×1080 (all on screen, hero ≥ 480 px) and 1536×864 (primary controls in first viewport, one scroll to Rig); no internal scrollbars; kite drawn on Run and answering its sheet.
+- [x] Pages live-verified at 1920×1080 (one short scroll — doc 1539 px, hero ≥ 480 px; the "all on screen" target was retired, ADR 0016 amendment) and 1536×864 (primary controls in first viewport, one scroll to Rig); no internal scrollbars; kite drawn on Run and answering its sheet.
 - [x] ux-03 `todo.md`: tick M-01 and M-04 with PR numbers.
 - [x] `CHANGELOG.md` entry; runbooks touched if steps changed (none: no operational step changed).
 - [x] Plan README state section; memory note.
@@ -106,10 +106,13 @@ Post-plan work that belongs to this plan's surface but earns no new phase.
   scripts/bundle_check.mjs` OK — entry 134 853 B gzip, +810 B on baseline
   (the provenance note), limit 136 091 B. `pnpm validate`: every polar and
   dock number in `validation/report.md` byte-identical; only the timestamp and
-  the boat geometry hash moved (`60104ed1` → `278aa109`, the extra JSON key).
+  the boat geometry hash moved (`60104ed1` → `39464adf`, the extra JSON key;
+  an earlier version of this entry recorded a hash that never existed).
   Hold-out gate still fails exactly as it did before the change — TWS 14
   `jib vmgUp` 5.8 % / 1.8°, `asym vmgDn` 15.1 % / 25.5° — both pre-existing
-  and already described in `ASSUMPTIONS.md`. No golden move.
+  and already described in `ASSUMPTIONS.md`. The golden corpus was **not**
+  regenerated here, so from this PR it was skipped (`boatHash` mismatch →
+  `it.skip`) — audit docs-consistency-01 H-03; fixed in its remediation.
 
   `pnpm test:ui` 31 passed. The kite baseline
   (`race-3d-kite-leeward-chromium-linux.png`) is regenerated in the pinned
@@ -128,9 +131,10 @@ Post-plan work that belongs to this plan's surface but earns no new phase.
 
 ## Progress log
 
-- 2026-08-25 — Live walk of `1be7c2e` on Pages (headless Chromium, production URL): 1920×1080 doc 1539 px, hero 768×1112 with WebGL on, zero elements with an internal scroller; 1536×864 hero band 1416×480, first sail controls in the first viewport; Broad reach shows the Gennaker panel and the reworked kite from astern (luff bowed, leech straight, clew inboard/aft). ux-03 M-01 and M-04 ticked (#70). Next-block list in the plan README state section (downwind main ease first).
+- 2026-08-25 — Live walk of `1be7c2e` on Pages (headless Chromium, production URL): 1920×1080 doc 1539 px, hero 768×1112 with WebGL on, zero elements with an internal scroller; 1536×864 hero band 1416×480, first sail controls in the first viewport; Broad reach shows the Gennaker panel and the reworked kite from astern (luff bowed, leech straight at the time — it bulges since #80, clew inboard/aft). ux-03 M-01 and M-04 ticked (#70). Next-block list in the plan README state section (downwind main ease first).
 
 ## Follow-ups
 
 - 2026-08-25 — ux-03 M-23 done (#78): the honesty markdown and the secondary screens left the first-load chunk. `PROVENANCE.md`, `ASSUMPTIONS.md` and `validation/report.md` are `await import('...?raw')` inside More's document sheet, and Log, Drills and More are `{#await import()}` in `App.svelte` the way Kit already was; Race and Dock stay static. First load 134066 → 92736 B gzip (−41330 B). `bundle_check.mjs` now sums every chunk `index.html` names — the split leaves four first-load chunks, not one — and `scripts/bundle_baseline.json` is lowered to match, which retires this plan's phase-05 note that its ASSUMPTIONS rows were riding in the entry. New `tests/ui/more.spec.ts` covers the three sheets; it caught a real bug on the way in (`$state` proxied the DOCS entry, so the `openDoc === doc` in-flight guard never matched and the sheet sat on "Loading…" — `$state.raw` now).
 - 2026-08-26 — Owner (with a J/70 photo): "the top of the sail is not open enough, the leech is too closed at the top" when sheeting. Cause: the leech ran straight into the masthead, so every upper section's chord pointed inboard and easing the sheet could not open the head. Leech now bulges to leeward/forward on a profile peaking at ~63 % height, 0.4 m trimmed → 1.1 m eased, cloth length held at 8.8 m by solving the chord numerically; the loft's foot wedge below the clew is excluded from the leech-length test (it is foot, not leech). Sections at 33 knots. `ASSUMPTIONS.md` row added.
+- 2026-08-26 — Audit docs-consistency-01 (#81) reviewed every doc surface against the code: 19 H / 36 M / 24 L. Remediation in #82 (code: report gate rows, validate exit code, golden fail-not-skip, `TACK_TRAVEL_M` 0.3, `LUFF_FORWARD_FRACTION` rename, `BASE_DOWN` into boat data, sheeting-equality test) and #83 (docs: ADR notes 0001–0017, plan statuses, README, CHANGELOG 0.2.0 cut, runbooks, ASSUMPTIONS/PROVENANCE bullets). Owner decisions left open in its `todo.md` P2.

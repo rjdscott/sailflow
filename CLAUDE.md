@@ -124,23 +124,27 @@ Delete the directories you aren't at yet. Adding one back later costs nothing.
 
 Sailflow: a free, web, mobile-first J/70 rig-tune and sail-trim trainer.
 Svelte 5 + Vite + TS, pnpm, deployed to GitHub Pages, no backend. Full brief:
-[`docs/initial-prompt.md`](docs/initial-prompt.md). Current build plan:
-[`docs/plans/2026-08-25-mvp-analyser/`](docs/plans/2026-08-25-mvp-analyser/).
+[`docs/initial-prompt.md`](docs/initial-prompt.md). Plans and their status:
+[`docs/plans/README.md`](docs/plans/README.md) — resume from its status table,
+not from a hard-coded plan; the Epic 1 plan is `2026-08-25-mvp-analyser`.
 
 - **`make check` before every PR.** Docs-check, lint, typecheck, test all
   green, or don't open it.
 - **Module boundary.** `src/core` is pure physics: no DOM, no framework, no
   imports from `src/ui`. The UI only talks to the solver through the
-  `src/worker` protocol, never by importing `src/core` directly.
+  `src/worker` protocol, never by importing `src/core` directly — the one
+  exception is type-only imports from `src/core/types`, enforced by
+  `no-restricted-imports` in `eslint.config.js`.
 - **Honesty rules.** No number in the app or docs without a `prov:` source
-  tag or a row in `ASSUMPTIONS.md`. Every model output carries a confidence
+  tag or a row in `ASSUMPTIONS.md` (enforced by `scripts/prov_check.py` for
+  `src/core` literals; honour-code elsewhere). Every model output carries a confidence
   tier (A/B/C). When the model and a tuning guide disagree, show both and the
   delta — never resolve the disagreement silently in favour of either.
 - **Determinism.** `src/core` never calls `Math.random` or `Date`. Same
   inputs, same outputs, always.
 - **Third-party data.** Committed under `data/`, one JSON file per source, so
-  a new source lands in a single commit. Provenance lives in
-  `PROVENANCE.md`, next to the data it describes, not restated elsewhere.
+  a new source lands in a single commit. Provenance lives in the root
+  `PROVENANCE.md`, one section per source, not restated elsewhere.
 - **Cut order under time pressure:** downwind first, then the tuning-log
   export, then visual polish. Never cut the validation harness or
   provenance documentation.

@@ -105,6 +105,7 @@ the plan view, and `SailView3D` is unchanged at 138.8 KB gzip.
 controls now, so under the jib they are unreachable — which is the owner's
 decision and matches the sail that is up, but it does mean a dock-side "what
 does the sprit do" needs a Run chip first. The Analyse cells read `shape.asym`,
-which is a set of constants: they move with the condition, not with your trim,
-and the explainer says so rather than letting a live-looking number imply
-otherwise.
+which is a set of constants: `asymShape(boat)` takes only the boat, so they
+are the same in every condition and trim (the AWA dependence doc 02 measures
+is the available upgrade, per `flying.ts`'s note), and the explainer says so
+rather than letting a live-looking number imply otherwise.

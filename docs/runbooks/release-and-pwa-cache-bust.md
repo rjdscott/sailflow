@@ -18,10 +18,11 @@ grep -o 'self.skipWaiting(),[a-zA-Z.]*clientsClaim()' dist/sw.js
 ```
 
 That means a new service worker installs and takes control of already-open
-tabs without waiting for them to close. `src/main.ts` registers
-`virtual:pwa-register` and calls `registerSW({ onNeedRefresh })`; when the
-browser detects a new `sw.js` mid-session, `onNeedRefresh` fires a
-`confirm()` and reloads the page on "OK". So in the normal case, **cache
+tabs without waiting for them to close. `src/App.svelte` registers
+`virtual:pwa-register` (`registerSW({ onNeedRefresh })`); when the browser
+detects a new `sw.js` mid-session, `onNeedRefresh` shows the in-app
+"Update available" toast with a Reload action (the `confirm()` dialog was
+replaced in #46, audit ux-02 L-04). So in the normal case, **cache
 busting is automatic**: bump the version, deploy, and open tabs get prompted
 within one Workbox update check (on load, and periodically thereafter).
 
@@ -47,7 +48,7 @@ within one Workbox update check (on load, and periodically thereafter).
 3. Deploy as usual (`deploy-to-github-pages.md`). Once live, a tab that was
    already open picks up the new `sw.js` on its next Workbox update check
    (page load, or the browser's background interval) and shows the reload
-   confirm from step "How the update path works" above.
+   toast from "How the update path works" above.
 
 4. **Manual bust**, if a user is stuck anyway (stale tab that was never
    revisited, or a bug in the update flow): have them do one of —
@@ -76,7 +77,8 @@ within one Workbox update check (on load, and periodically thereafter).
 
 ## Last verified
 
-- **Last verified:** 2026-08-25 against a55d993. `self.skipWaiting()` /
+- **Last verified:** 2026-08-26 against e9a0f7d (registration and toast in `App.svelte` re-read; earlier pass against a55d993 below).
+- Earlier: `self.skipWaiting()` /
   `clientsClaim()` and the precache manifest were confirmed by grepping a
   local `GITHUB_PAGES=1 pnpm build` output. The live "stuck on an old
   version" recovery steps have not been exercised against a real deploy in

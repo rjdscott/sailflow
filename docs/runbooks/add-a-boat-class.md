@@ -91,7 +91,8 @@ not a five-minute edit.
 
 ## Last verified
 
-- **Last verified:** 2026-08-25 against a55d993. `validateBoat` and the
+- **Last verified:** 2026-08-26 against e9a0f7d (steps re-read against `data/boats/j70.json` after #56/#58/#75/#79 added `baseRace`, `baseRaceDown` and the ORC edition rows; commands unchanged).
+- Earlier pass, 2026-08-25 against a55d993: `validateBoat` and the
   adhoc-test pattern in step 2 were run for real against the committed
   `j70.json` (passes with zero problems). The `grep` in step 4 was run
   against this branch and lists exactly seven non-test import sites. Adding

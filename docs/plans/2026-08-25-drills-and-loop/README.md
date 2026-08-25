@@ -1,6 +1,6 @@
 # Drills v2 and the closed loop: honest practice that people come back to
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 
 Remediation of audit [`ux-02`](../../audits/2026-08-25-ux-02/) plus the
 owner's 2026-08-25 questions: category-leading and intuitive; drills that

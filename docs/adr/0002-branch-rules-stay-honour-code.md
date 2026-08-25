@@ -78,6 +78,16 @@ discipline.
 or the first accidental push to `main` happens. Either event makes option A or
 C cheap to justify, and both are one command away.
 
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+The revisit trigger fired: `02bf851 docs(plan): phase 06 owns the desktop
+cockpit grid` reached `main` without a PR on 2026-08-25 (the orchestrator's
+docs push swept an agent's half-edit of `src/core/shape/base.ts` and
+`data/boats/j70.json` along; restored in #56, CI red for one commit). Reviewed
+2026-08-26: the decision stands — one contributor, the cost was one red CI
+run, and the rule "agent prompts state the worktree; never push to `main`
+for docs" is now in the memory note (M-18).
+
 ## Related
 
 - [ADR 0001](0001-tiered-docs-scaffold-with-machine-enforcement.md), which

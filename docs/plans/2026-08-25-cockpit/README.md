@@ -1,6 +1,6 @@
 # Cockpit: Race mode as a control centre that a beginner can read and a Grand Prix trimmer can drive
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 
 The owner's 2026-08-25 ask: redesign Race mode as a cockpit — controls in
 logical groups, each visual beside the controls that move it, a tasteful
@@ -26,7 +26,7 @@ restyled to the new tokens without IA changes; an adversarial UX audit
 - Redesign of Dock, Log, Drills IA.
 - Multiplayer, accounts.
 
-## Layout (desktop ≥ 1280 px, one screen, no scroll)
+## Layout (desktop ≥ 1280 px — panel grouping; the one-screen height model was superseded by ADR 0016)
 
 ```
 Conditions rail: PoS chips · TWS stepper · sea · crew · sailset · committed-rig chip
@@ -87,7 +87,8 @@ cut: the instrument-cell contract, tests, provenance, ADRs.
 5. New core instrument outputs are tier C inventions. Labelled, banded,
    disagreement panel unaffected, hold-out gate unchanged.
 6. One-screen desktop overflows at 1280×720. Phase 01 adds a Playwright
-   layout check at 1280×720 and 1440×900.
+   layout check at 1280×720 and 1440×900. (Superseded: ADR 0016 dropped the
+   one-screen promise; the page scrolls.)
 
 ## Implements
 
@@ -97,7 +98,7 @@ cut: the instrument-cell contract, tests, provenance, ADRs.
 
 - All six phases 🟢. Main at `44212a3`; live at https://rjdscott.github.io/sailflow/.
 - Shipped: three.js hero behind a lazy chunk with a mount-to-first-frame gate
-  (ADR 0014, amended 2026-08-25 to 350 ms), four sail-system panels with the
+  (ADR 0014, amended 2026-08-25 to 800 ms measured from mount), four sail-system panels with the
   instrument-cell contract and Learn/Race/Analyse tiers (ADR 0015), dark-first
   tokens v2 with a contrast gate in docs-check, puff replay, A/B compare,
   Playwright `ui-smoke` job in CI.

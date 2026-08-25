@@ -52,6 +52,12 @@ split in ADR 0007; tolerances there remain in force.
 **Revisit when:** a second data source arrives (ADR 0007 trigger), or the
 model gains a knob that only reaching rows constrain.
 
+### Consequences — 2026-08-26 note (audit docs-consistency-01)
+
+The constants are `HELD_OUT_TWS` in `validation/compare.ts` and `FIT_TWS`
+derived in `calibration/fit.ts:159`, not `FIT_TWS`/`HOLDOUT_TWS` in
+`compare.ts` as committed above; the intent (one shared source) holds (M-15).
+
 ## Related
 
 - Supersedes the fit/hold-out split of [ADR 0007](0007-calibration-and-validation-are-separate-with-a-held-out-gate.md)

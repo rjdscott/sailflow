@@ -17,7 +17,7 @@ L-02.
 - [x] `ConfidenceBadge`: tap/focus opens a popover with the tier meaning;
       neutral colour, not accent (M-13).
 - [x] Padlock as an SVG icon using `currentColor` (M-16).
-- [ ] Guide deltas: neutral colour + a one-line legend (M-06).
+- [x] Guide deltas: neutral colour + a one-line legend (M-06).
 - [x] Slider trough and chip border contrast ≥ 3:1 (L-02).
 - [x] Tests: keyboard model of the segmented control; badge popover opens on
       Enter.
