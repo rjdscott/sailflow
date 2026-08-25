@@ -1,8 +1,8 @@
 # Validation report
 
-- **Generated:** 2026-08-25 13:23:45 UTC
-- **Commit:** `32a3a72`
-- **Boat:** `j70` — geometry hash `2b39f8fb`
+- **Generated:** 2026-08-25 13:30:04 UTC
+- **Commit:** `07d5b1f`
+- **Boat:** `j70` — geometry hash `60104ed1`
 - **Calibration:** hash `ab97c1e7` — 18 fitted parameter(s)
 - **Replay condition:** sea state 1, crew 340 kg, dock rig at the guide base, race trim optimised (prov: assumed — the Speed Guide prints neither).
 
@@ -69,7 +69,7 @@ VMG rows are solved with the TWA optimised; 60/90/120° rows are solved at the p
 | row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | vmgUp jib | 5.95 | 6.30 | 5.9 % | 37.1 | 38.4 | 1.3° | 21.5 | 21.5 | 3.0 % / 2° | **FAIL** |
-| vmgDn asym | 6.73 | 6.38 | 5.2 % | 174.0 | 169.5 | 4.5° | 11.7 | 0.6 | 3.0 % / 2° | **FAIL** |
+| vmgDn asym | 6.73 | 6.46 | 4.1 % | 174.0 | 169.2 | 4.8° | 11.7 | 0.6 | 3.0 % / 2° | **FAIL** |
 | 60° jib | 7.05 | 7.25 | 2.9 % | 60.0 | 60.0 | — | 23.5 | 19.9 | 5.0 % | ok |
 | 90° jib | 7.91 | 7.70 | 2.7 % | 90.0 | 90.0 | — | 14.0 | 7.8 | 5.0 % | ok |
 | 120° jib | 6.92 | 7.06 | 2.1 % | 120.0 | 120.0 | — | 3.0 | 3.2 | 5.0 % | ok |
@@ -79,7 +79,7 @@ VMG rows are solved with the TWA optimised; 60/90/120° rows are solved at the p
 | row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | vmgUp jib | 5.94 | 6.31 | 6.3 % | 38.3 | 37.3 | 1.0° | 24.2 | 24.5 | 3.0 % / 2° | **FAIL** |
-| vmgDn asym | 11.53 | 12.46 | 8.0 % | 137.1 | 137.8 | 0.7° | 19.0 | 9.5 | 3.0 % / 2° | **FAIL** |
+| vmgDn asym | 11.53 | 12.46 | 8.1 % | 137.1 | 137.8 | 0.7° | 19.0 | 9.5 | 3.0 % / 2° | **FAIL** |
 | 60° jib | 7.13 | 7.60 | 6.5 % | 60.0 | 60.0 | — | 24.9 | 26.8 | 5.0 % | **FAIL** |
 | 90° jib | 8.66 | 8.72 | 0.6 % | 90.0 | 90.0 | — | 24.1 | 15.5 | 5.0 % | ok |
 | 120° jib | 7.88 | 7.77 | 1.4 % | 120.0 | 120.0 | — | 4.3 | 4.8 | 5.0 % | ok |
@@ -107,7 +107,7 @@ For each North tuning-guide band, the dock setup the model picks at the band mid
 | band | TWS | guide uppers | guide lowers | model uppers | model lowers | model forestay | |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | <6 kt | 5 | -3 | -2 | -3 | 5 | 30 mm | |
-| 6-8 kt | 7 | -2 | -1 | -3 | 1 | 30 mm | |
+| 6-8 kt | 7 | -2 | -1 | -3 | -2 | 30 mm | |
 | 8-10 kt | 9 | 0 | 0 | -3 | -2 | 30 mm | calibrated here |
 | 10-12 kt | 11 | 2 | 1 | -1 | -2 | 0 mm | |
 | 12-16 kt | 14 | 4 | 2 | 6 | -2 | 0 mm | calibrated here |
