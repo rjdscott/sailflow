@@ -150,17 +150,16 @@ test('an OS reduced-motion preference freezes the hero and parks the render loop
 test('the first-frame gate falls back to 2D when the hero is too slow to mount', async ({
   page,
 }) => {
-  // ux-03 H-12. A 20x CPU throttle stands in for a low-end Android: mount to
-  // first frame measures ~605 ms in the pinned image, against a 350 ms budget.
-  // The old gate timed a warm *second* render — GPU command submission, ~1 ms
-  // — and passed at every throttle rate, so nothing could ever reach the 2D
-  // fallback it guards.
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 20 });
+  // ux-03 H-12. The old gate timed a warm *second* render — GPU command
+  // submission, ~1 ms — and passed at every throttle rate, so nothing could
+  // ever reach the 2D fallback it guards. Mount → first frame is 60–600 ms
+  // depending on the machine, so the budget is pinned to 1 ms through the
+  // test seam rather than trusting a CPU throttle to beat 350 ms everywhere.
   await page.addInitScript(() => {
     try {
       localStorage.setItem('sailflow.hero.v1', '3d');
       localStorage.setItem('sailflow.motion', 'off');
+      localStorage.setItem('sailflow.hero.budget', '1');
     } catch {
       // ignore: storage disabled, the URL params still drive the view
     }

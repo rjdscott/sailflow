@@ -38,6 +38,17 @@
    * measurement so no desktop and no CI runner trips it.
    */
   const FIRST_FRAME_BUDGET_MS = 350;
+  /** Test seam: `sailflow.hero.budget` overrides the budget, so the gate can
+   *  be exercised on any machine instead of only on one slow enough. */
+  function budgetMs(): number {
+    try {
+      const v = Number(localStorage.getItem('sailflow.hero.budget'));
+      if (Number.isFinite(v) && v > 0) return v;
+    } catch {
+      // storage disabled: the built-in budget
+    }
+    return FIRST_FRAME_BUDGET_MS;
+  }
 
   const KEY = 'sailflow.hero.v1';
   type Hero = '3d' | 'plan';
@@ -137,7 +148,7 @@
   });
 
   function onready(ms: number): void {
-    if (!freeze && ms > FIRST_FRAME_BUDGET_MS) tooSlow = true;
+    if (!freeze && ms > budgetMs()) tooSlow = true;
   }
 </script>
 
