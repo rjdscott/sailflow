@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Condition, ControlState, SolveResult } from '../../core/types';
-import type { TrimmedRequest } from '../../worker/protocol';
+import type { Condition, ControlState, OptimalResult, SolveResult } from '../../core/types';
+import type { OptimalRequest, TrimmedRequest } from '../../worker/protocol';
 import type { Client } from './client';
 import { BASE_DOCK, BASE_DOWN, bestProbe, DEBOUNCE_MS, gradients, RaceStore } from './store.svelte';
-import { BASE_RACE } from '../stores/conditions.svelte';
+import { BASE_RACE, conditions } from '../stores/conditions.svelte';
 
 const CONDITION: Condition = { twsKt: 12, twaDeg: 42, seaState: 1, crewKg: 300, sailset: 'jib' };
 
@@ -205,6 +205,84 @@ describe('coach line downwind', () => {
     expect(store.coach?.dir).toBe(-1);
     expect(store.coach?.gainKt).toBeCloseTo(0.2, 5);
     expect(store.chevrons).toEqual({ mainsheet: -1 });
+  });
+});
+
+describe('RaceStore.setPointOfSail', () => {
+  /** Records the optimal requests and hands back their resolvers. */
+  function optimalClient() {
+    const calls: { req: OptimalRequest; resolve: (r: OptimalResult) => void }[] = [];
+    const client: Client = {
+      request: (req) =>
+        new Promise((resolve) => {
+          calls.push({
+            req: req as unknown as OptimalRequest,
+            resolve: resolve as (r: OptimalResult) => void,
+          });
+        }) as never,
+    };
+    return { client, calls };
+  }
+
+  function optimum(twaDeg: number): OptimalResult {
+    return { ...result(-3), twaDeg, race: { ...BASE_RACE } };
+  }
+
+  beforeEach(() => conditions.apply(CONDITION));
+
+  it('sets a fixed reach immediately and asks the solver for nothing', () => {
+    const { client, calls } = optimalClient();
+    const store = new RaceStore(client);
+    store.setPointOfSail('beam-reach');
+    expect(conditions.twaDeg).toBe(90);
+    expect(conditions.sailset).toBe('jib');
+    expect(store.pointOfSailBusy).toBeNull();
+    expect(calls).toHaveLength(0);
+  });
+
+  it('hoists the kite, then adopts the solved optimum angle', async () => {
+    const { client, calls } = optimalClient();
+    const store = new RaceStore(client);
+
+    store.setPointOfSail('run');
+    // The kite and the nominal angle land before the solve answers.
+    expect(conditions.sailset).toBe('asym');
+    expect(conditions.twaDeg).toBe(165);
+    expect(store.pointOfSailBusy).toBe('run');
+    expect(calls[0].req.optimiseTwa).toBe(true);
+    expect(calls[0].req.condition.sailset).toBe('asym');
+    expect(calls[0].req.dock).toEqual(BASE_DOCK);
+
+    calls[0].resolve(optimum(148.7));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(conditions.twaDeg).toBe(149);
+    expect(store.pointOfSailBusy).toBeNull();
+  });
+
+  it('drops an optimum that lands after a newer chip tap', async () => {
+    const { client, calls } = optimalClient();
+    const store = new RaceStore(client);
+
+    store.setPointOfSail('run');
+    store.setPointOfSail('close-hauled');
+    expect(conditions.sailset).toBe('jib');
+
+    calls[1].resolve(optimum(41.4));
+    await vi.advanceTimersByTimeAsync(0);
+    calls[0].resolve(optimum(148.7)); // the stale Run answer
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(conditions.twaDeg).toBe(41);
+    expect(conditions.sailset).toBe('jib');
+  });
+
+  it('keeps the nominal angle when the solve fails', async () => {
+    const client: Client = { request: () => Promise.reject(new Error('diverged')) as never };
+    const store = new RaceStore(client);
+    store.setPointOfSail('close-hauled');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(conditions.twaDeg).toBe(40);
+    expect(store.pointOfSailBusy).toBeNull();
   });
 });
 

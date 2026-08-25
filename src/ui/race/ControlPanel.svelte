@@ -3,6 +3,7 @@
   import Sheet from '../components/Sheet.svelte';
   import Slider from '../components/Slider.svelte';
   import { EXPLAIN } from '../explain';
+  import { conditions } from '../stores/conditions.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
   import { CONTROLS, race } from './store.svelte';
@@ -26,6 +27,8 @@
   const SIMPLE = ['mainsheet', 'traveller', 'backstay', 'jibSheet', 'jibLead'];
 
   const advanced = $derived(settings.mode === 'advanced');
+  /** Kite hoisted: the kite rows show in both modes, checkbox or not (ux-01 M-22). */
+  const kiteUp = $derived(conditions.sailset === 'asym');
   let explaining: string | null = $state(null);
   let sheetOpen = $state(false);
 
@@ -98,16 +101,18 @@
     {/if}
   {/each}
 
-  {#if advanced}
+  {#if advanced || kiteUp}
     <section class="card">
       <h2 class="section-title">
         Downwind
-        <label class="dw">
-          <input type="checkbox" bind:checked={race.downwind} />
-          show kite controls
-        </label>
+        {#if advanced && !kiteUp}
+          <label class="dw">
+            <input type="checkbox" bind:checked={race.downwind} />
+            show kite controls
+          </label>
+        {/if}
       </h2>
-      {#if race.downwind}
+      {#if race.downwind || kiteUp}
         <p class="banner"><ConfidenceBadge tier="C" /> Downwind is direction only.</p>
         {#each DOWN_IDS as id (id)}
           {@render row(id, downValues, { tier: 'C' })}
