@@ -56,7 +56,10 @@ export default defineConfig({
   ],
   test: {
     include: ['src/**/*.test.ts', 'validation/**/*.test.ts', 'calibration/**/*.test.ts'],
-    // The polar hold-out gate runs locally via `pnpm validate` (ADR 0007/0012); CI runs invariants + golden.
+    // The polar hold-out gate is excluded here (ADR 0007/0012) so `pnpm test`
+    // stays fast; it runs via `pnpm validate`, both locally and in CI's own
+    // `validate` job — which is `continue-on-error: true`, so it reports
+    // rather than blocks. `pnpm test` in CI is invariants + golden.
     exclude: ['**/node_modules/**', 'validation/polar.test.ts'],
   },
 });

@@ -193,8 +193,9 @@ function main(): void {
   // --- model optimum vs the North guide ------------------------------------
   out.push('## Model optimum vs North base settings');
   out.push('');
+  const grid = candidateGrid();
   out.push(
-    'For each North tuning-guide band, the dock setup the model picks at the band midpoint (best over `candidateGrid()`, 108 legal setups, scored on windward-leeward lap time) against the setting the guide publishes. Stage-4 rig calibration targets the 8–10 and 12–16 kt bands only; every other band is a genuine disagreement (ADR 0007), and the panel shows both sides rather than resolving it.',
+    `For each North tuning-guide band, the dock setup the model picks at the band midpoint (best over \`candidateGrid()\`, ${grid.length} legal setups, scored on windward-leeward lap time) against the setting the guide publishes. Stage-4 rig calibration targets the 8–10 and 12–16 kt bands only; every other band is a genuine disagreement (ADR 0007), and the panel shows both sides rather than resolving it.`,
   );
   out.push('');
   out.push(
@@ -202,7 +203,6 @@ function main(): void {
   );
   out.push('| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |');
 
-  const grid = candidateGrid();
   for (const band of north.bands) {
     const tws = bandMidpoint(band);
     progress(`dock optimum: ${band.label} (TWS ${tws} kt, ${grid.length} setups)`);
