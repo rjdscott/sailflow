@@ -28,6 +28,41 @@ jobs:
       - run: make setup
       - run: make check
 
+  # Software-rendered UI smoke, in the same image the screenshot baselines were
+  # generated in — SwiftShader output shifts between Chromium builds, so the
+  # tag is pinned here and in playwright.config.ts and they must move together
+  # (research 2026-08-25-cockpit/03, risk 8). Also asserts the first-load
+  # bundle has not grown, which is what makes ADR 0014's lazy 3D chunk honest.
+  ui-smoke:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: make setup
+      - run: pnpm build
+      - run: node scripts/bundle_check.mjs
+      - run: pnpm exec playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+
   # The polar hold-out gate currently FAILs on known rows (ADR 0007,
   # validation/report.md), so this job reports rather than blocks: it
   # regenerates the report on every push and puts the held-out tables and the

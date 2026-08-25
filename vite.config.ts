@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 const pkg: { version: string } = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
@@ -13,12 +14,22 @@ export default defineConfig({
   },
   plugins: [
     svelte(),
+    // `ANALYZE=1 pnpm build` writes dist/stats.html. Kept, not deleted: ADR
+    // 0014 commits to a measured chunk size, and re-measuring it after a
+    // `three` upgrade should not need this wiring rebuilt from memory.
+    ...(process.env.ANALYZE ? [visualizer({ filename: 'dist/stats.html', gzipSize: true })] : []),
     VitePWA({
       registerType: 'autoUpdate',
       // Workbox precaches everything Vite emits (js/css/html/svg/...),
       // including the solver worker chunk once solver.worker.ts lands.
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,ico,png,webmanifest}'],
+        // The three.js hero chunk is ~570 kB and lazily imported (ADR 0014).
+        // Precaching it would hand every phone that download on first visit,
+        // which is exactly the cost the lazy import exists to avoid. It is
+        // fetched on demand; offline, the Race screen keeps the 2D plan view,
+        // which is already the designed fallback.
+        globIgnores: ['**/SailView3D-*.js', '**/SailView3D-*.css'],
         navigateFallback: 'index.html',
       },
       includeAssets: ['icons/icon.svg', 'icons/icon-maskable.svg'],
