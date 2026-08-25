@@ -27,9 +27,9 @@ every High is P0 here.
 
 ## P1 — before public release
 
-- [ ] **M-01** (P1, M) Cockpit panels hide 54–81 % of their content behind an internal scroll with no styled affordance, worst on Rig (19 % visible) and tighter in Learn than Race — lower `Panel.svelte`'s 560 px container threshold or widen the column so the three-column layout fires; pin each panel's cue and add a scroll shadow.
+- [x] **M-01** (#70) (P1, M) Cockpit panels hide 54–81 % of their content behind an internal scroll with no styled affordance, worst on Rig (19 % visible) and tighter in Learn than Race — lower `Panel.svelte`'s 560 px container threshold or widen the column so the three-column layout fires; pin each panel's cue and add a scroll shadow.
 - [ ] **M-02** (P1, S) A drill prints "Finding the optimum…" indefinitely while it is actually waiting for the user, because `verdict.ts:61` returns loading copy for the deliberately withheld target — add a distinct branch and copy that names the state, plus a `verdict.test.ts` case.
-- [ ] **M-04** (P1, S) The Learn tier ellipsises seven control names it is specified to spell out, while the hint text refers to them in full — scope the ellipsis to the race and analyse tiers and let Learn wrap to two lines.
+- [x] **M-04** (#70) (P1, S) The Learn tier ellipsises seven control names it is specified to spell out, while the hint text refers to them in full — scope the ellipsis to the race and analyse tiers and let Learn wrap to two lines.
 - [ ] **M-05** (P1, S) The Δ sign convention is stated only in a source comment, so the band reads "+0.4" beside "0.29 kt below target" — extend the label once per band or flip to the loss reading, and add the sentence to the BSP/VMG explainers.
 - [ ] **M-06** (P1, S) Race's purpose sentence is `display: none` at ≥ 1280 px and no in-content link points to Drills — keep the lede as one header-row line and add "New to this? Try a drill →" to the actions strip.
 - [ ] **M-13** (P1, S) Thirteen instrument `?` buttons are 17.4 px tall on the phone against the repo's own 44 px token, and "Jib leech?" fails SC 2.5.8's spacing exception at 23.1 px — add `.hit-44` to `.explain` in `InstrumentCell` and `BulletGauge` only; leave `ConfidenceBadge` at its documented 24 px.
