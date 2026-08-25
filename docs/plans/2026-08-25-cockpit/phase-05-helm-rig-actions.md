@@ -167,3 +167,4 @@ otherwise be wrong.
   the chart reads was already in the entry for the disagreement panel. The
   three.js hero chunk is unchanged at 139.4 KB gzip and still lazy.
 - `pnpm validate` — unchanged: **FAIL, 21/25**, as above.
+- **2026-08-25 — merged onto main after #55–#57.** Only the 3D screenshot baseline conflicted (both sides had regenerated it); regenerated once more in the pinned image after the merge. Incident: the agent's shell `cd`'d into the main checkout for two early writes; they were swept onto main by a docs commit (02bf851, CI red) and restored in #56. Rule for future agent prompts: state the worktree path explicitly and forbid `cd` out of it.
