@@ -9,6 +9,11 @@
   import BottomNav from '../components/BottomNav.svelte';
   import NavRail from '../components/NavRail.svelte';
   import TopBar from '../components/TopBar.svelte';
+  import InstrumentCell from '../components/InstrumentCell.svelte';
+  import BulletGauge from '../components/BulletGauge.svelte';
+  import Sparkline from '../components/Sparkline.svelte';
+  import Panel from '../components/Panel.svelte';
+  import { heelBands } from '../instruments/gauges';
 
   let plain = $state(30);
   let locked = $state(40);
@@ -18,6 +23,15 @@
   let toastOpen = $state(false);
 
   let seg = $state<'a' | 'b' | 'c'>('a');
+
+  // Cockpit gallery (phase 01B). Fixed sample data: the gallery shows the
+  // contract, not live physics.
+  let panelSheet = $state(62);
+  let panelTraveller = $state(-2);
+  let explained = $state('');
+
+  const trend = [5.1, 5.16, 5.2, 5.18, 5.25, 5.31, 5.28, 5.42];
+  const heel = heelBands(10);
 </script>
 
 <TopBar title="Kit" />
@@ -85,6 +99,117 @@
         hint="Example hint text."
       />
     </section>
+
+    <section class="card">
+      <h2 class="section-title">Instrument cell</h2>
+      <p class="body">
+        One contract for every number: label · value · unit · tier badge · labelled delta · trend.
+        The delta is ink, never red or green. Density comes from
+        <code>data-tier</code> on the root, so learn spells the delta out and hides the trend,
+        analyse shows the trend even at <code>sm</code>.
+      </p>
+      <div class="cells">
+        <InstrumentCell
+          label="BSP"
+          id="bsp"
+          value="5.42"
+          unit="kt"
+          tier="A"
+          size="lg"
+          {trend}
+          target={{ text: '5.80', delta: '+0.38', label: 'vs optimum' }}
+          onexplain={(id) => (explained = id)}
+        />
+        <InstrumentCell label="VMG" id="vmg" value="3.87" unit="kt" tier="B" size="md" {trend} />
+        <InstrumentCell
+          label="Heel"
+          id="heel"
+          value="12"
+          unit="°"
+          tier="C"
+          size="sm"
+          {trend}
+          target={{ text: '14', delta: '+2', label: 'vs optimum' }}
+        />
+        <InstrumentCell label="AWA" id="awa" value="27" unit="°" size="sm" />
+      </div>
+      {#if explained}<p class="body">Explain requested for: <code>{explained}</code></p>{/if}
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Bullet gauge</h2>
+      <p class="body">
+        Three qualitative bands, one value mark, one target bug. Darkest band is the worst end,
+        which flips with <code>betterIs</code>. A scale that does not start at zero draws the value
+        as a marker, not a bar.
+      </p>
+      <div class="gauges">
+        <BulletGauge
+          label="Heel"
+          value={12}
+          min={0}
+          max={20}
+          target={heel.target}
+          ranges={[heel.lo, heel.hi]}
+          unit="°"
+          tier="B"
+        />
+        <BulletGauge
+          label="Leech stall"
+          value={14}
+          min={0}
+          max={40}
+          target={8}
+          ranges={[10, 20]}
+          betterIs="less"
+          unit="%"
+        />
+        <BulletGauge
+          label="Shroud tension"
+          value={32}
+          min={20}
+          max={40}
+          target={30}
+          ranges={[26, 34]}
+          unit="Loos"
+          tier="C"
+        />
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Sparkline</h2>
+      <p class="body">Shape only, no axes, hidden from the accessibility tree.</p>
+      <p><Sparkline points={trend} /></p>
+      <p class="body">Under two points it draws nothing: <Sparkline points={[5.1]} /></p>
+    </section>
+
+    <Panel
+      title="Mainsheet"
+      id="kit-panel-main"
+      cue="Ease until the top telltale streams, then trim back a touch."
+    >
+      {#snippet controls()}
+        <Slider label="Mainsheet" bind:value={panelSheet} min={0} max={100} step={1} unit="%" />
+        <Slider
+          label="Traveller"
+          bind:value={panelTraveller}
+          min={-10}
+          max={10}
+          step={1}
+          unit="cm"
+        />
+      {/snippet}
+      {#snippet visual()}
+        <svg viewBox="0 0 120 90" class="dummy-visual" role="img" aria-label="Placeholder drawing">
+          <rect x="8" y="8" width="104" height="74" rx="4" />
+        </svg>
+      {/snippet}
+      {#snippet instruments()}
+        <InstrumentCell label="Twist" id="twist" value="9" unit="°" tier="B" size="sm" />
+        <InstrumentCell label="Draft" id="draft" value="12.4" unit="%" tier="B" size="sm" />
+      {/snippet}
+    </Panel>
   </div>
 
   <div class="col-secondary stack">
@@ -138,6 +263,27 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-3);
     margin-top: var(--space-2);
+  }
+
+  .cells,
+  .gauges {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-3);
+  }
+
+  .cells {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    align-items: start;
+  }
+
+  .dummy-visual {
+    width: 100%;
+    height: auto;
+  }
+
+  .dummy-visual rect {
+    fill: var(--muted);
   }
 
   .body {
