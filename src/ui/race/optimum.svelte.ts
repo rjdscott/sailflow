@@ -2,14 +2,16 @@
  * The solver's best legal trim for the condition and the committed rig: the
  * one source the ghost ticks, the readout targets and the Apply button read.
  *
- * Keyed on condition + dock, deliberately **not** on the race sliders. The
- * descent starts from whatever trim is on screen when the request fires, but
- * moving a slider must not re-run it: a tick that chases the thumb is not a
- * target, and one `optimalTrim` costs ~140–190 solves. So `request()` builds a
- * key from the condition and the dock and returns early when nothing in it
- * moved. Debounce + sequence guard on top of that, same as `RaceStore`: a
- * stepped wind speed fires one search, and a slow answer to an old condition
- * never overwrites a fresh one.
+ * Keyed on condition + dock + the trim the search is seeded from. The descent
+ * starts from the trim on screen, so an answer computed at one trim is not an
+ * answer at another: keying on condition and dock alone left the ticks
+ * prescribing positions found from a trim the user had since dragged away
+ * from, with nothing on screen saying so (audit ux-02 H-07).
+ *
+ * A search costs ~280–380 solves (two seeds), so the debounce is long enough
+ * to sit out a slider drag and only the settled trim is searched. While one
+ * is pending the last answer stays on screen marked `stale`, and Apply is
+ * disabled: applying a target found from somewhere else is the defect.
  */
 import type {
   Condition,
@@ -18,11 +20,14 @@ import type {
   RaceControls,
   Tier,
 } from '../../core/types';
-import type { OptimalTrimRequest } from '../../worker/protocol';
+import { TRIM_CONTROLS, type OptimalTrimRequest } from '../../worker/protocol';
 import { getClient, type Client } from './client';
 
-/** Long enough to swallow a held wind-speed stepper, short enough to feel live. */
-export const OPTIMUM_DEBOUNCE_MS = 150;
+/**
+ * Long enough to sit out a slider drag and a held wind-speed stepper, short
+ * enough that a settled trim gets its answer before you look up. prov: assumed.
+ */
+export const OPTIMUM_DEBOUNCE_MS = 300;
 
 /**
  * prov: assumed. The optimum is a shape-layer answer, not a polar one: it is
@@ -34,20 +39,21 @@ export const OPTIMUM_TIER: Tier = 'B';
 
 /** What the target ticks and the Apply badge say when you press them. */
 export const OPTIMUM_REASON =
-  'Best trim the shape layer can find from here: a direction and a band, not a value to dial in.';
+  'Searched from where your sliders are and from the base tune: a local optimum on the control grid, a direction and a band, not a value to dial in.';
 
 /**
- * The inputs a re-search depends on. Race controls are excluded on purpose —
- * see the module header.
+ * The inputs a re-search depends on: condition, committed rig, and the trim
+ * the descent is seeded from. Only `TRIM_CONTROLS` counts — the halyards and
+ * the inhauler cannot move the answer, so moving one must not spend a search.
  */
 export function optimumKey(controls: ControlState, condition: Condition): string {
-  return JSON.stringify([condition, controls.dock]);
+  return JSON.stringify([condition, controls.dock, TRIM_CONTROLS.map((c) => controls.race[c])]);
 }
 
 export class OptimumStore {
   result: OptimalTrimResult | null = $state(null);
   busy = $state(false);
-  /** A newer condition or rig is pending: what is on screen is the old answer. */
+  /** A newer condition, rig or trim is pending: what is on screen is the old answer. */
   stale = $state(false);
   error: string | null = $state(null);
 

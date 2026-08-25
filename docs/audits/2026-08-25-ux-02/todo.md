@@ -14,7 +14,7 @@ finding code.
 - [ ] **H-04** (P0, M) The model's own optimum inverts the tuning guide the drill teaches (backstay 60→80 in 6 kt flat, 30→15 in 20 kt) — render both and the delta via `src/ui/disagree`, or suppress any imperative whose control's full-range spread is under the gold band.
 - [ ] **H-05** (P0, M) Log entry form overflows horizontally at every breakpoint and opens as a wall of zeros — `.row` to `grid` `auto-fit minmax(7rem,1fr)` plus `min-width:0`/`width:100%` in `NumberField`, seed from `conditions`/`rigLock` and allow null.
 - [ ] **H-06** (P0, S) Log editor shallow-copies the entry, so Cancel keeps the edits and a Dock draft writes into the committed rig — `form = $state.snapshot(entry)` at `Log.svelte:111` and around the draft merge at `:102`.
-- [ ] **H-07** (P0, M) Race's optimum is path-dependent while the Why copy claims a global answer — reword `Race.svelte:191-195`, and add a coarse trim term to `optimumKey` or grey the ticks once trim drifts a step.
+- [x] **H-07** (P0, M) Race's optimum is path-dependent while the Why copy claims a global answer — reword `Race.svelte:191-195`, and add a coarse trim term to `optimumKey` or grey the ticks once trim drifts a step.
 
 ## P1 — before public release
 
@@ -26,7 +26,7 @@ finding code.
 - [ ] **M-06** (P1, S) The coach line unmounts on the first slider move — keep the sheet mounted and mark it stale rather than gating it on `drills.score`.
 - [ ] **M-07** (P1, S) A failed log read renders as "No entries yet" and a failed save says nothing — `error` state on `LogUiStore` around all four writers, and stop `writeAll` swallowing.
 - [ ] **M-08** (P1, M) Log race/dock fields drop units, ranges and steps, and no path fills them — delete `RACE_FIELDS`, drive both rows off `CONTROLS`, add `min`/`max` to `NumberField`, add "Save this trim to the log" / "Load into Race".
-- [ ] **M-09** (P1, S) Downwind the target delta is signed backwards against the coach line on the same card — sign it with `objectiveKt` semantics as gap-to-target; add the downwind case beside `targetOf`.
+- [x] **M-09** (P1, S) Downwind the target delta is signed backwards against the coach line on the same card — sign it with `objectiveKt` semantics as gap-to-target; add the downwind case beside `targetOf`.
 - [ ] **M-16** (P1, M) Drills have no target, no distance-to-goal and no ghost ticks — show the goal and a "vs start" delta on open, pass `target` into the free-control sliders after Check, add "Show the optimum"; blocked on H-01.
 - [ ] **M-17** (P1, M) No attempt history, spacing or retrieval schedule — bump to `sailflow.drills.v2` with `{best, attempts, lastISO, lastMedal}`, resurface failed drills at 1/3/7 days, add a "due today" row.
 
@@ -46,7 +46,7 @@ finding code.
 - [ ] **M-23** (P2, S) The log's empty state is inert while Export/Import take equal billing — disable Export at zero entries, put the primary action in the empty card, collapse backup into a disclosure.
 - [ ] **M-24** (P2, M) Race ignores the forecast band the rig was committed against — mark the band on the TWS control and warn outside it; then a min/likely/max compare strip.
 - [ ] **M-25** (P2, M) Nothing prints — one `@media print` block plus a tuning-card layout from data already on screen.
-- [ ] **M-26** (P2, S) Apply optimum rewrites eight sliders with no statement of what changed — render `optimum.moved` as before → after against the state `race.remember()` already parks.
+- [x] **M-26** (P2, S) Apply optimum rewrites eight sliders with no statement of what changed — render `optimum.moved` as before → after against the state `race.remember()` already parks.
 - [ ] **M-27** (P2, M) The polar hold-out gate FAILs and CI never notices — CI job diffing the regenerated report row-by-row, failing on regression against a frozen baseline; publish the table in-app.
 - [ ] **M-28** (P2, L) Downwind is the largest modelling deficit and where the coach emits noise — next physics epic (tack-line/sprit/rotation, downwind righting moment, planing relief); until then suppress sub-resolution downwind recommendations.
 - [ ] **M-29** (P2, S) No in-app feedback path — "This felt wrong" link per solving screen, pre-filling a GitHub issue by URL with the visible state; no upload.

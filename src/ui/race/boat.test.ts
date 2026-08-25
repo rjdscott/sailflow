@@ -11,17 +11,17 @@ import {
   MAX_DRAWN_HEEL,
   jibSheetAngle,
   openBy,
+  PLAN_LAYOUT,
+  roseArrow,
   sailPath,
   sailPoints,
   tackSide,
-  windArrow,
-  type Ring,
   type Side,
   localAoa,
   luffRibbon,
   leechRibbon,
 } from './boat';
-import type { Pt } from './geometry';
+import { cropBox, rotate, type Pt } from './geometry';
 
 const section = (over: Partial<SectionShape> = {}): SectionShape => ({
   draft: 0.13,
@@ -41,14 +41,7 @@ function coords(d: string): Pt[] {
   return out;
 }
 
-const SCALE = 21;
-
-// The layout the component draws in, repeated here so the label/clearance
-// tests exercise the numbers that actually ship.
-const HUB = { x: 160, y: 132 };
-const TWA_RING: Ring = { rx: 110, ry: 100, len: 18, tagOff: 28 };
-const AWA_RING: Ring = { rx: 110, ry: 100, len: 18, tagOff: -28 };
-const VIEW = { w: 320, h: 264 };
+const SCALE = PLAN_LAYOUT.scale;
 
 describe('hullPath', () => {
   it('is finite and closed', () => {
@@ -195,84 +188,33 @@ describe('sailPath', () => {
   });
 });
 
-describe('windArrow', () => {
+describe('roseArrow', () => {
+  const C = { x: 40, y: 40 };
+
+  it('blows inward: the head is nearer the centre than the tail', () => {
+    for (let deg = 20; deg <= 180; deg += 5) {
+      const a = roseArrow(deg, C, 22, 14);
+      const d = (p: Pt) => Math.hypot(p.x - C.x, p.y - C.y);
+      expect(d(a.tail)).toBeCloseTo(22);
+      expect(d(a.head)).toBeCloseTo(8);
+    }
+  });
+
+  it('parks the tail where the wind comes from, bow up', () => {
+    // Head to wind: dead ahead, which is -y. Dead downwind: astern, +y.
+    expect(roseArrow(0, C, 20, 10).tail).toEqual({ x: 40, y: 20 });
+    expect(roseArrow(180, C, 20, 10).tail.y).toBeCloseTo(60);
+    // On the wind, starboard tack: to windward, which is +x.
+    expect(roseArrow(90, C, 20, 10).tail.x).toBeCloseTo(60);
+  });
+
   it('mirrors on port tack', () => {
     for (const deg of [24, 42, 90, 155]) {
-      const s = windArrow(deg, HUB, TWA_RING);
-      const p = windArrow(-deg, HUB, TWA_RING);
-      for (const k of ['head', 'tail', 'tag'] as const) {
-        expect(p[k].x).toBeCloseTo(2 * HUB.x - s[k].x);
-        expect(p[k].y).toBeCloseTo(s[k].y);
-      }
-    }
-  });
-
-  it('points inward: the head is nearer the boat than the tail', () => {
-    for (let deg = 20; deg <= 180; deg += 5) {
-      const a = windArrow(deg, HUB, TWA_RING);
-      const d = (p: Pt) => Math.hypot(p.x - HUB.x, p.y - HUB.y);
-      expect(d(a.head)).toBeLessThan(d(a.tail));
-      expect(d(a.tail) - d(a.head)).toBeCloseTo(TWA_RING.len);
-    }
-  });
-
-  it('keeps both tags clear of the sails and inside the viewBox, TWA 20..180', () => {
-    const d = deck(SCALE);
-    const origin = { x: HUB.x, y: HUB.y - (d.sternY + d.spritTip.y) / 2 };
-    const mast = { x: origin.x, y: origin.y + d.mast.y };
-    const bow = { x: origin.x, y: origin.y };
-    // The heel inset, mirrored to windward with the tack.
-    const heel = (sd: Side) => {
-      const cx = sd === 1 ? 50 : VIEW.w - 50;
-      return { minX: cx - 34, maxX: cx + 34, minY: 226 - 44, maxY: 226 + 36 };
-    };
-
-    for (let twa = 20; twa <= 180; twa += 2) {
-      for (const side of [1, -1] as Side[]) {
-        // Widest sails the controls can produce: sheets fully eased.
-        const boom = clewAt(mast, boomAngle(0, 100), d.boomPx, side);
-        const clew = clewAt(bow, jibSheetAngle(10, 0), d.jibFootPx, side);
-        const sail = [
-          ...sailPoints(mast, boom, section({ draft: 0.2 }), side, 24),
-          ...sailPoints(bow, clew, section({ draft: 0.2 }), side, 24),
-        ];
-        const box = {
-          minX: Math.min(...sail.map((p) => p.x)),
-          maxX: Math.max(...sail.map((p) => p.x)),
-          minY: Math.min(...sail.map((p) => p.y)),
-          maxY: Math.max(...sail.map((p) => p.y)),
-        };
-        // AWA never exceeds TWA on the wind and trails it downwind.
-        for (const [deg, ring] of [
-          [twa, TWA_RING],
-          [Math.max(12, twa - 18), AWA_RING],
-        ] as [number, Ring][]) {
-          const { tag } = windArrow(side * deg, HUB, ring);
-          const outside =
-            tag.x < box.minX || tag.x > box.maxX || tag.y < box.minY || tag.y > box.maxY;
-          expect(outside, `tag ${deg}° side ${side} inside sail bbox`).toBe(true);
-          // Tags are centre-anchored; allow for the widest label we draw.
-          expect(tag.x - 24).toBeGreaterThan(0);
-          expect(tag.x + 24).toBeLessThan(VIEW.w);
-          expect(tag.y - 8).toBeGreaterThan(0);
-          expect(tag.y + 4).toBeLessThan(VIEW.h);
-          // ...and clear of the heel inset in the windward bottom corner.
-          const h = heel(side);
-          const clear =
-            tag.x + 26 < h.minX || tag.x - 26 > h.maxX || tag.y + 4 < h.minY || tag.y - 8 > h.maxY;
-          expect(clear, `tag ${deg}° side ${side} over the heel inset`).toBe(true);
-        }
-      }
-    }
-  });
-
-  it('parks the arrow head clear of the bowsprit and the transom', () => {
-    const d = deck(SCALE);
-    const reach = (d.sternY - d.spritTip.y) / 2;
-    for (let deg = -180; deg <= 180; deg += 5) {
-      for (const ring of [TWA_RING, AWA_RING]) {
-        const { head } = windArrow(deg, HUB, ring);
-        expect(Math.hypot(head.x - HUB.x, head.y - HUB.y)).toBeGreaterThan(reach + 4);
+      const st = roseArrow(deg, C, 22, 14);
+      const pt = roseArrow(-deg, C, 22, 14);
+      for (const k of ['head', 'tail'] as const) {
+        expect(pt[k].x).toBeCloseTo(2 * C.x - st[k].x);
+        expect(pt[k].y).toBeCloseTo(st[k].y);
       }
     }
   });
@@ -332,16 +274,10 @@ describe('arrowLength', () => {
     expect(arrowLength(60)).toBe(arrowLength(25));
   });
 
-  it('keeps the longest arrow inside the viewBox at every angle', () => {
-    const len = arrowLength(25);
-    for (let deg = 0; deg <= 180; deg += 2) {
-      for (const side of [1, -1] as Side[]) {
-        const { tail } = windArrow(side * deg, HUB, { ...TWA_RING, len });
-        expect(tail.x, `tail x at ${deg}°`).toBeGreaterThan(0);
-        expect(tail.x).toBeLessThan(VIEW.w);
-        expect(tail.y, `tail y at ${deg}°`).toBeGreaterThan(0);
-        expect(tail.y).toBeLessThan(VIEW.h);
-      }
+  it('fits inside the rose, arrowhead included, at every wind speed', () => {
+    for (const kt of [2, 4, 12, 25, 40]) {
+      expect(arrowLength(kt)).toBeGreaterThan(4);
+      expect(arrowLength(kt)).toBeLessThan(PLAN_LAYOUT.rose.radius);
     }
   });
 });
@@ -357,5 +293,106 @@ describe('drawnHeel', () => {
   it('is capped, so a broach does not spin the drawing', () => {
     expect(Math.abs(drawnHeel(90, 1))).toBe(MAX_DRAWN_HEEL);
     expect(Math.abs(drawnHeel(-90, 1))).toBe(MAX_DRAWN_HEEL);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The crop. SECTION_LAYOUT's fit test does this for the sail sections; this is
+// the same check for the plan view, and it is the reason the viewBox can be
+// cropped tight to the hull instead of padded until nothing could possibly
+// clip (owner feedback, 2026-08-25).
+// ---------------------------------------------------------------------------
+
+describe('PLAN_LAYOUT', () => {
+  const L = PLAN_LAYOUT;
+  const D = deck(L.scale);
+  const ORIGIN = L.origin;
+  const MAST = { x: ORIGIN.x, y: ORIGIN.y + D.mast.y };
+  const HUB = { x: ORIGIN.x, y: ORIGIN.y + (D.sternY + D.spritTip.y) / 2 };
+  /** Widest label the drawing writes ("AWA 149°"), at font-size 7, centred. */
+  const LABEL = { halfW: 17, up: 6, down: 3 };
+  /** A ribbon is 16.5 units of rect and swings ±54° about its anchor. */
+  const RIBBON = 16.5;
+
+  const labelInk = (c: Pt): Pt[] => [
+    { x: c.x - LABEL.halfW, y: c.y - LABEL.up },
+    { x: c.x + LABEL.halfW, y: c.y + LABEL.down },
+  ];
+  const around = (p: Pt, r: number): Pt[] => [
+    { x: p.x - r, y: p.y - r },
+    { x: p.x + r, y: p.y + r },
+  ];
+
+  /** Everything the heeling group draws, at one tack and one drawn heel. */
+  function boatInk(side: Side, tiltDeg: number): Pt[] {
+    // Deepest legal section, sheets fully eased: the widest the picture goes.
+    const s = section({ draft: 0.25, draftPos: 0.6 });
+    const boomDeg = boomAngle(0, -100);
+    const boomTip = clewAt(MAST, boomDeg, D.boomPx, side);
+    const jibClew = clewAt(ORIGIN, jibSheetAngle(10, 0), D.jibFootPx, side);
+    const ghostHead = openBy(
+      MAST,
+      clewAt(MAST, boomDeg, D.boomPx * DIMS.headChord.main, side),
+      30,
+      side,
+    );
+
+    const deckPts = coords(D.hull).map((p) => ({ x: ORIGIN.x + p.x, y: ORIGIN.y + p.y }));
+    const sailPts = [
+      ...sailPoints(MAST, boomTip, s, side, 24),
+      ...sailPoints(ORIGIN, jibClew, s, side, 24),
+      ...sailPoints(MAST, ghostHead, s, side, 12),
+    ];
+    // Telltales: four up the jib luff, two on the main leech.
+    const tell = [
+      ...sailPoints(ORIGIN, jibClew, s, side, 4).slice(1),
+      ghostHead,
+      clewAt(MAST, boomDeg, D.boomPx * 0.88, side),
+    ];
+
+    const pts = [
+      ...deckPts,
+      { x: ORIGIN.x, y: ORIGIN.y + D.spritTip.y },
+      { x: ORIGIN.x, y: ORIGIN.y + D.sternY },
+      ...sailPts,
+      ...tell.flatMap((p) => around(p, RIBBON)),
+    ];
+    return pts.map((p) => rotate(p, tiltDeg, HUB));
+  }
+
+  /** The wind rose and the heel figure: fixed to the tack, never heeled. */
+  function chromeInk(side: Side): Pt[] {
+    const c = { x: ORIGIN.x + side * L.rose.dx, y: ORIGIN.y + L.rose.dy };
+    return [
+      ...around(c, L.rose.radius),
+      ...L.rose.labelY.flatMap((y) => labelInk({ x: c.x, y })),
+      ...labelInk({ x: ORIGIN.x + side * L.heelTag.dx, y: L.heelTag.y }),
+    ];
+  }
+
+  it('holds every tack, heel and trim inside the viewBox', () => {
+    for (const side of [1, -1] as Side[]) {
+      for (let heel = 0; heel <= 40; heel += 5) {
+        const tilt = drawnHeel(heel, side);
+        const b = cropBox([...boatInk(side, tilt), ...chromeInk(side)]);
+        expect(b.minX, `minX side ${side} heel ${heel}`).toBeGreaterThanOrEqual(0);
+        expect(b.maxX, `maxX side ${side} heel ${heel}`).toBeLessThanOrEqual(L.w);
+        expect(b.minY, `minY side ${side} heel ${heel}`).toBeGreaterThanOrEqual(0);
+        expect(b.maxY, `maxY side ${side} heel ${heel}`).toBeLessThanOrEqual(L.h);
+      }
+    }
+  });
+
+  it('crops to the boat: the hull owns the height of the card', () => {
+    const boatLen = D.sternY - D.spritTip.y;
+    expect(boatLen / L.h).toBeGreaterThan(0.9);
+    // ...and the hull alone, which is what "how big is the boat" reads off.
+    expect(D.sternY / L.h).toBeGreaterThan(0.75);
+  });
+
+  it('keeps the wind rose clear of the deck on both tacks', () => {
+    const D2 = deck(L.scale);
+    const beam = Math.max(...coords(D2.hull).map((p) => Math.abs(p.x)));
+    expect(L.rose.dx - L.rose.radius).toBeGreaterThan(beam);
   });
 });

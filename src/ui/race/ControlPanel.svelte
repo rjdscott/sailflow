@@ -91,6 +91,7 @@
         locked={opts.locked}
         tier={opts.tier}
         target={opts.optimum ? targetFor(id) : undefined}
+        targetStale={optimum.stale || optimum.busy}
         hint={opts.optimum && !trimmed.has(id) ? NO_EFFECT : undefined}
       />
     </div>

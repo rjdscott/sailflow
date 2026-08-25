@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fmt, round, snap, windLine } from './format';
+import { fmt, round, snap, targetOf, windLine } from './format';
 import type { LogEntry } from '../lib/logStore';
 
 describe('round', () => {
@@ -78,5 +78,24 @@ describe('windLine', () => {
       (seaState) => windLine(entry({ seaState })).split(' · ')[1],
     );
     expect(states).toEqual(['flat', 'ripple', 'chop', 'steep', 'waves']);
+  });
+});
+
+describe('targetOf', () => {
+  it('is undefined with no optimum to compare against', () => {
+    expect(targetOf(5.5, undefined, 1)).toBeUndefined();
+  });
+
+  it('signs the gap positive when the target is ahead of you', () => {
+    expect(targetOf(5.5, 5.8, 1)).toEqual({ text: '5.8', delta: '+0.3' });
+    expect(targetOf(5.9, 5.8, 1)).toEqual({ text: '5.8', delta: '−0.1' });
+    expect(targetOf(5.8, 5.8, 1)).toEqual({ text: '5.8', delta: '±0.0' });
+  });
+
+  // audit ux-02 M-09: downwind VMG is negative towards the leeward mark, so
+  // the raw difference signs a gain as a loss. Same card, same convention.
+  it('flips downwind, where a more negative VMG is the gain', () => {
+    expect(targetOf(-5.0, -5.02, 2, 'less')).toEqual({ text: '-5.02', delta: '+0.02' });
+    expect(targetOf(-5.0, -4.9, 2, 'less')?.delta).toBe('−0.10');
   });
 });

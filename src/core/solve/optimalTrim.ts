@@ -12,6 +12,14 @@
  * Deterministic: fixed control order, fixed sweep budget, no Math.random, no
  * Date, no state carried between calls.
  *
+ * Multi-start: the descent runs once per seed and the best result wins
+ * (default seeds: the trim passed in, then `baseRace()`). One descent is
+ * path-dependent — same condition, same rig, three starting trims, three
+ * different answer keys (audit ux-02 H-07) — and the ticks prescribe
+ * positions, so the positions cannot depend on the order the sliders were
+ * touched. Two seeds does not make it global; it makes it reproducible from
+ * the two places the UI can actually be in, and it costs one extra descent.
+ *
  * ponytail: one step per control per sweep, no line search. Total travel is
  * therefore bounded by `sweeps` steps per control; raise `sweeps` if the UI
  * needs an optimum farther from the starting trim than that. The result is a
@@ -30,6 +38,7 @@ import type {
   SolveResult,
 } from '../types';
 import type { AeroGeometry } from '../aero/orc/forces';
+import { baseRace } from '../shape/base';
 import { geometryFor } from './equilibrium';
 import { trimmed } from './trimmed';
 
@@ -78,6 +87,14 @@ export interface OptimalTrimOptions {
   sweeps?: number;
   /** Objective gain (kt) below which a move is solver noise. prov: assumed. */
   epsilon?: number;
+  /**
+   * Starting trims. One descent per seed, best score wins; ties go to the
+   * earlier seed, so re-optimising an answer returns that answer. Default:
+   * the trim passed in, then `baseRace()`. Only the controls the search moves
+   * are taken from a seed — halyards and the inhauler stay where the sailor
+   * left them, because a seed must not rewrite trim the model never reads.
+   */
+  seeds?: RaceControls[];
 }
 
 /**
@@ -116,9 +133,8 @@ export function optimalTrim(
   // solve and must not be reported as moved.
   const active = TRIM_CONTROLS.filter((c) => condition.sailset === 'jib' || !c.startsWith('jib'));
 
-  const race = { ...controls.race };
-  for (const c of active) race[c] = snap(boat.controls[c], race[c]);
-  const start = { ...race };
+  const start = { ...controls.race };
+  for (const c of active) start[c] = snap(boat.controls[c], start[c]);
 
   let iters = 0;
   const solve = (r: RaceControls) => {
@@ -133,34 +149,52 @@ export function optimalTrim(
     return r.converged ? obj : LOST + obj;
   };
 
-  let best = solve(race);
-  let bestScore = score(best);
+  /** One coordinate descent, from `seed` on the active controls only. */
+  const descend = (seed: RaceControls) => {
+    const race = { ...controls.race };
+    for (const c of active) race[c] = snap(boat.controls[c], seed[c]);
 
-  for (let s = 0; s < sweeps; s++) {
-    let anyMove = false;
-    for (const c of active) {
-      const spec = boat.controls[c];
-      for (const dir of [1, -1]) {
-        const v = snap(spec, race[c] + dir * spec.step);
-        if (v === race[c]) continue; // at a stop in this direction
-        const r = solve({ ...race, [c]: v });
-        const sc = score(r);
-        if (sc > bestScore + eps) {
-          race[c] = v;
-          best = r;
-          bestScore = sc;
-          anyMove = true;
-          break; // one accepted step per control per sweep
+    let best = solve(race);
+    let bestScore = score(best);
+
+    for (let s = 0; s < sweeps; s++) {
+      let anyMove = false;
+      for (const c of active) {
+        const spec = boat.controls[c];
+        for (const dir of [1, -1]) {
+          const v = snap(spec, race[c] + dir * spec.step);
+          if (v === race[c]) continue; // at a stop in this direction
+          const r = solve({ ...race, [c]: v });
+          const sc = score(r);
+          if (sc > bestScore + eps) {
+            race[c] = v;
+            best = r;
+            bestScore = sc;
+            anyMove = true;
+            break; // one accepted step per control per sweep
+          }
         }
       }
+      if (!anyMove) break;
     }
-    if (!anyMove) break;
+    return { race, result: best, score: bestScore };
+  };
+
+  const seeds = opts.seeds?.length ? opts.seeds : [controls.race, baseRace()];
+  let won = descend(seeds[0]);
+  // Strictly better, so an exact tie keeps the earlier seed and the search
+  // stays idempotent on its own answer.
+  for (let i = 1; i < seeds.length; i++) {
+    const c = descend(seeds[i]);
+    if (c.score > won.score) won = c;
   }
 
   return {
-    race,
-    result: best,
-    moved: active.filter((c) => race[c] !== start[c]),
+    race: won.race,
+    result: won.result,
+    // Measured against the trim on screen, not against the winning seed:
+    // this is the list of things Apply would move.
+    moved: active.filter((c) => won.race[c] !== start[c]),
     iters,
   };
 }

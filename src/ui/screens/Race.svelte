@@ -39,8 +39,9 @@
   });
 
   $effect(() => {
-    // Same snapshot, but the store keys on condition + dock only, so dragging
-    // a race slider re-runs this effect and then costs nothing.
+    // The store keys on condition + dock + trim and debounces, so a drag
+    // re-runs this effect sixty times and buys exactly one search, seeded
+    // from where the thumb stopped (audit ux-02 H-07).
     optimum.request($state.snapshot(race.controls), conditions.value);
   });
 
@@ -56,6 +57,19 @@
   });
   let from: RaceControls | null = null;
   let to: RaceControls | null = null;
+
+  /**
+   * What the last apply moved, "mainsheet 70 → 75" per control (audit ux-02
+   * M-26). Eight sliders animating at once in a column that does not fit on
+   * one screen is not a lesson; the list of four that moved is. Cleared by
+   * undo and by the next condition change, the same life as the undo itself.
+   */
+  let applied: { label: string; text: string }[] | null = $state(null);
+
+  $effect(() => {
+    void conditions.value; // any condition change retires the list
+    applied = null;
+  });
 
   const optimumTargets = $derived(
     optimum.result
@@ -75,6 +89,15 @@
     race.remember();
     from = { ...$state.snapshot(race.controls.race) };
     to = { ...$state.snapshot(target) };
+    applied = optimum.moved.map((id) => {
+      const spec = CONTROLS[id];
+      const d = spec.step < 1 ? 1 : 0;
+      const at = (v: number) => `${v.toFixed(d)}${spec.unit ? ` ${spec.unit}` : ''}`;
+      return {
+        label: spec.label,
+        text: `${at(from![id as keyof RaceControls])} → ${at(to![id as keyof RaceControls])}`,
+      };
+    });
     progress.set(0, { duration: 0 });
     void progress.set(1);
   }
@@ -82,6 +105,7 @@
   /** Exact, and instant: an undo that eases is an undo you have to wait out. */
   function undoTrim(): void {
     from = to = null;
+    applied = null;
     progress.set(1, { duration: 0 });
     race.undo();
   }
@@ -98,8 +122,9 @@
     if (p === 1) from = to = null;
   });
 
-  /** Which number the coach and the optimum are both chasing, in words. */
-  const objective = $derived(OBJECTIVE_METRIC[raceObjective(conditions.value)]);
+  /** Which number the coach and the optimum are both chasing. */
+  const objectiveId = $derived(raceObjective(conditions.value));
+  const objective = $derived(OBJECTIVE_METRIC[objectiveId]);
   const pointOfSail = $derived(
     POINTS_OF_SAIL.find((p) => p.id === nearestPointOfSail(conditions.twaDeg))?.label ??
       'this angle',
@@ -179,6 +204,15 @@
         <span class="hint">Already there — nothing the model would move.</span>
       {/if}
     </div>
+    {#if applied?.length}
+      <ul class="moved">
+        {#each applied as m (m.label)}
+          <li>
+            <span class="moved-label">{m.label}</span> <span class="tabular-nums">{m.text}</span>
+          </li>
+        {/each}
+      </ul>
+    {/if}
     <details>
       <summary>Why</summary>
       <p>
@@ -189,9 +223,12 @@
         )} kt is below the solver's own resolution, so it is not offered as a move.
       </p>
       <p>
-        <em>Apply optimum</em> runs the same search over every control the shape layer responds to, from
-        where your sliders are now. Halyards and the inhauler are left alone — they move draft position
-        and entry angle, which the model never reads.
+        <em>Apply optimum</em> runs the same search over every control the shape layer responds to, searched
+        from where your sliders are and from the base tune; it keeps whichever finishes faster. That is
+        a local optimum on the control grid, tier B — a direction and a band, not a value to dial in.
+        Move a slider and the search runs again, so the ticks always answer the trim on screen. Halyards
+        and the inhauler are left alone — they move draft position and entry angle, which the model never
+        reads.
       </p>
     </details>
   </section>
@@ -212,6 +249,7 @@
         <Readouts
           result={race.result}
           twaDeg={conditions.twaDeg}
+          objective={objectiveId}
           variant="hero"
           busy={race.busy}
           target={optimumTargets}
@@ -299,6 +337,7 @@
         <Readouts
           result={race.result}
           twaDeg={conditions.twaDeg}
+          objective={objectiveId}
           variant="strip"
           busy={race.busy}
           target={optimumTargets}
@@ -365,19 +404,11 @@
     gap: var(--space-3);
   }
 
-  /* The boat is the thing you watch while you drag a slider, so it gets the
-     room. Capping the drawing width keeps the stroke weights sane; the
-     --tag-size override keeps the two labels at reading size at this scale. */
-  .hero-boat {
-    min-height: 480px;
-    justify-content: center;
-    --tag-size: 6px;
-  }
-
-  .hero-boat :global(svg) {
-    max-height: none;
-    max-width: 720px;
-  }
+  /* The boat is the thing you watch while you drag a slider, so it owns the
+     card's height and nothing else in it gets a minimum. PlanView crops its
+     own viewBox to the hull and sizes its own svg, which is what takes this
+     card from ~660 px to ~430 px at 1440×900 (owner feedback, 2026-08-25) —
+     enough that Sail sections and Rig elevation sit below it unscrolled. */
 
   /* Between 1024 and 1280 the primary column is too narrow to read two
      diagrams side by side, so they stack instead of shrinking. */
@@ -447,6 +478,21 @@
   .hint {
     font-size: var(--text-xs);
     color: var(--ink-2);
+  }
+
+  .moved {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  .moved-label {
+    color: var(--ink);
   }
 
   .insight-head {
