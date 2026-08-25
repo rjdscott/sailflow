@@ -37,3 +37,4 @@ tuning guides" show a triangle; Dock load does not say "Searching…".
 - 2026-08-25 — All six P0 fixes landed on `fix/ux-01-p0`, 619 tests green,
   manual walk done on the dev build (desktop). Wording of the coach line is
   still upwind-only (`+x kt VMG`); phase 02 reworks it with the target.
+- 2026-08-25 — Merged as PR #26; Pages deploy green. Phase 🟢.

@@ -62,3 +62,4 @@ readouts update; Run shows asym, VMG negative and badged.
   so the monotonicity claim belongs to `core/solve/optimal.ts` rather than
   here. `pointOfSail.test.ts` covers the bands and the sailset split instead;
   the store test covers the fetch, the rounding and the stale drop.
+- 2026-08-25 — Merged as PR #27. M-21 (wind-arrow length) landed in phase 04 / PR #29. Phase 🟢.

@@ -117,3 +117,4 @@ the UI side — `worker/protocol.ts` is one request, one response, with no
 progress message — so a progress callback needs a protocol change, and
 precomputing T*(w) or shrinking the grid needs `src/core`. Both are left for the
 owner; neither is in this phase's file ownership.
+- 2026-08-25 — Merged as PR #31 except the scoring-latency item (measured 10.5 s desktop); a follow-up PR adds worker progress messages and cuts the work. Arm→confirm on phone shipped per owner brief, diverging from the audit's one-tap suggestion; revert is deleting `arm/disarm`.
