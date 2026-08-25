@@ -10,7 +10,7 @@ import {
   sailsetCl,
 } from './depower';
 import { jibTwistCeDropM, twistCeFactor } from './twist';
-import { FLAT_MIN_BASE } from './tables';
+import { FLAT_MIN_BASE, FLAT_MIN_SPINNAKER } from './tables';
 
 describe('flat bounds', () => {
   it('the 2023 baseline minimum flat is 0.42', () => {
@@ -28,6 +28,25 @@ describe('flat bounds', () => {
     expect(clampFlat(0.1)).toBe(0.42);
     expect(clampFlat(0.7)).toBe(0.7);
     expect(clampFlat(0.1, 0.8)).toBeCloseTo(0.336, 12);
+  });
+
+  it('the spinnaker floor is 0.53, and flat never goes below it under the kite', () => {
+    // prov: ORC VPP 2026 §5.1 footnote 3 -- offwind baseline raised to 0.53 in 2024
+    expect(FLAT_MIN_SPINNAKER).toBe(0.53);
+    expect(flatMin(1, 'asym')).toBe(0.53);
+    expect(clampFlat(0.1, 1, 'asym')).toBe(0.53);
+    expect(clampFlat(0.42, 1, 'asym')).toBe(0.53);
+    expect(clampFlat(0.7, 1, 'asym')).toBe(0.7);
+    // Flat8 re-modulation still applies offwind.
+    expect(flatMin(0.8, 'asym')).toBeCloseTo(0.424, 12);
+  });
+
+  it('leaves the jib on the 0.42 floor', () => {
+    expect(flatMin(1, 'jib')).toBe(0.42);
+    expect(clampFlat(0.1, 1, 'jib')).toBe(0.42);
+    // 0.45 is legal upwind and illegal under the kite: the two floors differ.
+    expect(clampFlat(0.45, 1, 'jib')).toBe(0.45);
+    expect(clampFlat(0.45, 1, 'asym')).toBe(0.53);
   });
 });
 

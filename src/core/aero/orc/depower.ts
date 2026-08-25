@@ -9,22 +9,27 @@
  * This module does not run ORC's optimiser: the caller supplies flat and reef
  * and this module applies them exactly as the documented routine does.
  */
-import { FCDMULT_FLAT, FCDMULT_VALUE, FLAT_MIN_BASE } from './tables';
+import type { SailSet } from '../../types';
+import { FCDMULT_FLAT, FCDMULT_VALUE, FLAT_MIN_BASE, FLAT_MIN_SPINNAKER } from './tables';
 import { lerpTable } from './coeffs';
 
 /**
- * FlatMIN = 0.42 * Flat8, where Flat8 is the flat value used with jib upwind
- * at TWS 8 kt and TWA 52 deg. The re-modulation exists so that a boat already
- * de-powering in light airs gets the same *relative* reduction.
- * prov: ORC VPP 2023 §5.1.3, step 1 (0.42 baseline set in 2023)
+ * FlatMIN = baseline * Flat8, where Flat8 is the flat value used with jib
+ * upwind at TWS 8 kt and TWA 52 deg. The re-modulation exists so that a boat
+ * already de-powering in light airs gets the same *relative* reduction.
+ *
+ * The baseline is sailset-dependent: 0.42 upwind, but 0.53 with a spinnaker
+ * or a headsail set flying, so the asymmetric floors 26 % higher than the jib.
+ * prov: ORC VPP 2023 §5.1.3, step 1 (0.42 baseline set in 2023); ORC VPP 2026
+ * §5.1, footnote 3 (0.53 offwind baseline, changed in 2024)
  */
-export function flatMin(flat8 = 1): number {
-  return FLAT_MIN_BASE * flat8;
+export function flatMin(flat8 = 1, sailset: SailSet = 'jib'): number {
+  return (sailset === 'asym' ? FLAT_MIN_SPINNAKER : FLAT_MIN_BASE) * flat8;
 }
 
 /** Clamp flat into [FlatMIN, 1]. prov: ORC VPP 2023 §5.1.3 */
-export function clampFlat(flat: number, flat8 = 1): number {
-  return Math.min(1, Math.max(flatMin(flat8), flat));
+export function clampFlat(flat: number, flat8 = 1, sailset: SailSet = 'jib'): number {
+  return Math.min(1, Math.max(flatMin(flat8, sailset), flat));
 }
 
 /**

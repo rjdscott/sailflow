@@ -29,6 +29,13 @@ describe('equilibrium', () => {
       expect(e.heelDeg).toBeGreaterThanOrEqual(0);
     }
   });
+  it('floors flat at the sailset ORC minimum, 0.53 under the kite', () => {
+    // prov: ORC VPP 2026 §5.1 footnote 3. Guards the sailset threading through
+    // forces.ts, which a floor test on clampFlat alone would not catch.
+    const deep = { flat: 0.1, reef: 1, twistEffDeg: 10 };
+    expect(solveEquilibrium(boat, { condition: dn, tune: deep }).aero.flat).toBe(0.53);
+    expect(solveEquilibrium(boat, { condition: up, tune: deep }).aero.flat).toBe(0.42);
+  });
   it('is deterministic and independent of call order', () => {
     const a1 = solveEquilibrium(boat, { condition: up, tune });
     const b1 = solveEquilibrium(boat, { condition: dn, tune });
