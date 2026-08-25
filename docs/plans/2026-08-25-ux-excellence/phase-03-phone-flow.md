@@ -206,3 +206,4 @@ JSON-safe; client asserts callbacks arrive before the result and never after;
 `solve.test.ts` asserts the coarse budgets stay within 0.5 % of the full solve
 at three conditions and that progress cannot change the result; store tests
 cover the provisional→full handover and stale-run progress.
+- 2026-08-25 — Latency follow-up merged as PR #35 (first paint 0.7 s desktop, full 4.2 s with a live count). Phase 🟢 pending the real-phone pass.

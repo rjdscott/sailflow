@@ -27,8 +27,8 @@ already exists as `optimal` with `optimiseTwa: false`).
 |----|-------|--------|-------------|
 | 00 | [P0 defects](phase-00-p0-defects.md) | 🟢 Completed | 2026-08-25 |
 | 01 | [Conditions and point of sail](phase-01-conditions-and-point-of-sail.md) | 🟢 Completed | 2026-08-25 |
-| 02 | [Optimise to target](phase-02-optimise-to-target.md) | 🟡 In progress | 2026-08-25 |
-| 03 | [Phone flow and loading states](phase-03-phone-flow.md) | 🟡 In progress | 2026-08-25 |
+| 02 | [Optimise to target](phase-02-optimise-to-target.md) | 🟢 Completed | 2026-08-25 |
+| 03 | [Phone flow and loading states](phase-03-phone-flow.md) | 🟢 Completed | 2026-08-25 |
 | 04 | [Motion](phase-04-motion.md) | 🟢 Completed | 2026-08-25 |
 | 05 | [Accessibility and design system](phase-05-a11y-and-design-system.md) | 🟢 Completed | 2026-08-25 |
 | 06 | [Content and comparison](phase-06-content-and-comparison.md) | 🔵 Not started | none |
@@ -59,3 +59,15 @@ already exists as `optimal` with `optimiseTwa: false`).
 - Owner decisions 2026-08-25, recorded in
   [decision log rows 23–27](../../research/2026-08-25-sailing-sim-landscape/04-decision-log.md).
 - ADR 0011 (2D only for Epic 1) stays in force.
+
+## State at end of the second autonomous block (2026-08-25)
+
+Phases 00–05 merged as PRs #26–#35; phase 06 (content and comparison) is
+🔵 and the lowest priority. Punchlist: 1 C, 5 H and 19 M closed; open are
+M-12, M-18, M-19, M-20, M-23 (all phase 06), L-01, L-03.
+
+Still owed by a human with a phone: the on-device pass (phase 02 and 03
+budgets were measured on desktop only) and the offline reload from the MVP
+plan. Side findings for the solver plan: downwind VMG-vs-TWA is
+multi-modal at 16 kt (phase 03 log), and `optimalTrim` is a grid-local
+optimum with a fixed sweep budget (phase 02 log).
