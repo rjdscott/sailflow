@@ -7,8 +7,12 @@
    --accent       the one interactive colour, and the flying shape in drawings
    --good/--warn/--bad  meaning only, never decoration
    --line         hairline borders (cards, rails, dividers)
+   --line-strong  borders that carry meaning rather than decoration: chips,
+                  badges, the outline of a control. >= 3:1 on --bg and
+                  --surface in both themes (WCAG 1.4.11, audit ux-01 L-02)
    --muted        filled geometry that must recede: slider troughs, axes,
-                  reference/guide shapes behind a live curve
+                  reference/guide shapes behind a live curve. Also >= 3:1:
+                  the unfilled trough is what shows how much travel is left
    --hull         deck fill in the plan view: one step off --surface, so the
                   boat lifts off the card it is drawn on */
 
@@ -19,7 +23,8 @@
   --ink: #0b1220;
   --ink-2: #3a4250;
   --line: #dde3ea;
-  --muted: #cbd3de;
+  --line-strong: #838d9b;
+  --muted: #7d8794;
   --accent: #0057d9;
   --on-accent: #ffffff;
   --good: #1b8a3a;
@@ -62,7 +67,8 @@
     --ink: #f3f6fa;
     --ink-2: #aeb7c4;
     --line: #26303b;
-    --muted: #2f3a47;
+    --line-strong: #5f6b7a;
+    --muted: #6b7686;
     --accent: #6fa8ff;
     --on-accent: #0b0f14;
     --good: #5bd07c;
@@ -78,7 +84,8 @@
   --ink: #f3f6fa;
   --ink-2: #aeb7c4;
   --line: #26303b;
-  --muted: #2f3a47;
+  --line-strong: #5f6b7a;
+  --muted: #6b7686;
   --accent: #6fa8ff;
   --on-accent: #0b0f14;
   --good: #5bd07c;

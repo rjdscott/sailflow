@@ -2,6 +2,8 @@
   import type { Tier } from '../../core/types';
   import { fmt, snap } from '../format';
   import ConfidenceBadge from './ConfidenceBadge.svelte';
+  import LockIcon from './LockIcon.svelte';
+  import { parseEdit, valueText } from './logic';
 
   let {
     label,
@@ -11,7 +13,9 @@
     step,
     unit = '',
     tick,
+    guide,
     locked = false,
+    lockReason = 'Committed at the dock, rule C.9.5.',
     tier,
     hint,
     decimals = 1,
@@ -22,12 +26,18 @@
     max: number;
     step: number;
     unit?: string;
+    /** Single guide value, drawn as a mark on the track. */
     tick?: number;
+    /** Guide band [lo, hi], announced as "guide 60–75 %". */
+    guide?: [number, number];
     locked?: boolean;
+    lockReason?: string;
     tier?: Tier;
     hint?: string;
     decimals?: number;
   } = $props();
+
+  const uid = $props.id();
 
   let editing = $state(false);
   let editValue = $state('');
@@ -38,18 +48,35 @@
   const tickPct = $derived(tick === undefined ? undefined : pct(tick));
   const fillPct = $derived(pct(value));
 
+  /** The band wins over the single tick when both are supplied. */
+  const guideText = $derived(guide ?? tick);
+
+  // The lock reason and the guide hint are prose about the control, so they
+  // hang off the range as descriptions rather than being baked into its name.
+  const describedBy = $derived(
+    [locked ? `${uid}-lock` : '', hint ? `${uid}-hint` : ''].filter(Boolean).join(' ') || undefined,
+  );
+
   function onInput(e: Event): void {
+    const el = e.target as HTMLInputElement;
+    // Locked sliders stay focusable and readable (aria-disabled, not disabled),
+    // so the guard has to put the DOM value back itself.
+    if (locked) {
+      el.value = String(value);
+      return;
+    }
+    value = snap(Number(el.value), min, max, step);
+  }
+
+  function openEditor(): void {
     if (locked) return;
-    const raw = Number((e.target as HTMLInputElement).value);
-    value = snap(raw, min, max, step);
+    editValue = String(value);
+    editing = true;
   }
 
   function startPress(): void {
     if (locked) return;
-    pressTimer = setTimeout(() => {
-      editValue = String(value);
-      editing = true;
-    }, 500);
+    pressTimer = setTimeout(openEditor, 500);
   }
 
   function cancelPress(): void {
@@ -57,13 +84,24 @@
   }
 
   function commitEdit(): void {
-    const n = Number(editValue);
-    if (!Number.isNaN(n)) value = snap(n, min, max, step);
+    if (!editing) return;
+    value = parseEdit(editValue, value, min, max, step);
     editing = false;
   }
 
-  function onLockedTap(): void {
-    showLockNote = !showLockNote;
+  function cancelEdit(): void {
+    editing = false;
+  }
+
+  function onEditKey(e: KeyboardEvent): void {
+    if (e.key === 'Enter') commitEdit();
+    else if (e.key === 'Escape') cancelEdit();
+  }
+
+  /** The editor is useless unless it is where you are typing. */
+  function focusOnMount(node: HTMLInputElement): void {
+    node.focus();
+    node.select();
   }
 </script>
 
@@ -76,20 +114,28 @@
     {#if editing}
       <input
         class="readout-input tabular-nums"
-        type="text"
+        type="number"
         inputmode="decimal"
-        bind:value={editValue}
+        {min}
+        {max}
+        {step}
+        aria-label="{label} value"
+        value={editValue}
+        oninput={(e) => (editValue = e.currentTarget.value)}
         onblur={commitEdit}
-        onkeydown={(e) => e.key === 'Enter' && commitEdit()}
+        onkeydown={onEditKey}
+        use:focusOnMount
       />
     {:else}
       <button
         type="button"
-        class="readout tabular-nums"
+        class="readout tabular-nums hit-44"
+        onclick={openEditor}
         onpointerdown={startPress}
         onpointerup={cancelPress}
         onpointerleave={cancelPress}
-        aria-label="{label} value, long-press to edit"
+        disabled={locked}
+        aria-label="Edit {label} value"
       >
         {fmt(value, decimals, unit)}
       </button>
@@ -101,11 +147,13 @@
       class="range"
       type="range"
       aria-label={label}
+      aria-valuetext={valueText(value, decimals, unit, guideText)}
+      aria-describedby={describedBy}
+      aria-disabled={locked ? 'true' : undefined}
       {min}
       {max}
       {step}
       {value}
-      disabled={locked}
       oninput={onInput}
     />
     {#if tickPct !== undefined}
@@ -115,21 +163,25 @@
       <button
         type="button"
         class="lock-overlay"
-        onclick={onLockedTap}
-        aria-label="Locked control, tap for why"
+        onclick={() => (showLockNote = !showLockNote)}
+        aria-expanded={showLockNote}
+        aria-controls="{uid}-lock"
+        aria-label="Why {label} is locked"
       >
-        🔒
+        <LockIcon />
       </button>
     {/if}
   </div>
 
-  {#if locked && showLockNote}
-    <p class="lock-note">
-      Locked by class rule C.9.5(a): standing rigging can't be adjusted between leaving the dock and
-      racing finishing for the day.
+  {#if locked}
+    <!-- Always in the accessibility tree, revealed on tap for everyone else. -->
+    <p id="{uid}-lock" class="lock-note" class:sr-only={!showLockNote}>
+      {lockReason} Standing rigging can't be adjusted between leaving the dock and racing finishing for
+      the day.
     </p>
-  {:else if hint}
-    <p class="hint">{hint}</p>
+  {/if}
+  {#if hint}
+    <p id="{uid}-hint" class="hint">{hint}</p>
   {/if}
 </div>
 
@@ -157,7 +209,8 @@
   }
 
   /* The value is the thing you read while dragging: tabular, right-aligned,
-     and wide enough that digits never shift the label. */
+     and wide enough that digits never shift the label. Click, Enter or Space
+     turns it into the editor; long-press still does too. */
   .readout {
     flex: none;
     min-width: 5.5ch;
@@ -169,6 +222,10 @@
     font-weight: 600;
     text-align: right;
     cursor: pointer;
+  }
+
+  .readout:disabled {
+    cursor: default;
   }
 
   .readout-input {
@@ -232,7 +289,7 @@
     border: 2px solid var(--bg);
   }
 
-  .range:disabled {
+  .range[aria-disabled='true'] {
     cursor: not-allowed;
   }
 
@@ -263,9 +320,12 @@
   .lock-overlay {
     position: absolute;
     right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
-    font-size: var(--text-md);
+    color: var(--ink-2);
     min-width: var(--hit-min);
     min-height: var(--hit-min);
     cursor: pointer;

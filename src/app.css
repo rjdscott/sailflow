@@ -18,6 +18,7 @@
      .hero-number    40/44 px tabular readout, .hero-unit inline beside it
      .chip-row/.chip pill row for conditions and other compact facts
      .hit-44         gives a small control a 44 px hit area without growing it
+     .sr-only        visible to a screen reader, not to the eye
      .lg-only/.lg-hide  render both variants, let CSS pick at 1024
      .mono           tabular monospace, for compact number tables */
 
@@ -189,7 +190,8 @@ details[open] > summary::before {
   gap: var(--space-1);
   height: 32px;
   padding: 0 var(--space-3);
-  border: 1px solid var(--line);
+  /* The outline is the chip: --line was 1.3:1 and vanished (audit ux-01 L-02). */
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink);
@@ -203,6 +205,20 @@ button.chip {
   color: var(--accent);
   background: transparent;
   cursor: pointer;
+}
+
+/* Present to a screen reader, absent to the eye: prose that a control is
+   described by but that only clutters the screen until it is asked for. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* A 44 px target around a control that should stay visually small. */
