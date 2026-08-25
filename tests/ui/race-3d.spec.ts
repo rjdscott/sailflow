@@ -16,18 +16,28 @@ import { expect, test, type Page } from '@playwright/test';
 
 const HERO = '.hero-boat';
 
-async function openHero(page: Page, query: string): Promise<void> {
-  await page.addInitScript(() => {
+/**
+ * `motion: 'default'` deliberately leaves `sailflow.motion` unset, which is
+ * the `'system'` default every real visitor lands on. Pinning it to `'off'` is
+ * what hid ux-03 H-09 for a whole phase, so the reduced-motion test below must
+ * not do it.
+ */
+async function openHero(
+  page: Page,
+  query: string,
+  motion: 'off' | 'default' = 'off',
+): Promise<void> {
+  await page.addInitScript((m) => {
     try {
       // Force the 3D branch: the toggle is persisted, and a fresh profile
       // would otherwise take the default.
       localStorage.setItem('sailflow.hero.v1', '3d');
       // Frozen telltales need frozen everything else too.
-      localStorage.setItem('sailflow.motion', 'off');
+      if (m === 'off') localStorage.setItem('sailflow.motion', 'off');
     } catch {
       // ignore: storage disabled, the URL params still drive the view
     }
-  });
+  }, motion);
   await page.goto(`/#/race?${query}`);
   await page.waitForFunction(
     () => (window as unknown as { __sailViewReady?: boolean }).__sailViewReady === true,
@@ -35,6 +45,24 @@ async function openHero(page: Page, query: string): Promise<void> {
     { timeout: 60_000 },
   );
 }
+
+/** Counts hero renders: `WebGLRenderer.render` clears before it draws. */
+async function countRenders(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __glClears?: number };
+    w.__glClears = 0;
+    for (const proto of [WebGL2RenderingContext.prototype, WebGLRenderingContext.prototype]) {
+      const clear = proto.clear;
+      proto.clear = function (this: WebGLRenderingContext, mask: number): void {
+        w.__glClears = (w.__glClears ?? 0) + 1;
+        clear.call(this, mask);
+      };
+    }
+  });
+}
+
+const clears = (page: Page): Promise<number> =>
+  page.evaluate(() => (window as unknown as { __glClears?: number }).__glClears ?? 0);
 
 test('renders the 3D hero from the leeward quarter', async ({ page }) => {
   await openHero(page, 'view=leeward&freeze=1');
@@ -88,4 +116,59 @@ test('mounts the 3D view once on a phone, in the one hero card there is', async 
   await openHero(page, 'view=leeward&freeze=1');
   await expect(page.locator('canvas')).toHaveCount(1);
   await expect(page.locator(`${HERO} canvas`)).toHaveCount(1);
+});
+
+test('an OS reduced-motion preference freezes the hero and parks the render loop', async ({
+  page,
+}) => {
+  // ux-03 H-09. `sailflow.motion` stays unset — `'system'`, the default every
+  // real visitor lands on — so the only thing that can freeze the hero is the
+  // media query. Pinning the setting to `'off'`, which the tests above do, is
+  // exactly what hid this for a phase. No `freeze=1` either, for the same
+  // reason: it would freeze the view by fiat and assert nothing.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await countRenders(page);
+  await openHero(page, 'view=leeward', 'default');
+
+  const canvas = page.locator(`${HERO} canvas`);
+  await expect(canvas).toBeVisible();
+
+  // Past the resize, the geometry build, and the 600 ms camera tween a moving
+  // hero would still be running.
+  await page.waitForTimeout(800);
+  const before = await clears(page);
+  const a = await canvas.screenshot();
+  await page.waitForTimeout(400);
+  const b = await canvas.screenshot();
+
+  // Two frames a few hundred ms apart, byte for byte: the audit's method.
+  expect(b.equals(a)).toBe(true);
+  // And the loop is parked, not merely redrawing the same thing 60 times a second.
+  expect(await clears(page)).toBe(before);
+});
+
+test('the first-frame gate falls back to 2D when the hero is too slow to mount', async ({
+  page,
+}) => {
+  // ux-03 H-12. The old gate timed a warm *second* render — GPU command
+  // submission, ~1 ms — and passed at every throttle rate, so nothing could
+  // ever reach the 2D fallback it guards. Mount → first frame is 60–600 ms
+  // depending on the machine, so the budget is pinned to 1 ms through the
+  // test seam rather than trusting a CPU throttle to beat 350 ms everywhere.
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('sailflow.hero.v1', '3d');
+      localStorage.setItem('sailflow.motion', 'off');
+      localStorage.setItem('sailflow.hero.budget', '1');
+    } catch {
+      // ignore: storage disabled, the URL params still drive the view
+    }
+  });
+  // No `freeze=1`: that exempts the gate, so the screenshot baseline is stable.
+  await page.goto('/#/race?view=leeward');
+
+  const hero = page.locator(HERO);
+  await expect(hero.getByText('3D ran slow on this device')).toBeVisible({ timeout: 60_000 });
+  await expect(hero.locator('canvas')).toHaveCount(0);
+  await expect(hero.locator('svg[role="img"]').first()).toBeVisible();
 });

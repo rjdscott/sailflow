@@ -37,6 +37,7 @@
   } from 'three';
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   import { onMount } from 'svelte';
+  import { prefersReducedMotion } from 'svelte/motion';
   import type { RaceControls, SolveResult } from '../../core/types';
   import { boomAngle, jibSheetAngle } from '../race/boat';
   import { settings } from '../stores/settings.svelte';
@@ -208,10 +209,21 @@
   let raf = 0;
   let visible = true;
   let onScreen = true;
-  let firstFrame = 0;
+  /** `performance.now()` at mount; the first-frame gate is measured from here. */
+  let mountedAt = 0;
 
-  /** Frozen telltales: the Playwright shot and reduced motion both want this. */
-  const still = $derived(freeze || settings.motion === 'off');
+  /**
+   * Frozen telltales and jump-cut camera: the Playwright shot wants this, and
+   * so does a reduced-motion preference. `'system'` is the default setting, so
+   * the media query is the branch that actually carries OS preferences here —
+   * testing only `motion === 'off'` meant reduced motion never reached the
+   * hero at all (ux-03 H-09).
+   */
+  const still = $derived(
+    freeze ||
+      settings.motion === 'off' ||
+      (settings.motion === 'system' && prefersReducedMotion.current),
+  );
 
   function schedule(): void {
     if (raf || !renderer || !visible || !onScreen) return;
@@ -230,20 +242,23 @@
     const tweening = tween !== null && stepTween(t);
     if (!still) telltaleMat.uniforms.uTime.value = t / 1000;
     if (dirty || moving || tweening || !still) {
-      const t0 = performance.now();
       renderer.render(scene, camera);
       dirty = false;
       if (frames < 2) {
         frames++;
         if (frames === 1) {
-          // The first render pays for context creation and shader compiles
-          // (tens of ms on any GPU), which is not what the gate is about;
-          // ask for one more frame and time that one.
+          // The gate is wall-clock from mount to the first frame the user
+          // could see: context creation, shader compiles and geometry upload
+          // are the cost, and they all land here. Timing a *second* render
+          // instead measured GPU command submission on a warm context, which
+          // is ~1 ms on any device and never tripped (ux-03 H-12).
+          onready?.(performance.now() - mountedAt);
+          // This frame drew at the renderer's default size: `ResizeObserver`
+          // callbacks run after animation frames, so the real canvas size only
+          // lands now. Ask for one more, and call *that* one ready.
           dirty = true;
         } else {
-          firstFrame = performance.now();
           (window as unknown as { __sailViewReady?: boolean }).__sailViewReady = true;
-          onready?.(firstFrame - t0);
         }
       }
     }
@@ -470,6 +485,7 @@
   // --- lifecycle -----------------------------------------------------------
 
   onMount(() => {
+    mountedAt = performance.now();
     renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     // Three-times retina buys 2.25x the pixels for no visible gain; a phone
     // with four cores or fewer pays for it in frame time (research 03 §6).
@@ -544,7 +560,7 @@
   });
 
   $effect(() => {
-    if (renderer) goTo(preset, still || settings.motion === 'off');
+    if (renderer) goTo(preset, still);
   });
 
   $effect(() => {

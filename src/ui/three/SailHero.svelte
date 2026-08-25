@@ -4,8 +4,8 @@
    * plan view when it cannot or when the user asks for it (ADR 0014).
    *
    * Three gates, in order. WebGL has to exist; the 3D chunk has to arrive; and
-   * the first frame has to land inside `FIRST_FRAME_BUDGET_MS`. Any of them
-   * failing leaves the plan view on screen, which is also what is showing
+   * mount → first frame has to land inside `FIRST_FRAME_BUDGET_MS`. Any of
+   * them failing leaves the plan view on screen, which is also what is showing
    * while the chunk downloads — so there is nothing to fall back *from*.
    */
   import { onMount, type Component } from 'svelte';
@@ -20,13 +20,35 @@
   let { result, twaDeg }: { result: SolveResult; twaDeg: number } = $props();
 
   /**
-   * How long the first frame may take before the 3D view is judged too heavy
-   * for this device and the 2D view keeps the slot.
-   * prov: assumed 50 ms — ADR 0014's committed gate. It is a phone budget, not
-   * a measurement: three frames at 60 Hz is the most a hero may cost before it
-   * is felt as a stall on the screen you drag sliders on.
+   * How long the hero may take, from mount to the first frame on screen,
+   * before the 3D view is judged too heavy for this device and the 2D view
+   * keeps the slot.
+   *
+   * prov: assumed 350 ms — ADR 0014's gate, re-picked 2026-08-25 against
+   * measured wall-clock (see the ADR's Consequences amendment). ADR 0014's
+   * 50 ms was three frames at 60 Hz, but it was applied to a *warm second
+   * render* — GPU command submission, ~1 ms everywhere — so it never tripped
+   * (ux-03 H-12). This times the whole cost instead: geometry build, context
+   * creation, shader compiles and upload. Measured in the pinned Playwright
+   * image, mount → first frame: 60–137 ms unthrottled (the 137 is a 2-core
+   * container, the CI worst case), 115–119 ms at 4× CPU, 271–279 ms at 10×,
+   * 605–609 ms at 20×. 350 ms sits in the gap between the 10× class, which
+   * still renders acceptably, and the 20× stand-in for a low-end Android that
+   * the fallback exists for, with ~2.6× headroom over the slowest fast-path
+   * measurement so no desktop and no CI runner trips it.
    */
-  const FIRST_FRAME_BUDGET_MS = 50;
+  const FIRST_FRAME_BUDGET_MS = 350;
+  /** Test seam: `sailflow.hero.budget` overrides the budget, so the gate can
+   *  be exercised on any machine instead of only on one slow enough. */
+  function budgetMs(): number {
+    try {
+      const v = Number(localStorage.getItem('sailflow.hero.budget'));
+      if (Number.isFinite(v) && v > 0) return v;
+    } catch {
+      // storage disabled: the built-in budget
+    }
+    return FIRST_FRAME_BUDGET_MS;
+  }
 
   const KEY = 'sailflow.hero.v1';
   type Hero = '3d' | 'plan';
@@ -70,8 +92,9 @@
   /**
    * `?freeze=1` pins the telltales and jump-cuts the camera. It also exempts
    * the view from the first-frame gate: it exists so a screenshot is
-   * deterministic, and software rendering in CI is always over the phone
-   * budget. The gate still runs on every ordinary visit.
+   * deterministic, and a baseline that silently becomes a shot of the 2D
+   * fallback whenever a CI runner is busy is worse than no baseline. The gate
+   * still runs on every ordinary visit.
    */
   const freeze = params.freeze === '1';
 
@@ -125,7 +148,7 @@
   });
 
   function onready(ms: number): void {
-    if (!freeze && ms > FIRST_FRAME_BUDGET_MS) tooSlow = true;
+    if (!freeze && ms > budgetMs()) tooSlow = true;
   }
 </script>
 

@@ -190,13 +190,16 @@ test('the phone instrument band keeps four readings and hides the rest behind Mo
   await page.setViewportSize(PHONE);
   await page.goto('/#/race');
 
+  // Labels, not text: the band also carries a screen-reader status that
+  // names VMG in prose (H-08), so a text match is ambiguous.
   const bar = page.locator('.bar');
-  await expect(bar.getByText('BSP')).toBeVisible();
-  await expect(bar.getByText('%POLAR')).toBeVisible();
-  await expect(bar.getByText('VMG')).toBeVisible();
-  await expect(bar.getByText('HEEL')).toBeVisible();
-  await expect(bar.getByText('TWA')).toBeHidden();
+  const label = (t: string) => bar.locator('.section-title', { hasText: t }).first();
+  await expect(label('BSP')).toBeVisible();
+  await expect(label('%POLAR')).toBeVisible();
+  await expect(label('VMG')).toBeVisible();
+  await expect(label('HEEL')).toBeVisible();
+  await expect(label('TWA')).toBeHidden();
 
   await bar.getByRole('button', { name: 'More' }).click();
-  await expect(bar.getByText('TWA')).toBeVisible();
+  await expect(label('TWA')).toBeVisible();
 });
