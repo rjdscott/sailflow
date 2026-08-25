@@ -18,6 +18,15 @@ import type { Condition, RaceControls, SailSet, SeaState } from '../../core/type
  */
 export const BASE_RACE: RaceControls = boatJson.baseRace as RaceControls;
 
+/**
+ * What changes about the base trim once the kite is up, from the same JSON:
+ * the mainsheet eased until the boom is out past the corner of the boat. A
+ * beat's mainsheet under a kite draws a boom on the centreline, which is the
+ * one thing about the upwind trim that is not merely unfast but wrong.
+ * Tier C — a cue from the sailmaker guides, not a solve (`optimalTrim`).
+ */
+export const BASE_RACE_DOWN: Partial<RaceControls> & { mainsheet: number } = boatJson.baseRaceDown;
+
 export interface Preset {
   id: string;
   label: string;
@@ -77,13 +86,15 @@ export const PRESETS: Preset[] = [
     race: {
       ...BASE_RACE,
       backstay: 10,
-      mainsheet: 20,
       traveller: 0,
       cunningham: 0,
       outhaul: 100,
       vang: 40,
       jibSheet: 0,
       inhauler: 0,
+      // Last, so the one downwind number that lives in the boat JSON wins
+      // over anything above it rather than being restated here.
+      ...BASE_RACE_DOWN,
     },
   },
 ];

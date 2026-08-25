@@ -255,6 +255,9 @@
     "mainHalyard": 50,
     "jibHalyard": 50
   },
+  "baseRaceDown": {
+    "mainsheet": 15
+  },
   "calibration": {
     "hydro.formFactor": 0.02965707577002189,
     "hydro.rrMul.fn20": 0.36421419027076724,
@@ -930,6 +933,11 @@
       "source": "app-convention",
       "kind": "assumed",
       "note": "see baseRace.backstay"
+    },
+    "baseRaceDown.mainsheet": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, mid the 60-80 degree band of research 2026-08-25-spinnaker doc 03 sections 2.1 (T3) and 2.2 (T2). Tier C cue, not a solve: see core/solve/optimalTrim notSolved"
     },
     "baseRace.traveller": {
       "source": "app-convention",

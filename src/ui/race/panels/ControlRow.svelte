@@ -3,7 +3,7 @@
   import Slider from '../../components/Slider.svelte';
   import { TRIM_CONTROLS } from '../../../worker/protocol';
   import { BASE_RACE } from '../../stores/conditions.svelte';
-  import { optimum } from '../optimum.svelte';
+  import { NOT_SOLVED_HINT, optimum } from '../optimum.svelte';
   import { CONTROLS, race, type Chevron } from '../store.svelte';
 
   /**
@@ -45,8 +45,17 @@
    * entry angle, which the shape layer never reads, so the search does not
    * touch them and a tick there would be a fabricated answer key (audit M-09).
    */
+  /**
+   * Controls the search ran but declined to answer — the mainsheet under the
+   * kite. Its value in `optimum.race` is the trim that went in, so drawing it
+   * as a target would present the upwind setting as a downwind answer.
+   */
+  const unsolved = $derived(optimum.notSolved.includes(id));
+
   const target = $derived(
-    optimumBug && trimmed.has(id) ? optimum.race?.[id as keyof RaceControls] : undefined,
+    optimumBug && trimmed.has(id) && !unsolved
+      ? optimum.race?.[id as keyof RaceControls]
+      : undefined,
   );
 
   /** The base trim, marked on the track. Not a tuning-guide number (base.ts). */
@@ -76,7 +85,11 @@
       {target}
       targetStale={optimum.stale || optimum.busy}
       highlight={race.hovering?.includes(id) ?? false}
-      hint={optimumBug && !trimmed.has(id) ? NO_EFFECT : undefined}
+      hint={optimumBug && !trimmed.has(id)
+        ? NO_EFFECT
+        : optimumBug && unsolved
+          ? NOT_SOLVED_HINT
+          : undefined}
     />
   </div>
   <div class="side">

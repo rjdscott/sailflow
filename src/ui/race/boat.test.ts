@@ -22,6 +22,7 @@ import {
   leechRibbon,
 } from './boat';
 import { cropBox, rotate, type Pt } from './geometry';
+import { BASE_RACE, BASE_RACE_DOWN } from '../stores/conditions.svelte';
 
 const section = (over: Partial<SectionShape> = {}): SectionShape => ({
   draft: 0.13,
@@ -122,6 +123,22 @@ describe('boomAngle', () => {
         expect(a).toBeLessThanOrEqual(90);
       }
     }
+  });
+
+  /**
+   * The owner-visible defect: at 150° TWA the plan view and the 3D hero drew a
+   * beat's boom, ~20° off the centreline, because the upwind mainsheet was
+   * still on the slider. The mapping is right about that — boom angle is sheet
+   * and traveller, not wind angle — so the fix is the trim, and this is the
+   * number the trim now uses. Out past the corner of the boat, leech bearing
+   * on the leeward shroud, the 60-80° band the guides describe (research
+   * `2026-08-25-spinnaker` doc 03 §2.1 `T3`, §2.2 `T2`).
+   */
+  it('draws the downwind base trim in the eased band and the upwind one on a beat', () => {
+    const down = boomAngle(BASE_RACE_DOWN.mainsheet, BASE_RACE.traveller);
+    expect(down).toBeGreaterThanOrEqual(60);
+    expect(down).toBeLessThanOrEqual(80);
+    expect(boomAngle(BASE_RACE.mainsheet, BASE_RACE.traveller)).toBeLessThan(25);
   });
 });
 

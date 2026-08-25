@@ -13,7 +13,7 @@ import {
   raceObjective,
   RaceStore,
 } from './store.svelte';
-import { BASE_RACE, conditions, PRESETS } from '../stores/conditions.svelte';
+import { BASE_RACE, BASE_RACE_DOWN, conditions, PRESETS } from '../stores/conditions.svelte';
 import { optimum } from './optimum.svelte';
 
 const CONDITION: Condition = { twsKt: 12, twaDeg: 42, seaState: 1, crewKg: 300, sailset: 'jib' };
@@ -379,6 +379,34 @@ describe('RaceStore.setPointOfSail', () => {
     expect(store.pointOfSailBusy).toBeNull();
   });
 
+  /**
+   * A beat's mainsheet under a kite draws the boom on the centreline, which is
+   * the one thing about carrying the upwind trim downwind that is not merely
+   * unfast but wrong. Hoisting eases it; nothing else in the trim moves; undo
+   * puts it back.
+   */
+  it('eases the main to the shroud when the kite goes up, and only then', () => {
+    const { client } = optimalClient();
+    const store = new RaceStore(client);
+    store.controls.race.mainsheet = BASE_RACE.mainsheet;
+    store.controls.race.vang = 75;
+
+    store.setPointOfSail('beam-reach'); // still under the jib: nothing moves
+    expect(store.controls.race.mainsheet).toBe(BASE_RACE.mainsheet);
+
+    store.setPointOfSail('broad-reach');
+    expect(store.controls.race.mainsheet).toBe(BASE_RACE_DOWN.mainsheet);
+    expect(store.controls.race.vang).toBe(75); // the rest of the trim is the sailor's
+
+    // Already under the kite: a second downwind chip leaves the sheet alone.
+    store.controls.race.mainsheet = 40;
+    store.setPointOfSail('run');
+    expect(store.controls.race.mainsheet).toBe(40);
+
+    store.undo();
+    expect(store.controls.race.mainsheet).toBe(BASE_RACE.mainsheet);
+  });
+
   it('keeps the tapped chip active at the angle its solve returned', async () => {
     const { client, calls } = deferredClient();
     const store = new RaceStore(client);
@@ -471,6 +499,7 @@ describe('RaceStore hover previews', () => {
       race: { ...BASE_RACE },
       result: result(4.5),
       moved: ['mainsheet', 'jibLead'],
+      notSolved: [],
       iters: 300,
     };
     expect(s.willMove()).toEqual(['mainsheet', 'jibLead']);
