@@ -160,12 +160,56 @@ export function deck(scale: number): Deck {
  * swap in a real sheet-load model if downwind trim ever earns the picture.
  */
 export function boomAngle(mainsheet: number, traveller: number): number {
-  return clamp(6 + (100 - mainsheet) * 0.25 + traveller * 0.08, 2, 90);
+  // Traveller + = up to windward (matches shape/flying.ts and the coach copy),
+  // which pulls the boom towards the centreline. prov: assumed gains
+  return clamp(6 + (100 - mainsheet) * 0.25 - traveller * 0.08, 2, 90);
+}
+
+// ---------------------------------------------------------------------------
+// Telltales. Read against the local angle of attack, not the raw AWA: sheet
+// in and the sheeting angle closes, so the same apparent wind meets the luff
+// at a larger angle and the leeward ribbon stalls; twist opens the top so the
+// high telltales lift first when pinching. prov: assumed targets and bands;
+// the core carries no boundary layer.
+// ---------------------------------------------------------------------------
+
+export type Ribbon = 'streaming' | 'lifting' | 'stalled';
+
+/** Local angle of attack at fraction `at` (0..1) up the luff. */
+export function localAoa(
+  awaDeg: number,
+  sheetDeg: number,
+  twistTopDeg: number,
+  at: number,
+): number {
+  const twistAt = Math.max(0, twistTopDeg) * clamp((at - 0.25) / 0.5, 0, 1);
+  return awaDeg - sheetDeg - twistAt;
+}
+
+/** Jib luff telltale, read against a target entry angle of attack. prov: assumed 10° */
+export function luffRibbon(aoaDeg: number, entryDeg = 10, band = 3): Ribbon {
+  const d = aoaDeg - entryDeg;
+  if (d < -band) return 'lifting';
+  if (d > band) return 'stalled';
+  return 'streaming';
+}
+
+/**
+ * Main leech telltale. The leech stalls when the top of the sail is
+ * over-trimmed: little twist and a closed boom. prov: assumed target 6°, band 4°
+ */
+export function leechRibbon(awaDeg: number, boomDeg: number, twistDeg: number, at = 1): Ribbon {
+  const aoa = localAoa(awaDeg, boomDeg, twistDeg, at);
+  const d = aoa - 6;
+  if (d > 4) return 'stalled';
+  if (d < -4) return 'lifting';
+  return 'streaming';
 }
 
 /** Jib sheeting angle off the centreline, degrees. Lead aft opens it. */
 export function jibSheetAngle(jibLead: number, jibSheet: number): number {
-  return clamp(7 + jibLead * 0.4 + (100 - jibSheet) * 0.15, 2, 90);
+  // prov: assumed; sheet term sized so 30 % of sheet travel is ~7° of sheeting angle
+  return clamp(4 + jibLead * 0.35 + (100 - jibSheet) * 0.22, 2, 90);
 }
 
 // ---------------------------------------------------------------------------

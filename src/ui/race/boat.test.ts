@@ -14,6 +14,9 @@ import {
   windArrow,
   type Ring,
   type Side,
+  localAoa,
+  luffRibbon,
+  leechRibbon,
 } from './boat';
 import type { Pt } from './geometry';
 
@@ -110,9 +113,9 @@ describe('boomAngle', () => {
     for (let i = 1; i < angles.length; i++) expect(angles[i]).toBeGreaterThan(angles[i - 1]);
   });
 
-  it('opens with the traveller down and closes with it up', () => {
-    expect(boomAngle(50, 100)).toBeGreaterThan(boomAngle(50, 0));
-    expect(boomAngle(50, -100)).toBeLessThan(boomAngle(50, 0));
+  it('opens with the traveller down (−) and closes with it up (+)', () => {
+    expect(boomAngle(50, -100)).toBeGreaterThan(boomAngle(50, 0));
+    expect(boomAngle(50, 100)).toBeLessThan(boomAngle(50, 0));
   });
 
   it('stays a drawable angle over the whole control range', () => {
@@ -277,5 +280,33 @@ describe('tackSide', () => {
     expect(tackSide(42)).toBe(1);
     expect(tackSide(0)).toBe(1);
     expect(tackSide(-42)).toBe(-1);
+  });
+});
+
+describe('telltales and traveller sign', () => {
+  it('traveller up (+) pulls the boom towards the centreline', () => {
+    expect(boomAngle(70, 50)).toBeLessThan(boomAngle(70, 0));
+    expect(boomAngle(70, -50)).toBeGreaterThan(boomAngle(70, 0));
+  });
+  it('sheeting the jib in at fixed apparent wind stalls the luff telltales', () => {
+    const awa = 26;
+    const states = [40, 70, 100].map((sheet) =>
+      luffRibbon(localAoa(awa, jibSheetAngle(5, sheet), 6, 0.5)),
+    );
+    expect(states[0]).toBe('lifting');
+    expect(states[2]).toBe('stalled');
+    expect(new Set(states).size).toBeGreaterThan(1);
+  });
+  it('the top telltale lifts before the bottom one when twist opens the head', () => {
+    const awa = 20;
+    const sheetDeg = jibSheetAngle(5, 70);
+    const low = luffRibbon(localAoa(awa, sheetDeg, 12, 0.25));
+    const top = luffRibbon(localAoa(awa, sheetDeg, 12, 1));
+    expect(low === 'lifting' && top !== 'lifting').toBe(false);
+    expect(localAoa(awa, sheetDeg, 12, 1)).toBeLessThan(localAoa(awa, sheetDeg, 12, 0.25));
+  });
+  it('main leech stalls when over-sheeted with little twist and streams when eased', () => {
+    expect(leechRibbon(26, boomAngle(100, 40), 3)).toBe('stalled');
+    expect(leechRibbon(26, boomAngle(55, 0), 12)).not.toBe('stalled');
   });
 });
