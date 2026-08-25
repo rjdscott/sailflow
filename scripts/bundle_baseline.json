@@ -1,7 +1,7 @@
 {
-  "note": "Gzip size, bytes, of the entry chunk index.html loads. ADR 0014's promise is that the three.js sail view does not land on first load; `bundle_check.mjs` is what makes that promise checkable. Raise this deliberately, in the PR that earns it, never to make CI green \u2014 and if the number jumps by tens of kilobytes, something that should be behind a dynamic import is not.",
+  "note": "Total gzip size, bytes, of the JS chunks index.html loads on first paint — the entry chunk plus anything it modulepreloads. ADR 0014's promise is that the three.js sail view does not land on first load; `bundle_check.mjs` is what makes that promise checkable. Raise this deliberately, in the PR that earns it, never to make CI green — and if the number jumps by tens of kilobytes, something that should be behind a dynamic import is not.",
   "measured": "2026-08-25",
-  "entryGzipBytes": 134043,
+  "entryGzipBytes": 92736,
   "toleranceBytes": 2048,
   "history": [
     {
@@ -32,17 +32,22 @@
     {
       "date": "2026-08-25",
       "bytes": 125384,
-      "note": "desktop-kite phase 02: the gennaker (ADR 0017). +3.0 KB over this branch's HEAD, which itself builds at 122380 B here \u2014 663 B above the 121717 recorded on the cockpit branch, so re-measure HEAD before attributing a delta to your own change. Of the 3.0 KB, 1.3 KB is the plan view drawing the kite: `three/kite.ts` and `three/conventions.ts` become shared modules and move into the entry, because the 2D plan view is the always-loaded fallback and it now draws the sail too. Deliberate: ADR 0017 puts one kite mapping behind both pictures, and a second copy of it in plan-view coordinates would cost more in drift than it saves in bytes. No renderer code moved \u2014 checked, not assumed: the hull stations and the kite material are in the SailView3D chunk and not in the entry, and that chunk is still lazy at 140.1 KB gzip."
+      "note": "desktop-kite phase 02: the gennaker (ADR 0017). +3.0 KB over this branch's HEAD, which itself builds at 122380 B here — 663 B above the 121717 recorded on the cockpit branch, so re-measure HEAD before attributing a delta to your own change. Of the 3.0 KB, 1.3 KB is the plan view drawing the kite: `three/kite.ts` and `three/conventions.ts` become shared modules and move into the entry, because the 2D plan view is the always-loaded fallback and it now draws the sail too. Deliberate: ADR 0017 puts one kite mapping behind both pictures, and a second copy of it in plan-view coordinates would cost more in drift than it saves in bytes. No renderer code moved — checked, not assumed: the hull stations and the kite material are in the SailView3D chunk and not in the entry, and that chunk is still lazy at 140.1 KB gzip."
     },
     {
       "date": "2026-08-25",
       "bytes": 128889,
-      "note": "desktop-kite phase 03: the Gennaker panel replaces Headsail under the kite. +1775 B over this branch's HEAD, which builds at 127114 B here \u2014 1730 B above the 125384 recorded for phase 02, so roughly half of the +3505 B the gate reported against the committed baseline is phases 01 and 02 landing after that measurement rather than this change. The 1775 B is the panel, the luff-curl cue, the downwind playbook copy and the kite-twist explainer: first-load Race UI by design. Nothing new crossed the lazy boundary \u2014 `three/kite.ts` was already in the entry for the plan view, and the SailView3D chunk is unchanged at 138.8 KB gzip."
+      "note": "desktop-kite phase 03: the Gennaker panel replaces Headsail under the kite. +1775 B over this branch's HEAD, which builds at 127114 B here — 1730 B above the 125384 recorded for phase 02, so roughly half of the +3505 B the gate reported against the committed baseline is phases 01 and 02 landing after that measurement rather than this change. The 1775 B is the panel, the luff-curl cue, the downwind playbook copy and the kite-twist explainer: first-load Race UI by design. Nothing new crossed the lazy boundary — `three/kite.ts` was already in the entry for the plan view, and the SailView3D chunk is unchanged at 138.8 KB gzip."
     },
     {
       "date": "2026-08-25",
       "bytes": 134043,
-      "note": "desktop-kite phase 05 merged onto phase 03/06: +5154 B over the phase-03 baseline. Phase 05 measured itself at +2666 B, of which 332 B is code (kite.ts luff-by-AWA and clew circle) and the rest is ASSUMPTIONS.md, which More.svelte imports as ?raw; the merge carries both phases' ASSUMPTIONS rows plus phase 06's PROVENANCE section, all first-load markdown. Tracked in ux-03 M-23 (lazy-load the ?raw honesty docs) \u2014 the next block's fix, not this PR's."
+      "note": "desktop-kite phase 05 merged onto phase 03/06: +5154 B over the phase-03 baseline. Phase 05 measured itself at +2666 B, of which 332 B is code (kite.ts luff-by-AWA and clew circle) and the rest is ASSUMPTIONS.md, which More.svelte imports as ?raw; the merge carries both phases' ASSUMPTIONS rows plus phase 06's PROVENANCE section, all first-load markdown. Tracked in ux-03 M-23 (lazy-load the ?raw honesty docs) — the next block's fix, not this PR's."
+    },
+    {
+      "date": "2026-08-25",
+      "bytes": 92736,
+      "note": "ux-03 M-23: the honesty markdown and the secondary screens leave the first load. −41330 B against this branch's HEAD, which builds at 134066 B here (23 B above the 134043 recorded for desktop-kite phase 05). Three things left: PROVENANCE.md, ASSUMPTIONS.md and validation/report.md are now `await import('...?raw')` inside More's document sheet, so the 48 KB raw / 21.1 KB gzip of markdown is three chunks (12.0 + 6.2 + 2.9 KB gzip) nobody fetches until they tap a document link; Log, Drills and More are `{#await import()}` in App.svelte the way Kit already was, for 6.0 + 4.1 + 4.1 KB gzip of screens plus an 11.1 KB shared `store.svelte` chunk. Race and Dock stay static — Race is the default route. Rollup now emits four first-load chunks rather than one (index, settings.svelte, InstrumentCell, Toast), so `bundle_check.mjs` sums every chunk index.html names instead of asserting there is exactly one; it is the same first-load payload measured the same way, and splitting a screen out only counts if it leaves that set. Nothing crossed the lazy boundary the other way: SailView3D is unchanged at 139.0 KB gzip and still not precached."
     }
   ]
 }

@@ -4,11 +4,11 @@
   import { settings } from './ui/stores/settings.svelte';
   import BottomNav from './ui/components/BottomNav.svelte';
   import NavRail from './ui/components/NavRail.svelte';
+  // Race and Dock stay static: Race is the default route, and Dock is the
+  // other half of the same before-and-during-the-race pair. Log, Drills and
+  // More are dynamic (audit ux-03 M-23) — see the markup below.
   import Race from './ui/screens/Race.svelte';
   import Dock from './ui/screens/Dock.svelte';
-  import Log from './ui/screens/Log.svelte';
-  import Drills from './ui/screens/Drills.svelte';
-  import More from './ui/screens/More.svelte';
   import Toast from './ui/components/Toast.svelte';
   import { conditions } from './ui/stores/conditions.svelte';
   import { race } from './ui/race/store.svelte';
@@ -103,12 +103,22 @@
       <Race />
     {:else if router.route === 'dock'}
       <Dock />
+      <!-- Log, Drills and More are secondary tabs: a visitor lands on Race,
+           and most never open them, so they are chunks fetched on navigation
+           rather than entry-chunk weight everyone pays for (ux-03 M-23). The
+           service worker precaches them, so an offline dock still opens them. -->
     {:else if router.route === 'log'}
-      <Log />
+      {#await import('./ui/screens/Log.svelte') then Log}
+        <Log.default />
+      {/await}
     {:else if router.route === 'drills'}
-      <Drills />
+      {#await import('./ui/screens/Drills.svelte') then Drills}
+        <Drills.default />
+      {/await}
     {:else if router.route === 'more'}
-      <More />
+      {#await import('./ui/screens/More.svelte') then More}
+        <More.default />
+      {/await}
     {:else if KIT_ENABLED && router.route === 'kit'}
       <!-- Component-demo state with invented numbers. Dev always, production
            only behind `?kit=1` (see KIT_ENABLED in router.svelte.ts), so the
