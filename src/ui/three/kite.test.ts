@@ -117,6 +117,9 @@ describe('kiteGeometry', () => {
     expect(strapped).toBeCloseTo(TACK_MIN_M, 9);
     expect(mid).toBeGreaterThan(strapped);
     expect(eased).toBeGreaterThan(mid);
+    // The travel stays inside the J/70 band the sources give and the downwind
+    // panel prints: 0–12 in (0–0.30 m), research doc 04 §2.4. It was 0.6 m.
+    expect(eased - strapped).toBeLessThanOrEqual(0.3 + 1e-9);
   });
 
   it('puts the head at the masthead at full hoist and drops it below on ease', () => {

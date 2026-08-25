@@ -134,10 +134,12 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     never longer" is claimed; the head chord is zero, the parabola's own answer.
   - **Tack**: on the bowsprit at `sprit`% of `bowspritOuterMm` (1.495 m,
     published, Class Rules C.9.4), `TACK_MIN_M` = 0.05 m above it strapped
-    down, rising by `TACK_TRAVEL_M` = 0.6 m eased. **Assumed and known wide**:
-    the J/70-specific figures span 0–12 in (0–0.30 m) across four North and
+    down, rising by `TACK_TRAVEL_M` = 0.3 m eased — **inside the J/70 band**.
+    The J/70-specific figures span 0–12 in (0–0.30 m) across four North and
     Doyle sources and disagree among themselves; the sportboat literature
-    reaches 18 in. Narrowing it and showing the band is doc 04 §2.4, not done.
+    reaches 18 in, but this is a J/70. Doc 04 §2.4's narrowing is applied
+    (0.6 m → 0.3 m); showing the source spread as a band in the panel rather
+    than one number is the half of that recommendation still outstanding.
   - **Head**: masthead at `kiteHalyard` = 100, dropping `HALYARD_DROP_M` =
     1.2 m at 0. **Assumed, and the sources contradict it**: "ease the halyard
     6–12 inches" could not be sourced to any sailmaker publication, and North

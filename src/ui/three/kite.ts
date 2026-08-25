@@ -118,7 +118,17 @@ export const KITE_CHORDS: SailChords = {
  * `geom.asymTackHeightM` (0.7 m, assumed) to within that freeboard.
  */
 export const TACK_MIN_M = 0.05;
-export const TACK_TRAVEL_M = 0.6;
+/**
+ * prov: research 2026-08-25-spinnaker doc 04 §2.4 — the J/70-specific figures
+ * span 0–12 in (0–0.30 m) across four North and Doyle sources, so 0.3 m puts
+ * the fully-eased tack at the top of the class band rather than at double it.
+ * Was 0.6, which with `TACK_MIN_M` gave 0.65 m of travel — above every cited
+ * J/70 source, and above the 0–12 in band the downwind panel prints beside it
+ * (`src/ui/race/downwind.ts`). The sportboat literature reaches 18 in, but
+ * this is a J/70. Doc 04's second half — showing the source spread as a band
+ * instead of one number — is still open.
+ */
+export const TACK_TRAVEL_M = 0.3;
 
 /**
  * How far the head drops below the masthead at `kiteHalyard = 0`, m.
