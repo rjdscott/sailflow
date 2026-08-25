@@ -14,6 +14,7 @@ import {
   RaceStore,
 } from './store.svelte';
 import { BASE_RACE, conditions, PRESETS } from '../stores/conditions.svelte';
+import { optimum } from './optimum.svelte';
 
 const CONDITION: Condition = { twsKt: 12, twaDeg: 42, seaState: 1, crewKg: 300, sailset: 'jib' };
 
@@ -410,6 +411,53 @@ describe('RaceStore.syncDock', () => {
     expect(dock).toEqual({ upperTurns: 3, lowerTurns: -2, forestayMm: 30 });
     store.syncDock(null);
     expect(dock).toEqual(BASE_DOCK);
+  });
+});
+
+/**
+ * The Factorio preview (research §3 principle 24): before an action rewrites
+ * the trim, the controls it would move say so. These are the three lists the
+ * panels outline from.
+ */
+describe('RaceStore hover previews', () => {
+  const store = () => new RaceStore(deferredClient().client);
+
+  afterEach(() => {
+    optimum.result = null;
+  });
+
+  it('lists only the controls whose value would change', () => {
+    const s = store();
+    expect(s.willMoveTo({ ...BASE_RACE })).toEqual([]);
+    expect(s.willMoveTo({ ...BASE_RACE, mainsheet: BASE_RACE.mainsheet + 5 })).toEqual([
+      'mainsheet',
+    ]);
+  });
+
+  it('moves nothing when there is nothing to move to', () => {
+    expect(store().willMoveTo(null)).toEqual([]);
+  });
+
+  it('previews a reset against the base trim, in control order', () => {
+    const s = store();
+    s.controls.race.backstay = BASE_RACE.backstay + 20;
+    s.controls.race.vang = BASE_RACE.vang + 10;
+    expect(s.willReset()).toEqual(['backstay', 'vang']);
+    s.controls.race.backstay = BASE_RACE.backstay;
+    s.controls.race.vang = BASE_RACE.vang;
+    expect(s.willReset()).toEqual([]);
+  });
+
+  it("previews Apply from the search's own list, so the two cannot disagree", () => {
+    const s = store();
+    expect(s.willMove()).toEqual([]); // no search has answered yet
+    optimum.result = {
+      race: { ...BASE_RACE },
+      result: result(4.5),
+      moved: ['mainsheet', 'jibLead'],
+      iters: 300,
+    };
+    expect(s.willMove()).toEqual(['mainsheet', 'jibLead']);
   });
 });
 

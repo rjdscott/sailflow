@@ -115,14 +115,14 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0,
+            "value": 0.4800959172925542,
             "tier": "C",
-            "sign": 0
+            "sign": 1
           },
           "jibLeechStripe": {
-            "value": -0.613249695810921,
+            "value": 0.9867503041890783,
             "tier": "C",
-            "sign": -1
+            "sign": 1
           },
           "helmLoad": {
             "value": 0.17018791210174766,
@@ -268,7 +268,7 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0.9420884961830929,
+            "value": 0.9987033680681433,
             "tier": "C",
             "sign": 1
           },
@@ -413,14 +413,14 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0,
+            "value": 0.49671878518659157,
             "tier": "C",
-            "sign": 0
+            "sign": 1
           },
           "jibLeechStripe": {
-            "value": -0.613249695810921,
+            "value": 0.9867503041890783,
             "tier": "C",
-            "sign": -1
+            "sign": 1
           },
           "helmLoad": {
             "value": 0.3880354481624415,
@@ -566,7 +566,7 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0.95628495735258,
+            "value": 0.9992388900569149,
             "tier": "C",
             "sign": 1
           },
@@ -711,14 +711,14 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0,
+            "value": 0.483557981643157,
             "tier": "C",
-            "sign": 0
+            "sign": 1
           },
           "jibLeechStripe": {
-            "value": -0.613249695810921,
+            "value": 0.9867503041890783,
             "tier": "C",
-            "sign": -1
+            "sign": 1
           },
           "helmLoad": {
             "value": 0.7904824845264024,
@@ -864,7 +864,7 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0.95628495735258,
+            "value": 0.9992388900569149,
             "tier": "C",
             "sign": 1
           },
@@ -1009,14 +1009,14 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0,
+            "value": 0.48106743855215844,
             "tier": "C",
-            "sign": 0
+            "sign": 1
           },
           "jibLeechStripe": {
-            "value": -0.613249695810921,
+            "value": 0.9867503041890783,
             "tier": "C",
-            "sign": -1
+            "sign": 1
           },
           "helmLoad": {
             "value": 0.1703844920097523,
@@ -1162,7 +1162,7 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0.9421824888806571,
+            "value": 0.9987073507388979,
             "tier": "C",
             "sign": 1
           },
@@ -1307,14 +1307,14 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0,
+            "value": 0.4977023433726536,
             "tier": "C",
-            "sign": 0
+            "sign": 1
           },
           "jibLeechStripe": {
-            "value": -0.613249695810921,
+            "value": 0.9867503041890783,
             "tier": "C",
-            "sign": -1
+            "sign": 1
           },
           "helmLoad": {
             "value": 0.3883920278564589,
@@ -1460,7 +1460,7 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0.9563668990211857,
+            "value": 0.9992415911092161,
             "tier": "C",
             "sign": 1
           },
@@ -1605,14 +1605,14 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0,
+            "value": 0.48446805624097183,
             "tier": "C",
-            "sign": 0
+            "sign": 1
           },
           "jibLeechStripe": {
-            "value": -0.613249695810921,
+            "value": 0.9867503041890783,
             "tier": "C",
-            "sign": -1
+            "sign": 1
           },
           "helmLoad": {
             "value": 0.7909360264188849,
@@ -1758,7 +1758,7 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0.9563668990211857,
+            "value": 0.9992415911092161,
             "tier": "C",
             "sign": 1
           },
@@ -1903,14 +1903,14 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0,
+            "value": 0.4786107321702858,
             "tier": "C",
-            "sign": 0
+            "sign": 1
           },
           "jibLeechStripe": {
-            "value": -0.613249695810921,
+            "value": 0.9867503041890783,
             "tier": "C",
-            "sign": -1
+            "sign": 1
           },
           "helmLoad": {
             "value": 0.16996981755973342,
@@ -2056,7 +2056,7 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0.9419521596495644,
+            "value": 0.9986975809515569,
             "tier": "C",
             "sign": 1
           },
@@ -2201,14 +2201,14 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0,
+            "value": 0.4952357193735156,
             "tier": "C",
-            "sign": 0
+            "sign": 1
           },
           "jibLeechStripe": {
-            "value": -0.613249695810921,
+            "value": 0.9867503041890783,
             "tier": "C",
-            "sign": -1
+            "sign": 1
           },
           "helmLoad": {
             "value": 0.38748149238530516,
@@ -2354,7 +2354,7 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0.956161756226843,
+            "value": 0.9992348204446008,
             "tier": "C",
             "sign": 1
           },
@@ -2499,14 +2499,14 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0,
+            "value": 0.48213652694136433,
             "tier": "C",
-            "sign": 0
+            "sign": 1
           },
           "jibLeechStripe": {
-            "value": -0.613249695810921,
+            "value": 0.9867503041890783,
             "tier": "C",
-            "sign": -1
+            "sign": 1
           },
           "helmLoad": {
             "value": 0.7889026589546544,
@@ -2652,7 +2652,7 @@
         },
         "instruments": {
           "leechStallFrac": {
-            "value": 0.956161756226843,
+            "value": 0.9992348204446008,
             "tier": "C",
             "sign": 1
           },

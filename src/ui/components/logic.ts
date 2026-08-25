@@ -77,6 +77,8 @@ export function valueText(
   unit: string,
   guide?: number | [number, number],
   target?: number,
+  /** What the mark on the track is. The base trim is not a tuning guide. */
+  word = 'guide',
 ): string {
   const shown = fmt(value, decimals, unit);
   const parts = [shown];
@@ -84,7 +86,7 @@ export function valueText(
     const [lo, hi] = typeof guide === 'number' ? [guide, guide] : guide;
     const band =
       lo === hi ? fmt(lo, decimals, unit) : `${fmt(lo, decimals)}–${fmt(hi, decimals, unit)}`;
-    parts.push(`guide ${band}`);
+    parts.push(`${word} ${band}`);
   }
   if (target !== undefined) parts.push(optimumText(target, decimals, unit));
   return parts.join(', ');

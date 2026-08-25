@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import j70 from '../../../data/boats/j70.json';
 import type { BoatDefinition } from '../types';
 import { polarTarget, POLAR_TWS } from '../reference/polar';
-import { sheetingDeviation } from '../shape/sheeting';
+import { sheetingDeviation, sheetingEffect, TWIST_TO_AOA } from '../shape/sheeting';
+import { baseDock, baseRace } from '../shape/base';
+import { geometryFor } from './equilibrium';
+import { trimmed } from './trimmed';
 import {
   HELM_REF_NM,
   jibChordAtSpreaderM,
   jibLeechStripe,
   leechStallFrac,
+  leechTwistDevDeg,
   LEECH_STALL_BAND,
   STRIPE_INCHES,
   helmLoad,
@@ -44,22 +48,23 @@ describe('polar lookup', () => {
 });
 
 describe('leech stall fraction', () => {
-  const band = 4;
-  const scale = 30;
-
-  it('is zero anywhere the sail is not over-trimmed', () => {
-    for (const dev of [-50, -5, -0.1, 0]) expect(leechStallFrac(dev, band, scale)).toBe(0);
+  it('turns a deviation in angle of attack into the twist that would remove it', () => {
+    // Only a quarter of head twist reaches the mid-height station the angle of
+    // attack is measured at, so a degree over-trimmed is four degrees of twist.
+    expect(leechTwistDevDeg(1)).toBeCloseTo(1 / TWIST_TO_AOA, 12);
+    expect(leechTwistDevDeg(-12.88)).toBeCloseTo(-51.52, 6);
+    expect(leechTwistDevDeg(0)).toBe(0);
   });
 
-  it('rises monotonically and reaches ~1 at band + 2 stall scales', () => {
+  it('rises monotonically with over-trim and stays inside (0, 1)', () => {
     let prev = -1;
-    for (let dev = 0; dev <= 70; dev += 1) {
-      const f = leechStallFrac(dev, band, scale);
-      expect(f, `dev ${dev}`).toBeGreaterThanOrEqual(prev);
+    for (let dev = -90; dev <= 90; dev += 1) {
+      const f = leechStallFrac(dev);
+      expect(f, `dev ${dev}`).toBeGreaterThan(prev);
+      expect(f).toBeGreaterThan(0);
       expect(f).toBeLessThan(1);
       prev = f;
     }
-    expect(leechStallFrac(band + 2 * scale, band, scale)).toBeCloseTo(0.95, 2);
   });
 
   it('quotes the guide band, not a point target', () => {
@@ -68,12 +73,47 @@ describe('leech stall fraction', () => {
   });
 
   it('reads the same deviation the forces do', () => {
-    // The refactor must not have grown a second copy of the angle formulas:
-    // a sail inside its groove costs no lift and stalls no ribbons.
-    const s = { sheetDeg: 12, twistDeg: 8 };
-    const d = sheetingDeviation(boat, 'main', 30, s);
-    expect(Math.abs(d.devDeg)).toBeLessThanOrEqual(d.bandDeg);
-    expect(leechStallFrac(d.devDeg, d.bandDeg, d.stallScaleDeg)).toBe(0);
+    // One number, two consumers: the deviation that costs the sail lift is the
+    // one that stalls its ribbons, not a second copy of the angle formulas.
+    const groove = { sheetDeg: 12, twistDeg: 8 };
+    const pinned = { sheetDeg: 2, twistDeg: 8 };
+    const inGroove = sheetingDeviation(boat, 'main', 30, groove);
+    const overTrimmed = sheetingDeviation(boat, 'main', 30, pinned);
+    expect(Math.abs(inGroove.devDeg)).toBeLessThanOrEqual(inGroove.bandDeg);
+    expect(overTrimmed.devDeg).toBeGreaterThan(overTrimmed.bandDeg);
+    expect(sheetingEffect(boat, 'main', 30, groove).clMul).toBe(1);
+    expect(sheetingEffect(boat, 'main', 30, pinned).clMul).toBeLessThan(1);
+    expect(leechStallFrac(overTrimmed.devDeg)).toBeGreaterThan(leechStallFrac(inGroove.devDeg));
+  });
+});
+
+/**
+ * The calibration the meter exists for (cockpit phase 03). Phase 02 scaled it
+ * on the sheeting layer's lift-loss e-fold, which left the whole upwind range
+ * inside 0–0.11 and the guide's 50–70 % band unreachable. These three points
+ * are what the rescale had to hit; they fail if either constant moves.
+ */
+describe('leech stall calibration, upwind at 10 kt', () => {
+  const stall = (mainsheet: number): number =>
+    trimmed(
+      boat,
+      { dock: baseDock(), race: { ...baseRace(), mainsheet } },
+      { twsKt: 10, twaDeg: 42, seaState: 1, crewKg: 300, sailset: 'jib' },
+      geometryFor(boat),
+    ).instruments.leechStallFrac.value;
+
+  it('sits inside the guide band at base trim', () => {
+    const f = stall(baseRace().mainsheet);
+    expect(f).toBeGreaterThan(LEECH_STALL_BAND[0]);
+    expect(f).toBeLessThan(LEECH_STALL_BAND[1]);
+  });
+
+  it('reads above the band with the mainsheet hard on', () => {
+    expect(stall(100)).toBeGreaterThan(LEECH_STALL_BAND[1]);
+  });
+
+  it('reads below 0.3 with the mainsheet eased to 30 %', () => {
+    expect(stall(30)).toBeLessThan(0.3);
   });
 });
 
@@ -92,11 +132,15 @@ describe('jib leech stripe', () => {
     expect(jibLeechStripe(boat, 13, 14)).toBeGreaterThan(base);
   });
 
-  it('reads 0, 1 and 2 at the three painted stripes', () => {
+  it('reads 0, 1 and 2 two inches apart, at the painted stripe spacing', () => {
+    // The index is the leech's position in stripes, so a leech two inches
+    // further outboard is one stripe further out, wherever the offset puts it.
     const chord = jibChordAtSpreaderM(boat);
+    const at = (m: number) => (Math.asin(m / chord) * 180) / Math.PI;
+    const zero = jibLeechStripe(boat, at(0.3), 0);
     for (const [i, inches] of STRIPE_INCHES.entries()) {
-      const deg = (Math.asin((inches * 0.0254) / chord) * 180) / Math.PI;
-      expect(jibLeechStripe(boat, deg, 0), `${inches}"`).toBeCloseTo(i, 9);
+      const step = (inches - STRIPE_INCHES[0]) * 0.0254;
+      expect(jibLeechStripe(boat, at(0.3 + step), 0), `${inches}"`).toBeCloseTo(zero + i, 9);
     }
   });
 
@@ -104,6 +148,35 @@ describe('jib leech stripe', () => {
     // A hooked leech has to stay distinguishable from one on the 18" stripe,
     // or the verdict cannot tell "lead aft" from "you are there".
     expect(jibLeechStripe(boat, 2, 0)).toBeLessThan(0);
+  });
+});
+
+/**
+ * The spreader offset (cockpit phase 03). Phase 02 read −0.6 at the base
+ * trim — hooked inside the 18" stripe — so the verdict asked for lead aft
+ * from the trim the guide calls right. The offset puts base trim on the
+ * middle 20" stripe, and the lead car then walks a stripe either side of it.
+ */
+describe('jib stripe calibration, upwind at 10 kt', () => {
+  const stripe = (jibLead: number): number => {
+    const r = trimmed(
+      boat,
+      { dock: baseDock(), race: { ...baseRace(), jibLead } },
+      { twsKt: 10, twaDeg: 42, seaState: 1, crewKg: 300, sailset: 'jib' },
+      geometryFor(boat),
+    );
+    return r.instruments.jibLeechStripe!.value;
+  };
+
+  it('reads the 20" stripe at base trim', () => {
+    expect(stripe(baseRace().jibLead)).toBeCloseTo(1, 1);
+  });
+
+  it('reads the 22" stripe three holes aft and the 18" three holes forward', () => {
+    // Nearest stripe, not the exact index: three holes move the model 1.35
+    // stripes, and the lead-to-twist gain is not calibrated to make it 1.00.
+    expect(stripe(baseRace().jibLead + 3)).toBeCloseTo(2, 0);
+    expect(stripe(baseRace().jibLead - 3)).toBeCloseTo(0, 0);
   });
 });
 

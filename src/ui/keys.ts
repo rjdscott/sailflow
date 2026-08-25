@@ -11,7 +11,17 @@ export type KeyAction =
   | { type: 'pointOfSail'; index: number }
   | { type: 'applyOptimum' }
   | { type: 'undo' }
+  /** Jump to a sail panel's first control (cockpit phase 03). */
+  | { type: 'focusPanel'; panel: PanelId }
   | { type: 'help' };
+
+/** Panels the keyboard can jump to, and the id of each one's control column. */
+export type PanelId = 'mainsail' | 'headsail';
+
+/** The element the `m` / `j` jump looks inside for a control to focus. */
+export function panelControlsId(panel: PanelId): string {
+  return `${panel}-controls`;
+}
 
 /** The keystroke fields the mapping reads. A `KeyboardEvent` satisfies it. */
 export interface KeyStroke {
@@ -43,6 +53,8 @@ export function keyAction(stroke: KeyStroke, typing: boolean): KeyAction | null 
   }
   if (stroke.key === 'o') return { type: 'applyOptimum' };
   if (stroke.key === 'u') return { type: 'undo' };
+  if (stroke.key === 'm') return { type: 'focusPanel', panel: 'mainsail' };
+  if (stroke.key === 'j') return { type: 'focusPanel', panel: 'headsail' };
   if (stroke.key === '?') return { type: 'help' };
   return null;
 }
@@ -52,6 +64,8 @@ export const SHORTCUTS: { keys: string; what: string }[] = [
   { keys: '1 – 5', what: 'Point of sail: close-hauled to run' },
   { keys: '[  ]', what: 'Nudge the focused slider one step' },
   { keys: '←  →', what: 'Nudge the focused slider one step' },
+  { keys: 'm', what: 'Jump to the Mainsail controls' },
+  { keys: 'j', what: 'Jump to the Headsail controls' },
   { keys: 'o', what: 'Apply optimum' },
   { keys: 'u', what: 'Back to my trim' },
   { keys: '?', what: 'This list' },

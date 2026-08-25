@@ -33,6 +33,14 @@ export function jibSheetAngle(jibLead: number, jibSheet: number): number {
   return clamp(4 + jibLead * 0.35 + 0.0045 * eased * eased, 2, 90);
 }
 
+/**
+ * Fraction of the head's twist that reaches the mid-height station the angle
+ * of attack is measured at. Exported so the leech-stall instrument can turn a
+ * deviation in angle of attack back into the twist that would remove it,
+ * rather than keeping its own copy of the number.
+ */
+export const TWIST_TO_AOA = 0.25; // prov: assumed, linear twist distribution up the leech
+
 export interface Sheeting {
   /** Sheeting angle of the sail's foot off the centreline, degrees. */
   sheetDeg: number;
@@ -82,7 +90,7 @@ export function sheetingDeviation(
   const luffScaleDeg = knob(boat, 'aero.sheet.luffScaleDeg', 20); // prov: assumed, e-fold of lift lost per degree eased past the band
   const stallScaleDeg = knob(boat, 'aero.sheet.stallScaleDeg', 30); // prov: assumed, e-fold of lift lost per degree over-trimmed past the band
   const stallDragPerDeg = knob(boat, 'aero.sheet.stallDragPerDeg', 0.004); // prov: assumed, CD0 added per degree over-trimmed past the band
-  const aoa = awaDeg - s.sheetDeg - 0.25 * Math.max(0, s.twistDeg);
+  const aoa = awaDeg - s.sheetDeg - TWIST_TO_AOA * Math.max(0, s.twistDeg);
   // Ideal AoA is unreachable when the boom cannot go out far enough (deep
   // running); that is real, not a penalty for good trim, so cap the ideal at
   // what a 90° boom can give.

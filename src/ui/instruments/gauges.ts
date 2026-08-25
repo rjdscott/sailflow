@@ -8,6 +8,24 @@ import { trackPct } from '../components/logic';
 
 export type BetterIs = 'more' | 'less';
 
+/**
+ * What fraction of the main's leech ribbons the guides want stalled at
+ * maximum trim: 50–70 %, with clean flow while building speed.
+ * prov: North Sails J/70 tuning guide (S1) and Speed Guide (S3).
+ *
+ * Mirrors `LEECH_STALL_BAND` in `src/core/solve/instruments.ts`. ADR 0003
+ * forbids the UI importing the core, so this published pair is written on
+ * both sides of the boundary; keep them identical.
+ */
+export const LEECH_STALL_BAND: readonly [number, number] = [0.5, 0.7];
+
+/**
+ * Spreader stripe distances from the mast, inches.
+ * prov: North Sails J/70 tuning guide (S1). Mirrors the core's
+ * `STRIPE_INCHES`, for the same reason as the band above.
+ */
+export const STRIPE_INCHES: readonly [number, number, number] = [18, 20, 22];
+
 export interface BulletInput {
   min: number;
   max: number;
