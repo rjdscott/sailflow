@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import type { BoatDefinition } from '../types';
+import type { BoatDefinition, DockControls } from '../types';
 import j70 from '../../../data/boats/j70.json';
 import { baseDock, baseRace } from '../shape/base';
 import { hikeFraction, seedFor, solveEquilibrium } from './equilibrium';
 import { trimmed } from './trimmed';
 import { backstayFromFlat, optimal } from './optimal';
-import { candidateGrid, forecastPmf, scoreDockSetups } from './dock';
+import {
+  candidateGrid,
+  DOCK_ITERS,
+  forecastPmf,
+  lapTimeHoursUncached,
+  scoreDockSetups,
+} from './dock';
+import { geometryFor } from './equilibrium';
 
 const boat = j70 as unknown as BoatDefinition;
 const up = { twsKt: 10, twaDeg: 42, seaState: 1 as const, crewKg: 300, sailset: 'jib' as const };
@@ -156,5 +163,55 @@ describe('dock lap-time memo', () => {
     const t2 = performance.now();
     expect(b).toEqual(a);
     expect(t2 - t1).toBeLessThan((t1 - t0) / 5);
+  });
+});
+
+describe('dock coarse solve budgets', () => {
+  const geom = geometryFor(boat);
+  const f = { minKt: 8, likelyKt: 12, maxKt: 16, seaState: 1 as const, crewKg: 300 };
+  const FULL = { flat: 12, twa: 16 }; // `optimal`'s own defaults
+
+  it('stays within 0.5 % of the full solve at three conditions', () => {
+    const cases: [DockControls, number][] = [
+      [baseDock(), 8],
+      [{ upperTurns: 6, lowerTurns: 5, forestayMm: 30 }, 12],
+      [{ upperTurns: -3, lowerTurns: -2, forestayMm: 0 }, 16],
+    ];
+    for (const [setup, twsKt] of cases) {
+      const full = lapTimeHoursUncached(boat, setup, f, twsKt, geom, FULL);
+      const coarse = lapTimeHoursUncached(boat, setup, f, twsKt, geom, DOCK_ITERS);
+      expect(Math.abs(coarse - full) / full).toBeLessThan(0.005);
+    }
+  });
+
+  it('is cheaper than the full budget it replaces', () => {
+    const setup = { upperTurns: 2, lowerTurns: 3, forestayMm: 15 };
+    const t0 = performance.now();
+    lapTimeHoursUncached(boat, setup, f, 14, geom, FULL);
+    const t1 = performance.now();
+    lapTimeHoursUncached(boat, setup, f, 14, geom, DOCK_ITERS);
+    expect(performance.now() - t1).toBeLessThan(t1 - t0);
+  });
+});
+
+describe('dock scoring progress', () => {
+  it('reports one step per lap, monotonically, ending at the total', () => {
+    const setups = [baseDock()];
+    const cands = [baseDock(), { upperTurns: 2, lowerTurns: 1, forestayMm: 0 }];
+    const f = { minKt: 10, likelyKt: 11, maxKt: 12, seaState: 1 as const, crewKg: 300 };
+    const seen: [number, number][] = [];
+    scoreDockSetups(boat, setups, f, cands, undefined, (done, total) => seen.push([done, total]));
+    // 2 candidates (baseDock is also the setup, deduped) x 3 wind speeds.
+    expect(seen).toHaveLength(6);
+    expect(seen.map(([done]) => done)).toEqual([1, 2, 3, 4, 5, 6]);
+    for (const [, total] of seen) expect(total).toBe(6);
+  });
+
+  it('does not change the result it reports on', () => {
+    const setups = [baseDock(), { upperTurns: 3, lowerTurns: 1, forestayMm: 0 }];
+    const f = { minKt: 10, likelyKt: 10, maxKt: 11, seaState: 1 as const, crewKg: 300 };
+    const quiet = scoreDockSetups(boat, setups, f, setups);
+    const noisy = scoreDockSetups(boat, setups, f, setups, undefined, () => {});
+    expect(noisy).toEqual(quiet);
   });
 });

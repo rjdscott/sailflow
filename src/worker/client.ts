@@ -15,6 +15,14 @@ import type {
   SolveResult,
 } from '../core/types';
 
+export interface RequestOptions {
+  /**
+   * Called for every `progress` message the worker sends before the result.
+   * Only requests that set `progress: true` produce any (today: `dockScore`).
+   */
+  onProgress?: (done: number, total: number) => void;
+}
+
 function createSolverWorker(): Worker {
   return new Worker(new URL('./solver.worker.ts', import.meta.url), { type: 'module' });
 }
@@ -24,7 +32,11 @@ export class SolverClient {
   private nextId = 1;
   private pending = new Map<
     number,
-    { resolve: (v: unknown) => void; reject: (e: Error) => void }
+    {
+      resolve: (v: unknown) => void;
+      reject: (e: Error) => void;
+      onProgress?: (done: number, total: number) => void;
+    }
   >();
 
   constructor(worker?: Worker) {
@@ -33,13 +45,18 @@ export class SolverClient {
       const res = e.data;
       const entry = this.pending.get(res.id);
       if (!entry) return;
+      // Progress is reporting, not completion: leave the request pending.
+      if (res.type === 'progress') return entry.onProgress?.(res.done, res.total);
       this.pending.delete(res.id);
       if (res.type === 'error') entry.reject(new Error(res.message));
       else entry.resolve(res.result);
     });
   }
 
-  request<R extends Request>(req: Omit<R, 'id' | 'protocolVersion'>): Promise<ResultOf<R>> {
+  request<R extends Request>(
+    req: Omit<R, 'id' | 'protocolVersion'>,
+    opts?: RequestOptions,
+  ): Promise<ResultOf<R>> {
     const id = this.nextId++;
     // The protocol is JSON by contract; the round-trip also strips reactive
     // proxies (Svelte $state) that structured clone refuses.
@@ -47,7 +64,11 @@ export class SolverClient {
       JSON.stringify({ ...req, id, protocolVersion: PROTOCOL_VERSION }),
     ) as R;
     return new Promise<ResultOf<R>>((resolve, reject) => {
-      this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject });
+      this.pending.set(id, {
+        resolve: resolve as (v: unknown) => void,
+        reject,
+        onProgress: opts?.onProgress,
+      });
       this.worker.postMessage(message);
     });
   }
@@ -124,6 +145,8 @@ function stubDockScore(setup: DockControls): DockScore {
 /** UI target for Phase 03: fixed plausible results, no worker, no async solve. */
 export function stubClient(): Pick<SolverClient, 'request'> {
   return {
+    // ponytail: the stub answers instantly, so it ignores RequestOptions
+    // entirely — a shorter parameter list still satisfies the same type.
     request<R extends Request>(req: Omit<R, 'id' | 'protocolVersion'>): Promise<ResultOf<R>> {
       const type = (req as { type: Request['type'] }).type;
       switch (type) {

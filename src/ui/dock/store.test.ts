@@ -3,7 +3,7 @@ import type { DockControls, DockScore } from '../../core/types';
 import type { Request, ResultOf } from '../../worker/protocol';
 import type { Client } from './client';
 import { COMMIT_ARM_MS, DockStore, SCORE_DEBOUNCE_MS } from './store.svelte';
-import { candidateSetups } from './logic';
+import { candidateSetups, quickCandidates } from './logic';
 import { rigLock } from '../stores/rigLock.svelte';
 
 function makeScore(setup: DockControls, expected: number): DockScore {
@@ -20,11 +20,19 @@ function makeScore(setup: DockControls, expected: number): DockScore {
 
 /** Records every request and lets the test resolve them out of order. */
 function fakeClient() {
-  const calls: { setups: DockControls[] }[] = [];
+  const calls: {
+    setups: DockControls[];
+    candidates: DockControls[];
+    onProgress?: (done: number, total: number) => void;
+  }[] = [];
   const pending: ((scores: DockScore[]) => void)[] = [];
   const client: Client = {
-    request<R extends Request>(req: Omit<R, 'id' | 'protocolVersion'>): Promise<ResultOf<R>> {
-      calls.push({ setups: (req as unknown as { setups: DockControls[] }).setups });
+    request<R extends Request>(
+      req: Omit<R, 'id' | 'protocolVersion'>,
+      opts?: { onProgress?: (done: number, total: number) => void },
+    ): Promise<ResultOf<R>> {
+      const r = req as unknown as { setups: DockControls[]; candidates: DockControls[] };
+      calls.push({ setups: r.setups, candidates: r.candidates, onProgress: opts?.onProgress });
       return new Promise((resolve) => {
         pending.push(resolve as (s: DockScore[]) => void);
       }) as Promise<ResultOf<R>>;
@@ -97,7 +105,55 @@ describe('DockStore.rescore', () => {
     pending[0](first);
     await flush();
     expect(dock.score?.expectedRegretSPerMile.value).toBe(3);
+    // Still busy: only the newest run's provisional pass has landed.
+    expect(dock.busy).toBe(true);
+    pending[2](second);
+    await flush();
+    expect(dock.score?.expectedRegretSPerMile.value).toBe(3);
     expect(dock.busy).toBe(false);
+  });
+
+  it('paints a provisional score off the small grid, then replaces it', async () => {
+    const { client, calls, pending } = fakeClient();
+    const dock = new DockStore(client);
+    dock.rescore();
+    vi.advanceTimersByTime(SCORE_DEBOUNCE_MS);
+
+    expect(calls[0].candidates).toEqual(quickCandidates());
+    expect(calls[0].onProgress).toBeUndefined();
+    pending[0]([makeScore(dock.setup, 9)]);
+    await flush();
+    expect(dock.provisional).toBe(true);
+    expect(dock.score?.expectedRegretSPerMile.value).toBe(9);
+    expect(dock.busy).toBe(true);
+
+    // Second pass: the full grid, and it reports progress.
+    expect(calls).toHaveLength(2);
+    expect(calls[1].candidates).toEqual(candidateSetups());
+    calls[1].onProgress?.(47, 324);
+    expect(dock.progress).toEqual({ done: 47, total: 324 });
+
+    pending[1]([makeScore(dock.setup, 12)]);
+    await flush();
+    expect(dock.provisional).toBe(false);
+    expect(dock.progress).toBeNull();
+    expect(dock.score?.expectedRegretSPerMile.value).toBe(12);
+    expect(dock.busy).toBe(false);
+  });
+
+  it('ignores progress from a superseded run', async () => {
+    const { client, calls, pending } = fakeClient();
+    const dock = new DockStore(client);
+    dock.rescore();
+    vi.advanceTimersByTime(SCORE_DEBOUNCE_MS);
+    pending[0]([makeScore(dock.setup, 9)]);
+    await flush();
+
+    const stale = calls[1].onProgress;
+    dock.rescore();
+    vi.advanceTimersByTime(SCORE_DEBOUNCE_MS);
+    stale?.(300, 324);
+    expect(dock.progress).toBeNull();
   });
 
   it('surfaces a solver failure without wedging busy', async () => {

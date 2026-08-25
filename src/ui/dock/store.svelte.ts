@@ -6,7 +6,7 @@
 import type { DockControls, DockScore, Forecast } from '../../core/types';
 import type { DockScoreRequest } from '../../worker/protocol';
 import { getClient, type Client } from './client';
-import { candidateSetups, pickBest, type Suggestion } from './logic';
+import { candidateSetups, pickBest, quickCandidates, type Suggestion } from './logic';
 import { rigLock, type RigLock } from '../stores/rigLock.svelte';
 
 /** Long enough that dragging a slider is one solve, short enough to feel live. */
@@ -26,6 +26,10 @@ export class DockStore {
   suggestion: Suggestion | null = $state.raw(null);
   /** Scoring the current setup. */
   busy: boolean = $state(false);
+  /** Laps solved / laps to solve for the pass in flight, when it reports. */
+  progress: { done: number; total: number } | null = $state.raw(null);
+  /** `scores` came from the reduced reference grid; the full one is in flight. */
+  provisional: boolean = $state(false);
   /** Searching the candidate grid. Separate from `busy`: a slider nudge must
       not cancel a search, and the Suggest button must not read "Searching…"
       while a rescore runs (audit ux-01 H-03). */
@@ -62,18 +66,38 @@ export class DockStore {
     this.timer = setTimeout(() => void this.send(), SCORE_DEBOUNCE_MS);
   }
 
+  /**
+   * Two passes. The first scores against `quickCandidates()` and paints a
+   * provisional number in well under a second; the second scores against the
+   * full grid and replaces it. The solver memoises lap times per setup, so
+   * the second pass pays only for the candidates the first did not cover.
+   */
   private async send(): Promise<void> {
     const id = ++this.seq;
+    const setup = $state.snapshot(this.setup);
     this.busy = true;
+    this.progress = null;
     try {
-      const scores = await this.request([$state.snapshot(this.setup)]);
+      const quick = await this.request([setup], quickCandidates());
       if (id !== this.seq) return; // stale
-      this.scores = scores;
+      this.scores = quick;
+      this.provisional = true;
+      this.error = null;
+
+      const full = await this.request([setup], candidateSetups(), (done, total) => {
+        if (id === this.seq) this.progress = { done, total };
+      });
+      if (id !== this.seq) return; // stale
+      this.scores = full;
+      this.provisional = false;
       this.error = null;
     } catch (e) {
       if (id === this.seq) this.error = e instanceof Error ? e.message : String(e);
     } finally {
-      if (id === this.seq) this.busy = false;
+      if (id === this.seq) {
+        this.busy = false;
+        this.progress = null;
+      }
     }
   }
 
@@ -93,13 +117,21 @@ export class DockStore {
     }
   }
 
-  private request(setups: DockControls[]): Promise<DockScore[]> {
-    return this.client.request<DockScoreRequest>({
-      type: 'dockScore',
-      setups,
-      candidates: candidateSetups(),
-      forecast: $state.snapshot(this.forecast),
-    });
+  private request(
+    setups: DockControls[],
+    candidates: DockControls[] = candidateSetups(),
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<DockScore[]> {
+    return this.client.request<DockScoreRequest>(
+      {
+        type: 'dockScore',
+        setups,
+        candidates,
+        forecast: $state.snapshot(this.forecast),
+        progress: onProgress !== undefined,
+      },
+      { onProgress },
+    );
   }
 
   /**

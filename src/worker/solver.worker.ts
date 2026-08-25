@@ -17,7 +17,11 @@ import { PROTOCOL_VERSION, type Request, type Response } from './protocol';
 let boat: BoatDefinition | null = null;
 let geom: Record<SailId, AeroGeometry> | null = null;
 
-export function handle(req: Request): Response {
+/**
+ * `emit` posts extra messages (progress) before the returned response. It
+ * defaults to a no-op so tests and the stub can ignore it.
+ */
+export function handle(req: Request, emit: (r: Response) => void = () => {}): Response {
   const base = { protocolVersion: PROTOCOL_VERSION, id: req.id } as const;
   if (req.protocolVersion !== PROTOCOL_VERSION)
     return {
@@ -52,7 +56,16 @@ export function handle(req: Request): Response {
         return {
           ...base,
           type: 'ok',
-          result: scoreDockSetups(need(), req.setups, req.forecast, req.candidates, geom!),
+          result: scoreDockSetups(
+            need(),
+            req.setups,
+            req.forecast,
+            req.candidates,
+            geom!,
+            req.progress
+              ? (done, total) => emit({ ...base, type: 'progress', done, total })
+              : undefined,
+          ),
         };
     }
   } catch (e) {
@@ -67,5 +80,6 @@ function need(): BoatDefinition {
 
 // In a real worker context, wire onmessage; in tests `handle` is called directly.
 if (typeof self !== 'undefined' && 'postMessage' in self && typeof window === 'undefined') {
-  self.onmessage = (ev: MessageEvent<Request>) => self.postMessage(handle(ev.data));
+  self.onmessage = (ev: MessageEvent<Request>) =>
+    self.postMessage(handle(ev.data, (r) => self.postMessage(r)));
 }

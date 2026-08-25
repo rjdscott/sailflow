@@ -68,6 +68,19 @@ export function lapTimeHours(
   return t;
 }
 
+/**
+ * Coarser golden-section budgets than `optimal`'s defaults (12 flat, 16 TWA),
+ * used for lap-time scoring only. Dock scoring runs hundreds of these per
+ * screen, and at the defaults the first score took ~10.5 s on a desktop.
+ *
+ * prov: assumed, from a measured sweep over three setups × four wind speeds:
+ * 7/8 costs 0.35 % worst-case lap-time error against the full budget, which
+ * moves an expected-regret figure by at most 0.18 s/mile — under a tenth of
+ * the 2 s/mile tie band the UI already refuses to resolve inside. Guarded by
+ * `solve.test.ts` ("dock coarse solve budgets").
+ */
+export const DOCK_ITERS = { flat: 7, twa: 8 } as const;
+
 /** Hours per mile of windward-leeward for a setup at one wind speed. */
 export function lapTimeHoursUncached(
   boat: BoatDefinition,
@@ -75,20 +88,21 @@ export function lapTimeHoursUncached(
   f: Forecast,
   twsKt: number,
   geom: Record<SailId, AeroGeometry>,
+  iters: { flat: number; twa: number } = DOCK_ITERS,
 ): number {
   const base = { twsKt, seaState: f.seaState, crewKg: f.crewKg };
   const up = optimal(
     boat,
     setup,
     { ...base, twaDeg: 45, sailset: 'jib' }, // prov: assumed, canonical upwind TWA for lap-time scoring
-    { optimiseTwa: true },
+    { optimiseTwa: true, iters },
     geom,
   );
   const dn = optimal(
     boat,
     setup,
     { ...base, twaDeg: 150, sailset: 'asym' }, // prov: assumed, canonical downwind TWA for lap-time scoring
-    { optimiseTwa: true },
+    { optimiseTwa: true, iters },
     geom,
   );
   const vmgUp = Math.max(0.1, up.vmgKt.value); // prov: assumed, VMG floor to avoid divide-by-zero
@@ -111,12 +125,20 @@ export function scoreDockSetups(
   forecast: Forecast,
   candidates: DockControls[] = candidateGrid(),
   geom: Record<SailId, AeroGeometry> = geometryFor(boat),
+  /** Called after each lap solve. Reporting only — it cannot change the result. */
+  onProgress?: (done: number, total: number) => void,
 ): DockScore[] {
   const pmf = forecastPmf(forecast);
   const all = dedupe([...candidates, ...setups]);
   // T(S, w) for every candidate and wind speed; T*(w) is the column minimum.
+  const total = all.length * pmf.length;
+  let done = 0;
   const times = all.map((s) =>
-    pmf.map(({ twsKt }) => lapTimeHours(boat, s, forecast, twsKt, geom)),
+    pmf.map(({ twsKt }) => {
+      const t = lapTimeHours(boat, s, forecast, twsKt, geom);
+      onProgress?.(++done, total);
+      return t;
+    }),
   );
   const best = pmf.map((_, j) => {
     let bi = 0;
