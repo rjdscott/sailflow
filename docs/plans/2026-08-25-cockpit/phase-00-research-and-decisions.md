@@ -13,7 +13,7 @@ four research reports, ADR 0014 (3D view, supersedes 0011), ADR 0015
 - [x] ADR 0015 cockpit panels by sail system, instrument cell contract, density tiers.
 - [x] Decision-log rows 35–43 appended.
 - [x] Plan directory with seven phase files; index regenerated.
-- [ ] PR merged, `make check` green on main.
+- [x] PR merged, `make check` green on main.
 
 ## Verification
 
@@ -35,3 +35,4 @@ make docs && make check
   rendering tech, modes, dynamics and execution style (decision log 35–43).
   The codebase map is not a research file: it is a snapshot of code that
   the plan's Critical files section points at directly.
+- **2026-08-25 — PR #50 merged.**

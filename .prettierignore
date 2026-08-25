@@ -15,3 +15,5 @@ README.md
 data/polar
 PROVENANCE.md
 ASSUMPTIONS.md
+playwright-report
+test-results

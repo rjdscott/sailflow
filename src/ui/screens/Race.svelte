@@ -9,7 +9,7 @@
   import ConditionsStrip from '../race/ConditionsStrip.svelte';
   import ControlPanel from '../race/ControlPanel.svelte';
   import PlanView from '../race/PlanView.svelte';
-  import Readouts from '../race/Readouts.svelte';
+  import InstrumentBar from '../race/InstrumentBar.svelte';
   import RigElevation from '../race/RigElevation.svelte';
   import SailSections from '../race/SailSections.svelte';
   import { CONTROLS, GAIN_EPS, OBJECTIVE_METRIC, race, raceObjective } from '../race/store.svelte';
@@ -28,7 +28,7 @@
   import { logStoreUi } from '../log/store.svelte';
   import { track } from '../../lib/telemetry';
 
-  const advanced = $derived(settings.mode === 'advanced');
+  const advanced = $derived(settings.advanced);
   const model = new ModelOptimumStore(getClient());
   $effect(() => {
     if (advanced) model.request(conditions.twsKt, conditions.seaState, conditions.crewKg);
@@ -287,13 +287,15 @@
     <!-- Phone and tablet: hero readouts, then one tabbed picture card. -->
     <div class="lg-hide">
       {#if race.result}
-        <Readouts
+        <InstrumentBar
           result={race.result}
           twaDeg={conditions.twaDeg}
           objective={objectiveId}
-          variant="hero"
           busy={race.busy}
           target={optimumTargets}
+          history={race.history}
+          twsKt={conditions.twsKt}
+          coach={race.coach?.text}
         />
       {/if}
     </div>
@@ -375,13 +377,15 @@
   <div class="col-secondary stack">
     <div class="lg-only metrics-dock">
       {#if race.result}
-        <Readouts
+        <InstrumentBar
           result={race.result}
           twaDeg={conditions.twaDeg}
           objective={objectiveId}
-          variant="strip"
           busy={race.busy}
           target={optimumTargets}
+          history={race.history}
+          twsKt={conditions.twsKt}
+          coach={race.coach?.text}
         />
       {/if}
     </div>

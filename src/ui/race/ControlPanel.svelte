@@ -30,7 +30,7 @@
   /** Simple mode: the five gears you actually move on a beat. */
   const SIMPLE = ['mainsheet', 'traveller', 'backstay', 'jibSheet', 'jibLead'];
 
-  const advanced = $derived(settings.mode === 'advanced');
+  const advanced = $derived(settings.advanced);
   /** Kite hoisted: the kite rows show in both modes, checkbox or not (ux-01 M-22). */
   const kiteUp = $derived(conditions.sailset === 'asym');
   let explaining: string | null = $state(null);

@@ -19,6 +19,7 @@ import type {
 import type { OptimalRequest, TrimmedRequest } from '../../worker/protocol';
 import { coachSentence, type Dir } from '../explain';
 import { snap } from '../format';
+import { History } from '../instruments/history';
 import { BASE_RACE, conditions, type Preset } from '../stores/conditions.svelte';
 import { getClient, type Client } from './client';
 import { POINTS_OF_SAIL } from './pointOfSail';
@@ -44,6 +45,15 @@ export const GAIN_EPS = 0.005;
  * the Apply-optimum button can never point at different things.
  */
 export type Objective = 'vmgUp' | 'vmgDown' | 'speed';
+
+/**
+ * What a trend line is allowed to span: one wind, one angle, one sail plan.
+ * Change any of them and the samples either side are two different boats, so
+ * `History` throws the buffer away rather than drawing a step (ADR 0015).
+ */
+export function historyKey(c: Condition): string {
+  return `${c.twsKt}|${c.twaDeg}|${c.sailset}`;
+}
 
 export function raceObjective(c: Condition): Objective {
   const twa = Math.abs(c.twaDeg);
@@ -141,6 +151,12 @@ export class RaceStore {
     down: { ...BASE_DOWN },
   });
   result: SolveResult | null = $state(null);
+  /**
+   * The last few converged answers at the current condition, for the
+   * instrument bar's sparklines. Not `$state`: the bar re-reads it whenever
+   * `result` changes, which is the only moment it can have grown.
+   */
+  readonly history = new History();
   busy = $state(false);
   coach: Coach | null = $state(null);
   chevrons: Record<string, Chevron> = $state({});
@@ -260,6 +276,15 @@ export class RaceStore {
     }
     if (seq !== this.#seq) return; // a newer control state is already in flight
     this.result = result;
+    // A trend of last iterates is a trend of noise: only a solve that settled
+    // gets a point on the line.
+    if (result.converged) {
+      this.history.push(historyKey(condition), {
+        bs: result.bsKt.value,
+        vmg: result.vmgKt.value,
+        heel: result.heelDeg.value,
+      });
+    }
     this.busy = false;
     this.error = null;
     await this.#probe(seq, controls, condition, result);

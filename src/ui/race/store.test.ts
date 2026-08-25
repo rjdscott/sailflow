@@ -8,6 +8,7 @@ import {
   bestProbe,
   DEBOUNCE_MS,
   gradients,
+  historyKey,
   OBJECTIVE_METRIC,
   raceObjective,
   RaceStore,
@@ -24,9 +25,9 @@ function controls(over: Partial<ControlState['race']> = {}): ControlState {
   };
 }
 
-function result(vmgKt: number, bsKt = 6): SolveResult {
+function result(vmgKt: number, bsKt = 6, converged = true): SolveResult {
   return {
-    converged: true,
+    converged,
     iters: 8,
     bsKt: { value: bsKt, tier: 'A' },
     vmgKt: { value: vmgKt, tier: 'A' },
@@ -53,6 +54,12 @@ function result(vmgKt: number, bsKt = 6): SolveResult {
       lowerN: 1,
     },
     shape: {},
+    instruments: {
+      leechStallFrac: { value: 0.4, tier: 'C', sign: 1 },
+      jibLeechStripe: { value: 1, tier: 'C', sign: 1 },
+      helmLoad: { value: 0.5, tier: 'C', sign: 1 },
+      pctPolar: { value: 98, tier: 'A' },
+    },
     residuals: [0, 0, 0],
   };
 }
@@ -403,5 +410,41 @@ describe('RaceStore.syncDock', () => {
     expect(dock).toEqual({ upperTurns: 3, lowerTurns: -2, forestayMm: 30 });
     store.syncDock(null);
     expect(dock).toEqual(BASE_DOCK);
+  });
+});
+
+describe('RaceStore.history', () => {
+  /** Answers every request with a fixed solve, so only the pushes are under test. */
+  const feeding = (r: SolveResult) => ({ request: () => Promise.resolve(r) }) as unknown as Client;
+
+  it('keeps one sample per converged solve, in order', async () => {
+    const store = new RaceStore(feeding(result(4.5, 6.1)));
+    for (const mainsheet of [60, 65, 70]) {
+      store.request(controls({ mainsheet }), CONDITION);
+      await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    }
+    expect(store.history.series('bs')).toEqual([6.1, 6.1, 6.1]);
+    expect(store.history.series('vmg')).toHaveLength(3);
+    expect(store.history.key).toBe(historyKey(CONDITION));
+  });
+
+  it('drops a solve that did not converge', async () => {
+    const store = new RaceStore(feeding(result(4.5, 6.1, false)));
+    store.request(controls(), CONDITION);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    expect(store.result?.converged).toBe(false);
+    expect(store.history.series('bs')).toEqual([]);
+  });
+
+  it('starts over when the condition changes', async () => {
+    const store = new RaceStore(feeding(result(4.5, 6.1)));
+    store.request(controls(), CONDITION);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    expect(store.history.series('bs')).toHaveLength(1);
+
+    store.request(controls(), { ...CONDITION, twsKt: 14 });
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    expect(store.history.series('bs')).toHaveLength(1);
+    expect(store.history.key).toBe(historyKey({ ...CONDITION, twsKt: 14 }));
   });
 });

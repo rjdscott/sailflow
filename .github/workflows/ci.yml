@@ -28,6 +28,30 @@ jobs:
       - run: make setup
       - run: make check
 
+  # Layout smoke: one real browser at two desktop widths, against the built
+  # bundle (tests/ui/kit.spec.ts). The Playwright container already has the
+  # browsers, so there is no `playwright install` step to keep in sync — but
+  # the image tag must match the @playwright/test version in package.json.
+  ui-smoke:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # The Playwright image has no make; test:ui builds first.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:ui
+
   # The polar hold-out gate currently FAILs on known rows (ADR 0007,
   # validation/report.md), so this job reports rather than blocks: it
   # regenerates the report on every push and puts the held-out tables and the
