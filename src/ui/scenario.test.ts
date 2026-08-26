@@ -1,15 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Condition, RaceControls } from '../core/types';
-import {
-  decodeRace,
-  decodeScenario,
-  encodeRace,
-  encodeScenario,
-  normaliseForecast,
-  readSession,
-  SESSION_KEY,
-  writeSession,
-} from './scenario';
+import { readSession, SESSION_KEY, writeSession } from './scenario';
 
 const RACE: RaceControls = {
   backstay: 30,
@@ -41,42 +32,6 @@ beforeEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('race trim encoding', () => {
-  it('round-trips every control, negatives included', () => {
-    expect(decodeRace(encodeRace(RACE))).toEqual(RACE);
-  });
-
-  it('rejects a string of the wrong length or with junk in it', () => {
-    expect(decodeRace('30.70.20')).toBeNull();
-    expect(decodeRace(encodeRace(RACE).replace('30', 'x'))).toBeNull();
-  });
-
-  it('snaps an out-of-range value onto the control grid', () => {
-    const race = decodeRace(encodeRace({ ...RACE, backstay: 999, jibLead: -3 }));
-    expect(race?.backstay).toBe(100);
-    expect(race?.jibLead).toBe(0);
-  });
-});
-
-describe('scenario round-trip', () => {
-  it('survives the URL', () => {
-    const { condition, race } = decodeScenario(encodeScenario(CONDITION, RACE));
-    expect(condition).toEqual(CONDITION);
-    expect(race).toEqual(RACE);
-  });
-
-  it('accepts a hand-written partial link', () => {
-    const { condition, race } = decodeScenario({ tws: '22' });
-    expect(condition).toEqual({ twsKt: 22 });
-    expect(race).toBeNull();
-  });
-
-  it('clamps a hostile link instead of passing it to the solver', () => {
-    const { condition } = decodeScenario({ tws: '9999', twa: '-40', sea: '9', set: 'sails' });
-    expect(condition).toEqual({ twsKt: 30, twaDeg: 0, seaState: 4 });
-  });
-});
-
 describe('session persistence', () => {
   it('writes and reads back a whole session', () => {
     mockLocalStorage();
@@ -92,6 +47,13 @@ describe('session persistence', () => {
     expect(readSession()).toEqual({ condition: { twsKt: 14 } });
   });
 
+  it('snaps a stored trim onto the control grid, as a link is snapped', () => {
+    mockLocalStorage({
+      [SESSION_KEY]: JSON.stringify({ race: { ...RACE, backstay: 999, jibLead: -3 } }),
+    });
+    expect(readSession().race).toEqual({ ...RACE, backstay: 100, jibLead: 0 });
+  });
+
   it('survives garbage and a storage that throws', () => {
     mockLocalStorage({ [SESSION_KEY]: 'not json' });
     expect(readSession()).toEqual({});
@@ -105,9 +67,5 @@ describe('session persistence', () => {
     });
     expect(readSession()).toEqual({});
     expect(() => writeSession({ race: RACE })).not.toThrow();
-  });
-
-  it('rejects a forecast missing a field', () => {
-    expect(normaliseForecast({ minKt: 8, likelyKt: 12, maxKt: 16, seaState: 1 })).toBeNull();
   });
 });

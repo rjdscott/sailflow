@@ -25,6 +25,8 @@ export const TELEMETRY_EVENTS = [
   'race.abCompare',
   'race.puffReplay',
   'race.mode',
+  'race.pin',
+  'share.copyLink',
   'dock.commit',
   'log.saved',
 ] as const;
@@ -45,6 +47,8 @@ export const TELEMETRY_LABELS: Record<TelemetryEvent, string> = {
   'race.abCompare': 'A/B compares',
   'race.puffReplay': 'Puff replays',
   'race.mode': 'Modes chosen',
+  'race.pin': 'Trims pinned',
+  'share.copyLink': 'Links copied',
   'dock.commit': 'Rig committed',
   'log.saved': 'Log entries saved',
 };

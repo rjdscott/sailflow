@@ -23,7 +23,7 @@ Epic 3 (Rust engine) stay unstarted; nothing here pre-commits to them.
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
 | 01 | [Downwind physics passes its own gate](phase-01-downwind-physics.md) | 🔵 Not started | none |
-| 02 | [Share a trim, pin and compare](phase-02-share-and-compare.md) | 🔵 Not started | none |
+| 02 | [Share a trim, pin and compare](phase-02-share-and-compare.md) | 🟡 In progress | 2026-08-26 |
 | 03 | [Tuning guides as data](phase-03-guides-as-data.md) | 🔵 Not started | none |
 | 04 | [Onboarding and explainers](phase-04-onboarding-and-explainers.md) | 🔵 Not started | none |
 | 05 | [Second boat class](phase-05-second-boat.md) | 🔵 Not started | none |

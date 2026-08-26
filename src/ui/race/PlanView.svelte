@@ -90,6 +90,39 @@
   const mainSail = $derived(main ? sailPath(MAST, boomTip, main.half, side) : '');
   const jibSail = $derived(jib && jibUp ? sailPath(TACK, jibClew, jib.half, side) : '');
 
+  // --- the pinned trim, as a ghost outline (audit ux-01 M-19) ---------------
+  //
+  // The same `sailPath` the live sails use, off the pinned solve's own
+  // sections and the pinned controls' sheeting angles, so the two outlines are
+  // built by one code path and cannot disagree about what a trim looks like.
+  //
+  // Deliberately *not* tweened: it is a fixed reference, and a reference that
+  // slides towards the live sail every time a slider moves is not one. Static
+  // geometry with no animation, so there is nothing for reduced motion to
+  // suppress — the dashes carry the "this is the ghost" cue on their own,
+  // which is also what makes it readable with animation off.
+  //
+  // Drawn on the current tack, not the pinned one: a ghost mirrored to the
+  // other side of the boat is a picture of a different manoeuvre, not a
+  // comparison. Under the kite the pinned jib is dropped rather than drawn
+  // over a furled sail.
+  const pin = $derived(race.pinned);
+  const pinBoomDeg = $derived(pin ? boomAngle(pin.race.mainsheet, pin.race.traveller) : 0);
+  const pinBoomTip = $derived(clewAt(MAST, pinBoomDeg, D.boomPx, side));
+  const pinMainSail = $derived(
+    pin?.result.shape.main ? sailPath(MAST, pinBoomTip, pin.result.shape.main.half, side) : '',
+  );
+  const pinJibSail = $derived(
+    jibUp && pin?.result.shape.jib
+      ? sailPath(
+          TACK,
+          clewAt(TACK, jibSheetAngle(pin.race.jibLead, pin.race.jibSheet), D.jibFootPx, side),
+          pin.result.shape.jib.half,
+          side,
+        )
+      : '',
+  );
+
   // --- the gennaker, projected (ADR 0017) -----------------------------------
   //
   // Same mapping as the 3D hero, so the two pictures cannot disagree about
@@ -207,7 +240,8 @@
   /** One string, so the accessible name is not a wrapped attribute literal. */
   const alt = $derived(
     `Plan view of the boat, bow up, on ${side === 1 ? 'starboard' : 'port'} tack, ` +
-      `heeling ${fmt(heelDeg)} degrees, true wind ${fmt(twaDeg)} degrees off the bow`,
+      `heeling ${fmt(heelDeg)} degrees, true wind ${fmt(twaDeg)} degrees off the bow` +
+      (pin ? ', with the pinned trim behind it as a dashed outline' : ''),
   );
 </script>
 
@@ -260,6 +294,19 @@
 
       <!-- Sails. Ghost of the twisted ¾ section behind the half-height shape. -->
       <g class="sails">
+        <!-- The pinned trim, dashed and behind everything: it is the reference
+             the live sails are read against, so it never draws over them. -->
+        {#if pin}
+          <path class="pin" d={pinMainSail} />
+          <path class="pin" d={pinJibSail} />
+          <line
+            class="pin-boom"
+            x1={MAST.x}
+            y1={MAST.y}
+            x2={pinBoomTip.x.toFixed(2)}
+            y2={pinBoomTip.y.toFixed(2)}
+          />
+        {/if}
         <path class="ghost" d={mainGhost} />
         <path class="ghost" d={jibGhost} />
         <!-- The kite goes down first: it is the sail furthest to leeward, and
@@ -565,6 +612,20 @@
 
   .sail.kite.curl {
     stroke-dasharray: 5 3;
+  }
+
+  /* The pinned trim: outline only, dashed, at 40 % — the same weight the 3D
+     hero gives its ghost, so the two pictures read as one cue. No fill: a
+     second translucent sail over the live one makes the live camber unreadable,
+     which is the thing being compared. */
+  .pin,
+  .pin-boom {
+    fill: none;
+    stroke: var(--ink);
+    stroke-opacity: 0.4;
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    stroke-linejoin: round;
   }
 
   .ghost {

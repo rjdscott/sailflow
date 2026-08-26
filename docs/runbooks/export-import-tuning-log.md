@@ -55,6 +55,29 @@ tuning log is otherwise the app's only persistent data).
    `src/lib/logStore.ts` — initialises), then Import the JSON file from
    step 1.
 
+6. **Send one entry to a crewmate.** Log screen → tap the entry → "Copy link"
+   in the editor's action row, beside Save and Cancel. That is a share link
+   (ADR 0019), not an export: it opens the app at that entry's conditions,
+   rig and — if the entry recorded one — trim, so the recipient sees the model
+   run on your day. It carries nothing else: no venue, no notes, no result, no
+   id, and no log entry is created on the other end.
+
+   The link is built from what is **in the editor**, so an edit you have not
+   saved yet is in the link. The route follows the entry: one with race
+   settings opens on Race, one without opens on Dock
+   (`entryShare` in `src/ui/log/logic.ts`). Wind is the sailed band's midpoint
+   where you recorded one, the forecast's likely value otherwise; the true wind
+   angle and sail plan are **not** in the link, because a log entry never
+   recorded either.
+
+   The same button is on Race (in the actions bar) and on Dock (beside "Print
+   tuning card") for the state on screen rather than a stored entry.
+
+   If the clipboard is unavailable — an insecure origin, or a permission you
+   denied — the button does not claim a copy: it prints the link in a
+   read-only, pre-selected field under the actions for you to copy by hand
+   (`copyText` in `src/ui/share.ts`).
+
 ## Failure modes
 
 - **Import silently does nothing, no sheet.** The file picker was cancelled
@@ -77,6 +100,16 @@ tuning log is otherwise the app's only persistent data).
   supported: `accept=".json"` blocks the file picker from even offering CSV
   files, so this only happens if a CSV was renamed to `.json`), or JSON hand-
   edited into an invalid shape. Check the row rules in step 3.
+- **A share link from an entry opens on Dock, not Race.** The entry has no
+  race settings — "Record race settings for this entry" was never ticked — so
+  there is no trim to open on Race, and Dock is the screen that can answer a
+  rig and a forecast. Tick it, fill the trim, and copy the link again.
+
+- **A share link opens at the right wind but the wrong angle.** Expected: the
+  link carries no true wind angle, because the log form has no field for one.
+  The recipient's own angle stands. If the angle matters, copy the link from
+  the Race screen with the trim on the sliders instead.
+
 - **Log looks empty after reinstalling the PWA on iOS Safari.** IndexedDB
   survives an app reinstall in most cases but is not guaranteed — iOS can
   evict any web storage under disk pressure, PWA or not. This is exactly why
@@ -84,6 +117,13 @@ tuning log is otherwise the app's only persistent data).
 
 ## Last verified
 
+- **Last verified:** 2026-08-26, phase-two phase 02 (step 6, the share link per entry, added with the feature; steps 1–5 unchanged and not re-walked in a browser this pass).
+  Step 6 and its two failure modes were read off `entryShare`
+  (`src/ui/log/logic.ts`), `CopyLink.svelte` and `src/ui/share.ts`. `pnpm test`
+  covers the entry → link mapping (`src/ui/log/logic.test.ts`) and the codec
+  (`src/ui/share.test.ts`); `pnpm test:ui` (`tests/ui/share.spec.ts`) walks
+  copy-in-one-browser → open-in-another for the Race version of the same
+  button.
 - **Last verified:** 2026-08-25, drills-and-loop phase 03 (log schema v2).
   The export/import code path and `validateRow` rules were read directly from
   `src/lib/logExport.ts` and `src/ui/screens/Log.svelte`; `pnpm test`

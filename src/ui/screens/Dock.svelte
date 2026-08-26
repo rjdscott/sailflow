@@ -2,6 +2,7 @@
   import TopBar from '../components/TopBar.svelte';
   import LockIcon from '../components/LockIcon.svelte';
   import Toast from '../components/Toast.svelte';
+  import CopyLink from '../components/CopyLink.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
   import { dock } from '../dock/store.svelte';
@@ -160,7 +161,16 @@
     </div>
 
     <!-- The output of a week of study is a sheet for the bulkhead (M-25). -->
-    <button type="button" class="quiet" onclick={() => window.print()}>Print tuning card</button>
+    <div class="share-row">
+      <button type="button" class="quiet" onclick={() => window.print()}>Print tuning card</button>
+      <!-- The forecast and the setup under consideration, as a link: "what do
+           you think of this tune for tomorrow?" is a Dock question, and it was
+           unanswerable without one (ADR 0019). -->
+      <CopyLink
+        route="dock"
+        title="Copy a link to this forecast and rig setup, to paste to a crewmate."
+      />
+    </div>
   </div>
 </div>
 
@@ -300,6 +310,12 @@
       width: 100%;
       border-collapse: collapse;
     }
+  }
+
+  .share-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
   }
 
   .quiet {

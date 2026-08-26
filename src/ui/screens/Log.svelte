@@ -4,6 +4,7 @@
   import Segmented from '../components/Segmented.svelte';
   import Sheet from '../components/Sheet.svelte';
   import Toast from '../components/Toast.svelte';
+  import CopyLink from '../components/CopyLink.svelte';
   import NumberField from '../log/NumberField.svelte';
   import { logStoreUi, type ImportPreview } from '../log/store.svelte';
   import {
@@ -11,6 +12,7 @@
     DOCK_KEYS,
     draftLabel,
     emptyRace,
+    entryShare,
     outcomeLine,
     prefillEntry,
     RACE_KEYS,
@@ -100,6 +102,19 @@
     editingId = null;
     logStoreUi.clearDraft();
   }
+
+  /**
+   * The link for the entry in the editor. Reads the form rather than the
+   * stored row, so what is on screen is what gets shared; `includeRace` gates
+   * the trim exactly as saving does, so a link never carries a trim the entry
+   * would not.
+   */
+  const entryLink = $derived(
+    entryShare({
+      ...$state.snapshot(form),
+      race: includeRace ? $state.snapshot(raceForm) : undefined,
+    } as LogEntry),
+  );
 
   async function handleSave(): Promise<void> {
     const entry: LogEntry = {
@@ -257,6 +272,16 @@
     <div class="actions">
       <button type="submit" class="primary">Save</button>
       <button type="button" class="quiet" onclick={closeEditor}>Cancel</button>
+      <!-- This entry as a link (ADR 0019): the wind, sea state, crew, rig and
+           trim it recorded, opened on whichever screen can answer it. Built
+           from the form's live values, so a link copied after an edit carries
+           the edit whether or not it has been saved yet. -->
+      <CopyLink
+        route={entryLink.route}
+        shareState={entryLink.state}
+        label="Copy link"
+        title="Copy a link that opens this entry's conditions, rig and trim in the app."
+      />
       {#if editingId}
         <button type="button" class="danger" onclick={handleDeleteTap}>
           {deleteArmed ? 'Tap again to delete' : 'Delete'}

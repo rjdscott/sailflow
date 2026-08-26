@@ -5,12 +5,14 @@ import {
   deltaLine,
   DOCK_KEYS,
   draftLabel,
+  entryShare,
   outcomeLine,
   prefillEntry,
   RACE_KEYS,
   sortEntries,
   SPECS,
 } from './logic';
+import { decodeShare, encodeShare } from '../share';
 
 function entry(over: Partial<LogEntry> = {}): LogEntry {
   return {
@@ -145,5 +147,61 @@ describe('outcomeLine', () => {
     );
     expect(outcomeLine(entry({ outcome: { result: '', placing: 2 } }))).toBe('placing 2');
     expect(outcomeLine(entry())).toBeNull();
+  });
+});
+
+describe('entryShare', () => {
+  const RACE = {
+    backstay: 45,
+    mainsheet: 70,
+    traveller: -20,
+    cunningham: 20,
+    outhaul: 60,
+    vang: 30,
+    jibSheet: 70,
+    jibLead: 5,
+    inhauler: 20,
+    mainHalyard: 50,
+    jibHalyard: 50,
+  };
+
+  it('opens on Race when the entry recorded a trim, on Dock when it did not', () => {
+    expect(entryShare(entry({ race: RACE })).route).toBe('race');
+    expect(entryShare(entry()).route).toBe('dock');
+  });
+
+  it('round-trips the rig, the trim and the forecast through a link', () => {
+    const { state } = entryShare(entry({ race: RACE }));
+    const back = decodeShare(encodeShare(state));
+    expect(back.race).toEqual(RACE);
+    expect(back.dock).toEqual({ upperTurns: 2, lowerTurns: 1, forestayMm: 10 });
+    expect(back.forecast).toEqual({
+      minKt: 8,
+      likelyKt: 12,
+      maxKt: 16,
+      seaState: 1,
+      crewKg: 260,
+    });
+  });
+
+  it('uses the sailed band midpoint for the wind, and the forecast when there is none', () => {
+    expect(entryShare(entry()).state.condition?.twsKt).toBe(12); // (9 + 14) / 2, rounded
+    const noActual = entry({ actual: { minKt: null, maxKt: null } });
+    expect(entryShare(noActual).state.condition?.twsKt).toBe(12); // forecast likely
+  });
+
+  it('invents no angle and no sail plan: the entry never recorded either', () => {
+    const { state } = entryShare(entry({ race: RACE }));
+    expect(state.condition?.twaDeg).toBeUndefined();
+    expect(state.condition?.sailset).toBeUndefined();
+    const params = encodeShare(state);
+    expect(params.twa).toBeUndefined();
+    expect(params.set).toBeUndefined();
+  });
+
+  it('omits a half-recorded forecast rather than shipping nulls', () => {
+    const half = entry({ forecast: { minKt: 8, likelyKt: null, maxKt: 16 } });
+    expect(entryShare(half).state.forecast).toBeUndefined();
+    expect(entryShare(entry({ crewKg: null })).state.forecast).toBeUndefined();
   });
 });

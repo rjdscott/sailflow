@@ -1,3 +1,17 @@
+<script module lang="ts">
+  /**
+   * One convention everywhere: + means the target is faster than you (ux-02
+   * M-09). It used to live in a comment and nowhere the reader could see it,
+   * so a leading `+` read as good news beside "0.29 kt below target" (audit
+   * ux-03 M-05). The label carries the direction now, and the BSP and VMG
+   * explainer sheets say it in prose.
+   */
+  export const DEFAULT_DELTA_LABEL = 'to optimum (+ = optimum is faster)';
+
+  /** The same sentence about a pinned trim (audit ux-01 M-19). */
+  export const PINNED_DELTA_LABEL = 'to pinned trim (+ = the pinned trim is faster)';
+</script>
+
 <script lang="ts">
   import type { SolveResult } from '../../core/types';
   import { fmt, targetOf } from '../format';
@@ -30,6 +44,7 @@
     twsKt,
     coach,
     targetWithheld = false,
+    deltaLabel = DEFAULT_DELTA_LABEL,
   }: {
     result: SolveResult;
     twaDeg: number;
@@ -46,16 +61,15 @@
     /** No target because a drill is holding the answer back, not because the
      *  solver is still working (audit ux-03 M-02). */
     targetWithheld?: boolean;
+    /**
+     * What the Δ on every cell is measured against, in words. A prop because
+     * `target` is not always the solver's optimum any more: with a trim pinned
+     * it is the pinned trim, and a delta whose label still said "to optimum"
+     * would be a lie in the one place the reader looks for the meaning.
+     */
+    deltaLabel?: string;
   } = $props();
 
-  /**
-   * One convention everywhere: + means the target is faster than you (ux-02
-   * M-09). It used to be stated in this comment and nowhere the reader could
-   * see it, so a leading `+` read as good news beside "0.29 kt below target"
-   * (audit ux-03 M-05). The label carries the direction now, and the BSP and
-   * VMG explainer sheets say it in prose.
-   */
-  const DELTA_LABEL = 'to optimum (+ = optimum is faster)';
   const vmgBetter = $derived(objective === 'vmgDown' ? ('less' as const) : ('more' as const));
   const gapTo = (
     value: number,
@@ -64,7 +78,7 @@
     better: 'more' | 'less' = 'more',
   ) => {
     const t = targetOf(value, to, decimals, better);
-    return t && { ...t, label: DELTA_LABEL };
+    return t && { ...t, label: deltaLabel };
   };
 
   /**
