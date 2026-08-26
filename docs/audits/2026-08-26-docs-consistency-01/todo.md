@@ -25,8 +25,8 @@ number the app shows and were not fixed silently.
 - [x] **H-12** (P1, S) Cache-bust runbook → `App.svelte` toast; stamp. (#83)
 - [x] **H-13** (P1, S) ADR 0012 wording in `validation/README.md`, `polar.test.ts`, `report.ts`, `compare.ts`. (#82)
 - [x] **H-14** (P1, S) CLAUDE.md/ADR 0006 claim narrowed to what `prov_check` enforces; widening filed. (#83)
-- [ ] **H-15** (P1, S) `TACK_TRAVEL_M` 0.6 → 0.3 (doc 04 §2.4); row re-tagged.
-- [ ] **H-16** (P1, S) Rename kite `SAG_FORWARD_FRACTION` → `LUFF_FORWARD_FRACTION`; row added.
+- [x] **H-15** (P1, S) `TACK_TRAVEL_M` 0.6 → 0.3 (doc 04 §2.4); row re-tagged.
+- [x] **H-16** (P1, S) Rename kite `SAG_FORWARD_FRACTION` → `LUFF_FORWARD_FRACTION`; row added.
 - [x] **H-17** (P1, S) ADR 0001 status line + note (branch protection never enabled; 0002). (#83)
 - [x] **H-18** (P1, S) ADR 0008 note: importer not built, deferred. (#83)
 - [x] **H-19** (P1, S) Phase-05 premise/citation corrected. (#83)
@@ -80,4 +80,4 @@ unticked:
 ## Log
 
 - 2026-08-26 — reconciled against main at `3a2e96d`; 24 ticked, 3 left open.
-
+- 2026-08-26 — H-15/H-16 doc rows restored from #82's `b4caa2e` on this branch (#83 had reverted them); ticked (close-out).
