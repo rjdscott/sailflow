@@ -29,10 +29,9 @@ reconciled with the code. The polar hold-out gate still reads FAIL — 8/10
   guides as data, onboarding and explainers, a second boat class, phone
   performance.
 - `validation/hash.test.ts` pins what the boat hash covers (#88).
-- **Audit release-01** (`docs/audits/2026-08-26-release-01/`): the repo and the
-  live site read cold by a first-time visitor. 17 findings, no Criticals; the
-  P0/P1 documentation findings are fixed in the same commit, the code ones are
-  on its punchlist.
+- **Release-readiness audit** `docs/audits/2026-08-26-release-01/`: a
+  cold-reader pass over the README, docs and live site; its P0/P1 docs
+  findings are fixed in this release, code findings carried in its `todo.md`.
 
 ### Changed
 
@@ -53,6 +52,21 @@ reconciled with the code. The polar hold-out gate still reads FAIL — 8/10
   first-load chunk.
 
 ### Fixed
+
+- **ux-03 P1 Mediums** (#91): drills no longer print "Finding the optimum…"
+  while the target is withheld; Δ sign convention stated; 44 px hit areas on
+  instrument `?` buttons; chip rows are groups; bottom nav honours the
+  safe-area inset; the HELM gauge draws a track; phone verdict printed once;
+  regret card titled once; "More/Fewer readings" disclosure.
+- **Audit punchlists reconciled** (#89): dc-01, ux-01, ux-02 and ux-03 ticked
+  against git; two `ASSUMPTIONS.md` rows that #83 had reverted (`TACK_TRAVEL_M`
+  0.3 m, `LUFF_FORWARD_FRACTION`) restored.
+- `hash.test.ts` typechecks and is formatted; the docs link check skips agent
+  worktrees (#90).
+- **Audit release-01** (`docs/audits/2026-08-26-release-01/`): the repo and the
+  live site read cold by a first-time visitor. 17 findings, no Criticals; the
+  P0/P1 documentation findings are fixed in the same commit, the code ones are
+  on its punchlist.
 
 - **The kite's head opens as the sheet eases** (#80): the drawn leech bulges to
   leeward on a profile peaking at ~63 % height instead of running straight

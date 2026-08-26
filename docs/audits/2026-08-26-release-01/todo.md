@@ -9,7 +9,7 @@ for the owner.
 
 ## P0 — ship-blocker
 
-- [ ] **H-18** — `make check` is red at `c5da8d7` on a clean tree:
+- [x] **H-18** — `make check` is red at `c5da8d7` on a clean tree: — fixed in #90
   `validation/hash.test.ts` (#88) fails `prettier --check` and `svelte-check`
   because `kind: 'assumed'` widens to `string` where `ProvenanceKind` is
   wanted. `kind: 'assumed' as const` plus `prettier --write`. CI runs
