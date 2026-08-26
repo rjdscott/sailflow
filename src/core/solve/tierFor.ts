@@ -56,7 +56,20 @@ function demote(t: Tier): Tier {
   return t === 'A' ? 'B' : 'C';
 }
 
-export const POLAR_MIN_TWS = 6; // prov: ORC Speed Guide J/70 lowest printed TWS
-export const POLAR_MAX_TWS = 20; // prov: ORC Speed Guide J/70 highest printed TWS
+/**
+ * The TWS range a reference polar is trusted over. Outside it, an output is
+ * demoted one tier: the table says nothing about wind speeds it does not
+ * print, and the fit had no data there.
+ *
+ * prov: class-independent. 6 and 20 kt are the first and last columns of the
+ * ORC Speed Guide *format* — every Speed Guide prints 6/8/10/12/14/16/20,
+ * whatever boat it is for — so this is a property of the reference document,
+ * not of the J/70. `validation/polar.test.ts` asserts the committed polar's
+ * grid still matches, which is what would catch a source that broke the rule.
+ */
+// prov: ORC Speed Guide printed TWS columns, class-independent (see above).
+export const POLAR_MIN_TWS = 6;
+// prov: ORC Speed Guide printed TWS columns, class-independent (see above).
+export const POLAR_MAX_TWS = 20;
 /** Shape-layer influence above which an output loses one tier. prov: assumed */
 export const SHAPE_DEMOTE_THRESHOLD = 0.08;

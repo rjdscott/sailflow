@@ -222,7 +222,7 @@ export function optimalTrim(
     return { race, result: best, score: bestScore };
   };
 
-  const seeds = opts.seeds?.length ? opts.seeds : [controls.race, baseRace()];
+  const seeds = opts.seeds?.length ? opts.seeds : [controls.race, baseRace(boat)];
   let won = descend(seeds[0]);
   // Strictly better, so an exact tie keeps the earlier seed and the search
   // stays idempotent on its own answer.

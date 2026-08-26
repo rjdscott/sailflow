@@ -15,7 +15,7 @@ const dn = { twsKt: 12, twaDeg: 150, seaState: 1 as const, crewKg: 300, sailset:
 
 /** Deliberately bad: over-flattened, over-vanged, sheets eased, lead at the stop. */
 const mistrim: RaceControls = {
-  ...baseRace(),
+  ...baseRace(boat),
   backstay: 90,
   mainsheet: 20,
   traveller: -60,
@@ -80,7 +80,7 @@ describe('optimalTrim', () => {
     const only = (seed: RaceControls) =>
       optimalTrim(boat, from(mistrim), up, { seeds: [seed] }, GEOM);
     const fromStart = only(mistrim);
-    const fromBase = only(baseRace());
+    const fromBase = only(baseRace(boat));
     const both = optimalTrim(boat, from(mistrim), up, {}, GEOM); // default seeds
 
     expect(both.result.vmgKt.value).toBeGreaterThanOrEqual(fromStart.result.vmgKt.value);
@@ -91,7 +91,7 @@ describe('optimalTrim', () => {
   });
 
   it('seeds only the controls it searches, never the halyards or inhauler', () => {
-    const seed = { ...baseRace(), inhauler: 99, mainHalyard: 99, jibHalyard: 99 };
+    const seed = { ...baseRace(boat), inhauler: 99, mainHalyard: 99, jibHalyard: 99 };
     const o = optimalTrim(boat, from(mistrim), up, { seeds: [seed] }, GEOM);
     expect(o.race.inhauler).toBe(mistrim.inhauler);
     expect(o.race.mainHalyard).toBe(mistrim.mainHalyard);
@@ -161,7 +161,7 @@ describe('optimalTrim', () => {
 
   it('stops at a control stop instead of stepping off the grid', () => {
     // Backstay hard on, traveller hard down: the ± probe has one legal side.
-    const atStops = { ...baseRace(), backstay: 100, traveller: -100 };
+    const atStops = { ...baseRace(boat), backstay: 100, traveller: -100 };
     const o = optimalTrim(boat, from(atStops), up, { sweeps: 2 }, GEOM);
     expect(o.race.backstay).toBeLessThanOrEqual(boat.controls.backstay.max);
     expect(o.race.traveller).toBeGreaterThanOrEqual(boat.controls.traveller.min);

@@ -56,10 +56,24 @@ export function hikeFraction(boat: BoatDefinition, heelDeg: number): number {
   return Math.min(1, Math.max(0, heelDeg / ramp));
 }
 
-/** Fixed seed table: boat speed (kt) versus TWS for an upwind J/70. prov: ORC Speed Guide J/70 rounded */
+/**
+ * Fixed seed table: boat speed (kt) versus TWS. Newton's *starting point*, not
+ * an answer — the root it converges to is set by the residuals, not by where
+ * the search began, and `validation/invariants.test.ts` asserts the solve is
+ * seed-independent by replaying it.
+ *
+ * prov: class-independent. Read off the J/70's ORC Speed Guide and rounded,
+ * but used here only as "a sport keelboat of this size does roughly this
+ * speed" — any 6–8 m keelboat starts inside the basin of attraction from
+ * these numbers. If a future class fails to converge from them, the fix is a
+ * per-boat `solve.seedBs*` knob, not a second hard-coded table.
+ */
+// prov: class-independent Newton seeds, see the block comment above.
 const SEED_TWS = [4, 6, 8, 10, 12, 14, 16, 20, 25];
+// prov: class-independent Newton seeds, see the block comment above.
 const SEED_BS_UP = [3.2, 4.6, 5.4, 5.9, 6.1, 6.2, 6.3, 6.4, 6.4];
-const SEED_BS_DN = [3.0, 4.4, 5.3, 6.0, 6.6, 7.2, 8.0, 10.0, 11.0]; // prov: ORC Speed Guide J/70 rounded
+// prov: class-independent Newton seeds, see the block comment above.
+const SEED_BS_DN = [3.0, 4.4, 5.3, 6.0, 6.6, 7.2, 8.0, 10.0, 11.0];
 
 export function seedFor(c: Condition): [number, number, number] {
   const up = Math.abs(c.twaDeg) < 90; // prov: assumed, upwind/downwind split at 90° TWA

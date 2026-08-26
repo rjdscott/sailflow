@@ -21,6 +21,21 @@
   import { logStoreUi } from '../log/store.svelte';
   import { drills } from '../drills/store.svelte';
   import { GUIDE_LABELS, referenceStatus, type GuideId } from '../../lib/reference';
+  import { boatChoices } from '../../lib/boat';
+
+  const BOATS = boatChoices();
+
+  /* ponytail: a class change reloads the page rather than re-seeding live.
+     Every store — race controls, conditions, rig lock, drills — reads its
+     ranges and base trim from the boat once, at construction, so a live swap
+     would leave each of them holding the previous class's numbers under the
+     new class's name. A reload is one line and cannot be half-done. Revisit if
+     switching ever becomes something people do mid-session. */
+  function switchBoat(id: string): void {
+    if (id === settings.boatId) return;
+    settings.setBoatId(id);
+    location.reload();
+  }
   import { replayTour } from '../onboarding/tour.svelte';
 
   const VERSION = import.meta.env.VITE_APP_VERSION;
@@ -182,6 +197,28 @@
         Race adds the eleven-control panel, the per-wind-speed regret table, the model-vs-guides
         comparison and the tier-3 drills; Analyse is Race plus the comparison surfaces still being
         built. It applies everywhere, not just on this screen.
+      </p>
+      <div class="setting">
+        <span>Boat</span>
+        {#if BOATS.length > 1}
+          <Segmented
+            ariaLabel="Boat class"
+            options={BOATS.map((b) => ({ value: b.id, label: b.name }))}
+            value={settings.boatId}
+            onchange={switchBoat}
+          />
+        {:else}
+          <span class="value">{BOATS[0].name}</span>
+        {/if}
+      </div>
+      <p class="note">
+        {#if BOATS.length > 1}
+          Every number on every screen is that class's — its own measured boat file, its own
+          reference polar, its own tuning guides. Switching reloads the app.
+        {:else}
+          The {BOATS[0].name} is the only class committed so far. Adding one is data, not code:
+          <code>docs/runbooks/add-a-boat-class.md</code>.
+        {/if}
       </p>
       <div class="setting">
         <span>Theme</span>

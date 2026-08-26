@@ -6,7 +6,6 @@
  * by construction every delta is zero here. Tests use it as the reference
  * point for every monotonicity sweep.
  */
-import boatJson from '../../../data/boats/j70.json';
 import type {
   BoatDefinition,
   DockControls,
@@ -19,8 +18,12 @@ import { rigState } from '../rig/state';
 import { flyingShape } from './flying';
 
 /**
- * Dock base: zero turns from the guide's base rig, forestay at base length.
- * prov: North J/70 tuning guide base (Loos PT-2 22 uppers / 12 lowers).
+ * Dock base: zero turns from the class guide's base rig, forestay at base
+ * length. Class-independent by construction — the dock controls are defined
+ * as *deltas from the guide's base setting*, so the base is the origin for
+ * every class, and the class-specific part is which rig that origin names
+ * (`boat.provenance` records it per boat).
+ * prov: definitional, not measured — zero is the datum, not a rig tension.
  */
 export function baseDock(): DockControls {
   return { upperTurns: 0, lowerTurns: 0, forestayMm: 0 };
@@ -28,16 +31,16 @@ export function baseDock(): DockControls {
 
 /**
  * Race base: mid-range trim for a boat sailing upwind in the guide's base
- * wind band, read from `data/boats/j70.json` (`baseRace`; prov: assumed — the
- * North guide publishes qualitative settings, not percentages).
+ * wind band, read from the boat's own `baseRace` block. The boat file is the
+ * one source; the numbers and their provenance live there, not here.
  *
- * The JSON is the one source. Race mode's default trim
- * (`src/ui/stores/conditions.svelte.ts`) reads the same block, so the datum
- * the shape deltas are measured against and the trim the sliders start on
- * cannot drift apart again (cockpit phase 05, carried from phase 03).
+ * Race mode's default trim (`src/ui/stores/conditions.svelte.ts`) reads the
+ * same block, so the datum the shape deltas are measured against and the trim
+ * the sliders start on cannot drift apart again (cockpit phase 05, carried
+ * from phase 03).
  */
-export function baseRace(): RaceControls {
-  return { ...(boatJson.baseRace as RaceControls) };
+export function baseRace(boat: BoatDefinition): RaceControls {
+  return { ...boat.baseRace };
 }
 
 /**
@@ -54,8 +57,8 @@ export function baseRace(): RaceControls {
  * gennaker controls, which are not `RaceControls`. Same pick-key-by-key
  * reason as `BASE_RACE_DOWN` in `src/ui/stores/conditions.svelte.ts`.
  */
-export function baseRaceDown(): RaceControls {
-  return { ...baseRace(), mainsheet: boatJson.baseRaceDown.mainsheet };
+export function baseRaceDown(boat: BoatDefinition): RaceControls {
+  return { ...baseRace(boat), mainsheet: boat.baseRaceDown.mainsheet };
 }
 
 /**
@@ -67,7 +70,7 @@ export function referenceShapes(
   sails: readonly SailId[],
   sailset: SailSet = 'jib',
 ): Partial<Record<SailId, SailShape>> {
-  const race = sailset === 'asym' ? baseRaceDown() : baseRace();
+  const race = sailset === 'asym' ? baseRaceDown(boat) : baseRace(boat);
   const rig = rigState(boat, baseDock(), race.backstay);
   const out: Partial<Record<SailId, SailShape>> = {};
   for (const s of sails) out[s] = flyingShape(boat, rig, race, s);

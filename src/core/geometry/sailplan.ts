@@ -39,15 +39,19 @@ function mm(boat: BoatDefinition, sail: SailId, key: string): number {
 /**
  * Girth stations for main and jib. Fractional heights are the class
  * measurement points: quarter, half, three-quarter, upper (7/8), top.
- * prov: J/70 Class Rules sail measurement points (boat JSON dimensions).
+ * prov: class-independent. Sail measurement rules put girth stations at the
+ * quarter, half and three-quarter points of the leech for every class that
+ * measures a sail this way; the millimetre values are per-boat and come off
+ * the boat file, whose provenance rows name the class rules they were read
+ * from.
  */
 function girthStations(boat: BoatDefinition, sail: SailId): Station[] {
   if (sail === 'main')
     return [
       { h: 0, c: mm(boat, sail, 'footMm') },
-      { h: 0.25, c: mm(boat, sail, 'quarterMm') }, // prov: J/70 Class Rules sail measurement points
+      { h: 0.25, c: mm(boat, sail, 'quarterMm') }, // prov: class-independent station (see the block comment above)
       { h: 0.5, c: mm(boat, sail, 'halfMm') },
-      { h: 0.75, c: mm(boat, sail, 'threeQuarterMm') }, // prov: J/70 Class Rules sail measurement points
+      { h: 0.75, c: mm(boat, sail, 'threeQuarterMm') }, // prov: class-independent station (see the block comment above)
       { h: 0.875, c: mm(boat, sail, 'upperMm') }, // prov: upper girth is the 7/8 point
       { h: 1, c: mm(boat, sail, 'topMm') },
     ];
@@ -55,7 +59,7 @@ function girthStations(boat: BoatDefinition, sail: SailId): Station[] {
     { h: 0, c: mm(boat, sail, 'lpMm') }, // prov: LP stands in for the jib foot chord
     { h: 0.25, c: mm(boat, sail, 'quarterMm') },
     { h: 0.5, c: mm(boat, sail, 'halfMm') },
-    { h: 0.75, c: mm(boat, sail, 'threeQuarterMm') }, // prov: J/70 Class Rules sail measurement points
+    { h: 0.75, c: mm(boat, sail, 'threeQuarterMm') }, // prov: class-independent station (see the block comment above)
     { h: 1, c: mm(boat, sail, 'topMm') },
   ];
 }

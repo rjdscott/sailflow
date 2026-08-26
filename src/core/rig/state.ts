@@ -77,7 +77,10 @@ export function rigState(boat: BoatDefinition, dock: DockControls, backstayPct: 
   // guides publish (North: 1 1/2 - 2 1/2 in aft bend at the spreaders).
   const prebendMm = Math.max(
     0,
-    knob(boat, 'rig.prebendBaseMm', 50) + // prov: North J/70 guide base 1.5-2.5 in, midpoint ~50 mm
+    // prov: per-class, default from the North J/70 guide base 1.5-2.5 in,
+    // midpoint ~50 mm. A class whose guide calls a different base prebend
+    // sets this knob; leaving it is borrowing the reference boat's rig.
+    knob(boat, 'rig.prebendBaseMm', 50) +
       knob(boat, 'rig.prebendPerUpperTurnMm', 2) * dock.upperTurns + // prov: assumed, swept spreaders add bend as uppers come on
       knob(boat, 'rig.prebendPerLowerTurnMm', -6) * dock.lowerTurns, // prov: assumed, tighter lowers straighten
   );

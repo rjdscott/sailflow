@@ -26,7 +26,7 @@ Epic 3 (Rust engine) stay unstarted; nothing here pre-commits to them.
 | 02 | [Share a trim, pin and compare](phase-02-share-and-compare.md) | 🟡 In progress | 2026-08-26 |
 | 03 | [Tuning guides as data](phase-03-guides-as-data.md) | 🟡 In progress | 2026-08-26 — schema, enumeration, selector and runbook landed; third guide blocked on sourcing |
 | 04 | [Onboarding and explainers](phase-04-onboarding-and-explainers.md) | 🟢 Completed | 2026-08-26 |
-| 05 | [Second boat class](phase-05-second-boat.md) | 🔵 Not started | none |
+| 05 | [Second boat class](phase-05-second-boat.md) | 🟡 In progress | 2026-08-26 |
 | 06 | [Phone performance](phase-06-phone-performance.md) | 🟢 Completed | 2026-08-26 — ux-03 M-20/21/22/24/25 and every P3 low fixed with measured before/after; the seven remaining P2 mediums are instrument content, deferred to 04 with reasons |
 
 Order: 01 first (credibility), then 02 and 03 in parallel (both data/UI,

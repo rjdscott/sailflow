@@ -58,4 +58,5 @@ line. Don't hand-edit.
 | [0017](0017-kite-drawn-from-downwind-controls-as-tier-c-geometry.md) | The gennaker is drawn from the downwind controls by a UI-side, tier-C geometry mapping, not by the solver | Accepted; luff direction, leech and core scope amended 2026-08-26 |
 | [0018](0018-offwind-parachute-drag-knob-not-a-mode-switch.md) | The offwind sail gets a fitted bluff-body drag knob above the wing-to-parachute changeover, not a soak/plane mode switch | Accepted |
 | [0019](0019-share-links-are-a-versioned-query-with-a-migration-table.md) | Share links are a versioned, compact query with a migration table | Accepted |
+| [0020](0020-melges-24-is-the-second-class-blocked-on-the-ui-boat-switch.md) | Melges 24 is the second class, and it lands after the UI takes the active boat | Accepted |
 <!-- index:end -->

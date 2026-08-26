@@ -1,9 +1,12 @@
 /**
- * Staged calibration of the J/70 free parameters (ADR 0007, split per ADR 0012).
+ * Staged calibration of one class's free parameters (ADR 0007, split per
+ * ADR 0012). `pnpm calibrate --boat <id>`; default is the J/70.
  *
- * Run: `pnpm calibrate`. Writes the fitted values into the `calibration` block
- * of `data/boats/j70.json` and the full audit trail into
- * `calibration/residuals.json`. Nothing else is written; `validation/` only
+ * Run: `pnpm calibrate --boat <id>`. Writes the fitted values into the
+ * `calibration` block of `data/boats/<id>.json` and the full audit trail into
+ * `calibration/residuals.json` (the default class keeps that name, which a
+ * dozen docs and `scripts/provenance.mjs` cite; other classes get
+ * `residuals-<id>.json`). Nothing else is written; `validation/` only
  * ever reads.
  *
  * Four stages, each a Nelder-Mead search on log-normalised parameters with a
@@ -61,6 +64,7 @@ import type { Comparison, Polar, PolarRow } from '../validation/compare';
 import {
   angleRows,
   boat,
+  BOAT_ID,
   compareRow,
   HELD_OUT_TWS,
   loadPolar,
@@ -68,6 +72,18 @@ import {
   POLAR_SEA_STATE,
   vmgRows,
 } from '../validation/compare';
+import { DEFAULT_BOAT_ID } from '../src/lib/boat';
+
+const BOAT_FILE = `data/boats/${BOAT_ID}.json`;
+/**
+ * The default class keeps `residuals.json`: `scripts/provenance.mjs`,
+ * `ASSUMPTIONS.md` and two runbooks cite that path by name, and every one of
+ * them means the J/70's residuals. Other classes get a suffix.
+ */
+const RESIDUALS_FILE =
+  BOAT_ID === DEFAULT_BOAT_ID
+    ? 'calibration/residuals.json'
+    : `calibration/residuals-${BOAT_ID}.json`;
 import type { Condition, DockControls } from '../src/core/types';
 import { nelderMead } from '../src/core/math/nelderMead';
 import { baseRace } from '../src/core/shape/base';
@@ -154,7 +170,11 @@ export function vmgLoss(models: FitPoint[], targets: FitPoint[], w: LossWeights)
 // ---------------------------------------------------------------------------
 
 const loaded = loadPolar();
-if (!loaded) throw new Error('data/polar/orc-j70.json is missing; nothing to fit against');
+if (!loaded)
+  throw new Error(
+    `${BOAT_ID} has no committed reference polar; there is nothing to fit against. ` +
+      `Add one under data/polar/ and register it in src/lib/boat.ts, or calibrate another class.`,
+  );
 const polar: Polar = loaded;
 
 /** ADR 0012: fit every printed row at the wind speeds that are not held out. */
@@ -526,7 +546,7 @@ export function shapeHeadroom(): ShapeHeadroom {
   let minTwist = Infinity;
   let maxTwist = -Infinity;
   for (let backstay = 0; backstay <= 100; backstay += 5) {
-    const race = { ...baseRace(), backstay };
+    const race = { ...baseRace(boat), backstay };
     const s = flyingShape(boat, rigState(boat, BASE_DOCK, backstay), race, 'main').half;
     minDraft = Math.min(minDraft, s.draft);
     maxDraft = Math.max(maxDraft, s.draft);
@@ -558,7 +578,7 @@ export async function main(): Promise<void> {
   const t0 = Date.now();
   const stages: StageReport[] = [];
 
-  // Cold start, always. `data/boats/j70.json` already holds the previous fit,
+  // Cold start, always. The boat file already holds the previous fit,
   // and leaving it in place would make each run start where the last one
   // finished: the output would depend on how many times the script had been
   // run, which is exactly the kind of drift the determinism rule forbids.
@@ -760,8 +780,8 @@ export async function main(): Promise<void> {
         `heel ${r.heelDeg.toFixed(1)} vs ${r.target.heelDeg.toFixed(1)}`,
     );
 
-  await writeJson('data/boats/j70.json', boat);
-  await writeJson('calibration/residuals.json', {
+  await writeJson(BOAT_FILE, boat);
+  await writeJson(RESIDUALS_FILE, {
     schemaVersion: 1,
     adr: '0012 (fit/hold-out split), 0007 (tolerances)',
     fitTws: FIT_TWS,
@@ -773,7 +793,7 @@ export async function main(): Promise<void> {
     heldOut,
   });
   console.log(
-    `\nwrote data/boats/j70.json and calibration/residuals.json in ` +
+    `\nwrote ${BOAT_FILE} and ${RESIDUALS_FILE} in ` +
       `${((Date.now() - t0) / 1000).toFixed(1)} s total`,
   );
 }
