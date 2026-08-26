@@ -12,7 +12,7 @@ import type {
   Forecast,
 } from '../../core/types';
 import j70 from '../../../data/boats/j70.json';
-import north from '../../../data/tuning/north-j70.json';
+import { bandFor, DEFAULT_BOAT_ID, guidesFor } from '../../lib/reference';
 import { fmt, round, snap } from '../format';
 
 /** The one boat in the MVP. JSON is validated by `src/core/boat/validate`. */
@@ -189,20 +189,34 @@ export function sparklineTicks(points: DockRegret[], w = 88): SparkTick[] {
 
 export interface GuideBand {
   label: string;
-  uppersTurns: number;
-  lowersTurns: number;
+  uppersTurns: number | null;
+  lowersTurns: number | null;
 }
 
-/** North's published band covering `twsKt`. Never returns undefined. */
-export function guideBand(twsKt: number): GuideBand {
-  const bands = north.bands;
-  const hit =
-    bands.find((b) => twsKt >= b.twsMinKt && (b.twsMaxKt === null || twsKt < b.twsMaxKt)) ??
-    (twsKt < bands[0].twsMinKt ? bands[0] : bands[bands.length - 1]);
+/**
+ * The guide the Dock quotes when nothing is selected: the first one committed
+ * for the boat, in filename order. `null` when the boat has no guide at all.
+ */
+export function defaultGuideId(boatId: string = DEFAULT_BOAT_ID): string | null {
+  return guidesFor(boatId).find((e) => e.guide !== null)?.id ?? null;
+}
+
+/**
+ * A guide's published band covering `twsKt`, clamped at both ends. `null`
+ * when the guide is absent or its table was never transcribed — the sliders
+ * then show no tick rather than an invented one.
+ */
+export function guideBand(twsKt: number, id: string | null = defaultGuideId()): GuideBand | null {
+  const guide = guidesFor().find((e) => e.id === id)?.guide;
+  if (!guide) return null;
+  const hit = bandFor(guide, twsKt);
   return { label: hit.label, uppersTurns: hit.uppersTurns, lowersTurns: hit.lowersTurns };
 }
 
-export const guideSource = north.source.title;
+/** The guide's short name for a hint line ("North"), or a stand-in. */
+export function guideLabel(id: string | null = defaultGuideId()): string {
+  return guidesFor().find((e) => e.id === id)?.label ?? 'No guide';
+}
 
 // ---------------------------------------------------------------------------
 // Display

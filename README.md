@@ -3,7 +3,13 @@
 A free, browser-based rig-tune and sail-trim trainer for the J/70. No
 backend, no account, works offline on a phone after the first visit.
 
-**Live:** https://rjdscott.github.io/sailflow/
+## ▶ Try it: **[rjdscott.github.io/sailflow](https://rjdscott.github.io/sailflow/)**
+
+[![Sailflow Race mode on a desktop: instrument bar, mainsail and headsail panels with section stacks, and the 3D sail view](docs/img/race-desktop.png)](https://rjdscott.github.io/sailflow/)
+
+*Race mode at 12 kt, close-hauled. Every number wears its confidence tier
+(A/B/C); the coach line says what to move and what it is worth; the 3D view
+is the flying shape the model solved.*
 
 Sailflow answers two questions a J/70 crew asks every race day:
 
@@ -16,7 +22,10 @@ Sailflow answers two questions a J/70 crew asks every race day:
 It solves a steady-state velocity-prediction model (VPP) in a Web Worker, draws
 the flying shape of every sail in 3D and plan view, compares its answer against
 the North and Quantum tuning guides, logs what you tried, and drills you on
-the decisions with fault-injection exercises.
+the decisions with fault-injection exercises. Trim states are shareable as
+links; a pinned trim shows as a ghost outline with deltas.
+
+<p align="center"><img src="docs/img/race-phone.png" width="280" alt="Sailflow Race mode on a phone, panels stacked with the hero first"></p>
 
 ## Why it is different
 

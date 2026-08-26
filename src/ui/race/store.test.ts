@@ -547,6 +547,68 @@ describe('RaceStore.history', () => {
  * away, this keeps both — so the question "which of these two is faster" can
  * be asked as many times as it takes.
  */
+describe('RaceStore.pin', () => {
+  const store = () => new RaceStore(deferredClient().client);
+
+  beforeEach(() => conditions.apply(CONDITION));
+
+  it('refuses before the first solve: a pin with no result draws nothing', () => {
+    const s = store();
+    expect(s.pin()).toBe(false);
+    expect(s.pinned).toBeNull();
+    expect(s.pinMoved).toEqual([]);
+  });
+
+  it('freezes the trim, the gennaker controls, the condition and the solve', () => {
+    const s = store();
+    s.result = result(4.2, 6.3);
+    s.controls.race.mainsheet = 40;
+    s.controls.down!.kiteSheet = 35;
+
+    expect(s.pin()).toBe(true);
+    expect(s.pinned?.race.mainsheet).toBe(40);
+    expect(s.pinned?.down.kiteSheet).toBe(35);
+    expect(s.pinned?.condition).toEqual(CONDITION);
+    expect(s.pinned?.result.bsKt.value).toBe(6.3);
+  });
+
+  it('is a snapshot: trimming on does not drag the pinned trim with it', () => {
+    const s = store();
+    s.result = result(4.2);
+    s.controls.race.mainsheet = 40;
+    s.pin();
+    s.controls.race.mainsheet = 80;
+    s.controls.down!.kiteSheet = 90;
+
+    expect(s.pinned?.race.mainsheet).toBe(40);
+    expect(s.pinned?.down.kiteSheet).toBe(BASE_DOWN.kiteSheet);
+    expect(s.pinMoved).toEqual(['mainsheet']);
+  });
+
+  it('survives an undo, which is what makes it a reference rather than an A/B', () => {
+    const s = store();
+    s.result = result(4.2);
+    s.controls.race.mainsheet = 40;
+    s.pin();
+    s.remember();
+    s.controls.race.mainsheet = 80;
+    s.undo();
+
+    expect(s.previousRace).toBeNull();
+    expect(s.pinned?.race.mainsheet).toBe(40);
+    expect(s.pinMoved).toEqual([]);
+  });
+
+  it('unpins completely', () => {
+    const s = store();
+    s.result = result(4.2);
+    s.pin();
+    s.unpin();
+    expect(s.pinned).toBeNull();
+    expect(s.pinMoved).toEqual([]);
+  });
+});
+
 describe('RaceStore.abToggle', () => {
   const store = () => new RaceStore(deferredClient().client);
 

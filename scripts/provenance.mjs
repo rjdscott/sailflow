@@ -5,13 +5,74 @@
  *      node scripts/provenance.mjs --check (fails if stale)
  * Hand-written prose lives above the <!-- generated --> marker in each file.
  */
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 
 const MARK = '<!-- generated: do not edit below this line -->';
 const boat = JSON.parse(readFileSync('data/boats/j70.json', 'utf8'));
-const north = JSON.parse(readFileSync('data/tuning/north-j70.json', 'utf8'));
-const quantum = JSON.parse(readFileSync('data/tuning/quantum-j70.json', 'utf8'));
 const polar = JSON.parse(readFileSync('data/polar/orc-j70.json', 'utf8'));
+
+// Tuning guides are enumerated, never named: adding one is a file, not a code
+// change (data/tuning/README.md). Sorted so this file's output is stable.
+const TUNING_DIR = 'data/tuning';
+const guides = readdirSync(TUNING_DIR)
+  .filter((f) => f.endsWith('.json'))
+  .sort()
+  .map((file) => ({ file, guide: JSON.parse(readFileSync(`${TUNING_DIR}/${file}`, 'utf8')) }));
+
+/**
+ * Schema gate for `data/tuning/*.json`. A malformed guide fails `make check`
+ * here rather than rendering as a blank column in the disagreement panel.
+ * Kept to the shape the UI actually reads (`src/lib/reference.ts`); prose
+ * fields are free-form by design.
+ */
+function checkGuides() {
+  const problems = [];
+  const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+  const nullOr = (v, ok) => v === null || ok(v);
+  for (const { file, guide: g } of guides) {
+    const at = `${TUNING_DIR}/${file}`;
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*-[a-z0-9]+\.json$/.test(file))
+      problems.push(`${at}: name must be <guide-id>-<boat-id>.json, lowercase`);
+    if (g.schemaVersion !== 1) problems.push(`${at}: schemaVersion must be 1`);
+    const s = g.source ?? {};
+    for (const k of ['label', 'id', 'title', 'url', 'retrieved', 'copyright'])
+      if (typeof s[k] !== 'string' || s[k] === '') problems.push(`${at}: source.${k} is required`);
+    if (typeof s.revision !== 'string') problems.push(`${at}: source.revision must be a string`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s.retrieved ?? ''))
+      problems.push(`${at}: source.retrieved must be YYYY-MM-DD (ADR 0008)`);
+    if (typeof g.base !== 'object' || g.base === null) problems.push(`${at}: base is required`);
+    if (!Array.isArray(g.bands)) {
+      problems.push(`${at}: bands must be an array (empty = transcription removed)`);
+      continue;
+    }
+    let prevMin = -Infinity;
+    for (const [i, b] of g.bands.entries()) {
+      const where = `${at}: bands[${i}]`;
+      if (typeof b.label !== 'string' || b.label === '') problems.push(`${where}.label is required`);
+      if (!isNum(b.twsMinKt)) problems.push(`${where}.twsMinKt must be a number (kt)`);
+      if (!nullOr(b.twsMaxKt, isNum))
+        problems.push(`${where}.twsMaxKt must be a number or null (open-ended top band)`);
+      if (isNum(b.twsMinKt) && isNum(b.twsMaxKt) && b.twsMaxKt <= b.twsMinKt)
+        problems.push(`${where}: twsMaxKt must be above twsMinKt`);
+      if (isNum(b.twsMinKt) && b.twsMinKt < prevMin)
+        problems.push(`${where}: bands must be ordered by twsMinKt ascending`);
+      if (isNum(b.twsMinKt)) prevMin = b.twsMinKt;
+      for (const k of ['uppersTurns', 'lowersTurns', 'rakeMm', 'forestayMm'])
+        if (!nullOr(b[k], isNum)) problems.push(`${where}.${k} must be a number or null`);
+      for (const k of ['race', 'targets'])
+        if (typeof b[k] !== 'object' || b[k] === null) problems.push(`${where}.${k} is required`);
+    }
+    if (g.bands.length > 0 && g.bands[g.bands.length - 1].twsMaxKt !== null)
+      problems.push(`${at}: the last band must be open-ended (twsMaxKt: null)`);
+  }
+  if (problems.length) {
+    for (const p of problems) console.error(`error: ${p}`);
+    console.error(`\n${problems.length} problem(s). Schema: ${TUNING_DIR}/README.md`);
+    process.exit(1);
+  }
+}
+
+checkGuides();
 // Written by calibration/fit.ts. Absent before the first fit, and the
 // calibrated-parameter table degrades to knob + value when it is.
 const RESIDUALS = 'calibration/residuals.json';
@@ -27,7 +88,7 @@ function provenanceBody() {
   out.push('| Id | Title | Retrieved | Edition | URL |', '|---|---|---|---|---|');
   for (const [id, s] of Object.entries(boat.sources))
     out.push(`| \`${id}\` | ${s.title} | ${s.retrieved} | ${s.edition ?? ''} | <${s.url}> |`);
-  for (const t of [north, quantum, polar]) {
+  for (const t of [...guides.map((g) => g.guide), polar]) {
     const s = t.source;
     out.push(
       `| \`${s.id}\` | ${s.title} | ${s.retrieved} | ${s.revision ?? s.vppVersion ?? ''} | <${s.url}> |`,
@@ -40,9 +101,12 @@ function provenanceBody() {
     out.push(`| \`${path}\` | ${v} | ${e.kind} | \`${e.source}\` | ${e.note ?? ''} |`);
   }
   out.push('', '## Reference tables', '');
+  for (const { file, guide } of guides)
+    out.push(
+      `- \`${TUNING_DIR}/${file}\`: ${guide.bands.length} wind bands, retrieved ${guide.source.retrieved},` +
+        ` © ${guide.source.copyright}. Settings only; no prose reproduced.`,
+    );
   out.push(
-    `- \`data/tuning/north-j70.json\`: ${north.bands.length} wind bands, © ${north.source.copyright}. Settings only; no prose reproduced.`,
-    `- \`data/tuning/quantum-j70.json\`: ${quantum.bands.length} wind bands, © ${quantum.source.copyright}. Settings only.`,
     `- \`data/polar/orc-j70.json\`: ${polar.rows.length} rows at TWS ${polar.twsKt.join('/')} kt, ${polar.source.vppVersion}, issued ${polar.source.issued}.`,
   );
   return out.join('\n') + '\n';

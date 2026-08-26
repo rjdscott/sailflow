@@ -13,7 +13,10 @@
   import Mainsail from '../race/panels/Mainsail.svelte';
   import PanelTabs from '../race/PanelTabs.svelte';
   import Rig from '../race/panels/Rig.svelte';
-  import InstrumentBar from '../race/InstrumentBar.svelte';
+  import InstrumentBar, {
+    DEFAULT_DELTA_LABEL,
+    PINNED_DELTA_LABEL,
+  } from '../race/InstrumentBar.svelte';
   import SailHero from '../three/SailHero.svelte';
   import {
     CONTROLS,
@@ -99,6 +102,26 @@
         }
       : undefined,
   );
+
+  /**
+   * A pinned trim takes the instrument bar's target slot from the optimum
+   * while it is pinned (audit ux-01 M-19). One target per cell is the
+   * instrument-cell contract (ADR 0015) and a second one would be a redesign
+   * of every cell in the product; a pin is a deliberate "compare with this
+   * instead", so it wins the slot and the label says which it is. Unpin and
+   * the optimum comes straight back.
+   */
+  const pinnedTargets = $derived(
+    race.pinned
+      ? {
+          bsKt: race.pinned.result.bsKt.value,
+          vmgKt: race.pinned.result.vmgKt.value,
+          heelDeg: race.pinned.result.heelDeg.value,
+        }
+      : undefined,
+  );
+  const barTarget = $derived(pinnedTargets ?? optimumTargets);
+  const barDeltaLabel = $derived(race.pinned ? PINNED_DELTA_LABEL : DEFAULT_DELTA_LABEL);
 
   const canApply = $derived(optimum.race !== null && !optimum.busy && !optimum.stale);
 
@@ -264,7 +287,8 @@
         twaDeg={conditions.twaDeg}
         objective={objectiveId}
         busy={race.busy}
-        target={optimumTargets}
+        target={barTarget}
+        deltaLabel={barDeltaLabel}
         history={race.history}
         twsKt={conditions.twsKt}
         coach={race.coach?.text}

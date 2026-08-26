@@ -6,6 +6,8 @@
 import type { ControlSpec, DockControls, RaceControls, SeaState } from '../../core/types';
 import type { LogEntry, LogNumber } from '../../lib/logStore';
 import type { RigLock } from '../stores/rigLock.svelte';
+import type { Route } from '../router.svelte';
+import type { ShareState } from '../share';
 import { boat } from '../dock/logic';
 import { fmt } from '../format';
 
@@ -104,6 +106,52 @@ export function deltaLine(entry: LogEntry): string | null {
   ].filter(Boolean);
   const tail = parts.length ? ` (${parts.join(', ')})` : ' (as forecast)';
   return `forecast ${f} · sailed ${a} kt${tail}`;
+}
+
+/** Midpoint of a recorded band, or null when either end is missing. */
+function midKt(lo: LogNumber, hi: LogNumber): number | null {
+  if (lo === null || hi === null) return null;
+  return Math.round((lo + hi) / 2);
+}
+
+/**
+ * One log entry as a share link's state (ADR 0019): "here is the day I
+ * sailed — open it and see what the model makes of it."
+ *
+ * What the entry does *not* know is left out rather than invented: it has no
+ * true wind angle and no sail plan, so the link carries neither and the
+ * recipient's own angle stands. The wind is the sailed band's midpoint where
+ * one was recorded and the forecast's likely value otherwise — the same
+ * precedence `windLine` uses in the list, so the chip and the link agree.
+ *
+ * The route follows what is in the entry: a trim opens on Race, a rig-and-
+ * forecast-only entry opens on Dock, which is the screen that answers it.
+ */
+export function entryShare(entry: LogEntry): { route: Route; state: ShareState } {
+  const twsKt = midKt(entry.actual.minKt, entry.actual.maxKt) ?? entry.forecast.likelyKt;
+  const { minKt, likelyKt, maxKt } = entry.forecast;
+  const complete = minKt !== null && likelyKt !== null && maxKt !== null && entry.crewKg !== null;
+  return {
+    route: entry.race ? 'race' : 'dock',
+    state: {
+      condition: {
+        ...(twsKt === null ? {} : { twsKt }),
+        seaState: entry.seaState,
+        ...(entry.crewKg === null ? {} : { crewKg: entry.crewKg }),
+      },
+      race: entry.race,
+      dock: entry.dock,
+      forecast: complete
+        ? {
+            minKt: minKt!,
+            likelyKt: likelyKt!,
+            maxKt: maxKt!,
+            seaState: entry.seaState,
+            crewKg: entry.crewKg!,
+          }
+        : undefined,
+    },
+  };
 }
 
 /** "3, 1, 7 · placing 4" — whatever the sailor recorded, or null. */

@@ -13,7 +13,8 @@
   import { conditions } from './ui/stores/conditions.svelte';
   import { race } from './ui/race/store.svelte';
   import { dock } from './ui/dock/store.svelte';
-  import { decodeScenario, encodeScenario, readSession, writeSession } from './ui/scenario';
+  import { readSession, writeSession } from './ui/scenario';
+  import { decodeShare, encodeShare } from './ui/share';
 
   $effect(() => {
     const theme = settings.theme === 'auto' ? undefined : settings.theme;
@@ -46,15 +47,26 @@
     applyUrl();
   }
 
+  /**
+   * A share link is applied on every screen, not only Race (ADR 0019): a Dock
+   * link carries a forecast and a rig, a Race link carries a trim, and both
+   * live in stores the whole app reads. What a link never sets is the *rig
+   * Race solves* — that is the recipient's own committed tune under class rule
+   * C.9.5, and `race.syncDock` would overwrite it anyway.
+   */
   function applyUrl(): void {
-    if (router.route !== 'race') return;
-    const { condition, race: trim } = decodeScenario(router.params);
+    if (router.route !== 'race' && router.route !== 'dock') return;
+    const { condition, race: trim, down, dock: setup, forecast, tier } = decodeShare(router.params);
     // A link that names the kite but carries no `r=` has specified the sail
     // plan and not the trim, so it lands on the trim for that sail plan rather
     // than on a beat's mainsheet with a spinnaker up (`race.hoistKite`).
     if (condition.sailset === 'asym' && conditions.sailset !== 'asym' && !trim) race.hoistKite();
     Object.assign(conditions, condition);
     if (trim) Object.assign(race.controls.race, trim);
+    if (down && race.controls.down) Object.assign(race.controls.down, down);
+    if (setup) Object.assign(dock.setup, setup);
+    if (forecast) Object.assign(dock.forecast, forecast);
+    if (tier) settings.setMode(tier);
   }
 
   restore();
@@ -72,12 +84,22 @@
   $effect(() => {
     const condition = conditions.value;
     const trim = $state.snapshot(race.controls.race);
+    const down = $state.snapshot(race.controls.down);
+    const setup = $state.snapshot(dock.setup);
     const forecast = $state.snapshot(dock.forecast);
-    const onRace = router.route === 'race';
+    const tier = settings.mode;
+    const shareable = router.route === 'race' || router.route === 'dock';
     clearTimeout(writeTimer);
     writeTimer = setTimeout(() => {
       writeSession({ condition, race: trim, forecast });
-      if (onRace) router.replaceParams(encodeScenario(condition, trim));
+      // Merged over whatever is already there, so the hero's own `?view=` and
+      // `?freeze=` survive a slider drag rewriting the trim.
+      if (shareable) {
+        router.replaceParams({
+          ...router.params,
+          ...encodeShare({ condition, race: trim, down, dock: setup, forecast, tier }),
+        });
+      }
     }, WRITE_MS);
     return () => clearTimeout(writeTimer);
   });
