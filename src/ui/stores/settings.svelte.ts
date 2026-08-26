@@ -20,6 +20,8 @@ const MODE_KEY = 'sailflow.mode';
 const THEME_KEY = 'sailflow.theme';
 const MOTION_KEY = 'sailflow.motion';
 const BOAT_KEY = 'sailflow.boat';
+/** Phase-two 04: the first-run tour is dismissed once, per browser. */
+const TOUR_KEY = 'sailflow.tourSeen';
 
 const DEFAULT_MODE: Mode = 'race';
 
@@ -84,6 +86,11 @@ class Settings {
    * to the default rather than blanking the app.
    */
   boatId: string = $state(isBoatId(initialBoat) ? initialBoat : DEFAULT_BOAT_ID);
+   * Whether the first-run tour has been dismissed. A settings flag rather than
+   * a store of its own: it is one boolean with the same persistence rules as
+   * the three above, and a second store would need the same try/catch twice.
+   */
+  tourSeen: boolean = $state(readStorage(TOUR_KEY) === '1');
 
   /**
    * "Show the dense version": true for race and analyse, false for learn.
@@ -117,6 +124,9 @@ class Settings {
     if (!isBoatId(id)) return;
     this.boatId = id;
     writeStorage(BOAT_KEY, id);
+  setTourSeen(seen: boolean): void {
+    this.tourSeen = seen;
+    writeStorage(TOUR_KEY, seen ? '1' : '0');
   }
 }
 

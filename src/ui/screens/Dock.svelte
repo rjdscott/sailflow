@@ -18,6 +18,8 @@
   import { guideSelection, ModelOptimumStore } from '../disagree/store.svelte';
   import { getClient } from '../dock/client';
   import { logStoreUi } from '../log/store.svelte';
+  import { gearChart, rowFor } from '../race/gearChart';
+  import { GUIDE_IDS } from '../../lib/reference';
 
   const model = new ModelOptimumStore(getClient());
   $effect(() => {
@@ -44,6 +46,20 @@
       published numbers next to the modelled ones (audit ux-02 M-25). */
   const band = $derived(guideBand(dock.forecast.likelyKt, guideSelection.id ?? undefined));
   const printedOn = new Date().toLocaleDateString();
+
+  /**
+   * The wind-range gear chart, for the printout only — Keane's "sail by the
+   * numbers" grid, which research 02 §2.5 calls the single most-used artefact
+   * in the sport, and which is only useful on paper taped to a bulkhead
+   * (phase-two 04). Screen-side it already lives in Race → Rig.
+   *
+   * A print stylesheet, not a PDF library: the browser already has a
+   * paginating renderer with the app's own fonts in it, and "Save as PDF" is
+   * in every print dialog. Every cell is the guide's own wording.
+   */
+  const chartGuideId = $derived(guideSelection.id ?? GUIDE_IDS[0]);
+  const chart = $derived(chartGuideId ? gearChart(chartGuideId) : null);
+  const chartHere = $derived(rowFor(chart, dock.forecast.likelyKt));
   /** Phone: the bar arms first, so the setup can be read before it is locked. */
   const commitLabel = $derived(`Commit ${shortSetup(dock.setup)} for today`);
 
@@ -154,6 +170,13 @@
         locked={rigLock.lockedToday}
         showOptimum={advanced}
       />
+      <!-- The sliders ask for turns; this says where a turn is made and how
+           one is counted (audit ux-01 M-20). A chunk, not entry weight: it is
+           a drawing under the fold on the second screen, and the first load is
+           budgeted (ADR 0014). -->
+      {#await import('../dock/ShroudGuide.svelte') then ShroudGuide}
+        <ShroudGuide.default />
+      {/await}
     </section>
 
     <div class="commit-slot" class:hide-sm={!rigLock.lockedToday}>
@@ -243,6 +266,38 @@
       </tbody>
     </table>
   {/if}
+  {#if chart}
+    <h2>Sail by the numbers — {chart.source.title}</h2>
+    <p class="print-sub">
+      {chart.base}. The band the forecast lands in is marked ▸. Printed settings, reproduced as
+      published — not this app's numbers.
+    </p>
+    <table class="gear-print tabular-nums">
+      <thead>
+        <tr>
+          <th scope="col">Wind</th>
+          {#each chart.columns as col (col.key)}
+            <th scope="col">{col.label}</th>
+          {/each}
+        </tr>
+      </thead>
+      <tbody>
+        {#each chart.rows as row, i (row.label)}
+          <tr>
+            <th scope="row">{i === chartHere ? '▸ ' : ''}{row.label}</th>
+            {#each row.cells as cell, c (chart.columns[c].key)}
+              <td>{cell}</td>
+            {/each}
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+    <p class="print-sub">
+      prov: {chart.source.title}{chart.source.revision ? `, ${chart.source.revision}` : ''} — {chart
+        .source.url}
+    </p>
+  {/if}
+
   <p class="print-foot">
     Modelled, not measured. Tiers and provenance: see More → About in the app.
   </p>
@@ -317,6 +372,34 @@
     .print-card .per-tws {
       width: 100%;
       border-collapse: collapse;
+    }
+
+    /* Eleven columns on portrait A4: the type has to come down, and every
+       cell is short enough (the guide's own wording) that it still reads. */
+    .gear-print {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 7pt;
+      line-height: 1.25;
+    }
+
+    .gear-print th,
+    .gear-print td {
+      border: 0.5pt solid #999;
+      padding: 2pt 3pt;
+      text-align: start;
+      vertical-align: top;
+    }
+
+    .gear-print thead th {
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* One band per printed row and the chart never split across a page: the
+       point of the sheet is reading one row at a glance on the rail. */
+    .gear-print tr {
+      break-inside: avoid;
     }
   }
 

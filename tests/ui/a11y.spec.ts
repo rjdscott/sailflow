@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * The accessibility regressions audit ux-03 found on Race, as tests. Vitest

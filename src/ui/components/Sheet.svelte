@@ -11,6 +11,11 @@
     children?: Snippet;
   } = $props();
 
+  /* The heading was inside the dialog but not attached to it, so every sheet
+     in the app — eighteen explainers, the gear chart, the tour — was announced
+     as an unnamed dialog. */
+  const uid = $props.id();
+
   let dialogEl: HTMLDialogElement | undefined = $state();
 
   $effect(() => {
@@ -28,9 +33,15 @@
   }
 </script>
 
-<dialog bind:this={dialogEl} onclose={onDialogClose} onclick={onBackdropClick} class="sheet">
+<dialog
+  bind:this={dialogEl}
+  onclose={onDialogClose}
+  onclick={onBackdropClick}
+  class="sheet"
+  aria-labelledby={title ? `${uid}-title` : undefined}
+>
   <div class="sheet-content">
-    {#if title}<h2>{title}</h2>{/if}
+    {#if title}<h2 id="{uid}-title">{title}</h2>{/if}
     {@render children?.()}
   </div>
 </dialog>

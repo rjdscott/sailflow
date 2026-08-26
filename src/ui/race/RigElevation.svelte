@@ -144,23 +144,32 @@
     {/if}
   </svg>
 
-  <dl class="mono">
-    <div>
-      <dt>Bend</dt>
-      <dd>{bendMm.toFixed(0)} mm <span class="badge">×{EXAGGERATION}</span></dd>
-    </div>
-    <div>
-      <dt>Sag</dt>
-      <dd>{rig.sagMm.toFixed(0)} mm <span class="badge">×{EXAGGERATION}</span></dd>
-    </div>
-    <div>
-      <dt>Rake</dt>
-      <dd>{rig.rakeMm.toFixed(0)} mm</dd>
-    </div>
+  <div class="dims">
+    <dl class="mono">
+      <div>
+        <dt>Bend</dt>
+        <dd>{bendMm.toFixed(0)} mm <span class="badge">×{EXAGGERATION}</span></dd>
+      </div>
+      <div>
+        <dt>Sag</dt>
+        <dd>{rig.sagMm.toFixed(0)} mm <span class="badge">×{EXAGGERATION}</span></dd>
+      </div>
+      <div>
+        <dt>Rake</dt>
+        <dd>{rig.rakeMm.toFixed(0)} mm</dd>
+      </div>
+    </dl>
+
+    <!-- Outside the `<dl>`: a button is not a term or a definition, and as a
+         fourth direct child it made the list an invalid content model that axe
+         flags `definition-list` and that some screen readers answer by
+         dropping the toggle from list traversal entirely (audit ux-03 L-03).
+         The wrapper keeps the paint identical — the same flex row, the same
+         gap, the button still on the line with the three dimensions. -->
     <button type="button" class="chip hit-44" aria-pressed={dims} onclick={() => (dims = !dims)}
       >dims</button
     >
-  </dl>
+  </div>
 
   <figcaption>
     Bow left, to scale. Bend and sag ×{EXAGGERATION}, rake true.
@@ -300,12 +309,22 @@
     stroke-width: 3;
   }
 
+  /* The dimensions and the exaggeration toggle share one wrapping row; the
+     `<dl>` holds only term/definition pairs (audit ux-03 L-03). */
+  .dims {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+
   dl {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-3);
-    margin: var(--space-2) 0 0;
+    margin: 0;
     font-size: var(--text-xs);
   }
 

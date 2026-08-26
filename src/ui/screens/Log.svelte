@@ -365,7 +365,12 @@
     {/if}
   </div>
 
-  {#if wide}
+  <!-- Not while the log is empty: the left column already says "No entries
+       yet — start today's entry", and a second card beside it saying "Pick an
+       entry to edit it" contradicted it, on a screen that was 85 % empty
+       anyway (audit release-01 M-10). Once there is an entry, or the editor is
+       open, the pane earns its column. -->
+  {#if wide && (editorOpen || logStoreUi.entries.length > 0)}
     <div class="col-secondary">
       <section class="card">
         <h2 class="section-title">{editingId ? 'Edit entry' : 'New entry'}</h2>
@@ -432,6 +437,10 @@
     align-items: center;
     gap: var(--space-2);
     flex-wrap: wrap;
+    /* The row sat flush on the card below it, where every other card on the
+       screen has `--space-4` between it and its neighbour, so the two buttons
+       read as fused to the card border (audit ux-03 L-04). */
+    margin-bottom: var(--space-4);
   }
 
   .spacer {

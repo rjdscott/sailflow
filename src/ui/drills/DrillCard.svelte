@@ -49,7 +49,13 @@
       {/each}
     </span>
     <span class="badges">
-      {#if due}<span class="chip due">Due</span>{/if}
+      <!-- `spacing.ts` is right that a never-practised drill is the most
+           overdue thing there is, and the featured drill depends on it — but
+           on a first run that made every card Due, which turned the page's one
+           prioritisation signal off by leaving it on (audit ux-03 L-01). The
+           schedule is unchanged; the chip is reserved for resurfacing, and
+           "Not attempted" below already carries the other state. -->
+      {#if due && (best?.attempts ?? 0) > 0}<span class="chip due">Due</span>{/if}
       <!-- The confidence tier, drawn like ConfidenceBadge's C — the component
            itself is a button, and this card already is one. -->
       {#if template.cTier}<span class="tier-c" aria-label="Confidence C: direction only">C</span

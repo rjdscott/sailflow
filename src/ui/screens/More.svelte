@@ -36,6 +36,7 @@
     settings.setBoatId(id);
     location.reload();
   }
+  import { replayTour } from '../onboarding/tour.svelte';
 
   const VERSION = import.meta.env.VITE_APP_VERSION;
   const REPO = 'https://github.com/rjdscott/sailflow/blob/main';
@@ -248,6 +249,10 @@
       <p class="note">
         System follows your device's reduce-motion setting; the other two override it here.
       </p>
+      <div class="setting">
+        <span>First-run tour</span>
+        <button type="button" class="quiet" onclick={replayTour}>Show again</button>
+      </div>
     </section>
   </div>
 
