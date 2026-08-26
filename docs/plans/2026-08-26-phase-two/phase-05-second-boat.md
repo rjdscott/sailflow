@@ -13,10 +13,11 @@ class.
 
 - [x] Inventory: `grep -rl j70 src/core` (ten files at close-out) — for each, move the constant into `BoatDefinition` or justify it as class-independent with a `prov:` tag.
 - [x] `validateBoat` covers every field the solver reads; a missing field is an error, not a silent default.
-- [ ] Boat picker (More screen), persisted; router carries `boat=` in share URLs (phase 02 schema).
-- [ ] Second boat file with full provenance; polar from ORC if published, else the class association; drills templates optional.
-- [ ] Calibration per boat: `pnpm calibrate --boat <id>`; residuals and golden corpus per boat.
-- [ ] Runbook `docs/runbooks/add-a-boat-class.md` re-verified by actually following it.
+- [x] Boat picker (More screen), persisted; router carries `boat=` in share URLs (phase 02 schema).
+- [ ] Second boat file with full provenance; polar from ORC if published, else the class association; drills templates optional. — **blocked on the UI task below**; class chosen and sourced ([ADR 0020](../../adr/0020-melges-24-is-the-second-class-blocked-on-the-ui-boat-switch.md))
+- [x] Calibration per boat: `pnpm calibrate --boat <id>`; residuals and golden corpus per boat.
+- [x] Runbook `docs/runbooks/add-a-boat-class.md` re-verified by actually following it.
+- [ ] **New, carried out of this phase:** repoint the thirteen UI components that still import `data/boats/j70.json` for control ranges and drawing dimensions.
 
 ## Verification
 
@@ -93,3 +94,112 @@ Deliberately *not* done here: `boatHash` still excludes the polar. That is
 status quo, not a new hole — the polar was outside the hash entirely when it
 was a module-scope import, and `validation/polar.test.ts` is what guards the
 table itself.
+
+### 2026-08-26 — per-boat harness, picker, share param, runbook
+
+Three commits after the core refactor.
+
+**Per-boat harness** (`1ea3daf`). `pnpm calibrate|golden|validate --boat <id>`,
+defaulting to `j70` so every existing CI invocation is unchanged. The id is
+read once at module load in `validation/compare.ts`, which resolves through the
+same `src/lib/boat.ts` registry the app uses — the harness cannot gate a
+different model from the one that ships. An unknown id is a hard error in the
+harness (unlike in the app, where it falls back): a typo on a calibration run
+would otherwise fit the J/70 and write the result under another class's name.
+The golden corpus moved to `validation/golden/<boat>/` by `git mv`, and
+`golden.test.ts` now replays every *registered* class rather than one
+hard-coded directory — a second boat whose corpus nobody runs is a corpus that
+rots. `loadPolar()` lost its filesystem read; the polar is already on the boat.
+
+**Picker and share param** (`97cf238`). `sailflow.boat` in settings, validated
+against the registry on read. More shows a picker only when more than one class
+is committed — a one-option segmented control reads as broken — and otherwise
+names the single class and points at this runbook. `boat=` is additive in
+share v1 per ADR 0019: no version bump and no migration entry, because a link
+that names no class means the default, which is exactly what every link written
+before the field existed meant. An unknown class decodes to null so a crewmate
+on an older build opens the link rather than a blank screen. `share.ts` stops
+importing the J/70 and snaps a link's values to the stops of the boat *the link
+names* — a J/24 jib lead runs to a different number of holes.
+
+Switching class reloads rather than re-seeding live, marked `ponytail:`. Every
+store reads its ranges and base trim from the boat once, at construction, so a
+live swap would leave each holding the previous class's numbers under the new
+class's name.
+
+**Provenance and runbook** (`1474339`). `scripts/provenance.mjs` globs
+`data/boats/*.json` and `data/polar/*.json` instead of naming the J/70 — the
+bug the runbook warned about in its own failure modes, which would have let a
+second boat's numbers land with no provenance rows and nothing to say so.
+Output is byte-identical for one boat.
+
+The runbook was re-verified by following it literally, not by re-reading it:
+the step-2 adhoc `validateBoat` test was written, run (passes) and deleted;
+`provenance.mjs --check` exits 0; `pnpm golden` reproduces the corpus
+byte-identically; and `pnpm golden --boat nope` was run to confirm the error
+text the new failure-modes section quotes. It now carries an explicit
+**step 5 is not done** section rather than implying the app is multi-class.
+
+### 2026-08-26 — second class chosen (Melges 24), not registered; ADR 0020
+
+Sourcing both candidates turned the plan's "pick by polar availability" into a
+three-way constraint that does not point one way. Recorded as
+[ADR 0020](../../adr/0020-melges-24-is-the-second-class-blocked-on-the-ui-boat-switch.md)
+rather than settled in this log, because it commits the app to a sail plan.
+
+**Polars: both fetchable, and the better one belongs to the wrong boat.** ORC's
+public certificate feed is open, unauthenticated and machine-readable
+(`data.orc.org/public/WPub.dll?action=DownBoatRMS&RefNo=<ref>&ext=json`), and
+returns a full VPP polar for either class. Two things it does not give: it
+publishes allowances in seconds per mile rather than speeds (`3600/allowance`
+is exact, but the allowance is the primary datum), and it does not tag which
+sail each row uses — the sail-resolved Speed Guide is a paid per-boat product.
+An ORC polar is also per-*certificate*, not per-class: across 29 J/24
+certificates the polar varies by ≤ 1.8 %, across 40 Melges 24 certificates by
+up to 11.4 %, driven by measured displacement spanning 821–1002 kg.
+
+**The J/24 has the better polar and a sail the model cannot represent.** It
+flies a symmetric spinnaker on a pole — its ORC record reads `Area_Sym: 35.34`,
+`Area_Asym: null` — and `SailId`, `DownControls.sprit` and ADR 0017 all describe
+a sprit-tacked asymmetric. A `sails.asym` block on a J/24 would not be an
+approximation, it would describe a sail the boat does not carry, and it would
+then be calibrated and reported to sailors. The Melges 24 flies an asymmetric on
+a retracting bowsprit, which is the plan the model was built for, so it takes
+the slot despite the worse polar. Uncertainty has a tier (ADR 0006); a wrong
+sail does not.
+
+**The six "missing" hull fields were a false blocker, and finding that out is
+the useful part.** `validateBoat` requires `hull.lwlM`, `bwlM`, `keelAreaM2`,
+`keelSpanM`, `kgM` and `gmM`. No class rule publishes them and the ORC public
+certificate has no hydrostatics at all — all 284 keys of the J/24 record were
+enumerated and there is no `LWL`, `BWL`, `VCG`, `GM` or keel-area field. The
+trap to avoid: `IMSL` is ORC's VPP sailing length and `CDL` its Class Division
+Length; neither is LWL, and substituting one would be an invented number
+wearing a citation.
+
+But the J/70's own file carries all six as `kind: "assumed"` with the method in
+the note — `bwlM` = 0.85 × max beam, `keelSpanM` = 0.85 × draft, `kgM` = 0.35 ×
+draft, `gmM` = 0.30 × beam — and the same is true of `rig.chainplateYM`,
+`spreaderZM` and `sweepDeg`. So the schema's bar is met by convention, not by
+publication, and a second class clears it the same way. That is what makes the
+Melges 24 a data task with a known shape rather than an open question. Its 2017
+rules in fact publish spreader height, spreader length, sweep offset and
+chainplate transverse spacing, so three fields that are `assumed` on the J/70
+would be `published` on it.
+
+**What actually blocks registration is code, not data.** Thirteen UI components
+still import `data/boats/j70.json` by path for control ranges and drawing
+dimensions, so a registered second class would get correct physics and correct
+share links but the J/70's slider stops and hull drawing — and because the
+picker appears as soon as a second class exists, it would offer a boat whose
+sliders lie. Most of those files are owned by other agents working this plan
+concurrently (`dock/**`, `race/panels/**`, `three/**`,
+`race/store.svelte.ts`), so repointing them is left as a new task on this phase
+rather than raced through a shared tree.
+
+**Nothing was committed under `data/boats/` or `data/polar/` for the second
+class.** Registration is the last step, not the first (the rewritten runbook now
+says so), and a boat file committed ahead of the UI work would sit unvalidated
+by any gate that runs — `boat.test.ts` only validates *registered* classes, and
+`golden.test.ts` only replays them. The sourcing is done and recorded in
+ADR 0020; the transcription lands with the UI change it depends on.
