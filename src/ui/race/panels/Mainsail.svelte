@@ -3,7 +3,6 @@
   import BulletGauge from '../../components/BulletGauge.svelte';
   import InstrumentCell from '../../components/InstrumentCell.svelte';
   import Panel from '../../components/Panel.svelte';
-  import Sheet from '../../components/Sheet.svelte';
   import { fmt } from '../../format';
   import { LEECH_STALL_BAND } from '../../instruments/gauges';
   import { panelControlsId } from '../../keys';
@@ -13,9 +12,9 @@
   import SailSectionStack from '../SailSectionStack.svelte';
   import { puffPlayer } from '../puffPlayer.svelte';
   import { conditions } from '../../stores/conditions.svelte';
+  import { settings } from '../../stores/settings.svelte';
   import { race } from '../store.svelte';
   import ControlRow from './ControlRow.svelte';
-  import { explainText, explainTitle } from './copy';
 
   /**
    * The mainsail system: every control that moves the main, the picture of
@@ -73,7 +72,13 @@
 
   {#snippet visual()}
     <div class="pictures">
-      <SailSectionStack sail="main" {shape} table={false} />
+      <!-- The three-section stack is the abstraction Learn has not been
+           taught yet: draft, draft position and twist at ¼ ½ ¾, with no
+           number beside it here (audit ux-01 M-12). Learn keeps the leech
+           profile, which is a picture of the sail. -->
+      {#if settings.advanced}
+        <SailSectionStack sail="main" {shape} table={false} />
+      {/if}
       <LeechProfile {shape} {boomDeg} />
     </div>
   {/snippet}
@@ -113,9 +118,14 @@
   {/snippet}
 </Panel>
 
-<Sheet bind:open={sheetOpen} title={explainTitle(explaining)}>
-  <p class="explainer">{explainText(explaining)}</p>
-</Sheet>
+<!-- The explainer copy and its schematic are a chunk, not entry weight: they
+     are only ever read after a deliberate tap on the `?` (ADR 0014's first-load
+     budget). Mounted already-open, which is what `Sheet` expects. -->
+{#if sheetOpen}
+  {#await import('./ExplainSheet.svelte') then S}
+    <S.default bind:open={sheetOpen} id={explaining} />
+  {/await}
+{/if}
 
 <style>
   .rows {
@@ -142,12 +152,5 @@
     font-size: var(--text-sm);
     font-weight: 600;
     cursor: pointer;
-  }
-
-  .explainer {
-    margin: 0;
-    font-size: var(--text-md);
-    line-height: 1.55;
-    color: var(--ink);
   }
 </style>
