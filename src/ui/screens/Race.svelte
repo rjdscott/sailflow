@@ -559,9 +559,8 @@
     /* The phone spent ~600 px of an 844 px screen on chrome before the first
        number (audit ux-03 M-20). Three things go, none of them information:
        the 28 px page title drops to 20 px — the tab bar already names the
-       route, in the accent colour, permanently on screen; the lede goes,
-       because it is a first-visit sentence occupying two lines on every
-       visit thereafter and Drills is one tab away; and the four read-only
+       route, in the accent colour, permanently on screen; the lede drops to
+       one ellipsised line instead of two wrapped ones; and the four read-only
        condition chips (TWA, sea state, crew, sail plan) go, because every
        one of them is a *display* of a value the Edit sheet right beside them
        already sets, and TWA is also on the point-of-sail chips above.
@@ -573,8 +572,17 @@
       font-size: var(--text-lg);
     }
 
+    /* release-01 L-12 wants the orientation line on the phone too, so it
+       stays — on one ellipsised line, the desktop treatment, not two wrapped
+       ones. */
     .lede {
-      display: none;
+      min-width: 0;
+      margin: 0;
+      font-size: var(--text-sm);
+      line-height: 1.2;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     .head :global([aria-label='Conditions'] span.chip:not(.stepper)) {
