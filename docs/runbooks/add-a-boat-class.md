@@ -63,9 +63,12 @@ not a five-minute edit.
    `src/ui/drills/DrillView.svelte`, `src/ui/race/store.svelte.ts`,
    `src/ui/race/ConditionsStrip.svelte`, `src/ui/drills/client.ts`,
    `src/ui/dock/logic.ts`, and `src/lib/drills.ts`. `data/drills/j70-templates.json`
-   (`add-a-drill.md`) and the tuning tables in `data/tuning/*-j70.json`
-   (loaded by `src/lib/reference.ts`) are also J/70-specific and would need
-   class-scoped equivalents.
+   (`add-a-drill.md`) is also J/70-specific and would need a class-scoped
+   equivalent. The tuning tables no longer do: `src/lib/reference.ts`
+   enumerates `data/tuning/*.json` and filters on the boat id in the filename,
+   so `guidesFor('<id>')` picks up `data/tuning/<guide>-<id>.json` with no code
+   change — and honestly reports "no tuning guide is committed for this boat"
+   until one exists (`add-a-tuning-guide.md`).
 
 5. Re-run the full gate before opening a PR:
 
