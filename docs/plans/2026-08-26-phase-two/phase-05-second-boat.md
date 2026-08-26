@@ -203,3 +203,4 @@ says so), and a boat file committed ahead of the UI work would sit unvalidated
 by any gate that runs — `boat.test.ts` only validates *registered* classes, and
 `golden.test.ts` only replays them. The sourcing is done and recorded in
 ADR 0020; the transcription lands with the UI change it depends on.
+- 2026-08-26 — Merged onto main after phases 04 and 06 (keep-both conflicts in `settings.svelte.ts` and `More.svelte`: boat id and tour flag coexist). Bundle +3378 B — registry + polar on the entry; baseline raised with attribution, to be re-measured when the thirteen UI import sites are repointed.
