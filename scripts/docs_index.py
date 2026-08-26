@@ -213,7 +213,7 @@ def dead_links(root: Path | None = None) -> list[str]:
     root = root or ROOT
     problems = []
     for path in sorted(root.rglob("*.md")):
-        if any(part in {".git", ".venv", "node_modules"} for part in path.parts):
+        if any(part in {".git", ".venv", "node_modules", ".claude"} for part in path.parts):
             continue
         # Fenced blocks quote example output, which is not a link to follow.
         body = FENCE.sub("", path.read_text())
