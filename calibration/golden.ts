@@ -13,7 +13,15 @@
 import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { format, resolveConfig } from 'prettier';
-import { boat, boatHash, calibHash, POLAR_CREW_KG, POLAR_SEA_STATE } from '../validation/compare';
+import {
+  boat,
+  boatHash,
+  BOAT_ID,
+  calibHash,
+  GOLDEN_DIR,
+  POLAR_CREW_KG,
+  POLAR_SEA_STATE,
+} from '../validation/compare';
 import type {
   Condition,
   ControlState,
@@ -26,7 +34,7 @@ import { geometryFor } from '../src/core/solve/equilibrium';
 import { optimal } from '../src/core/solve/optimal';
 import { trimmed } from '../src/core/solve/trimmed';
 
-const DIR = 'validation/golden';
+const DIR = GOLDEN_DIR;
 const GEOM = geometryFor(boat);
 const TWS_LIST = [6, 8, 10, 12, 14, 16, 20];
 
@@ -161,7 +169,7 @@ export async function main(): Promise<void> {
     n += cases.length;
   }
   console.log(
-    `wrote ${groups.length} golden files (${n} cases) to ${DIR} in ` +
+    `wrote ${groups.length} golden files (${n} cases) for ${BOAT_ID} to ${DIR} in ` +
       `${((Date.now() - t0) / 1000).toFixed(1)} s\n` +
       `  boatHash ${hashes.boatHash}  calibHash ${hashes.calibHash}`,
   );

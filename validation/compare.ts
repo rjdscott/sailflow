@@ -4,57 +4,67 @@
  * printed polar row.
  *
  * `validation/` only ever READS (ADR 0007). Nothing here writes calibration.
+ *
+ * **Which boat.** Every entry point here is per-boat: `pnpm calibrate --boat
+ * <id>`, `pnpm golden --boat <id>`, `pnpm validate --boat <id>`. The id is
+ * read from argv once at module load, because these are CLIs and a boat that
+ * could change mid-run would make the golden corpus meaningless. Default is
+ * the J/70, which is the class every gate in CI runs on.
  */
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import j70 from '../data/boats/j70.json';
-import polarJson from '../data/polar/orc-j70.json';
-import type { BoatDefinition, PolarTable, SailSet, SeaState } from '../src/core/types';
+import type { BoatDefinition, PolarRow, PolarTable, SailSet, SeaState } from '../src/core/types';
+import { boatFor, DEFAULT_BOAT_ID, isBoatId } from '../src/lib/boat';
 import { baseDock } from '../src/core/shape/base';
 import { geometryFor } from '../src/core/solve/equilibrium';
 import { optimal } from '../src/core/solve/optimal';
 
 /**
- * The boat the harness gates, with its reference polar attached the same way
- * `src/lib/boat.ts` attaches one for the app — the solver reads `boat.polar`
- * for `pctPolar`, so a harness boat without it would gate a different model
+ * `--boat <id>` from argv, or the default. An unknown id is a hard error here,
+ * unlike in the app: a typo on a calibration run would otherwise silently fit
+ * the J/70 and write the result under the name of another class.
+ */
+function boatIdFromArgv(): string {
+  const i = process.argv.indexOf('--boat');
+  if (i === -1) return DEFAULT_BOAT_ID;
+  const id = process.argv[i + 1];
+  if (!isBoatId(id))
+    throw new Error(
+      `--boat ${String(id)}: unknown class. Register it in src/lib/boat.ts first ` +
+        `(docs/runbooks/add-a-boat-class.md).`,
+    );
+  return id;
+}
+
+export const BOAT_ID = boatIdFromArgv();
+
+/**
+ * The boat the harness gates, with its reference polar attached — the same
+ * registry the app loads from, so the harness cannot gate a different model
  * from the one that ships.
  */
-export const boat = { ...j70, polar: polarJson as PolarTable } as unknown as BoatDefinition;
+export const boat: BoatDefinition = boatFor(BOAT_ID);
 
 /** Cached once: sail geometry never varies within a run. */
 const GEOM = geometryFor(boat);
 
-export const POLAR_PATH = fileURLToPath(new URL('../data/polar/orc-j70.json', import.meta.url));
+/** Golden corpus directory for this boat. One per class (ADR 0007). */
+export const GOLDEN_DIR = `validation/golden/${BOAT_ID}`;
 
 // ---------------------------------------------------------------------------
 // Reference polar
 // ---------------------------------------------------------------------------
 
-export interface PolarRow {
-  twsKt: number;
-  sail: SailSet;
-  kind: 'vmgUp' | 'angle' | 'vmgDn';
-  twaDeg: number;
-  bsKt: number;
-  vmgKt: number;
-  heelDeg: number;
-}
+export type { PolarRow };
+export type Polar = PolarTable;
 
-export interface Polar {
-  twsKt: number[];
-  rows: PolarRow[];
-  source: { title: string; url: string; vppVersion?: string; issued?: string };
-}
-
-/** The committed ORC Speed Guide polar, or null when the file is absent. */
+/**
+ * This boat's committed reference polar, or null when the class has none.
+ * Null is a real state, not an error: a class with no published polar still
+ * sails, it just cannot be gated against one (ADR 0012) and reports no
+ * percentage of target.
+ */
 export function loadPolar(): Polar | null {
-  try {
-    return JSON.parse(readFileSync(POLAR_PATH, 'utf8')) as Polar;
-  } catch {
-    return null;
-  }
+  return boat.polar ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -109,9 +119,9 @@ export function boatHash(b: BoatDefinition = boat): string {
 }
 
 /** Hash of the calibration block alone, key order normalised. */
-export function calibHash(): string {
-  const keys = Object.keys(boat.calibration).sort();
-  return sha8(JSON.stringify(keys.map((k) => [k, boat.calibration[k]])));
+export function calibHash(b: BoatDefinition = boat): string {
+  const keys = Object.keys(b.calibration).sort();
+  return sha8(JSON.stringify(keys.map((k) => [k, b.calibration[k]])));
 }
 
 // ---------------------------------------------------------------------------
