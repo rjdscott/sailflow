@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /**
  * ux-03 M-23. PROVENANCE.md, ASSUMPTIONS.md and validation/report.md left the
