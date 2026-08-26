@@ -553,6 +553,32 @@
   @media (max-width: 719px) {
     .head {
       order: 0;
+      gap: var(--space-1);
+    }
+
+    /* The phone spent ~600 px of an 844 px screen on chrome before the first
+       number (audit ux-03 M-20). Three things go, none of them information:
+       the 28 px page title drops to 20 px — the tab bar already names the
+       route, in the accent colour, permanently on screen; the lede goes,
+       because it is a first-visit sentence occupying two lines on every
+       visit thereafter and Drills is one tab away; and the four read-only
+       condition chips (TWA, sea state, crew, sail plan) go, because every
+       one of them is a *display* of a value the Edit sheet right beside them
+       already sets, and TWA is also on the point-of-sail chips above.
+       What stays inline is what you touch: the point-of-sail row, the ±1 kt
+       wind stepper, Edit, and the committed-forecast chip when there is one.
+       ADR 0016's one-screen promise is a desktop promise and is untouched:
+       every rule here is inside the phone query. */
+    .head :global(h1) {
+      font-size: var(--text-lg);
+    }
+
+    .lede {
+      display: none;
+    }
+
+    .head :global([aria-label='Conditions'] span.chip:not(.stepper)) {
+      display: none;
     }
 
     .hero-boat {
