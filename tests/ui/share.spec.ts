@@ -33,7 +33,11 @@ async function instruments(page: Page): Promise<string> {
  */
 async function settled(page: Page): Promise<void> {
   await expect(page.locator('.bar .cells').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: /Apply optimum/ })).toBeEnabled();
+  // The optimum search re-runs after every input; CI's SwiftShader runner
+  // takes well over the 5 s default to land it.
+  await expect(page.getByRole('button', { name: /Apply optimum/ })).toBeEnabled({
+    timeout: 30_000,
+  });
 }
 
 test('a link generated in one session reproduces the instruments in a fresh one', async ({
