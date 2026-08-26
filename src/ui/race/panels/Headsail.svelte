@@ -1,16 +1,15 @@
 <script lang="ts">
   import type { SolveResult } from '../../../core/types';
   import Panel from '../../components/Panel.svelte';
-  import Sheet from '../../components/Sheet.svelte';
   import { STRIPE_INCHES } from '../../instruments/gauges';
   import { panelControlsId } from '../../keys';
+  import { settings } from '../../stores/settings.svelte';
   import SagIndicator from '../SagIndicator.svelte';
   import SailSectionStack from '../SailSectionStack.svelte';
   import SpreaderStripeGauge from '../SpreaderStripeGauge.svelte';
   import { puffPlayer } from '../puffPlayer.svelte';
   import { race } from '../store.svelte';
   import ControlRow from './ControlRow.svelte';
-  import { explainText, explainTitle } from './copy';
 
   /**
    * The headsail system: sheet, lead and inhauler, the jib's own section
@@ -80,10 +79,13 @@
   {/snippet}
 
   {#snippet visual()}
-    {#if flying}
-      <SailSectionStack sail="jib" {shape} table={false} />
-    {:else}
+    <!-- Learn does not get the three-section stack (audit ux-01 M-12); it is
+         the abstraction, not the sail. The stripe gauge below still says
+         where the leech is. -->
+    {#if !flying}
       <p class="empty">Jib not flying.</p>
+    {:else if settings.advanced}
+      <SailSectionStack sail="jib" {shape} table={false} />
     {/if}
   {/snippet}
 
@@ -97,9 +99,14 @@
   {/snippet}
 </Panel>
 
-<Sheet bind:open={sheetOpen} title={explainTitle(explaining)}>
-  <p class="explainer">{explainText(explaining)}</p>
-</Sheet>
+<!-- The explainer copy and its schematic are a chunk, not entry weight: they
+     are only ever read after a deliberate tap on the `?` (ADR 0014's first-load
+     budget). Mounted already-open, which is what `Sheet` expects. -->
+{#if sheetOpen}
+  {#await import('./ExplainSheet.svelte') then S}
+    <S.default bind:open={sheetOpen} id={explaining} />
+  {/await}
+{/if}
 
 <style>
   .rows {
@@ -135,12 +142,5 @@
     margin: 0;
     font-size: var(--text-sm);
     color: var(--ink-2);
-  }
-
-  .explainer {
-    margin: 0;
-    font-size: var(--text-md);
-    line-height: 1.55;
-    color: var(--ink);
   }
 </style>

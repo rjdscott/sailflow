@@ -3,7 +3,6 @@
   import ConfidenceBadge from '../../components/ConfidenceBadge.svelte';
   import InstrumentCell from '../../components/InstrumentCell.svelte';
   import Panel from '../../components/Panel.svelte';
-  import Sheet from '../../components/Sheet.svelte';
   import { fmt } from '../../format';
   import { panelControlsId } from '../../keys';
   import { conditions } from '../../stores/conditions.svelte';
@@ -17,7 +16,6 @@
   import { puffPlayer } from '../puffPlayer.svelte';
   import { race } from '../store.svelte';
   import ControlRow from './ControlRow.svelte';
-  import { explainText, explainTitle } from './copy';
 
   /**
    * The gennaker system, in the Headsail slot under `sailset = 'asym'`: the
@@ -121,15 +119,24 @@
 
   {#snippet visual()}
     <div class="pictures">
-      <SailSectionStack sail="asym" {shape} table={false} />
+      <!-- Learn keeps the luff curl — the one downwind reference a trimmer
+           actually watches — and not the section stack (audit ux-01 M-12). -->
+      {#if settings.advanced}
+        <SailSectionStack sail="asym" {shape} table={false} />
+      {/if}
       <LuffCurl {curl} />
     </div>
   {/snippet}
 </Panel>
 
-<Sheet bind:open={sheetOpen} title={explainTitle(explaining)}>
-  <p class="explainer">{explainText(explaining)}</p>
-</Sheet>
+<!-- The explainer copy and its schematic are a chunk, not entry weight: they
+     are only ever read after a deliberate tap on the `?` (ADR 0014's first-load
+     budget). Mounted already-open, which is what `Sheet` expects. -->
+{#if sheetOpen}
+  {#await import('./ExplainSheet.svelte') then S}
+    <S.default bind:open={sheetOpen} id={explaining} />
+  {/await}
+{/if}
 
 <style>
   .rows {
@@ -171,13 +178,6 @@
 
   .caveat {
     display: block;
-    color: var(--ink);
-  }
-
-  .explainer {
-    margin: 0;
-    font-size: var(--text-md);
-    line-height: 1.55;
     color: var(--ink);
   }
 </style>

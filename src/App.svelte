@@ -15,6 +15,7 @@
   import { dock } from './ui/dock/store.svelte';
   import { readSession, writeSession } from './ui/scenario';
   import { decodeShare, encodeShare } from './ui/share';
+  import { tour } from './ui/onboarding/tour.svelte';
 
   $effect(() => {
     const theme = settings.theme === 'auto' ? undefined : settings.theme;
@@ -158,6 +159,17 @@
 
   <div class="tabbar-slot"><BottomNav /></div>
 </div>
+
+<!-- First run only, and a chunk rather than entry weight: `tour.mounted` starts
+     false for anyone who has dismissed it, so a returning visitor never
+     fetches this. The `await` is unresolved while the chunk loads, so the
+     cockpit paints and the first solve runs behind it. `mounted` and not
+     `open`: see `tour.svelte.ts`. -->
+{#if tour.mounted}
+  {#await import('./ui/onboarding/Tour.svelte') then Tour}
+    <Tour.default />
+  {/await}
+{/if}
 
 <Toast
   message="A new version of Sailflow is ready."

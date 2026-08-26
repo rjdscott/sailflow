@@ -5,7 +5,6 @@
   import ConfidenceBadge from '../../components/ConfidenceBadge.svelte';
   import Panel from '../../components/Panel.svelte';
   import Segmented from '../../components/Segmented.svelte';
-  import Sheet from '../../components/Sheet.svelte';
   import Slider from '../../components/Slider.svelte';
   import { HEEL_SCALE_MAX, HELM_TARGET, heelBands } from '../../instruments/gauges';
   import { panelControlsId } from '../../keys';
@@ -20,7 +19,6 @@
     type ForeAft,
     type RaceMode,
   } from '../store.svelte';
-  import { explainText, explainTitle } from './copy';
 
   /**
    * Helm & conditions: the two gauges that only mean anything together, the
@@ -150,9 +148,14 @@
   {/snippet}
 </Panel>
 
-<Sheet bind:open={sheetOpen} title={explainTitle(explaining)}>
-  <p class="explainer">{explainText(explaining)}</p>
-</Sheet>
+<!-- The explainer copy and its schematic are a chunk, not entry weight: they
+     are only ever read after a deliberate tap on the `?` (ADR 0014's first-load
+     budget). Mounted already-open, which is what `Sheet` expects. -->
+{#if sheetOpen}
+  {#await import('./ExplainSheet.svelte') then S}
+    <S.default bind:open={sheetOpen} id={explaining} />
+  {/await}
+{/if}
 
 <style>
   .rows {
@@ -187,12 +190,5 @@
   /* Prose is the learn tier's job; race and analyse have the chips. */
   :global([data-tier='learn']) .note {
     display: block;
-  }
-
-  .explainer {
-    margin: 0;
-    font-size: var(--text-md);
-    line-height: 1.55;
-    color: var(--ink);
   }
 </style>

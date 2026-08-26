@@ -95,3 +95,32 @@ describe('settings store', () => {
     expect(settings.advanced).toBe(true);
   });
 });
+
+/**
+ * The first-run tour is shown to a first-run visitor and to nobody else, so
+ * the only thing that matters is that a dismissal survives a reload — a tour
+ * that reappears on every visit is worse than no tour.
+ */
+describe('first-run tour flag', () => {
+  it('is unseen with nothing stored, so the tour opens', async () => {
+    mockLocalStorage();
+    const { settings } = await import('./settings.svelte');
+    expect(settings.tourSeen).toBe(false);
+    const { tour } = await import('../onboarding/tour.svelte');
+    expect(tour.open).toBe(true);
+  });
+
+  it('stays dismissed once it has been dismissed', async () => {
+    const store = mockLocalStorage();
+    const { settings } = await import('./settings.svelte');
+    settings.setTourSeen(true);
+    expect(store.get('sailflow.tourSeen')).toBe('1');
+
+    // A fresh module graph is the next page load.
+    vi.resetModules();
+    const reloaded = await import('./settings.svelte');
+    expect(reloaded.settings.tourSeen).toBe(true);
+    const { tour } = await import('../onboarding/tour.svelte');
+    expect(tour.open).toBe(false);
+  });
+});

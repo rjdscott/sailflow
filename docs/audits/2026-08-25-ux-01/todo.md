@@ -32,12 +32,12 @@ Priority: **P0** ship-blocker, **P1** before public release, **P2** soon,
 - [x] **M-04** (P2, S) Phone coach line sits a full screen down — render an `lg-hide` copy of the insight card under `<ConditionsStrip />`.
 - [x] **M-06** (P2, S) Guide deltas painted in the error colour, no legend — neutral magnitude encoding at `Panel.svelte:364-377`, name the subject ("model +0.3"), add a noise-threshold key.
 - [x] **M-11** (P2, S) Presets overwrite all eleven sliders with no undo — split condition from trim, or stash the previous controls and offer Undo via the existing `Toast`.
-- [ ] **M-12** (P2, M) Simple mode hides sliders but keeps every hard concept — show only BSP/Height/VMG, collapse the section table, single Boat view.
+- [x] **M-12** (P2, M) Simple mode hides sliders but keeps every hard concept — show only BSP/Height/VMG, collapse the section table, single Boat view. — closed in phase-two 04: the Learn tier no longer renders `SailSectionStack` in Mainsail, Headsail or Gennaker, and the disagreement solve was already gated (see M-23). See the reconciliation note below for what "Simple mode" became.
 - [x] **M-14** (P2, S) Dock columns missing `.stack`, so cards butt into one grey slab — add `stack` at `Dock.svelte:59` and `:117`.
 - [x] **M-16** (P2, S) Emoji padlocks ignore the theme tokens — one stroked 16 px `currentColor` padlock in `--ink-2`.
 - [x] **M-18** (#52, #58: HELM load in the instrument bar and Helm panel) No helm or rudder-angle readout — surface the solver's balance term as an eighth tier-badged readout, or state its absence.
 - [x] **M-19** (#58: A/B compare in the actions bar) No before/after compare — "Pin this trim" storing one `$state.snapshot`, drawn as the `.ref` path with pinned-vs-live deltas.
-- [ ] **M-20** (P2, M) Shroud turns with no picture of how to measure — one own-drawn rig elevation SVG on the Dock RIG card, reusing `RigElevation` geometry.
+- [x] **M-20** (P2, M) Shroud turns with no picture of how to measure — one own-drawn rig elevation SVG on the Dock RIG card, reusing `RigElevation` geometry. — closed in phase-two 04 by `src/ui/dock/ShroudGuide.svelte`: a schematic of the upper and lower shrouds with the turnbuckle barrel enlarged beside them, plus a "How to apply turns" sheet. Not `RigElevation`'s geometry — that drawing is to scale and a turnbuckle is three pixels tall in it; this one is deliberately not to scale.
 - [x] **M-21** (P2, S) Wind arrows the same length at all TWS — scale `RING.len` with `twsKt`, clamped.
 - [x] **M-22** (P2, S) Downwind preset in Simple mode has no kite controls — drive `race.downwind` off `conditions.sailset` and show the kite controls in Simple under the existing C-tier banner.
 - [x] **M-23** (#65) (P2, S) Disagreement solve runs even when the panel is hidden — gate the `$effect` on the `<details>` open state, surface the headline delta unconditionally.
@@ -46,7 +46,7 @@ Priority: **P0** ship-blocker, **P1** before public release, **P2** soon,
 
 - [ ] **L-01** (P3, S) Simple mode wastes three rows on locked dock sliders — largely subsumed by C-01; afterwards wrap the Dock setup card in `{#if advanced}` or show a one-line summary chip.
 - [x] **L-02** (P3, S) Slider troughs and chip borders near 1.3:1 contrast — darken `--muted`, give `.chip`/`.info` an `--ink-2`-derived border.
-- [ ] **L-03** (P3, M) Control explainers untitled with no illustration — render the matching `SailSections`/`RigElevation` beside the text in the explain sheet.
+- [x] **L-03** (P3, M) Control explainers untitled with no illustration — render the matching `SailSections`/`RigElevation` beside the text in the explain sheet. — closed in phase-two 04. Titled since the cockpit remodel (`panels/copy.ts`); illustrated now by `src/ui/components/ExplainDiagram.svelte` from `src/ui/explainDetail.ts`, plus a what-it-changes list. Nine schematics rather than the live `SailSections`/`RigElevation`: an explainer is about a *direction*, and a live drawing of the current solve does not show one.
 
 ## Reconciliation — 2026-08-26
 

@@ -52,19 +52,28 @@ for the owner.
 - [x] **M-04** — `CHANGELOG.md:69` bills "#41 to #80" to 0.2.0 while 0.3.0
   claims #66, #78 and #80; #66 is described in both sections. *(docs, 10 min)*
   — fixed, release-01 close-out. → [01](01-repo-first-impressions.md#m-04)
-- [ ] **M-10** — Log at 1920×1080 is 85 % empty and shows two contradicting
+- [x] **M-10** — Log at 1920×1080 is 85 % empty and shows two contradicting
   empty states; the detail-pane placeholder should not render while the list is
-  empty. *(code, `src/ui/log/`, 1 h)* → [02](02-live-first-run.md#m-10)
+  empty. *(code, `src/ui/log/`, 1 h)* → [02](02-live-first-run.md#m-10) —
+  fixed in phase-two 04: the secondary column renders only once there is an
+  entry or the editor is open. Covered by `tests/ui/onboarding.spec.ts`.
 - [ ] **M-11** — "tier" names confidence (A/B/C), drill difficulty (Tier 1–3)
   and density (Learn/Race/Analyse); Race never prints the word at all. Label the
   badge explainer "confidence tier" and rename drill difficulty. *(code, copy
-  across `src/ui/`, 2 h)* → [02](02-live-first-run.md#m-11)
+  across `src/ui/`, 2 h)* → [02](02-live-first-run.md#m-11) — **half done** in
+  phase-two 04: `ConfidenceBadge` already announces "Confidence B", and the
+  first-run tour's second step separates density tiers from confidence tiers.
+  The drill difficulty is still "Tier 1–3" (`src/lib/drills.ts`,
+  `src/ui/drills/`), which is outside that phase's files.
 - [ ] **M-17** — `package.json` has no `engines` and no `packageManager`, so
   "Node 20, pnpm 9" is enforced only inside CI. *(code, `package.json`, 5 min)*
   → [03](03-contributor-path.md#m-17)
-- [ ] **L-12** — Race's orientation line ("Trim for the wind in front of you…")
+- [x] **L-12** — Race's orientation line ("Trim for the wind in front of you…")
   renders on the phone and not on the desktop. *(code, `src/ui/race/`, 30 min)*
-  → [02](02-live-first-run.md#l-12)
+  → [02](02-live-first-run.md#l-12) — **already fixed** before this audit was
+  filed, by ux-03 M-06: `.lede` shrinks and ellipsises inside the ≥ 1024 px
+  header row rather than being `display: none`. Verified and pinned at three
+  widths in `tests/ui/onboarding.spec.ts` (phase-two 04); no code change.
 
 ## P3 — nice
 
@@ -79,8 +88,12 @@ for the owner.
   date anywhere in its tree, so phase-two reports activity from a cross-reference
   path. Same function feeds the 60-day staleness gate. *(code,
   `scripts/docs_index.py`, 30 min)* → [01](01-repo-first-impressions.md#l-08)
-- [ ] **L-13** — Dock prints "EXPECTED REGRET" twice, as panel title and metric
-  label. *(code, `src/ui/dock/`, 5 min)* → [02](02-live-first-run.md#l-13)
+- [x] **L-13** — Dock prints "EXPECTED REGRET" twice, as panel title and metric
+  label. *(code, `src/ui/dock/`, 5 min)* → [02](02-live-first-run.md#l-13) —
+  **already fixed** before this audit was filed, by ux-03 M-18: `RegretCard`
+  dropped the `h2` and names the section with `aria-label`. The existing
+  `tests/ui/a11y.spec.ts` case asserts the words appear exactly once. No code
+  change (phase-two 04).
 - [ ] **L-14** — on the phone the "Sailflow" wordmark strip sits over the
   scrolling content above the tab bar and cuts the last line. *(code,
   `src/ui/` shell, 20 min)* → [02](02-live-first-run.md#l-14)
