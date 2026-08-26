@@ -63,3 +63,4 @@ node scripts/provenance.mjs && git diff --exit-code PROVENANCE.md
   lands. Gates: `make check` exit 0, `pnpm test:ui` 41 passed,
   `node scripts/provenance.mjs && git diff --exit-code PROVENANCE.md` clean
   after commit.
+- 2026-08-26 — #93 merged with `ui-smoke` red: `bundle_check.mjs` reported the first load +2550 B against a 2048 B tolerance (merge step did not gate on the check; it does now). Baseline raised deliberately to 95286 B with the attribution in `scripts/bundle_baseline.json` — ~1320 B is this phase's guide enumeration and selector, ~1230 B was unattributed drift already on main.
