@@ -1,7 +1,7 @@
 {
   "note": "Total gzip size, bytes, of the JS chunks index.html loads on first paint \u2014 the entry chunk plus anything it modulepreloads. ADR 0014's promise is that the three.js sail view does not land on first load; `bundle_check.mjs` is what makes that promise checkable. Raise this deliberately, in the PR that earns it, never to make CI green \u2014 and if the number jumps by tens of kilobytes, something that should be behind a dynamic import is not.",
   "measured": "2026-08-26",
-  "entryGzipBytes": 95286,
+  "entryGzipBytes": 97482,
   "toleranceBytes": 2048,
   "history": [
     {
@@ -53,6 +53,11 @@
       "date": "2026-08-26",
       "bytes": 95286,
       "note": "phase-two 03: tuning guides enumerated from data/ (#93). +2550 B over the recorded 92736, of which ~1230 B was already on main before #93 (measured at 93966 B on #86's clean HEAD and not attributed then), so #93 itself is ~1320 B: the guide glob, the guide selector (Segmented) and the three-state disagreement panel. First-load Race UI by design; the two guide JSONs were already in the entry. Nothing crossed the lazy boundary: SailView3D unchanged at 139.0 KB gzip."
+    },
+    {
+      "date": "2026-08-26",
+      "bytes": 97482,
+      "note": "phase-two 02 merged onto 03/#94: phase-two phase 02, share and compare (ADR 0019). +3107 B over this branch's HEAD, which builds at 94419 B here \u2014 1683 B above the 92736 recorded at ux-03 M-23, so a third of the +4790 B the gate reported against the committed baseline is main drifting since that measurement rather than this change. Of the 3107 B, roughly half is code (`ui/share.ts`: the versioned codec, its migration table and the control-group validators; `components/CopyLink.svelte`; the pin state and its ghost outline in `race/PlanView.svelte`) and roughly half is Rollup regrouping: `share.ts` is now imported by the entry alongside `conditions.svelte` and `dock/logic`, so `data/boats/j70.json` (6.0 KB) and `data/tuning/north-j70.json` (3.2 KB) stop being inlined in the index chunk and become preloaded shared chunks, which the sum counts at their standalone gzip size rather than compressed against 70 KB of neighbouring JS. The same bytes go over the wire, measured less kindly. Nothing crossed the lazy boundary: the 3D ghost outline is built inside SailView3D, which is unchanged at 139.2 KB gzip and still not precached, and the Log screen passes `CopyLink` a `ShareState` rather than importing `share.ts`, so its chunk keeps no second copy of the boat file. Re-measured after merging main (which had moved to 95286 with #94): 97482 B, i.e. +2196 B for this change on top of the guide work."
     }
   ]
 }

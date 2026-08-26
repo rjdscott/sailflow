@@ -1,6 +1,8 @@
 <script lang="ts">
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
+  import CopyLink from '../components/CopyLink.svelte';
   import { fmt } from '../format';
+  import { track } from '../../lib/telemetry';
   import { buildHash } from '../router.svelte';
   import { conditions } from '../stores/conditions.svelte';
   import { optimum, OPTIMUM_REASON, OPTIMUM_TIER } from './optimum.svelte';
@@ -36,6 +38,19 @@
   const metric = $derived(OBJECTIVE_METRIC[raceObjective(conditions.value)]);
   const moved = $derived(race.abMoved);
   const delta = $derived(race.abDeltaKt);
+  const pinMoved = $derived(race.pinMoved);
+
+  /**
+   * Pin freezes the trim on screen as a ghost outline in both hero views, and
+   * every instrument then reads its delta against it (audit ux-01 M-19).
+   * Distinct from A/B beside it: A/B swaps two live trims, a pin is a fixed
+   * reference you keep trimming against.
+   */
+  const pinTitle = $derived(
+    race.pinned
+      ? `Unpin. ${pinMoved.length} control${pinMoved.length === 1 ? '' : 's'} differ from the pinned trim.`
+      : 'Freeze this trim as a ghost outline, and read every instrument as a delta against it.',
+  );
 
   /** What the A/B toggle would swap in, in words, for the tooltip and the bar. */
   const abTitle = $derived(
@@ -122,7 +137,27 @@
     Base trim
   </button>
 
+  <!-- Pin: the fixed reference. Hovering it outlines the sliders that differ
+       from the pinned trim, the same preview contract as everything else here. -->
+  <button
+    type="button"
+    class="ghost"
+    class:pinned={race.pinned}
+    onclick={() => (race.pinned ? race.unpin() : race.pin() && track('race.pin'))}
+    disabled={!race.pinned && !race.result}
+    title={pinTitle}
+    aria-pressed={!!race.pinned}
+    onpointerenter={() => preview(pinMoved)}
+    onfocus={() => preview(pinMoved)}
+    onpointerleave={() => preview(null)}
+    onblur={() => preview(null)}
+  >
+    {race.pinned ? 'Unpin' : 'Pin this trim'}
+  </button>
+
   <button type="button" class="ghost" onclick={onlog}>Log this trim</button>
+
+  <CopyLink />
 
   <PuffReplay />
 
@@ -139,6 +174,23 @@
     <span class="hint">Already there — nothing the model would move.</span>
   {/if}
 </div>
+
+<!-- What the ghost outline is, and when it was taken. Every tier gets this one:
+     a dashed sail on the hero and a changed delta label are both unexplained
+     without it, and the condition matters — a pin from 8 kt compared at 18 is
+     still a valid question, but the reader has to know that is what it is. -->
+{#if race.pinned}
+  <p class="pin-line">
+    Pinned at {fmt(race.pinned.condition.twsKt, 0)} kt · TWA {fmt(race.pinned.condition.twaDeg, 0)}°
+    — the ghost outline on the boat, and what every Δ is measured against.
+    {#if pinMoved.length > 0}
+      Differs on {#each pinMoved as id, i (id)}{i > 0 ? ', ' : ''}{CONTROLS[id]?.label ??
+          id}{/each}.
+    {:else}
+      The trim on the sliders is the pinned one.
+    {/if}
+  </p>
+{/if}
 
 <!-- Which controls the two sides differ by, named. The outline preview says
      where they are; this says what they are, for the tier that wants both. -->
@@ -188,7 +240,15 @@
     color: inherit;
   }
 
+  /* Pinned reads as held down, not as another primary action: the accent is a
+     border and the label, not a fill, so Apply optimum stays the only pill. */
+  .ghost.pinned {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
   .apply-wrap.off,
+  .ghost:disabled,
   .ab:disabled {
     border-color: var(--line-strong);
     background: transparent;
@@ -248,6 +308,13 @@
 
   .diff {
     display: none;
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  .pin-line {
+    flex-basis: 100%;
     margin: var(--space-2) 0 0;
     font-size: var(--text-xs);
     color: var(--ink-2);

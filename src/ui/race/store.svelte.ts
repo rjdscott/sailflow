@@ -168,6 +168,22 @@ export interface Coach {
   text: string;
 }
 
+/**
+ * A trim frozen for comparison (audit ux-01 M-19). The whole solved state, not
+ * just the controls: the ghost outline is drawn from `result.shape`, and the
+ * instrument deltas are read off `result`, so a pin that kept only the slider
+ * positions would have to re-solve to say anything.
+ *
+ * `condition` is kept for the label — a pin taken at 8 kt and compared at
+ * 18 kt is two different boats, and the screen says which one it was.
+ */
+export interface Pinned {
+  race: RaceControls;
+  down: DownControls;
+  condition: Condition;
+  result: SolveResult;
+}
+
 export function ids(mode: ControlSpec['mode']): string[] {
   return Object.keys(CONTROLS).filter((id) => CONTROLS[id].mode === mode);
 }
@@ -251,6 +267,20 @@ export class RaceStore {
   previousObjKt: number | null = $state(null);
   /** Which side of the A/B compare is on the sliders. 'A' until you toggle. */
   ab: 'A' | 'B' = $state('A');
+  /**
+   * A trim frozen on screen as a ghost outline, with every instrument reading
+   * its delta against it (audit ux-01 M-19). Unlike A/B, the pinned trim is
+   * not on the sliders and cannot be swapped back onto them: it is the thing
+   * you are comparing *to*, and it survives presets, Apply optimum and undo
+   * until it is unpinned. It is not dropped when the condition moves — the
+   * pin's own condition is kept and shown, because "same trim, 6 kt more
+   * breeze" is a comparison a sailor asks for, not a bug.
+   *
+   * `$state.raw`: a whole `SolveResult` behind a deep proxy costs a proxy read
+   * per number on every frame the ghost draws, and nothing ever mutates one
+   * field of it — it is replaced or dropped.
+   */
+  pinned: Pinned | null = $state.raw(null);
   /** The chosen mode, and the angle its offset is measured from. */
   mode: RaceMode = $state('vmg');
   modeBaseTwaDeg: number | null = $state(null);
@@ -365,6 +395,31 @@ export class RaceStore {
     // The incoming trim's own objective is re-solved, not restored: the
     // condition may have moved since it was parked.
     this.ab = this.ab === 'A' ? 'B' : 'A';
+  }
+
+  /**
+   * Freeze the trim on screen as the comparison ghost. Refuses before the
+   * first solve: a pin with no `result` has no shape to draw and no numbers to
+   * be a delta against, and a half-pinned state is worse than no pin.
+   */
+  pin(): boolean {
+    if (!this.result) return false;
+    this.pinned = {
+      race: { ...$state.snapshot(this.controls.race) },
+      down: { ...$state.snapshot(this.controls.down ?? BASE_DOWN) },
+      condition: conditions.value,
+      result: this.result,
+    };
+    return true;
+  }
+
+  unpin(): void {
+    this.pinned = null;
+  }
+
+  /** Race controls that differ from the pinned trim, in `CONTROLS` order. */
+  get pinMoved(): string[] {
+    return this.willMoveTo(this.pinned?.race ?? null);
   }
 
   /** Controls that differ between the two sides of the compare. */

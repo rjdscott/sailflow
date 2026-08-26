@@ -40,6 +40,7 @@
   import { prefersReducedMotion } from 'svelte/motion';
   import type { DownControls, RaceControls, SolveResult } from '../../core/types';
   import { boomAngle, jibSheetAngle } from '../race/boat';
+  import type { Pinned } from '../race/store.svelte';
   import { settings } from '../stores/settings.svelte';
   import { DEG2RAD, heelRad, lee, tackSide, type Side, type Vec3 } from './conventions';
   import { deckMesh, hullMesh, WATER_Y } from './hull';
@@ -66,6 +67,7 @@
     jibUp = true,
     kiteUp = false,
     down,
+    pinned = null,
     onready,
   }: {
     result: SolveResult;
@@ -79,6 +81,8 @@
     kiteUp?: boolean;
     /** The four downwind controls the kite is drawn from (ADR 0017). */
     down?: DownControls;
+    /** A trim frozen for comparison, drawn as an outline (audit ux-01 M-19). */
+    pinned?: Pinned | null;
     /** First frame drawn, with the milliseconds it took — the perf gate. */
     onready?: (ms: number) => void;
   } = $props();
@@ -129,6 +133,16 @@
   // as the shaded one. prov: assumed #c2571f.
   const stripeMat = new LineBasicMaterial({ color: '#c2571f' });
   const edgeMat = new LineBasicMaterial({ color: '#6f8092' });
+  /**
+   * The pinned trim's outline. 40 % alpha rather than a dashed line: three
+   * needs `computeLineDistances` and a `LineDashedMaterial` per geometry
+   * rebuild to dash in 3D, and a dash length in world units reads as a
+   * different pattern at every camera distance. Alpha is distance-invariant
+   * and costs one material. The plan view carries the dashes, where the
+   * drawing is 2D and they mean the same thing at every size.
+   * prov: assumed 0.4 — ADR 0019's ghost weight, matched in `PlanView.svelte`.
+   */
+  const pinMat = new LineBasicMaterial({ color: '#f2ece0', transparent: true, opacity: 0.4 });
 
   // Double-sided: the hull is a generated open shell, so which way a station
   // triangle happens to face is not worth reasoning about for four hundred
@@ -155,9 +169,10 @@
 
   const stripes = new LineSegments(new BufferGeometry(), stripeMat);
   const edges = new LineSegments(new BufferGeometry(), edgeMat);
+  const pinEdges = new LineSegments(new BufferGeometry(), pinMat);
   const rigging = new LineSegments(new BufferGeometry(), wireMat);
   const forestay = new Line(new BufferGeometry(), wireMat);
-  boat.add(stripes, edges, rigging, forestay);
+  boat.add(stripes, edges, pinEdges, rigging, forestay);
 
   let mast: Mesh | null = null;
   let boom: Mesh | null = null;
@@ -546,6 +561,9 @@
       kiteSail: kite ? kiteSail : null,
       telltales,
       stripes,
+      // Null unless a trim is pinned, for the same reason as the sails above:
+      // "is the ghost drawn?" should be one read, not `.visible` archaeology.
+      pinEdges: pinEdges.visible ? pinEdges : null,
     };
   }
 
@@ -587,6 +605,49 @@
     }
     setLines(stripes, stripeVerts);
     setLines(edges, edgeVerts);
+
+    // The pinned trim (audit ux-01 M-19): the same `buildSail` off the pinned
+    // solve's sections and the pinned controls' sheeting angles, but only its
+    // luff, leech and foot are drawn. A second lit surface hanging beside the
+    // live sail hides the camber that is the thing being compared; three lines
+    // per sail say where the leech was and nothing else.
+    //
+    // Built on the *current* tack and the pinned solve's own rig, so the ghost
+    // is a comparison rather than a picture of the other board. Static, so
+    // there is nothing here for reduced motion to suppress.
+    const pinVerts: number[] = [];
+    if (pinned) {
+      const pinRig = rig3d(
+        pinned.result.rig,
+        side,
+        boomAngle(pinned.race.mainsheet, pinned.race.traveller) * DEG2RAD,
+      );
+      const pinMain = pinned.result.shape.main
+        ? buildSail(
+            sectionStack(pinned.result.shape.main, MAIN_CHORDS),
+            pinRig.mainSpine,
+            boomAngle(pinned.race.mainsheet, pinned.race.traveller) * DEG2RAD,
+            side,
+          )
+        : null;
+      const pinJib =
+        jibUp && pinned.result.shape.jib
+          ? buildSail(
+              sectionStack(pinned.result.shape.jib, JIB_CHORDS),
+              pinRig.jibSpine,
+              jibSheetAngle(pinned.race.jibLead, pinned.race.jibSheet) * DEG2RAD,
+              side,
+            )
+          : null;
+      for (const m of [pinMain, pinJib]) {
+        if (!m) continue;
+        segmentsOf(gridColumn(m, 0), pinVerts);
+        segmentsOf(gridColumn(m, m.M - 1), pinVerts);
+        segmentsOf(gridRow(m, m.N - 1), pinVerts);
+      }
+    }
+    setLines(pinEdges, pinVerts);
+    pinEdges.visible = pinVerts.length > 0;
 
     setLines(rigging, [...r.lines]);
     const stayVerts: number[] = [];
@@ -684,7 +745,16 @@
         const m = o as Mesh;
         m.geometry?.dispose?.();
       });
-      for (const mat of [sailMat, kiteMat, sparMat, wireMat, stripeMat, edgeMat, telltaleMat]) {
+      for (const mat of [
+        sailMat,
+        kiteMat,
+        sparMat,
+        wireMat,
+        stripeMat,
+        edgeMat,
+        pinMat,
+        telltaleMat,
+      ]) {
         mat.dispose();
       }
       renderer?.dispose();
@@ -696,7 +766,7 @@
   // One effect, every input: the solver's answer, the sliders, the tack.
   $effect(() => {
     void [result, controls.mainsheet, controls.traveller, controls.jibLead, controls.jibSheet];
-    void [twaDeg, heelDeg, jibUp, kiteUp];
+    void [twaDeg, heelDeg, jibUp, kiteUp, pinned];
     // Read through the object: a rune tracks the properties, not the box.
     void [down?.kiteHalyard, down?.tackLine, down?.kiteSheet, down?.sprit];
     if (renderer) rebuild();

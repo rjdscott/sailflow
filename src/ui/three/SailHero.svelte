@@ -12,7 +12,7 @@
   import type { DownControls, SolveResult } from '../../core/types';
   import Segmented from '../components/Segmented.svelte';
   import PlanView from '../race/PlanView.svelte';
-  import { race } from '../race/store.svelte';
+  import { race, type Pinned } from '../race/store.svelte';
   import { conditions } from '../stores/conditions.svelte';
   import { router } from '../router.svelte';
   import { isPreset, PRESET_HINT, PRESET_LABEL, PRESET_ORDER, type PresetId } from './presets';
@@ -113,6 +113,7 @@
     jibUp?: boolean;
     kiteUp?: boolean;
     down?: DownControls;
+    pinned?: Pinned | null;
     onready?: (ms: number) => void;
   }>;
 
@@ -206,6 +207,7 @@
       jibUp={conditions.sailset === 'jib'}
       kiteUp={conditions.sailset === 'asym'}
       down={race.controls.down}
+      pinned={race.pinned}
       {onready}
     />
   {:else}
