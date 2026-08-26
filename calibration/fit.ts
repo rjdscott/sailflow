@@ -19,8 +19,10 @@
  *                     Fn 0.5-0.7 reaching regime in front of fn50/fn60
  *                     (ADR 0012; the first fit left them to the asym alone and
  *                     the reaching rows came out 7-15 % wrong)
- *   2. asym           aero.asymClMul — the one non-ORC aero knob, against the
- *                     asymmetric VMG rows
+ *   2. asym           aero.asymClMul + aero.asymCdMul — the two non-ORC aero
+ *                     knobs, against the asymmetric VMG rows, over a
+ *                     deterministic coarse grid before the simplex because the
+ *                     downwind VMG optimum is bimodal (ADR 0018)
  *   3. righting       crewArmMul, refit on the high-wind heel rows only
  *   4. rig + shape    rig.EI/turnsToN/sagK, shape.bendToDraft/sagToDraft/
  *                     sheetToTwist, against the North guide's base settings
@@ -289,11 +291,30 @@ interface StageSpec {
    * Fixed, so the search stays deterministic.
    */
   restarts?: number;
+  /**
+   * Optional deterministic coarse grid, one array of candidate values per knob,
+   * evaluated before Nelder-Mead so the simplex starts from the best cell.
+   *
+   * Needed where the loss surface has cliffs rather than curvature: stage 2's
+   * downwind rows switch between the reaching and the soak VMG hump within the
+   * knobs' plausible range (ADR 0018), and a simplex started at x0 collapses on
+   * whichever side of a cliff it lands. Same reason `softOptimum` exists in
+   * stage 4 and the TWA search scans before it refines.
+   */
+  scan?: number[][];
   /** Loss at the current calibration block. */
   loss: () => number;
   /** Per-point residuals at the current calibration block, for the report. */
   residuals: () => PointResidual[] | TurnsResidual[];
   notes?: string;
+}
+
+/** Cartesian product of the per-knob candidate lists, in a fixed order. */
+export function gridCells(values: number[][]): number[][] {
+  return values.reduce<number[][]>(
+    (acc, vs) => acc.flatMap((row) => vs.map((v) => [...row, v])),
+    [[]],
+  );
 }
 
 function runStage(spec: StageSpec): StageReport {
@@ -322,6 +343,20 @@ function runStage(spec: StageSpec): StageReport {
 
   let x = spec.knobs.map(() => 0);
   const lossStart = f(x);
+  if (spec.scan) {
+    let best = lossStart;
+    for (const cell of gridCells(spec.scan)) {
+      const cand = cell.map((v, i) => toX(spec.knobs[i], v));
+      const l = f(cand);
+      if (l < best) {
+        best = l;
+        x = cand;
+      }
+    }
+    console.log(
+      `  [${spec.name}] grid scan: loss ${lossStart.toExponential(4)} -> ${best.toExponential(4)}`,
+    );
+  }
   for (let r = 0; r < restarts; r++) {
     x = nelderMead(f, x, { step: SIMPLEX_STEP, maxIter: spec.maxIter, tol: 1e-9 }).x;
   }
@@ -579,26 +614,59 @@ export async function main(): Promise<void> {
   );
 
   // --- stage 2: the asymmetric ---------------------------------------------
-  // One knob, and it is not ORC. With the hydro frozen, the running rows are
-  // still reached far too fast and far too high; the only remaining degree of
-  // freedom that changes the asym without disturbing the jib fit is the sail's
-  // own lift.
+  // Two knobs, and neither is ORC. With the hydro frozen, the running rows are
+  // still reached far too fast and far too high; the remaining degrees of
+  // freedom that change the asym without disturbing the jib fit are the sail's
+  // own lift and, above the wing-to-parachute changeover, its own drag.
+  //
+  // `asymCdMul` is the one added in ADR 0018 and it is the one that carries the
+  // deep rows: ORC Table 5.7 puts CLmax at 0.100 by AWA 150 and 0.020 by 170,
+  // so `asymClMul` has no authority at all over a soak. Before it existed this
+  // stage fitted to 1.011 — a no-op — because there was nothing to turn.
   stages.push(
     runStage({
       stage: 2,
       name: 'asym',
       target: `asym vmgDn at TWS ${FIT_TWS.join('/')}`,
       weights: WEIGHTS,
-      maxIter: 80,
+      maxIter: 160,
       restarts: 2,
-      knobs: [{ name: 'aero.asymClMul', start: 1, min: 0.3, max: 2 }],
+      // Bounds, both of them, come from what is published about the
+      // coefficient each knob acts on — not from numerics.
+      knobs: [
+        // CL: ORC's own two editions bracket the lift regime this knob has any
+        // authority in (AWA <= 115, where the TWS 6/8/20 rows sit) at 1.00 to
+        // 1.10 — 2026 raises Table 5.7's CL by 5 % at 75 deg and 10 % at
+        // 115 deg over 2023, and the wind-tunnel corpus sits above both
+        // (research doc 01 §2.2, §3.1). Nothing published supports de-powering
+        // the printed table, so 1.0 is the floor. An earlier bound of
+        // [0.3, 2] let the fit run to 0.82, which is less lift than either
+        // edition prints; see ADR 0018.
+        { name: 'aero.asymClMul', start: 1, min: 1.0, max: 1.1 },
+        // CD above the changeover is bracketed by nothing: this is where the
+        // two ORC editions disagree most and where the wind-tunnel corpus sits
+        // far above both, so the knob is wide.
+        // Upper bound from the published wind-tunnel band: ORC's rated-area CD
+        // at AWA 130-150 is 0.475-0.352, and Souppez & Viola 2024 report
+        // 0.6-1.0 on full moulded area over the same window, which is
+        // 0.83-1.39 on ORC's rated area at the historical 0.72 asymmetric
+        // efficiency factor (research doc 01 §3.1, §7.2). 4.0 is comfortably
+        // outside that band in both directions, so a value that lands on the
+        // bound is a signal, not a fit.
+        { name: 'aero.asymCdMul', start: 1, min: 0.5, max: 4 },
+      ],
+      // 5 x 8 cells, ~40 extra solves. The cliffs are in cdMul, so it is the
+      // finer axis.
+      scan: [
+        [1.0, 1.025, 1.05, 1.075, 1.1],
+        [1.2, 1.6, 2.0, 2.2, 2.4, 2.6, 3.0, 3.4],
+      ],
       loss: () => lossFor(ASYM_ROWS, WEIGHTS),
       residuals: () => residualsFor(ASYM_ROWS, WEIGHTS),
       notes:
-        'The 20 kt asym row (137.1 deg at 11.53 kt, Fn 0.73) and the 16 kt row ' +
-        '(174.0 deg at 6.73 kt, Fn 0.43) pull this knob in opposite directions: ' +
-        'one wants far more power, the other far less. A single multiplier ' +
-        'cannot serve both and the residuals show the split.',
+        'The 20 kt asym row (137.1 deg at 11.53 kt, Fn 0.73) is a planing row ' +
+        'against a displacement model and still pulls against the rest; the ' +
+        'residuals show the split.',
     }),
   );
 
