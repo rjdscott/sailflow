@@ -1,6 +1,7 @@
 <script lang="ts">
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
   import { fmt } from '../format';
+  import { buildHash } from '../router.svelte';
   import { conditions } from '../stores/conditions.svelte';
   import { optimum, OPTIMUM_REASON, OPTIMUM_TIER } from './optimum.svelte';
   import PuffReplay from './PuffReplay.svelte';
@@ -125,6 +126,11 @@
 
   <PuffReplay />
 
+  <!-- The one in-content handoff from the densest screen in the product to the
+       guided path. Race says what the moves are worth; it never said where to
+       go and learn them (audit ux-03 M-06). -->
+  <a class="ghost to-drills" href={buildHash('drills')}>New to this? Try a drill →</a>
+
   {#if optimum.busy || optimum.stale}
     <span class="hint">Searching…</span>
   {:else if optimum.error}
@@ -199,6 +205,15 @@
     border: 1px solid var(--line-strong);
     background: transparent;
     color: var(--ink);
+  }
+
+  /* A link, not a button: it changes the route. Quieter than the trim actions
+     beside it, because it is the way out rather than a move on this screen. */
+  .to-drills {
+    color: var(--ink-2);
+    font-weight: 400;
+    text-decoration: none;
+    white-space: nowrap;
   }
 
   /* Which side is on the sliders, as a badge rather than a changing label:

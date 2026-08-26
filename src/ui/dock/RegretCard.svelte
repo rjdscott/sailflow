@@ -47,13 +47,13 @@
   }
 </script>
 
-<section class="card regret" class:busy aria-busy={busy}>
+<!-- Named by the `lg` cell below rather than by an `h2` above it saying the
+     same three words in a second type style (audit ux-03 M-18). -->
+<section class="card regret" class:busy aria-busy={busy} aria-label="Expected regret">
   <!-- Same 1 px indeterminate sweep as the instrument bar: a solve in flight
        never moves anything on the page (phase 06, copied deliberately — a
        shared component for four lines of CSS is not worth the indirection). -->
   {#if busy}<span class="progress" aria-hidden="true"></span>{/if}
-
-  <h2 class="section-title">Expected regret</h2>
 
   {#if score}
     <InstrumentCell
@@ -154,6 +154,9 @@
       is the price of committing once, not a mistake.
     </p>
   {:else}
+    <!-- The only branch that still needs a heading of its own: with no score
+         there is no `lg` cell to carry the card's name. -->
+    <h2 class="section-title">Expected regret</h2>
     <p class="explain">{busy ? scoringNote : 'No score yet.'}</p>
   {/if}
 </section>

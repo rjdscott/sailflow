@@ -29,6 +29,7 @@
     history,
     twsKt,
     coach,
+    targetWithheld = false,
   }: {
     result: SolveResult;
     twaDeg: number;
@@ -42,9 +43,19 @@
     twsKt: number;
     /** The coach line's probe sentence, the verdict's fallback cue. */
     coach?: string;
+    /** No target because a drill is holding the answer back, not because the
+     *  solver is still working (audit ux-03 M-02). */
+    targetWithheld?: boolean;
   } = $props();
 
-  /** One convention everywhere: + means the target is faster than you (ux-02 M-09). */
+  /**
+   * One convention everywhere: + means the target is faster than you (ux-02
+   * M-09). It used to be stated in this comment and nowhere the reader could
+   * see it, so a leading `+` read as good news beside "0.29 kt below target"
+   * (audit ux-03 M-05). The label carries the direction now, and the BSP and
+   * VMG explainer sheets say it in prose.
+   */
+  const DELTA_LABEL = 'to optimum (+ = optimum is faster)';
   const vmgBetter = $derived(objective === 'vmgDown' ? ('less' as const) : ('more' as const));
   const gapTo = (
     value: number,
@@ -53,7 +64,7 @@
     better: 'more' | 'less' = 'more',
   ) => {
     const t = targetOf(value, to, decimals, better);
-    return t && { ...t, label: 'to optimum' };
+    return t && { ...t, label: DELTA_LABEL };
   };
 
   /**
@@ -67,7 +78,7 @@
   });
 
   const heel = $derived(heelBands(twsKt));
-  const line = $derived(verdict({ result, target, objective, coach }));
+  const line = $derived(verdict({ result, target, objective, coach, targetWithheld }));
 
   let explaining: string | null = $state(null);
   let sheetOpen = $state(false);
@@ -172,8 +183,13 @@
         />
       </div>
 
+      <!-- "More readings", not "More": the bottom nav's fifth destination is
+           also called "More" and is on screen at the same time on a phone, and
+           a bare pill said nothing about what is behind it (audit ux-03 M-19). -->
       <button type="button" class="more-btn" aria-expanded={more} onclick={() => (more = !more)}>
-        {more ? 'Less' : 'More'}
+        {more ? 'Fewer readings' : 'More readings'}<span aria-hidden="true" class="chev"
+          >{more ? '▴' : '▾'}</span
+        >
       </button>
     </div>
 
@@ -285,6 +301,11 @@
     color: var(--ink-2);
     font-size: var(--text-xs);
     cursor: pointer;
+  }
+
+  .chev {
+    margin-left: var(--space-1);
+    color: var(--accent);
   }
 
   @media (max-width: 719px) {

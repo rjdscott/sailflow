@@ -39,7 +39,7 @@ finding code.
 - [x] **M-14** (P2, S) Scroll position carries across tab switches — per-route offset map restored in one `$effect`.
 - [ ] **M-15** (P2, M) "Clicks" are 5 %-of-range slider steps, not purchase-derived — express deltas in turns, holes, cm and purchase pulls from the committed `purchaseMin`/`purchaseMax`.
 - [x] **M-18** (P2, M) No streak, daily challenge, list progress or celebration — date-derived drill of the day, streak chip with one day's forgiveness, "x of 10 attempted · Start here →", best on the card face and in the ScoreSheet.
-- [ ] **M-19** (P2, S) The log's daily ritual starts from a blank 20-field form — prefill date/forecast/dock from `rigLock.locked` and race from live trim, add "Log this day" on Dock and Race.
+- [x] **M-19** (#46) (P2, S) The log's daily ritual starts from a blank 20-field form — prefill date/forecast/dock from `rigLock.locked` and race from live trim, add "Log this day" on Dock and Race.
 - [x] **M-20** (P2, M) The log is write-only and records no outcome — search over venue/notes, forecast-vs-actual delta on the card, "Open on the Dock", then a `result` field plus the model's prediction at the actual wind.
 - [x] **M-21** (P2, S) Import merges irreversibly and there is no reset — wire the existing `LogStore.clear()` to a two-step button on More, confirm the import count before writing.
 - [x] **M-22** (P2, M) The three honesty links are network-only in an offline app — inline the markdown with Vite `?raw` into the existing `Sheet`.
@@ -59,3 +59,37 @@ finding code.
 - [x] **L-03** (P3, M) More has no units, no reduced-motion override, and About is a 100-word jargon block at the bottom — Motion control, kg/lb toggle, plain-language lead.
 - [x] **L-04** (P3, S) No release surface: v0.1.0 since the initial commit, no changelog, native `confirm()` — bump per batch, add `CHANGELOG.md`, "What's new" line plus build stamp, in-app update toast.
 - [ ] **L-05** (P3, M) A second class is blocked by eight hardcoded `boats/j70.json` imports — one `src/lib/boat.ts` export, repoint all eight, glob the provenance script.
+
+## Reconciliation — 2026-08-26
+
+Checked against `main` at `3a2e96d`.
+
+- **M-19** — ticked, closed incidentally by #46 (which cited M-01/M-05/M-10 and
+  friends but shipped this too). The form seeds date, forecast and dock from the
+  committed rig and merges the Dock draft rather than opening blank
+  (`src/ui/screens/Log.svelte:84,89`); Dock starts the draft on commit
+  (`src/ui/screens/Dock.svelte:36`); Race hands the live trim over and navigates
+  (`logTrim()`, `src/ui/screens/Race.svelte:151-162`, wired at `:341`).
+- **M-24** — half done, so it stays open. The committed band *is* on screen and
+  clickable: `ConditionsStrip.svelte:29,76-85` renders "Committed: X–Y kt" and
+  `takeForecast()` snaps the condition back to it (#46). Not done: no warning
+  when the live TWS is outside that band, and no min/likely/max compare strip.
+  Deferred to phase two.
+- **M-15** — open, unchanged. Nothing in `src/ui` reads `purchaseMin`/
+  `purchaseMax`; the coach line still says "one click"
+  (`src/ui/explain.ts:97-98`). This blocks ux-03 M-03, which says so.
+  Deferred to phase two.
+- **M-28** — open. #79, #86 and #87 improved downwind honesty (the mainsheet
+  eases with the point of sail, the shape datum under the kite is the downwind
+  base trim, `notSolved` says what it does not solve), but the physics epic the
+  finding asks for — tack line, sprit, rotation, downwind righting moment,
+  planing relief — is unstarted, and sub-resolution downwind recommendations are
+  still emitted. Deferred to phase two.
+- **L-05** — open, and larger than when it was written: 15 files import
+  `data/boats/j70.json` directly (`grep -rn "boats/j70.json" src/`), and there is
+  no `src/lib/boat.ts`. Deferred to phase two.
+
+## Log
+
+- 2026-08-26 — reconciled against main at `3a2e96d`; 1 ticked, 4 deferred.
+

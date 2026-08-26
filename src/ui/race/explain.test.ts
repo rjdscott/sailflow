@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import boat from '../../../data/boats/j70.json';
-import { coachSentence, EXPLAIN, MOVES } from '../explain';
+import { coachSentence, EXPLAIN, MOVES, READOUT_EXPLAIN } from '../explain';
 import { PROBE_CONTROLS } from './store.svelte';
 
 describe('EXPLAIN', () => {
@@ -45,5 +45,21 @@ describe('coachSentence', () => {
 
   it('is empty for a control with no phrasing', () => {
     expect(coachSentence('cunningham', 1, 0.1, 'VMG')).toBe('');
+  });
+});
+
+/**
+ * The Δ sign convention used to be stated in one source comment and nowhere a
+ * reader could reach it, so a leading `+` read as good news beside "0.29 kt
+ * below target" (audit ux-03 M-05). The two readouts that print a delta in the
+ * instrument band say which way it is signed.
+ */
+describe('READOUT_EXPLAIN', () => {
+  it('states the delta sign convention on the two readouts that carry a delta', () => {
+    for (const id of ['bsp', 'vmg']) {
+      expect(READOUT_EXPLAIN[id], `${id} never says which way the delta is signed`).toMatch(
+        /optimum is faster/,
+      );
+    }
   });
 });

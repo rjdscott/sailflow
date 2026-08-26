@@ -40,10 +40,44 @@ Priority: **P0** ship-blocker, **P1** before public release, **P2** soon,
 - [ ] **M-20** (P2, M) Shroud turns with no picture of how to measure — one own-drawn rig elevation SVG on the Dock RIG card, reusing `RigElevation` geometry.
 - [x] **M-21** (P2, S) Wind arrows the same length at all TWS — scale `RING.len` with `twsKt`, clamped.
 - [x] **M-22** (P2, S) Downwind preset in Simple mode has no kite controls — drive `race.downwind` off `conditions.sailset` and show the kite controls in Simple under the existing C-tier banner.
-- [ ] **M-23** (P2, S) Disagreement solve runs even when the panel is hidden — gate the `$effect` on the `<details>` open state, surface the headline delta unconditionally.
+- [x] **M-23** (#65) (P2, S) Disagreement solve runs even when the panel is hidden — gate the `$effect` on the `<details>` open state, surface the headline delta unconditionally.
 
 ## P3 — nice
 
 - [ ] **L-01** (P3, S) Simple mode wastes three rows on locked dock sliders — largely subsumed by C-01; afterwards wrap the Dock setup card in `{#if advanced}` or show a one-line summary chip.
 - [x] **L-02** (P3, S) Slider troughs and chip borders near 1.3:1 contrast — darken `--muted`, give `.chip`/`.info` an `--ink-2`-derived border.
 - [ ] **L-03** (P3, M) Control explainers untitled with no illustration — render the matching `SailSections`/`RigElevation` beside the text in the explain sheet.
+
+## Reconciliation — 2026-08-26
+
+Checked against `main` at `3a2e96d`. The cockpit remodel (ADR 0015, #51–#60)
+and the desktop-kite plan rebuilt the screens two of these findings were
+written against, so the state below is what a stranger should read, not the
+tick alone.
+
+- **M-23** — ticked. The `<details>` the finding named is gone: ux-03 H-03
+  (#65) put the summary row inline in the cockpit panel and moved the table
+  behind the existing `Sheet`, so the delta is now unconditional. The solve
+  itself is gated on the density tier — `src/ui/screens/Race.svelte:47-49` and
+  `src/ui/screens/Dock.svelte:22-24` only `model.request(...)` when
+  `settings.advanced`, and the panel renders under the same guard.
+- **M-12** and **L-01** — superseded by the cockpit density tiers (ADR 0015,
+  #51–#60). Both cite `src/ui/race/ControlPanel.svelte`, which no longer
+  exists; Simple/Advanced was replaced by `learn` / `race` / `analyse`
+  (`src/ui/stores/settings.svelte.ts:6-12`, which migrates the old values), and
+  the panels are per sail system. The successor findings on the same ground are
+  ux-03 M-04 (Learn tier) and ux-03 M-07 (Analyse tier); those are the live
+  handles, not these.
+- **M-20** — still open, unchanged. `RigElevation.svelte` is mounted only in the
+  Race Rig panel (`src/ui/race/panels/Rig.svelte:143`); the Dock RIG card still
+  issues shroud turns with no picture. Deferred to phase two.
+- **L-03** — still open, unchanged. `EXPLAIN` is a flat `Record<string, string>`
+  (`src/ui/explain.ts:12`) rendered as one untitled paragraph
+  (`src/ui/race/panels/copy.ts:33`, `InstrumentBar.svelte:241`); no title, no
+  illustration. Deferred to phase two.
+
+## Log
+
+- 2026-08-26 — reconciled against main at `3a2e96d`; 1 ticked, 4 deferred
+  (2 superseded by the cockpit remodel, 2 carried forward unchanged).
+

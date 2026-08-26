@@ -28,38 +28,73 @@ every High is P0 here.
 ## P1 — before public release
 
 - [x] **M-01** (#70) (P1, M) Cockpit panels hide 54–81 % of their content behind an internal scroll with no styled affordance, worst on Rig (19 % visible) and tighter in Learn than Race — lower `Panel.svelte`'s 560 px container threshold or widen the column so the three-column layout fires; pin each panel's cue and add a scroll shadow.
-- [ ] **M-02** (P1, S) A drill prints "Finding the optimum…" indefinitely while it is actually waiting for the user, because `verdict.ts:61` returns loading copy for the deliberately withheld target — add a distinct branch and copy that names the state, plus a `verdict.test.ts` case.
+- [x] **M-02** (close-out) (P1, S) A drill prints "Finding the optimum…" indefinitely while it is actually waiting for the user, because `verdict.ts:61` returns loading copy for the deliberately withheld target — add a distinct branch and copy that names the state, plus a `verdict.test.ts` case.
 - [x] **M-04** (#70) (P1, S) The Learn tier ellipsises seven control names it is specified to spell out, while the hint text refers to them in full — scope the ellipsis to the race and analyse tiers and let Learn wrap to two lines.
-- [ ] **M-05** (P1, S) The Δ sign convention is stated only in a source comment, so the band reads "+0.4" beside "0.29 kt below target" — extend the label once per band or flip to the loss reading, and add the sentence to the BSP/VMG explainers.
-- [ ] **M-06** (P1, S) Race's purpose sentence is `display: none` at ≥ 1280 px and no in-content link points to Drills — keep the lede as one header-row line and add "New to this? Try a drill →" to the actions strip.
-- [ ] **M-13** (P1, S) Thirteen instrument `?` buttons are 17.4 px tall on the phone against the repo's own 44 px token, and "Jib leech?" fails SC 2.5.8's spacing exception at 23.1 px — add `.hit-44` to `.explain` in `InstrumentCell` and `BulletGauge` only; leave `ConfidenceBadge` at its documented 24 px.
-- [ ] **M-14** (P1, S) `aria-label` on role-less `<div>`s means the point-of-sail and conditions groups have no accessible name — add `role="group"` to `ConditionsStrip.svelte:39,53`.
-- [ ] **M-15** (P1, S) `height: 56px` plus `padding-bottom: env(safe-area-inset-bottom)` under `border-box` means the tab bar does not grow on notched phones: all five labels sit in the gesture-reserved strip and Dock's commit bar floats 34 px clear — `height: calc(56px + env(safe-area-inset-bottom))`, which leaves Dock and Toast correct as written.
-- [ ] **M-16** (P1, S) The HELM gauge is passed no `ranges`, so `symbol` mode draws two hairlines on an invisible track, on the phone band and the desktop Helm panel — pass a band split around `HELM_TARGET` and add a scale legend, or give `BulletGauge` a fallback track rect.
-- [ ] **M-17** (P1, S) The verdict sentence is printed twice back-to-back on the phone, costing ~14 % of the first screen — `display: none` on the band's copy under `max-width: 719px`.
-- [ ] **M-18** (P1, S) Dock's regret card prints "Expected regret" as an `h2` and again as the cell label — drop the `h2` and give the section `aria-labelledby` on the cell's label.
-- [ ] **M-19** (P1, S) The instrument band's "More" disclosure and the "More" nav tab are on screen together at 390 px, and the pill gives no cue that three readings are hidden — "More readings ▾" / "Fewer readings ▴" plus a chevron.
+- [x] **M-05** (close-out) (P1, S) The Δ sign convention is stated only in a source comment, so the band reads "+0.4" beside "0.29 kt below target" — extend the label once per band or flip to the loss reading, and add the sentence to the BSP/VMG explainers.
+- [x] **M-06** (close-out) (P1, S) Race's purpose sentence is `display: none` at ≥ 1280 px and no in-content link points to Drills — keep the lede as one header-row line and add "New to this? Try a drill →" to the actions strip.
+- [x] **M-13** (close-out) (P1, S) Thirteen instrument `?` buttons are 17.4 px tall on the phone against the repo's own 44 px token, and "Jib leech?" fails SC 2.5.8's spacing exception at 23.1 px — add `.hit-44` to `.explain` in `InstrumentCell` and `BulletGauge` only; leave `ConfidenceBadge` at its documented 24 px.
+- [x] **M-14** (close-out) (P1, S) `aria-label` on role-less `<div>`s means the point-of-sail and conditions groups have no accessible name — add `role="group"` to `ConditionsStrip.svelte:39,53`.
+- [x] **M-15** (close-out) (P1, S) `height: 56px` plus `padding-bottom: env(safe-area-inset-bottom)` under `border-box` means the tab bar does not grow on notched phones: all five labels sit in the gesture-reserved strip and Dock's commit bar floats 34 px clear — `height: calc(56px + env(safe-area-inset-bottom))`, which leaves Dock and Toast correct as written.
+- [x] **M-16** (close-out) (P1, S) The HELM gauge is passed no `ranges`, so `symbol` mode draws two hairlines on an invisible track, on the phone band and the desktop Helm panel — pass a band split around `HELM_TARGET` and add a scale legend, or give `BulletGauge` a fallback track rect.
+- [x] **M-17** (close-out) (P1, S) The verdict sentence is printed twice back-to-back on the phone, costing ~14 % of the first screen — `display: none` on the band's copy under `max-width: 719px`.
+- [x] **M-18** (close-out) (P1, S) Dock's regret card prints "Expected regret" as an `h2` and again as the cell label — drop the `h2` and give the section `aria-labelledby` on the cell's label.
+- [x] **M-19** (close-out) (P1, S) The instrument band's "More" disclosure and the "More" nav tab are on screen together at 390 px, and the pill gives no cue that three readings are hidden — "More readings ▾" / "Fewer readings ▴" plus a chevron.
 
 ## P2 — soon
 
-- [ ] **M-03** (P2, M) "Clicks" is the unit the Race coach line and the whole of Drills grade in and it is defined nowhere; the Learn tier also hides the ± steppers, the only discrete click affordance — pending ux-02 M-15's purchase-derived units, add one sentence to the mainsheet `?` sheet. Do not print the coach line as a percentage delta: it is a ±1-step gradient probe, not the distance to the answer.
-- [ ] **M-07** (P2, L) The Analyse tier's only unique numbers are LEECH STALL and JIB STRIPE, both duplicates of gauges on the same unscrolled screen, and the sparkline half of Pattern 5 is dead CSS that can never fire — land the promised content or fold the two cells into Race and delete the tier.
-- [ ] **M-08** (P2, M) HEADSTAY SAG draws a zero-based bar with no bands and no bug, and %POLAR drops the confidence band `instruments.ts:233` already computes — forward the channels the solve already returns; leave the two bar cells whose panel gauges already carry the reference.
-- [ ] **M-09** (P2, S) `sparkPoints` normalises each series to its own min/max, so a 0.1 kt wobble draws a full-height collapse — floor the span per channel and draw the optimum as a reference line in the same box.
-- [ ] **M-10** (P2, S) `historyKey` resets the trend buffer on any wind change, so the sparkline is empty during a wind sweep and a gust replay, and the collected heel series is never drawn — push a `null` sentinel and split the polyline; pass `trend={history.series('heel')}` to the HEEL gauge.
-- [ ] **M-11** (P2, S) The analyse chevron's magnitude lives only in a `title`, unreachable on touch and keyboard — print `▲ +0.06 kt` using the `chevLabel` already computed.
-- [ ] **M-12** (P2, S) `.delta-label` is clipped outside the Learn tier, so Analyse sees "target 4.14 +0.29" with no statement of the reference or direction — show it at every tier, abbreviated rather than clipped at `sm`.
-- [ ] **M-20** (P2, M) Race spends ~600 px of the phone's first screen on title, lede and four wrapped chip rows before the first number — shrink the `h1`, collapse the lede, move the condition chips behind the existing Edit sheet.
-- [ ] **M-21** (P2, S) Every Race visit leaks two WebGL contexts and the whole detached Race DOM tree (+2,404 nodes, +38.9 listeners per visit; 61,865 nodes over 25 cycles) — `forceContextLoss()` before `dispose()`, memoise `hasWebGL()` at module level, add the four missed inline materials. No context-lost handling is needed: the live hero is never the eviction target.
-- [ ] **M-22** (P2, S) The phone fetches 142 KB gzip of three.js and creates a context for a hero 372 px below the fold that then draws two frames and parks — swap `SailHero`'s width-only `shown` gate for an `IntersectionObserver` on the same slot.
+- [ ] **M-03** (P2, M) "Clicks" is the unit the Race coach line and the whole of Drills grade in and it is defined nowhere; the Learn tier also hides the ± steppers, the only discrete click affordance — pending ux-02 M-15's purchase-derived units, add one sentence to the mainsheet `?` sheet. Do not print the coach line as a percentage delta: it is a ±1-step gradient probe, not the distance to the answer. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **M-07** (P2, L) The Analyse tier's only unique numbers are LEECH STALL and JIB STRIPE, both duplicates of gauges on the same unscrolled screen, and the sparkline half of Pattern 5 is dead CSS that can never fire — land the promised content or fold the two cells into Race and delete the tier. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **M-08** (P2, M) HEADSTAY SAG draws a zero-based bar with no bands and no bug, and %POLAR drops the confidence band `instruments.ts:233` already computes — forward the channels the solve already returns; leave the two bar cells whose panel gauges already carry the reference. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **M-09** (P2, S) `sparkPoints` normalises each series to its own min/max, so a 0.1 kt wobble draws a full-height collapse — floor the span per channel and draw the optimum as a reference line in the same box. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **M-10** (P2, S) `historyKey` resets the trend buffer on any wind change, so the sparkline is empty during a wind sweep and a gust replay, and the collected heel series is never drawn — push a `null` sentinel and split the polyline; pass `trend={history.series('heel')}` to the HEEL gauge. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **M-11** (P2, S) The analyse chevron's magnitude lives only in a `title`, unreachable on touch and keyboard — print `▲ +0.06 kt` using the `chevLabel` already computed. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **M-12** (P2, S) `.delta-label` is clipped outside the Learn tier, so Analyse sees "target 4.14 +0.29" with no statement of the reference or direction — show it at every tier, abbreviated rather than clipped at `sm`. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **M-20** (P2, M) Race spends ~600 px of the phone's first screen on title, lede and four wrapped chip rows before the first number — shrink the `h1`, collapse the lede, move the condition chips behind the existing Edit sheet. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **M-21** (P2, S) Every Race visit leaks two WebGL contexts and the whole detached Race DOM tree (+2,404 nodes, +38.9 listeners per visit; 61,865 nodes over 25 cycles) — `forceContextLoss()` before `dispose()`, memoise `hasWebGL()` at module level, add the four missed inline materials. No context-lost handling is needed: the live hero is never the eviction target. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **M-22** (P2, S) The phone fetches 142 KB gzip of three.js and creates a context for a hero 372 px below the fold that then draws two frames and parks — swap `SailHero`'s width-only `shown` gate for an `IntersectionObserver` on the same slot. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
 - [x] **M-23** (#78) (P2, S) 13.8 KB gzip of provenance/assumptions/validation markdown and all five screens sit in the entry chunk — `await import()` the three `?raw` files inside their disclosure and make More, Log and Drills dynamic imports the way `Kit` already is.
-- [ ] **M-24** (P2, M) A one-second slider drag creates and destroys 285 GL buffers because everything but the two sail meshes is rebuilt from scratch per event — give the four line meshes `applySail`'s reuse path and skip the mast/boom rebuild unless the spar points changed.
-- [ ] **M-25** (P2, S) `DEBOUNCE_MS = 80` is 33× the measured 2.4 ms solve, so the instruments trail the slider by ~105 ms at 7–9 Hz while the 3D sail follows it live — drop the main `trimmed` solve to ~16 ms and keep the longer delay for the probe pass and `optimalTrim`.
+- [ ] **M-24** (P2, M) A one-second slider drag creates and destroys 285 GL buffers because everything but the two sail meshes is rebuilt from scratch per event — give the four line meshes `applySail`'s reuse path and skip the mast/boom rebuild unless the spar points changed. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **M-25** (P2, S) `DEBOUNCE_MS = 80` is 33× the measured 2.4 ms solve, so the instruments trail the slider by ~105 ms at 7–9 Hz while the 3D sail follows it live — drop the main `trimmed` solve to ~16 ms and keep the longer delay for the probe pass and `optimalTrim`. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
 
 ## P3 — nice
 
-- [ ] **L-01** (P3, S) Every drill wears a "Due" chip on a first run, so the one prioritisation signal on the page is uniformly on — suppress it when `attempts === 0`.
-- [ ] **L-02** (P3, S) `PuffReplay.svelte:80` outlines the Lull/Shift chips in `--line` (1.28:1 dark, 1.17:1 light), the one control outline phase 06's `--line-strong` sweep missed — swap the token.
-- [ ] **L-03** (P3, S) `RigElevation.svelte:147-161` puts a `<button>` as a direct child of a `<dl>` — move it into the `<figure>` beside the `<figcaption>`.
-- [ ] **L-04** (P3, S) Log's actions row abuts the card below it with a 0 px gap where every other card has `--space-4` — add the margin.
-- [ ] **L-05** (P3, S) The production-gated Kit chunk is still precached by the service worker (3.8 KB per install) — add `Kit-*` to the existing `workbox.globIgnores` beside `SailView3D`.
+- [ ] **L-01** (P3, S) Every drill wears a "Due" chip on a first run, so the one prioritisation signal on the page is uniformly on — suppress it when `attempts === 0`. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **L-02** (P3, S) `PuffReplay.svelte:80` outlines the Lull/Shift chips in `--line` (1.28:1 dark, 1.17:1 light), the one control outline phase 06's `--line-strong` sweep missed — swap the token. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **L-03** (P3, S) `RigElevation.svelte:147-161` puts a `<button>` as a direct child of a `<dl>` — move it into the `<figure>` beside the `<figcaption>`. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **L-04** (P3, S) Log's actions row abuts the card below it with a 0 px gap where every other card has `--space-4` — add the margin. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+- [ ] **L-05** (P3, S) The production-gated Kit chunk is still precached by the service worker (3.8 KB per install) — add `Kit-*` to the existing `workbox.globIgnores` beside `SailView3D`. **Deferred to phase two** (docs/plans/2026-08-26-phase-two).
+
+## Reconciliation — 2026-08-26
+
+Checked against `main` at `3a2e96d`. **P1 Mediums are excluded from this pass**
+— they were being worked concurrently; only P2 and P3 were reconciled here.
+
+Every open P2 and P3 item was re-verified against the code and none had been
+fixed incidentally. Spot checks, in the two places most likely to have moved:
+`DEBOUNCE_MS` is still 80 (`src/ui/race/store.svelte.ts:48`) for M-25, and the
+hero still has no `forceContextLoss()` and calls `hasWebGL()` per instance
+(`src/ui/three/SailHero.svelte:67,138`) for M-21. M-22's `shown` gate is still
+the width-only `ResizeObserver` at `:130-133`, and `sparkPoints`
+(`src/ui/instruments/gauges.ts:203`), `historyKey`
+(`src/ui/race/store.svelte.ts:69`), `chevLabel`'s title-only magnitude
+(`src/ui/race/panels/ControlRow.svelte:101`), `.delta-label`'s Learn-only
+visibility (`src/ui/components/InstrumentCell.svelte:155`), PuffReplay's
+`--line` outline (`:80`), RigElevation's `<button>` inside a `<dl>`
+(`:161-163`) and `globIgnores` without `Kit-*` (`vite.config.ts:32`) are all
+unchanged.
+
+`docs/plans/2026-08-26-phase-two` does not exist yet — the deferral notes name
+where this work is meant to land, and creating that plan is the next step.
+
+## Log
+
+- 2026-08-26 — reconciled against main at `3a2e96d`; 0 ticked, 17 deferred
+  (P2 and P3 only; the P1 Mediums were left untouched for a concurrent pass).
+- **2026-08-26 — P1 Mediums closed out** (`fix/ux03-p1-mediums`). M-02, M-05,
+  M-06, M-13, M-14, M-15, M-16, M-17, M-18, M-19 fixed, each with a unit test
+  or a Playwright check. M-13 and M-16 landed in the shared components
+  (`InstrumentCell`, `BulletGauge`) rather than per call site, so the desktop
+  Helm panel and every future symbol-mode gauge are covered with them. M-13
+  keeps phase 06's cockpit carve-out: the 44 px overlay is off at ≥ 1280 px,
+  where instrument rows are 37 px apart and two overlays would overlap. The 3D
+  screenshot baselines did not move.
