@@ -1,0 +1,62 @@
+
+## desktop 1920x1080 — #/race
+title: Race · Sailflow  url: https://rjdscott.github.io/sailflow/#/race?tws=10&twa=42&sea=1&crew=300&set=jib&r=30.60.0.20.50.30.60.5.30.50.50  chars: 2363
+mentions "tier": false
+mentions "version": none
+console/network (4):
+  [warning] [.WebGL-0x1754008e3800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+  [warning] [.WebGL-0x1754008e3800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+
+## desktop 1920x1080 — #/dock
+title: Dock · Sailflow  url: https://rjdscott.github.io/sailflow/#/dock  chars: 2405
+mentions "tier": false
+mentions "version": none
+console/network (0):
+
+## desktop 1920x1080 — #/log
+title: Log · Sailflow  url: https://rjdscott.github.io/sailflow/#/log  chars: 288
+mentions "tier": false
+mentions "version": none
+console/network (0):
+
+## desktop 1920x1080 — #/drills
+title: Drills · Sailflow  url: https://rjdscott.github.io/sailflow/#/drills  chars: 1406
+mentions "tier": true
+mentions "version": none
+console/network (0):
+
+## desktop 1920x1080 — #/more
+title: More · Sailflow  url: https://rjdscott.github.io/sailflow/#/more  chars: 2363
+mentions "tier": true
+mentions "version": 0.2.0
+console/network (0):
+
+## phone 390x844 — #/race
+title: Race · Sailflow  url: https://rjdscott.github.io/sailflow/#/race?tws=10&twa=42&sea=1&crew=300&set=jib&r=30.60.0.20.50.30.60.5.30.50.50  chars: 2338
+mentions "tier": false
+mentions "version": none
+console/network (0):
+
+## phone 390x844 — #/dock
+title: Dock · Sailflow  url: https://rjdscott.github.io/sailflow/#/dock  chars: 2430
+mentions "tier": false
+mentions "version": none
+console/network (0):
+
+## phone 390x844 — #/log
+title: Log · Sailflow  url: https://rjdscott.github.io/sailflow/#/log  chars: 231
+mentions "tier": false
+mentions "version": none
+console/network (0):
+
+## phone 390x844 — #/drills
+title: Drills · Sailflow  url: https://rjdscott.github.io/sailflow/#/drills  chars: 1407
+mentions "tier": true
+mentions "version": none
+console/network (0):
+
+## phone 390x844 — #/more
+title: More · Sailflow  url: https://rjdscott.github.io/sailflow/#/more  chars: 2364
+mentions "tier": true
+mentions "version": 0.2.0
+console/network (0):

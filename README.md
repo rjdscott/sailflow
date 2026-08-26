@@ -18,8 +18,6 @@ the flying shape of every sail in 3D and plan view, compares its answer against
 the North and Quantum tuning guides, logs what you tried, and drills you on
 the decisions with fault-injection exercises.
 
-<!-- screenshot: docs/img/race-desktop.png (1920×1080, Race, kite up) -->
-
 ## Why it is different
 
 Most trim advice is a table in a PDF. Sailflow is a model you can argue with:
@@ -34,10 +32,11 @@ Most trim advice is a table in a PDF. Sailflow is a model you can argue with:
   citation in [`PROVENANCE.md`](PROVENANCE.md).
 - **Disagreement is shown, never resolved silently.** When the model and a
   tuning guide differ, you see both and the delta.
-- **Validation is public.** [`validation/report.md`](validation/report.md) is
-  regenerated on every push against the ORC J/70 polar with held-out wind
-  speeds, and the current verdict is printed below, including the rows it
-  fails.
+- **Validation is public.** [`validation/report.md`](validation/report.md)
+  replays the ORC J/70 polar through the solver with two wind speeds held out
+  of the fit. CI regenerates it on every push and puts the held-out tables and
+  the gate verdict in the job summary, so a regression is visible in the PR.
+  The current verdict, and the rows it fails, are below.
 - **Deterministic core.** Same inputs, same outputs. No randomness, no clock,
   no framework in `src/core`. A golden corpus of 65 solved cases catches any
   drift.
@@ -53,8 +52,9 @@ drills v2, PWA offline, dark/light themes, desktop-first layout down to phone.
 ([ADR 0012](docs/adr/0012-hold-out-split-by-wind-speed-not-by-angle.md): every
 row at TWS 8 and 14 kt withheld from calibration) currently reads
 **FAIL — 8 of 10 rows** inside 3 % boat speed / 2° angle. The two misses are
-both at 14 kt: upwind VMG (5.8 % slow, 1.8° high) and downwind VMG (15 % slow,
-and the model runs 172° where the polar gybes at 146°). The downwind miss is
+both at 14 kt, and both are the model being optimistic: upwind VMG 5.8 % fast
+and 1.8° wide, downwind VMG 15 % fast and 25° tight — the polar runs 172° where
+the model gybes at 146°, so it will not soak. The downwind miss is
 structural — the asymmetric-kite aero has no soak/plane mode switch — and is
 phase 01 of [the phase-two plan](docs/plans/2026-08-26-phase-two/). Until it
 lands, downwind boat speed is tier B and downwind optimum angle is tier C, and
@@ -83,14 +83,22 @@ make setup      # pnpm install --frozen-lockfile
 make dev        # vite dev server on http://localhost:5173
 make check      # docs-check + lint + typecheck + 1100+ unit tests
 make validate   # polar hold-out gate, regenerates validation/report.md
-pnpm test:ui    # Playwright: layout, a11y, 3D smoke, screenshots
 make help       # every target
+
+pnpm exec playwright install chromium   # once, before the first test:ui run
+pnpm test:ui    # Playwright: layout, a11y, 3D smoke, screenshots
 ```
 
-Node 20, pnpm 9. Python 3.12 is used only by the docs tooling. Playwright
-screenshot baselines are generated inside
-`mcr.microsoft.com/playwright:v1.62.1-noble` so they match CI — see
-[`docs/runbooks/`](docs/runbooks/README.md).
+Node 20, pnpm 9, and [`uv`](https://docs.astral.sh/uv/) — `make docs-check`
+runs the documentation tests through `uvx pytest`, so `make check` needs it:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Python 3.12 is used only by that docs tooling. Playwright screenshot baselines
+are generated inside `mcr.microsoft.com/playwright:v1.62.1-noble` so they match
+CI — see [`docs/runbooks/`](docs/runbooks/README.md).
 
 ## Architecture
 
@@ -112,7 +120,7 @@ so a solve is reproducible and never blocks the frame.
 
 Stack: Svelte 5 runes, Vite, TypeScript strict, Vitest, Playwright,
 three.js (one lazy chunk, gated by a measured first-frame budget), vite-plugin-pwa,
-GitHub Pages. ~26 k lines of app code, ~12 k lines of tests, 17 ADRs.
+GitHub Pages. ~26 k lines of app code, ~14 k lines of tests, 17 ADRs.
 
 ## Documentation
 
@@ -123,14 +131,23 @@ The repo is run on a documentation pipeline that is machine-checked
 |-------|------|
 | [`docs/adr/`](docs/adr/README.md) | 17 decisions, Nygard format, immutable once accepted |
 | [`docs/plans/`](docs/plans/README.md) | Phase plans with status tables; resumable by a stranger |
-| [`docs/audits/`](docs/audits/README.md) | Point-in-time sweeps (UX ×3, docs consistency) with evidence and punchlists |
+| [`docs/audits/`](docs/audits/README.md) | Point-in-time sweeps (UX ×3, docs consistency, first impressions) with evidence and punchlists |
 | [`docs/research/`](docs/research/README.md) | Cockpit UX, spinnaker aerodynamics and trim, simulator landscape |
-| [`docs/runbooks/`](docs/runbooks/README.md) | Deploy, release and cache-bust, recalibrate, add a boat, add a drill |
+| [`docs/runbooks/`](docs/runbooks/README.md) | Seven operational how-tos: deploy, release and cache-bust, recalibrate, add a boat, add a drill, export the log, start a new project from the template |
 | [`docs/initial-prompt.md`](docs/initial-prompt.md) | The original build brief and acceptance criteria |
 | [`CHANGELOG.md`](CHANGELOG.md) | Per-release, from squash-merge titles |
 
 Start with [`docs/plans/README.md`](docs/plans/README.md) for what is done and
-what is next, and [`CLAUDE.md`](CLAUDE.md) for the engineering rules.
+what is next, and [`CLAUDE.md`](CLAUDE.md#this-project) for the engineering
+rules.
+
+One thing that corpus will not explain about itself: Sailflow was built
+autonomously by Claude Code agents against a written brief, with the owner
+reviewing and merging. That is why the plan progress logs and audit method
+lines name models — Fable, Opus, Sonnet — as the party that did a piece of
+work. Those logs are dated, append-only records of what happened; they are
+kept as written rather than tidied up, for the same reason the polar gate is
+published while it still reads FAIL.
 
 ## What's next
 
@@ -148,7 +165,9 @@ accounts, any backend.
 Issues and PRs welcome, especially from J/70 sailors with measured numbers.
 The rules are short: branch + PR + squash, `make check` green, every literal
 carries provenance, every model output carries a tier, tests land with the
-change. Details in [`CLAUDE.md`](CLAUDE.md). To add a boat class, follow
+change. Details in [`CLAUDE.md`](CLAUDE.md#this-project) — the sections above
+that heading are generic template conventions, not Sailflow's. To add a boat
+class, follow
 [`docs/runbooks/add-a-boat-class.md`](docs/runbooks/add-a-boat-class.md).
 
 ## Licence

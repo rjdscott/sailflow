@@ -1,7 +1,7 @@
 # Validation report
 
-- **Generated:** 2026-08-25 23:40:47 UTC
-- **Boat:** `j70` — geometry hash `3527bccc`
+- **Generated:** 2026-08-26 00:36:28 UTC
+- **Boat:** `j70` — geometry hash `6272af4c`
 - **Calibration:** hash `ab97c1e7` — 18 fitted parameter(s)
 - **Replay condition:** sea state 1, crew 340 kg, dock rig at the guide base, race trim optimised (prov: assumed — the Speed Guide prints neither).
 

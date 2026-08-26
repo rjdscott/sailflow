@@ -1,0 +1,103 @@
+More
+ABOUT
+
+A practice tool, not a measurement — every number tells you how much to trust it.
+
+Sailflow v0.2.0 — what's new
+
+Sailflow implements the documented ORC VPP parametric aero model, plus an explicitly invented rig-bend-to-sail-shape sensitivity layer for which there is no public evidence base on a J/70. It is calibrated against the ORC J/70 Speed Guide polar with held-out points, and parametric VPPs are known to under-predict boat speed against CFD-based tools. Every output carries a confidence tier — A is a number, B is a direction and a band, C is a direction only — because this is a decision-rehearsal tool, not a wind tunnel.
+
+Provenance — read here
+on GitHub
+Assumptions — read here
+on GitHub
+Validation report — read here
+on GitHub
+
+The three documents are bundled with the app, so they open offline.
+
+SETTINGS
+Density
+Learn
+Race
+Analyse
+
+Race adds the eleven-control panel, the per-wind-speed regret table, the model-vs-guides comparison and the tier-3 drills; Analyse is Race plus the comparison surfaces still being built. It applies everywhere, not just on this screen.
+
+Theme
+Auto
+Light
+Dark
+Motion
+System
+On
+Reduced
+
+System follows your device's reduce-motion setting; the other two override it here.
+
+DATA
+Storage
+IndexedDB, on this device only. Nothing is uploaded.
+North
+loaded, Rev. 1015
+Quantum
+loaded, no revision stated
+
+Export, import and backup live under Backup in the log toolbar.
+
+Open the log
+Reset log
+DRILL PROGRESS
+STREAK
+0
+days
+DRILLS ATTEMPTED
+0
+of 9
+
+Every attempt, the medals, the streak and the spaced-repetition schedule live in this browser only. Nothing is uploaded and nothing follows you to another device — clearing site data clears all of it, so export first if it matters.
+
+Export drill history
+Reset drill progress
+IMPROVE SAILFLOW
+
+What you have used, counted on this device and nowhere else. Sailflow has no server to send it to — nothing here is uploaded, ever.
+
+Race opened
+0
+Dock opened
+0
+Log opened
+0
+Drills opened
+0
+More opened
+1
+Drills started
+0
+Drills checked
+0
+Apply optimum used
+0
+A/B compares
+0
+Puff replays
+0
+Modes chosen
+0
+Rig committed
+0
+Log entries saved
+0
+Export usage JSON
+Reset
+
+This felt wrong → opens a GitHub issue with the screen and version filled in. You see and edit everything before it is sent; no counters and no personal data are attached.
+
+Sailflow
+
+Race
+Dock
+Log
+Drills
+More

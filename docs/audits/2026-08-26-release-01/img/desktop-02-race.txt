@@ -1,0 +1,250 @@
+Sailflow
+
+Race
+Dock
+Log
+Drills
+More
+Race
+Learn
+Race
+Analyse
+Close-hauled
+Close reach
+Beam reach
+Broad reach
+Run
+−
+10 kt
++
+42° TWA
+Ripple
+300 kg
+Jib
+Edit
+BSP?
+A
+5.2
+kt
+target 5.6
+Δ to optimum
++0.4
+%POLAR?
+A
+93
+%
+VMG?
+A
+3.85
+kt
+target 4.14
+Δ to optimum
++0.29
+TWA?
+42
+°
+HEEL?
+B
+6°
+HELM?
+C
+0.27
+
+0.29 kt below target: Trim mainsheet one click: +0.10 kt VMG, leech is twisting off and losing height.
+
+5.2 knots boat speed, 93 percent of polar, VMG 3.85 knots.
+
+3D
+Plan
+Helm
+Astern
+Leeward
+Up the luff
+Top-down
+
+Sails lofted from the solved sections; hull illustrative, not a measured J/70. Bend, sag and rake drawn true.
+
+MAINSAIL
+¾
+½
+¼
+Live shape in accent, the ¼ section repeated behind it as a reference. Sections are rotated by their twist relative to ¼.
+Boom 20°
+15°
+Leech in accent, the same leech untwisted behind it: the gap is the twist. The tick at the head is the top batten against a boom-parallel line.
+Mainsheet
+60 %
+−
++
+?
+Traveller (+ up to windward)
+0 %
+−
++
+?
+Backstay
+30 %
+−
++
+?
+Boom vang
+30 %
+−
++
+?
+Outhaul
+50 %
+−
++
+?
+Cunningham
+20 %
+−
++
+?
+Setup
+LEECH STALL?
+C
+52 %
+BATTEN?
+B
+15
+°
+DRAFT ½?
+B
+8.5
+%
+HEADSAIL
+¾
+½
+¼
+Live shape in accent, the ¼ section repeated behind it as a reference. Sections are rotated by their twist relative to ¼.
+Jib sheet
+60 %
+−
++
+?
+Jib lead car position
+5 holes
+−
++
+?
+Inhauler
+30 %
+−
++
+
+No modelled effect on speed — it changes the drawn shape only.
+
+?
+Setup
+JIB LEECH?
+C
+20 "
+18"
+20"
+22"
+HEADSTAY SAG?
+C
+17 mm
+
+Backstay on → sag off: a straighter headstay flattens the jib's entry.
+
+HELM & CONDITIONS
+HEEL?
+B
+6°
+HELM LOAD?
+C
+0.27
+MODE
+High
+VMG
+Fast
+CREW
+Crew weight
+300 kg
+−
++
+FORE-AFT
+C
+Fwd
+Mid
+Aft
+RIG
+¾
+½
+¼
+I
+P
+J
+E
+Bend
+61 mm ×5
+Sag
+17 mm ×5
+Rake
+0 mm
+dims
+Bow left, to scale. Bend and sag ×5, rake true.
+
+Nothing committed today, so these three are free to explore — and they are not what you will be sailing unless you commit them.
+
+Upper shroud turns (from base)
+0.0 turns
+−
++
+?
+Lower shroud turns (from base)
+0.0 turns
+−
++
+?
+Forestay length adjustment
+0 mm
+−
++
+?
+Set it on the dock →
+RAKE?
+B
+0
+mm
+PREBEND?
+B
+50
+mm
+
+C
+Not committed today.
+
+Trim mainsheet one click: +0.10 kt VMG, leech is twisting off and losing height. 
+A
+
+Apply optimum
+B
+A
+A/B
+Base trim
+Log this trim
+Replay a gust ▶
+Lull
+Shift
+Why
+MODEL VS GUIDES
+
+These disagree.
+
+UPPERS
+MODEL
+-3.0
+turns
+NORTH
+1.0
+turns
+Δ -4.0
+QUANTUM
+-1.0
+turns
+Δ -2.0
+Full table

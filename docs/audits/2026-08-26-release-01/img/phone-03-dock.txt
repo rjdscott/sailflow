@@ -1,0 +1,196 @@
+Dock
+EXPECTED REGRET
+EXPECTED REGRET
+B
+0.5
+s/mi
+
+band 0.4–0.6 s/mi
+
+AT 8 KT
+0.3
+s/mi
+target 0.5 s/mi
+Δ to expected
+−0.2
+AT 16 KT
+8.6
+s/mi
+target 0.5 s/mi
+Δ to expected
++8.2
+WORST, AT 16 KT
+8.6
+s/mi
+target 0.5 s/mi
+Δ to expected
++8.2
+8
+12
+16 kt
+
+What you would give up per mile of windward-leeward against a rig re-tuned for that wind. It is the price of committing once, not a mistake.
+
+SUGGESTED SETUPS
+Suggest a setup
+
+Scores every setup on the grid against your forecast and ranks the best three.
+
+REGRET BY WIND SPEED
+TWS	SLOWER BY	BEST SETUP
+8 kt	0.3 s/mi	-3.0 / -2.0 / 30 mm
+9 kt	0.2 s/mi	-3.0 / -2.0 / 30 mm
+10 kt	0.1 s/mi	+0.0 / -2.0 / 30 mm
+11 kt	0.2 s/mi	+0.0 / -2.0 / 16 mm
+12 kt	0.3 s/mi	+0.0 / -2.0 / 0 mm
+13 kt	0.5 s/mi	+6.0 / -2.0 / 0 mm
+14 kt	0.7 s/mi	+6.0 / -2.0 / 0 mm
+15 kt	0.9 s/mi	+6.0 / -2.0 / 0 mm
+16 kt	8.6 s/mi	+6.0 / -2.0 / 0 mm
+
+Best setup: uppers / lowers / forestay, re-tuned for that wind alone.
+
+MODEL VS GUIDES
+calibrated here
+
+These disagree. The model is calibrated to North at 8–10 and 12–16 kt (marked); elsewhere the gap is information.
+
+Δ = model − guide, in the guide's units.
+
+UPPERS
+MODEL
+0.0
+turns
+NORTH
+2.7
+turns
+Δ -2.7
+QUANTUM
+1.0
+turns
+Δ -1.0
+LOWERS
+MODEL
+-2.0
+turns
+NORTH
+1.3
+turns
+Δ -3.3
+QUANTUM
+0.5
+turns
+Δ -2.5
+RAKE
+MODEL
+0
+mm forestay
+NORTH
+—
+no published value in this guide
+QUANTUM
+—
+no published value in this guide
+TARGET BSP
+MODEL
+A
+5.75
+kt
+NORTH
+—
+no published value in this guide
+QUANTUM
+—
+no published value in this guide
+TARGET HEEL
+MODEL
+B
+13
+°
+NORTH
+—
+no published value in this guide
+QUANTUM
+—
+no published value in this guide
+North race notes — 12-16 kt
+Quantum race notes — 12-14 kt
+Divergence history
+FORECAST
+
+8–16 ktlikely 12 kt
+
+Min wind
+8 kt
+−
++
+Likely wind
+12 kt
+−
++
+
+The band the day is most likely to sit in.
+
+Max wind
+16 kt
+−
++
+Sea state
+Flat
+Ripple
+Chop
+Steep
+Waves
+Crew weight
+−
+300 kg
++
+
+Class limit 255–340 kg, minimum 3 crew.
+
+RIG
+Upper shroud turns (from base)
+0.0 turns
+−
++
+
+J/70 Tuning Guide: +4.0 in 12-16 kt
+
+optimum
+-3.0 at 8 kt
++6.0 at 16 kt
+
+Lower shroud turns (from base)
+0.0 turns
+−
++
+
+J/70 Tuning Guide: +2.0 in 12-16 kt
+
+optimum
+-2.0 at 8 kt
+-2.0 at 16 kt
+
+Forestay length adjustment
+0 mm
+−
++
+
+No published band for the forestay: the guides give rake in words.
+
+optimum
+30 mm at 8 kt
+0 mm at 16 kt
+
+Print tuning card
+Commit +0.0 / +0.0 / 0 mm for today
+
+Locks the rig for the day and starts a log entry.
+
+Sailflow
+
+Race
+Dock
+Log
+Drills
+More

@@ -29,11 +29,21 @@ reconciled with the code. The polar hold-out gate still reads FAIL — 8/10
   guides as data, onboarding and explainers, a second boat class, phone
   performance.
 - `validation/hash.test.ts` pins what the boat hash covers (#88).
+- **Audit release-01** (`docs/audits/2026-08-26-release-01/`): the repo and the
+  live site read cold by a first-time visitor. 17 findings, no Criticals; the
+  P0/P1 documentation findings are fixed in the same commit, the code ones are
+  on its punchlist.
 
 ### Changed
 
 - **README rewritten** for engineers and sailors: what it is, why it is
-  different, the known limitation in numbers, architecture, docs map.
+  different, the known limitation in numbers, architecture, docs map. Audit
+  release-01 then corrected it: the held-out residuals are the model running
+  _fast_ and _wide_, not slow and high, and the polar — not the model — is the
+  one that runs 172° (H-01); `uv` is named as a prerequisite because
+  `make check` needs it (H-15); the audit and runbook counts match `ls` (M-05);
+  and the README now says the repo was built by Claude Code agents, so the
+  progress logs that name models parse (M-06).
 - **Boat hash covers solver data only** (#88): `provenance` and `sources`
   prose no longer move it, so a note edit does not fail the golden test.
 
@@ -53,10 +63,11 @@ reconciled with the code. The polar hold-out gate still reads FAIL — 8/10
   kite. Held-out validation rows byte-identical.
 - **`solveEquilibrium` rejects a non-finite condition** (#87) instead of
   returning the seed-table speed with `converged: false`.
-- **The 3D perf gate measures work, not the clock** (#66): mount plus the
-  first render, so a tab opened behind another window is not judged slow for
-  having been hidden; budget 800 ms after a cold desktop GPU measured 315 ms.
-  The compact model-vs-guides strip wraps its cells.
+- **The 3D perf gate measures work, not the clock** (#66, also summarised under
+  0.2.0's ux-03 H-12 below): mount plus the first render, so a tab opened
+  behind another window is not judged slow for having been hidden; budget
+  800 ms after a cold desktop GPU measured 315 ms. The compact model-vs-guides
+  strip wraps its cells.
 - Audit docs-consistency-01 (#81, #82, #83): the shipped validation report now
   gates ADR 0012's ten held-out rows (it scored the superseded 25-row set);
   `pnpm validate` propagates its exit code; the golden corpus fails rather
@@ -66,9 +77,12 @@ reconciled with the code. The polar hold-out gate still reads FAIL — 8/10
 
 ## [0.2.0] — 2026-08-26
 
-Everything from #41 to #80: drills v2 and the closed loop, the cockpit with
-the three.js hero, the desktop layout, the gennaker and the downwind
-corrections. The sections below were written as the work landed.
+Everything from #41 to #80 that had been written up when 0.2.0 was cut: drills
+v2 and the closed loop, the cockpit with the three.js hero, the desktop
+layout, the gennaker and the downwind corrections. The sections below were
+written as the work landed. Three PRs in that range were written up later and
+so appear under 0.3.0 above rather than here: #78 (first-load bundle), #80
+(kite head) and the close-out detail of #66.
 
 ### Changed
 

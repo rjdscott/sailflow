@@ -1,0 +1,61 @@
+Sailflow
+
+Race
+Dock
+Log
+Drills
+More
+Drills
+
+Each drill is a real condition with a deliberately wrong setup, generated fresh from the day's seed. Trim the free controls, hit Check, and the solver's optimum from where you started tells you how far off the shape was.
+
+TODAY'S DRILL
+
+Light air: the rig has been depowered
+
+6–8 kt · flat/ripple · not attempted yet
+
+Start
+Share this drill
+
+Same drill, same seed, for anyone who opens the link today. The streak is counted in this browser only — clearing site data clears it, and it does not follow you to another device.
+
+TIER 1 — THE OBVIOUS ONE
+Due
+Light air: the rig has been depowered
+6–8 kt · flat/ripple · jib
+Not attempted
+Due
+Chop: the jib is doing nothing
+7–9 kt · chop/steep · jib
+Not attempted
+Due
+Survival upwind: get the boat on its feet
+18–20 kt · steep · jib
+Not attempted
+TIER 2 — TWO CONTROLS THAT FIGHT
+Due
+Ten knots: the slot is open and the main is soft
+9–11 kt · ripple/chop · jib
+Not attempted
+Due
+Over-depowered in the middle of the range
+13–15 kt · flat/ripple · jib
+Not attempted
+Due
+Sixteen knots: flattened to nothing
+15–17 kt · chop/steep · jib
+Not attempted
+Due
+Twelve knots: low mode by accident
+11–13 kt · ripple/chop · jib
+Not attempted
+TIER 3 — THE WHOLE RIG
+Due
+Smooth water: four controls, one shape
+8–10 kt · flat/ripple · jib
+Not attempted
+Due
+Eighteen knots: the whole rig at once
+17–19 kt · chop/steep · jib
+Not attempted
