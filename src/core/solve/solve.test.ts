@@ -257,3 +257,49 @@ describe('dock scoring progress', () => {
     expect(noisy).toEqual(quiet);
   });
 });
+
+/**
+ * The downwind TWA search has to survive a bimodal objective (ADR 0018).
+ *
+ * These run on the *fitted* boat, because the second hump only exists once the
+ * offwind sail is in its parachute regime — that is the point of the ADR.
+ */
+describe('optimal: the downwind TWA search is not fooled by two humps', () => {
+  const geom = geometryFor(boat);
+  const dnAt = (twsKt: number) =>
+    optimal(
+      boat,
+      baseDock(),
+      { twsKt, twaDeg: 150, seaState: 1 as const, crewKg: 340, sailset: 'asym' as const },
+      { optimiseTwa: true },
+      geom,
+    );
+
+  /** Dense reference scan of the same objective the optimiser maximises. */
+  const scanBest = (twsKt: number) => {
+    let best = { twaDeg: 0, vmgKt: -Infinity };
+    for (let twaDeg = 120; twaDeg <= 178; twaDeg += 1) {
+      const r = optimal(
+        boat,
+        baseDock(),
+        { twsKt, twaDeg, seaState: 1 as const, crewKg: 340, sailset: 'asym' as const },
+        { optimiseTwa: false },
+        geom,
+      );
+      const vmgKt = -r.bsKt.value * Math.cos((twaDeg * Math.PI) / 180);
+      if (vmgKt > best.vmgKt) best = { twaDeg, vmgKt };
+    }
+    return best;
+  };
+
+  for (const twsKt of [10, 14]) {
+    it(`TWS ${twsKt}: finds the global VMG maximum, not the nearer local one`, () => {
+      const opt = dnAt(twsKt);
+      const ref = scanBest(twsKt);
+      // Within one scan step of the reference angle, and no worse in VMG than
+      // the reference by more than the scan's own resolution.
+      expect(Math.abs(Math.abs(opt.twaDeg) - ref.twaDeg)).toBeLessThanOrEqual(3);
+      expect(-opt.vmgKt.value).toBeGreaterThan(ref.vmgKt * 0.995);
+    });
+  }
+});

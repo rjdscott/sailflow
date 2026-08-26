@@ -56,4 +56,5 @@ line. Don't hand-edit.
 | [0015](0015-cockpit-panels-by-sail-system-with-density-tiers.md) | Race mode is a cockpit of task-named sail-system panels, one instrument-cell contract, and three density tiers | Accepted; one-screen clause superseded by [0016](0016-cockpit-sizes-to-content-page-scrolls.md) |
 | [0016](0016-cockpit-sizes-to-content-page-scrolls.md) | The cockpit sizes to its content and the page scrolls; no panel scrolls inside itself | Accepted; the "1920×1080 holds the whole cockpit" target amended 2026-08-26 |
 | [0017](0017-kite-drawn-from-downwind-controls-as-tier-c-geometry.md) | The gennaker is drawn from the downwind controls by a UI-side, tier-C geometry mapping, not by the solver | Accepted; luff direction, leech and core scope amended 2026-08-26 |
+| [0018](0018-offwind-parachute-drag-knob-not-a-mode-switch.md) | The offwind sail gets a fitted bluff-body drag knob above the wing-to-parachute changeover, not a soak/plane mode switch | Accepted |
 <!-- index:end -->

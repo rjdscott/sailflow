@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   fromX,
+  gridCells,
   northBand,
   pointResidual,
   polarRow,
@@ -215,5 +216,28 @@ describe('structuralFloor', () => {
       loss: 0,
     };
     expect(structuralFloor([row, { ...row, twsKt: 14 }])).toBeCloseTo(0, 12);
+  });
+});
+
+describe('gridCells', () => {
+  it('is the Cartesian product, in a fixed order', () => {
+    expect(
+      gridCells([
+        [1, 2],
+        [10, 20, 30],
+      ]),
+    ).toEqual([
+      [1, 10],
+      [1, 20],
+      [1, 30],
+      [2, 10],
+      [2, 20],
+      [2, 30],
+    ]);
+  });
+
+  it('handles one knob and no knobs', () => {
+    expect(gridCells([[1, 2, 3]])).toEqual([[1], [2], [3]]);
+    expect(gridCells([])).toEqual([[]]);
   });
 });

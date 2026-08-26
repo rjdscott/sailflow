@@ -50,15 +50,30 @@ drills v2, PWA offline, dark/light themes, desktop-first layout down to phone.
 
 **Known limitation, stated plainly.** The polar hold-out gate
 ([ADR 0012](docs/adr/0012-hold-out-split-by-wind-speed-not-by-angle.md): every
-row at TWS 8 and 14 kt withheld from calibration) currently reads
-**FAIL — 8 of 10 rows** inside 3 % boat speed / 2° angle. The two misses are
-both at 14 kt, and both are the model being optimistic: upwind VMG 5.8 % fast
-and 1.8° wide, downwind VMG 15 % fast and 25° tight — the polar runs 172° where
-the model gybes at 146°, so it will not soak. The downwind miss is
-structural — the asymmetric-kite aero has no soak/plane mode switch — and is
-phase 01 of [the phase-two plan](docs/plans/2026-08-26-phase-two/). Until it
-lands, downwind boat speed is tier B and downwind optimum angle is tier C, and
-the app says so on screen.
+row at TWS 8 and 14 kt withheld from calibration) reads **FAIL — 8 of 10 rows**
+inside 3 % boat speed / 2° angle. Both misses are at 14 kt and both are the
+model being optimistic:
+
+- **Upwind VMG 5.8 % fast, 1.7° wide.** The polar's upwind speed plateaus at
+  5.89–5.95 kt from 14 to 20 kt and the model plateaus at 6.23–6.34. The same
+  overshoot sits on the *fitted* 16 and 20 kt rows, so it is a limit of the
+  resistance model, not a fit that failed to generalise, and no knob in the
+  model closes it. Written up in
+  [`ASSUMPTIONS.md`](ASSUMPTIONS.md#where-the-model-is-honestly-weak-2026-08-26-fit-adr-0018).
+- **Downwind VMG 1.9 % fast, 3.0° tight.** It was 15 % and 25.5°: the model
+  gybed at 146° where the polar soaks to 172°, because the only free parameter
+  on the asymmetric multiplied lift, and lift is ~0 at the angles a soak
+  happens at. [ADR 0018](docs/adr/0018-offwind-parachute-drag-knob-not-a-mode-switch.md)
+  adds the missing one — a fitted bluff-body drag multiplier above the
+  wing-to-parachute changeover — and the model now soaks. What is left is that
+  its optimum angle is compressed into 165–170° while the polar's spans
+  162.5–174°; closing that needs a second mechanism, not a better number.
+
+Downwind boat speed stays tier B and downwind optimum angle tier C: the two
+gated downwind rows now pass on boat speed (0.1 % and 1.9 %), but they pass at
+an angle the model still picks 3° hot, which is not enough to promote a tier.
+The app says so on screen. Phase 01 of
+[the phase-two plan](docs/plans/2026-08-26-phase-two/) carries the detail.
 
 ## Model
 
@@ -120,7 +135,7 @@ so a solve is reproducible and never blocks the frame.
 
 Stack: Svelte 5 runes, Vite, TypeScript strict, Vitest, Playwright,
 three.js (one lazy chunk, gated by a measured first-frame budget), vite-plugin-pwa,
-GitHub Pages. ~26 k lines of app code, ~14 k lines of tests, 17 ADRs.
+GitHub Pages. ~26 k lines of app code, ~14 k lines of tests, 18 ADRs.
 
 ## Documentation
 
@@ -129,7 +144,7 @@ The repo is run on a documentation pipeline that is machine-checked
 
 | Where | What |
 |-------|------|
-| [`docs/adr/`](docs/adr/README.md) | 17 decisions, Nygard format, immutable once accepted |
+| [`docs/adr/`](docs/adr/README.md) | 18 decisions, Nygard format, immutable once accepted |
 | [`docs/plans/`](docs/plans/README.md) | Phase plans with status tables; resumable by a stranger |
 | [`docs/audits/`](docs/audits/README.md) | Point-in-time sweeps (UX ×3, docs consistency, first impressions) with evidence and punchlists |
 | [`docs/research/`](docs/research/README.md) | Cockpit UX, spinnaker aerodynamics and trim, simulator landscape |

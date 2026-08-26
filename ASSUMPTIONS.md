@@ -15,18 +15,50 @@ The rig-bend-to-sail-shape layer (`src/core/shape`, applied to the ORC baseline
 through `src/core/aero/shape`) is invented for this app: sign-correct by construction and tested for it,
 magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
-## Where the model is honestly weak (2026-08-25 fit)
+## Where the model is honestly weak (2026-08-26 fit, ADR 0018)
 
-- **Upwind speed plateau.** The ORC polar holds 5.79–5.95 kt from 12 to 20 kt;
-  linear residuary bins 0.1 Fn apart cannot build that wall, so the model is
-  ~5 % slow at 6 kt and ~6–8 % fast at 16–20 kt. Held-out TWS 14 upwind misses
-  the 3 % gate by 2.8 points. Candidate fix: a finer Fn table or a wave-making
-  hump term (Epic 2).
-- **Asymmetric optimum angle.** ORC's downwind optimum jumps 150° → 172°
-  between 12 and 16 kt at nearly constant speed; the model stays near 147°.
-  A single CL multiplier (`aero.asymClMul`) cannot shape an angle error.
-- **Downwind heel** prints 11.7° in the polar; the model gives 0.5–2°. No
-  knob touches it; not gated.
+- **Upwind speed plateau — a model limit, not a fit residual.** The ORC polar
+  holds 5.89–5.95 kt from 12 to 20 kt; linear residuary bins 0.1 Fn apart
+  cannot build that wall, so the model is ~5 % slow at 6 kt and 5.8–6.8 % fast
+  from 14 kt up. Held-out TWS 14 upwind misses the 3 % gate by 2.8 points —
+  and the *fitted* 16 and 20 kt rows miss by 2.9 and 3.8, which is what makes
+  it a limit rather than a generalisation failure. Nothing available closes it:
+  `hydro.heelDragK` is the one lever that grows with heel and the fit left it
+  at 0.919 inside a bound of 4.0, and forcing `hydro.hikeRampDeg` from 8° to
+  26° moves TWS 14 only to 4.9 % while costing the fitted 10 and 12 kt rows.
+  Candidate fix: a finer Fn table or a wave-making hump term (Epic 2).
+- **The offwind sail's deep-angle drag is fitted, not measured.**
+  `aero.asymCdMul` multiplies ORC Table 5.7's CD0 above AWA 115°, ramped to
+  full at 150° (ADR 0018). It exists because the only earlier offwind knob
+  multiplied CLmax, which ORC puts at 0.100 by AWA 150 — no authority over a
+  soak at all, so the fit had nothing to turn and the model made 264 N of
+  drive at TWS 14 / TWA 172° where 351 N is needed. The fitted **2.456** puts
+  the rated-area CD at AWA 130–150 at 1.17–0.86 against a published
+  wind-tunnel band of 0.83–1.39 once the historical 0.72 asymmetric efficiency
+  factor is undone — inside the band, but the band is wide and the
+  reference-area reconciliation is an inference. It is standing in for a
+  mechanism the model does not contain: ORC gives the spinnaker `bk = 1` at
+  every angle, so the main's shadow on the kite is absent and the sprit and
+  the tack line act on nothing.
+- **Asymmetric optimum angle, still tight by 3.0°.** The polar's downwind
+  optimum runs 141.9° → 174.0° over TWS 6–16; the model's now runs 145.4° →
+  169.4° and is compressed into a 165–170° band from 12 kt up. The held-out
+  TWS 14 row misses the 2° tolerance by 1.0 point. Swept over the whole range
+  of `aero.asymCdMul` the best achievable there is 2.2°, so this needs a
+  second mechanism, not a better number. (Before ADR 0018 the model stayed
+  near 147° at every wind speed and missed by 25.5°.)
+- **Downwind VMG is bimodal.** A reaching hump near 145°, a soak hump near
+  168°, a trough between, and the two cross between TWS 10 and 12. `optimal()`
+  scans a 6° grid before it golden-section refines, so the reported optimum is
+  the global one rather than whichever hump the bracket happened to contain;
+  calibration stage 2 scans a 5 × 8 grid before its simplex for the same
+  reason. Near the crossing the dock-setup ranking is genuinely jumpy — about
+  0.19 s/mile, a tenth of the tie band the UI already refuses to resolve
+  inside, and invariant 10 carries that slack with the reason written down.
+- **Downwind heel** prints 11.7° in the polar; the model gives 0.8–1.1°. No
+  knob touches it; not gated. Deliberately not chased: that column is constant
+  at 11.7–12.0° across TWS 6 to 16, which is not the signature of a solved
+  heel.
 - **Dock-setup sensitivity.** In VPP mode `optimal()` overrides the
   shape-derived `flat`, so a dock setup enters only as a small coefficient
   perturbation and the setup ranking is nearly wind-independent. Stage 4 could
@@ -444,23 +476,24 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
 | Knob | Value | Stage | Fit loss |
 |---|---|---|---|
-| `hydro.formFactor` | 0.0296571 | 1 hydro-jib | 0.1388 |
-| `hydro.rrMul.fn20` | 0.364214 | 1 hydro-jib | 0.1388 |
-| `hydro.rrMul.fn30` | 0.812076 | 1 hydro-jib | 0.1388 |
-| `hydro.rrMul.fn40` | 0.974563 | 1 hydro-jib | 0.1388 |
-| `hydro.rrMul.fn50` | 1.63226 | 1 hydro-jib | 0.1388 |
-| `hydro.rrMul.fn60` | 1.69371 | 1 hydro-jib | 0.1388 |
-| `hydro.planingRelief` | 0.153826 | 1 hydro-jib | 0.1388 |
-| `hydro.keelLiftSlope` | 0.751711 | 1 hydro-jib | 0.1388 |
-| `hydro.heelDragK` | 1.09438 | 1 hydro-jib | 0.1388 |
-| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.1388 |
-| `aero.asymClMul` | 1.01107 | 2 asym | 0.4739 |
-| `hydro.crewArmMul` | 0.768062 | 3 righting | 0.01014 |
-| `rig.EI` | 685000 | 4 rig-shape | 15.99 |
-| `rig.turnsToN` | 100 | 4 rig-shape | 15.99 |
-| `rig.sagK` | 25 | 4 rig-shape | 15.99 |
-| `shape.bendToDraft` | 0.36 | 4 rig-shape | 15.99 |
-| `shape.sagToDraft` | 0.0003 | 4 rig-shape | 15.99 |
-| `shape.sheetToTwist` | 0.15 | 4 rig-shape | 15.99 |
+| `hydro.formFactor` | 0.0717205 | 1 hydro-jib | 0.1432 |
+| `hydro.rrMul.fn20` | 0.3 | 1 hydro-jib | 0.1432 |
+| `hydro.rrMul.fn30` | 0.763502 | 1 hydro-jib | 0.1432 |
+| `hydro.rrMul.fn40` | 0.947371 | 1 hydro-jib | 0.1432 |
+| `hydro.rrMul.fn50` | 1.58541 | 1 hydro-jib | 0.1432 |
+| `hydro.rrMul.fn60` | 1.55437 | 1 hydro-jib | 0.1432 |
+| `hydro.planingRelief` | 0.136135 | 1 hydro-jib | 0.1432 |
+| `hydro.keelLiftSlope` | 0.581155 | 1 hydro-jib | 0.1432 |
+| `hydro.heelDragK` | 0.919079 | 1 hydro-jib | 0.1432 |
+| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.1432 |
+| `aero.asymClMul` | 1 | 2 asym | 0.2085 |
+| `aero.asymCdMul` | 2.45556 | 2 asym | 0.2085 |
+| `hydro.crewArmMul` | 0.767644 | 3 righting | 0.01471 |
+| `rig.EI` | 685000 | 4 rig-shape | 9.057 |
+| `rig.turnsToN` | 600 | 4 rig-shape | 9.057 |
+| `rig.sagK` | 27.6399 | 4 rig-shape | 9.057 |
+| `shape.bendToDraft` | 0.36 | 4 rig-shape | 9.057 |
+| `shape.sagToDraft` | 0.0003 | 4 rig-shape | 9.057 |
+| `shape.sheetToTwist` | 0.15 | 4 rig-shape | 9.057 |
 
 Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out split), 0007 (tolerances)). Per-point residuals: `calibration/residuals.json`.

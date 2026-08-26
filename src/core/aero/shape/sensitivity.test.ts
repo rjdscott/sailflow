@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ShapeDeltas } from '../../internal';
-import { ZERO_DELTAS, applyShapeDeltas, twistCeFactorInvented } from './sensitivity';
+import {
+  PARACHUTE_AWA_HI,
+  PARACHUTE_AWA_LO,
+  ZERO_DELTAS,
+  applyShapeDeltas,
+  parachuteCdMul,
+  twistCeFactorInvented,
+} from './sensitivity';
 
 const base = { clMax: 1.4, cd0: 0.032, ceH: 4.01, twist: 12 };
 const d = (over: Partial<ShapeDeltas>): ShapeDeltas => ({ ...ZERO_DELTAS, ...over });
@@ -71,5 +78,39 @@ describe('twistCeFactorInvented', () => {
 
   it('a zero gain switches the invented layer off entirely', () => {
     for (const t of [0, 5, 20, 45]) expect(twistCeFactorInvented(t, 0)).toBe(1);
+  });
+});
+
+describe('parachuteCdMul', () => {
+  it('is identically 1 at and below the changeover, whatever the multiplier', () => {
+    for (const awa of [0, 60, 100, PARACHUTE_AWA_LO]) expect(parachuteCdMul(awa, 3)).toBe(1);
+  });
+
+  it('is the full multiplier at and above the parachute end', () => {
+    for (const awa of [PARACHUTE_AWA_HI, 165, 180]) expect(parachuteCdMul(awa, 3)).toBe(3);
+  });
+
+  it('ramps linearly across the changeover', () => {
+    const mid = (PARACHUTE_AWA_LO + PARACHUTE_AWA_HI) / 2;
+    expect(parachuteCdMul(mid, 3)).toBeCloseTo(2, 12);
+    expect(parachuteCdMul(PARACHUTE_AWA_LO + 7, 3)).toBeCloseTo(1.4, 12);
+  });
+
+  it('never decreases with apparent wind angle', () => {
+    let prev = 0;
+    for (let awa = 0; awa <= 180; awa += 2.5) {
+      const v = parachuteCdMul(awa, 2.6);
+      expect(v).toBeGreaterThanOrEqual(prev);
+      prev = v;
+    }
+  });
+
+  it('is symmetric in the sign of the apparent wind angle', () => {
+    for (const awa of [100, 130, 170])
+      expect(parachuteCdMul(-awa, 2.6)).toBe(parachuteCdMul(awa, 2.6));
+  });
+
+  it('a multiplier of 1 switches the layer off entirely — ORC unmodified', () => {
+    for (let awa = 0; awa <= 180; awa += 5) expect(parachuteCdMul(awa, 1)).toBe(1);
   });
 });
