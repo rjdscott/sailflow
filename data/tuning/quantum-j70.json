@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "source": {
+    "label": "Quantum",
     "id": "quantum-j70",
     "title": "J/70 Tuning and How-To Guide",
     "url": "https://www.quantumsails.com/en/sails/one-design/documents/j70/j70_tuningguide.aspx",

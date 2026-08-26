@@ -2,7 +2,11 @@
   import type { DockControls, DockScore } from '../../core/types';
   import Slider from '../components/Slider.svelte';
   import { fmt, snap } from '../format';
-  import { guideBand, guideSource, signed, specs } from './logic';
+  import Segmented from '../components/Segmented.svelte';
+  import { defaultGuideId, guideBand, guideLabel, signed, specs } from './logic';
+  import { guidesFor } from '../../lib/reference';
+  import { needsSelector } from '../disagree/guides';
+  import { guideSelection } from '../disagree/store.svelte';
 
   let {
     setup,
@@ -18,13 +22,36 @@
     showOptimum?: boolean;
   } = $props();
 
-  const band = $derived(guideBand(likelyKt));
-  const upperTick = $derived(
-    snap(band.uppersTurns, specs.upperTurns.min, specs.upperTurns.max, specs.upperTurns.step),
-  );
-  const lowerTick = $derived(
-    snap(band.lowersTurns, specs.lowerTurns.min, specs.lowerTurns.max, specs.lowerTurns.step),
-  );
+  // The guide is whichever one the disagreement panel is showing, so the two
+  // never quote different sources at the same time.
+  const entries = $derived(guidesFor());
+  const guideId = $derived(guideSelection.id ?? defaultGuideId());
+  const band = $derived(guideBand(likelyKt, guideId));
+  const selectorOptions = $derived(entries.map((e) => ({ value: e.id, label: e.label })));
+  let selected = $state(guideSelection.id ?? defaultGuideId() ?? '');
+
+  function tick(
+    turns: number | null | undefined,
+    spec: (typeof specs)['upperTurns'],
+  ): number | undefined {
+    return turns === null || turns === undefined
+      ? undefined
+      : snap(turns, spec.min, spec.max, spec.step);
+  }
+
+  const upperTick = $derived(tick(band?.uppersTurns, specs.upperTurns));
+  const lowerTick = $derived(tick(band?.lowersTurns, specs.lowerTurns));
+
+  /**
+   * "North: +4.0 in 12-16 kt" — and the honest alternatives when the guide has
+   * no number for this control, or when the boat has no guide at all.
+   */
+  function hintFor(turns: number | null | undefined): string {
+    if (!band) return 'No tuning guide is committed for this boat.';
+    if (turns === null || turns === undefined)
+      return `${guideLabel(guideId)} publishes no value for ${band.label}.`;
+    return `${guideLabel(guideId)}: ${signed(turns)} in ${band.label}`;
+  }
 
   /** "+4.0" for turns from base, "15 mm" for an absolute measurement. */
   function value(v: number, decimals: number, unit: string): string {
@@ -46,6 +73,19 @@
   {/if}
 {/snippet}
 
+<!-- Only once there are more guides than the panel can show side by side. -->
+{#if needsSelector(entries)}
+  <div class="guide-pick">
+    <span class="chip-label">guide</span>
+    <Segmented
+      options={selectorOptions}
+      bind:value={selected}
+      ariaLabel="Which tuning guide to quote"
+      onchange={(v) => (guideSelection.id = v)}
+    />
+  </div>
+{/if}
+
 <Slider
   label={specs.upperTurns.label}
   bind:value={setup.upperTurns}
@@ -55,7 +95,7 @@
   unit={specs.upperTurns.unit}
   tick={upperTick}
   {locked}
-  hint="{guideSource}: {signed(band.uppersTurns)} in {band.label}"
+  hint={hintFor(band?.uppersTurns)}
 />
 {@render optimumChips('upperTurns', 1, 'turns')}
 
@@ -68,7 +108,7 @@
   unit={specs.lowerTurns.unit}
   tick={lowerTick}
   {locked}
-  hint="{guideSource}: {signed(band.lowersTurns)} in {band.label}"
+  hint={hintFor(band?.lowersTurns)}
 />
 {@render optimumChips('lowerTurns', 1, 'turns')}
 
@@ -86,6 +126,13 @@
 {@render optimumChips('forestayMm', 0, 'mm')}
 
 <style>
+  .guide-pick {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+
   .chips {
     display: flex;
     align-items: center;

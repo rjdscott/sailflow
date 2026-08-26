@@ -238,6 +238,6 @@ Sources table below: `F*`/`T*` in
 
 ## Reference tables
 
-- `data/tuning/north-j70.json`: 7 wind bands, © North Sails. Settings only; no prose reproduced.
-- `data/tuning/quantum-j70.json`: 11 wind bands, © Quantum Sails, 2020. Settings only.
+- `data/tuning/north-j70.json`: 7 wind bands, retrieved 2026-08-25, © North Sails. Settings only; no prose reproduced.
+- `data/tuning/quantum-j70.json`: 11 wind bands, retrieved 2026-08-25, © Quantum Sails, 2020. Settings only; no prose reproduced.
 - `data/polar/orc-j70.json`: 182 rows at TWS 6/8/10/12/14/16/20 kt, VPP 2011 1.02, issued 2012-04-30.

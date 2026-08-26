@@ -1,20 +1,20 @@
 /**
  * Tuning-guide lookup for the disagreement panel (ADR 0008).
  *
- * The North and Quantum J/70 tables live under `data/tuning/` as one JSON per
- * source and are imported statically — no fetch, no runtime path. A guide is
- * "not loaded" when its `bands` array is empty, which is what deleting the
- * source data leaves behind (`{"schemaVersion":1,"bands":[]}`), so the panel
- * can say "reference tables not loaded" instead of inventing numbers.
+ * Guides live under `data/tuning/` as one JSON per source, named
+ * `<guideId>-<boatId>.json`, and are enumerated with `import.meta.glob` —
+ * adding a guide is a file, not a code change (`data/tuning/README.md`).
+ * A guide is "not loaded" when its `bands` array is empty, which is what
+ * removing the transcription leaves behind, so the panel can say "reference
+ * tables not loaded" instead of inventing numbers.
  *
- * ponytail: static import means physically deleting the file breaks the build.
- * Emptying `bands` is the supported removal path; swap to a lazy `import()`
- * only if someone actually needs file-absent-at-build-time.
+ * ponytail: eager glob, so every guide is in the main bundle. Two files is
+ * ~30 kB; switch to a lazy per-guide `import()` if the directory ever grows
+ * past a handful.
  */
-import northJson from '../../data/tuning/north-j70.json';
-import quantumJson from '../../data/tuning/quantum-j70.json';
 
-export type GuideId = 'north' | 'quantum';
+/** A guide id is whatever is in front of the boat id in the filename. */
+export type GuideId = string;
 
 /** Guide race-mode settings are free text ("14 in - Max", "25%"), never numbers. */
 export type GuideRace = Record<string, string | null>;
@@ -42,27 +42,61 @@ export interface GuideBand {
 }
 
 export interface Guide {
-  source: { id: string; title: string; url: string; revision: string };
+  source: { label: string; id: string; title: string; url: string; revision: string };
   base: { uppers: string; lowers: string; rakeMm: number | null; forestayMm: number | null };
   bands: GuideBand[];
 }
 
-const GUIDES: Record<GuideId, Guide> = {
-  north: northJson as unknown as Guide,
-  quantum: quantumJson as unknown as Guide,
-};
+/** One entry per file found under `data/tuning/`. */
+export interface GuideEntry {
+  /** Filename stem in front of the boat id: `north-j70.json` → `north`. */
+  id: GuideId;
+  /** Filename stem after the last hyphen: `north-j70.json` → `j70`. */
+  boatId: string;
+  /** Short display name, from the file's `source.label`. */
+  label: string;
+  /** `null` when the file's `bands` array is empty (transcription removed). */
+  guide: Guide | null;
+}
 
-export const GUIDE_IDS: GuideId[] = ['north', 'quantum'];
+/** The one boat in the MVP; phase 05 passes another id to `guidesFor`. */
+export const DEFAULT_BOAT_ID = 'j70';
 
-export const GUIDE_LABELS: Record<GuideId, string> = {
-  north: 'North',
-  quantum: 'Quantum',
-};
+const FILES: Record<string, Guide> = import.meta.glob('../../data/tuning/*.json', {
+  eager: true,
+  import: 'default',
+});
+
+/** Sorted by filename, so the panel's column order is the same everywhere. */
+const ENTRIES: GuideEntry[] = Object.keys(FILES)
+  .sort()
+  .map((path) => {
+    const stem = path.slice(path.lastIndexOf('/') + 1).replace(/\.json$/, '');
+    const cut = stem.lastIndexOf('-');
+    const guide = FILES[path];
+    const loaded = Array.isArray(guide.bands) && guide.bands.length > 0;
+    return {
+      id: stem.slice(0, cut),
+      boatId: stem.slice(cut + 1),
+      label: guide.source?.label ?? stem.slice(0, cut),
+      guide: loaded ? guide : null,
+    };
+  });
+
+/** Every guide committed for a boat, loaded or not. Empty is a real answer. */
+export function guidesFor(boatId: string = DEFAULT_BOAT_ID): GuideEntry[] {
+  return ENTRIES.filter((e) => e.boatId === boatId);
+}
+
+export const GUIDE_IDS: GuideId[] = guidesFor().map((e) => e.id);
+
+export const GUIDE_LABELS: Record<GuideId, string> = Object.fromEntries(
+  ENTRIES.map((e) => [e.id, e.label]),
+);
 
 /** The loaded guide, or `null` when its table is absent/empty. */
 export function guideFor(id: GuideId): Guide | null {
-  const g = GUIDES[id];
-  return g && Array.isArray(g.bands) && g.bands.length > 0 ? g : null;
+  return ENTRIES.find((e) => e.id === id)?.guide ?? null;
 }
 
 /**
@@ -161,10 +195,8 @@ export interface GuideStatus {
 }
 
 export function referenceStatus(): Record<GuideId, GuideStatus> {
-  const status = {} as Record<GuideId, GuideStatus>;
-  for (const id of GUIDE_IDS) {
-    const g = guideFor(id);
-    status[id] = { loaded: g !== null, revision: g?.source?.revision ?? '' };
-  }
+  const status: Record<GuideId, GuideStatus> = {};
+  for (const e of ENTRIES)
+    status[e.id] = { loaded: e.guide !== null, revision: e.guide?.source?.revision ?? '' };
   return status;
 }
