@@ -1,6 +1,6 @@
 # Phase 04: Onboarding and explainers
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 
 ## Goal
 
