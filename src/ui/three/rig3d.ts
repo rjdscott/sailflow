@@ -14,7 +14,7 @@
  * the lie, and a lie here would put the luff spine — and therefore the sails —
  * somewhere the boat never puts them.
  */
-import boat from '../../../data/boats/j70.json';
+import { activeBoat as boat, sailM } from '../../lib/boat';
 import type { RigState } from '../../core/types';
 import {
   add,
@@ -47,20 +47,20 @@ const FORESTAY_SAMPLES = 16;
 
 /** Mainsail chords at the five stack heights, m. prov: Class Rules G.3 girths. */
 export const MAIN_CHORDS: SailChords = {
-  foot: boat.sails.main.footMm / 1000,
-  quarter: boat.sails.main.quarterMm / 1000,
-  half: boat.sails.main.halfMm / 1000,
-  threeQuarter: boat.sails.main.threeQuarterMm / 1000,
-  head: boat.sails.main.topMm / 1000,
+  foot: sailM(boat.sails.main, 'footMm'),
+  quarter: sailM(boat.sails.main, 'quarterMm'),
+  half: sailM(boat.sails.main, 'halfMm'),
+  threeQuarter: sailM(boat.sails.main, 'threeQuarterMm'),
+  head: sailM(boat.sails.main, 'topMm'),
 };
 
 /** Headsail chords, m. prov: Class Rules G.4.3 (foot is LP). */
 export const JIB_CHORDS: SailChords = {
-  foot: boat.sails.jib.lpMm / 1000,
-  quarter: boat.sails.jib.quarterMm / 1000,
-  half: boat.sails.jib.halfMm / 1000,
-  threeQuarter: boat.sails.jib.threeQuarterMm / 1000,
-  head: boat.sails.jib.topMm / 1000,
+  foot: sailM(boat.sails.jib, 'lpMm'),
+  quarter: sailM(boat.sails.jib, 'quarterMm'),
+  half: sailM(boat.sails.jib, 'halfMm'),
+  threeQuarter: sailM(boat.sails.jib, 'threeQuarterMm'),
+  head: sailM(boat.sails.jib, 'topMm'),
 };
 
 export interface Rig3D {

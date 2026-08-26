@@ -1,7 +1,7 @@
 {
   "note": "Total gzip size, bytes, of the JS chunks index.html loads on first paint \u2014 the entry chunk plus anything it modulepreloads. ADR 0014's promise is that the three.js sail view does not land on first load; `bundle_check.mjs` is what makes that promise checkable. Raise this deliberately, in the PR that earns it, never to make CI green \u2014 and if the number jumps by tens of kilobytes, something that should be behind a dynamic import is not.",
   "measured": "2026-08-26",
-  "entryGzipBytes": 100860,
+  "entryGzipBytes": 111130,
   "toleranceBytes": 2048,
   "history": [
     {
@@ -63,6 +63,16 @@
       "date": "2026-08-26",
       "bytes": 100860,
       "note": "phase-two 05 step 1\u20133: the core takes the boat, not the J/70. +3378 B over 97482 (main itself sat at 97612 after #99). The boat registry (`src/lib/boat.ts`) attaches the ORC polar to the BoatDefinition at load and the settings store validates the stored boat id against that registry, so the polar JSON and the loader join the entry; `validateBoat` grew to cover every field the solver reads. First-load data by design: the picker and the share `boat=` param need the registry before the first solve. Follow-up on the phase: thirteen UI files still import `data/boats/j70.json` directly \u2014 repointing them to the registry is expected to shrink this, and the number should be re-measured then rather than treated as a floor."
+    },
+    {
+      "date": "2026-08-26",
+      "bytes": 101872,
+      "note": "phase-two 05, HEAD of this branch re-measured: 1012 B above the 100860 recorded for the same commit, so the deltas in the row below are measured against 101872. Re-measure HEAD before attributing a delta to your own change."
+    },
+    {
+      "date": "2026-08-26",
+      "bytes": 111130,
+      "note": "phase-two 05 finished: the thirteen UI files read the active boat, and the Melges 24 is registered (ADR 0020). +9258 B against this branch's HEAD (101872 B here). Two parts. Repointing the UI to the registry was +250 B, not the shrink the previous note predicted -- the boat JSON was already on the entry through src/lib/boat.ts, so removing duplicate import edges removed module records, not data. The second class is the other +9007 B: 9.6 KB gzip of data/boats/m24.json plus 2.6 KB of data/polar/orc-m24.json, both on first load because the registry needs a boat before the first solve. About 5.8 KB of that is the file's `provenance` and `sources` blocks, which nothing at runtime reads. Naming only the fields the app reads, so Rollup could drop the prose, was tried and reverted: Vite stringifies a JSON module over ~10 KB and a stringified module has only a default export, so every named import resolved to undefined. The bundle duly 'shrank' 12 KB -- because the boat data was gone. Vitest passed; 42 of the 69 Playwright specs failed with an empty cockpit. If this payload has to come off the entry, it is a per-class dynamic import or a sidecar file for the prose, and the Playwright suite is what proves it. Nothing crossed the lazy boundary: SailView3D unchanged at 139.4 KB gzip."
     }
   ]
 }

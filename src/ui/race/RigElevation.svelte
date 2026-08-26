@@ -1,15 +1,13 @@
 <script lang="ts">
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion, Tween } from 'svelte/motion';
-  import j70 from '../../../data/boats/j70.json';
-  import type { BoatDefinition, RigState } from '../../core/types';
+  import { activeBoat as boat } from '../../lib/boat';
+  import type { RigState } from '../../core/types';
   import { EXAGGERATION, polyline } from './geometry';
   import { rigLayout, VIEW } from './rigLayout';
   import { conditions } from '../stores/conditions.svelte';
 
   let { rig }: { rig: RigState } = $props();
-
-  const boat = j70 as unknown as BoatDefinition;
 
   // Everything geometric lives in rigLayout.ts, so this file is only ink:
   // which stroke, which label, what the caption says. The layout is drawn to

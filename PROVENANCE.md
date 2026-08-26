@@ -82,9 +82,12 @@ Sources table below: `F*`/`T*` in
 | `orc-cert` | ORC public one-design certificate, J/70 | 2026-08-25 | 2021 offset file (J70.od), VPP ver 2021 1.00; page marked 'TEST CERTIFICATE - NOT VALID FOR RACING' (data.orc.org public template certificate, not an owner-specific issued certificate) | <https://data.orc.org/public/od/2021/j70.od.html?nav=1> |
 | `app-convention` | Sailflow app UI convention (not a published source) | 2026-08-25 | internal | <> |
 | `orc-vpp-2023` | ORC VPP Documentation | 2026-08-25 | 2023 edition. The coefficient tables in src/core/aero/orc/tables.ts are transcribed from this edition. ORC renumbered the sail tables in the 2026 edition (symmetric 5.6 -> 5.8, asymmetric on centreline 5.7 -> 5.9, asymmetric on pole 5.8 -> 5.10) and changed the asymmetric-on-centreline coefficients; every orcTable label in this file is 2023 numbering | <https://orc.org/uploads/files/ORC-VPP-Documentation-2023.pdf> |
+| `class-rules-m24-2026` | International Melges 24 Class Rules, effective 30 January 2026 | 2026-08-26 | Effective date 2026-January-30, Status: Approved. Linked from World Sailing's class page (https://www.sailing.org/document/2023-apr-19-class-rules-melgels-24/). ADR 0020 expected the 2017 edition, because the link the class association's own Measurement & Inspection page carries (d7qh6ksdplczd.cloudfront.net/.../M24CR190422.pdf, the 2022 rules) points at a host that no longer resolves; the current edition is reachable through World Sailing instead | <https://media.sailing.org/sailing/wp-content/uploads/2023/04/30154150/M24_CR_2026-01Jan-30.pdf> |
+| `orc-cert-m24` | ORC certificate, MELGES 24 'HAIZEA' POR-210, RefNo 03510004JAJ | 2026-08-26 | ESP national authority, certificate 21001, C_Type INTL, issued 2026-03-30. A per-certificate document, not a class one-design certificate: ADR 0020 measured the spread across 40 Melges 24 certificates at up to 11.4 %, driven by measured displacement spanning 821-1002 kg, so every number taken from it names this boat and not the class | <https://data.orc.org/public/WPub.dll?action=DownBoatRMS&RefNo=03510004JAJ&ext=json> |
 | `north-j70` | J/70 Tuning Guide | 2026-08-25 | Rev. 1015 | <https://j70tr.org/wp-content/uploads/2025/12/north-j70-tuningguide-EUR.pdf> |
 | `quantum-j70` | J/70 Tuning and How-To Guide | 2026-08-25 |  | <https://www.quantumsails.com/en/sails/one-design/documents/j70/j70_tuningguide.aspx> |
 | `orc-speed-guide-j70` | ORC Speed Guide - J/70 Class | 2026-08-25 | VPP 2011 1.02 | <https://www.carpediemsailingteam.com/app/download/16137868/Speed_Guide_J70_Class.pdf> |
+| `orc-rms-m24-03510004JAJ` | ORC certificate allowances, MELGES 24 'HAIZEA' POR-210, RefNo 03510004JAJ | 2026-08-26 | ORC VPP, certificate issued 2026-03-30 | <https://data.orc.org/public/WPub.dll?action=DownBoatRMS&RefNo=03510004JAJ&ext=json> |
 
 ## Boat definition: `data/boats/j70.json`
 
@@ -236,8 +239,151 @@ Sources table below: `F*`/`T*` in
 | `sails.main.topMm` | 364 | published | `class-rules-2026` | Class Rules G.3: mainsail top width maximum 364mm |
 | `sails.main.upperMm` | 880 | published | `class-rules-2026` | Class Rules G.3: mainsail upper width maximum 880mm |
 
+## Boat definition: `data/boats/m24.json`
+
+| Path | Value | Kind | Source | Note |
+|---|---|---|---|---|
+| `baseRace.backstay` | 30 | assumed | `app-convention` | no Melges 24 tuning guide is committed under data/tuning/, so unlike the J/70's this base trim is not a reading of a published guide: it is the mid-band starting point the app opens on, and the datum every shape delta in core/shape/toOrc.ts is measured against. The disagreement panel shows the honest no-guide-for-this-boat state rather than quoting the J/70's tables at a different rig |
+| `baseRace.cunningham` | 20 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.inhauler` | 30 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.jibHalyard` | 50 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.jibLead` | 5 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.jibSheet` | 60 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.mainHalyard` | 50 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.mainsheet` | 60 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.outhaul` | 50 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.traveller` | 0 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRace.vang` | 30 | assumed | `app-convention` | see baseRace.backstay |
+| `baseRaceDown.kiteHalyard` | 100 | assumed | `app-convention` | halyard two-blocked at the masthead before the sheet is touched. App convention, same as the J/70's |
+| `baseRaceDown.kiteSheet` | 50 | assumed | `app-convention` | kite sheet mid-range, to be trimmed to the curl. core/solve/optimalTrim does not solve the downwind sheet. App convention, same as the J/70's |
+| `baseRaceDown.mainsheet` | 15 | assumed | `app-convention` | the mainsheet under the kite, on the same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat. Same app convention and the same value as the J/70's, which shape/sheeting.ts turns into about 67 degrees of boom; the sheeting model is class-independent, so the number carries across where a guide reading would not. Tier C cue, not a solve |
+| `baseRaceDown.sprit` | 100 | published | `class-rules-m24-2026` | sprit fully out. Class Rules C.11.1 requires the bowsprit to be fully retracted at all times except during a continuous hoist, while flying or while dropping the spinnaker, so on this class the pole is all the way out or the kite is not up — 100 is the rule, not a chosen midpoint |
+| `baseRaceDown.tackLine` | 50 | assumed | `app-convention` | tack line mid-range: a trim control the sailor is expected to move, not a setting. App convention, same as the J/70's |
+| `controls.backstay.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.backstay.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.backstay.purchaseMax` | 8 | published | `class-rules-m24-2026` | Class Rules Appendix H .54 Backstay 8:1, shall not be modified |
+| `controls.backstay.purchaseMin` | 8 | published | `class-rules-m24-2026` | Class Rules Appendix H .54 Backstay 8:1, shall not be modified |
+| `controls.backstay.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.cunningham.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.cunningham.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.cunningham.purchaseMax` | 6 | published | `class-rules-m24-2026` | Class Rules Appendix H .49 Mainsail Cunningham 3:1 - 6:1 |
+| `controls.cunningham.purchaseMin` | 3 | published | `class-rules-m24-2026` | Class Rules Appendix H .49 Mainsail Cunningham 3:1 - 6:1 |
+| `controls.cunningham.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.forestayMm.max` | 40 | assumed | `app-convention` | range not published in the class rules; app convention for a workable forestay length adjustment sweep. F.3.3 offers both an adjustable and a fixed forestay system, and the choice may not change during an event |
+| `controls.forestayMm.min` | 0 | assumed | `app-convention` | range not published in the class rules; app convention for a workable forestay length adjustment sweep. F.3.3 offers both an adjustable and a fixed forestay system, and the choice may not change during an event |
+| `controls.forestayMm.step` | 2 | assumed | `app-convention` | range not published in the class rules; app convention for a workable forestay length adjustment sweep. F.3.3 offers both an adjustable and a fixed forestay system, and the choice may not change during an event |
+| `controls.inhauler.max` | 100 | assumed | `app-convention` | discrepancy: the app's control set carries an inhauler, but the Melges 24 class rules have no inhauler — Appendix H's purchase table lists none, and the only windward-sheeting system it permits is on the mainsail traveller (.30). Range and purchase are unregulated app assumptions, as they are on the J/70 |
+| `controls.inhauler.min` | 0 | assumed | `app-convention` | discrepancy: the app's control set carries an inhauler, but the Melges 24 class rules have no inhauler — Appendix H's purchase table lists none, and the only windward-sheeting system it permits is on the mainsail traveller (.30). Range and purchase are unregulated app assumptions, as they are on the J/70 |
+| `controls.inhauler.step` | 5 | assumed | `app-convention` | discrepancy: the app's control set carries an inhauler, but the Melges 24 class rules have no inhauler — Appendix H's purchase table lists none, and the only windward-sheeting system it permits is on the mainsail traveller (.30). Range and purchase are unregulated app assumptions, as they are on the J/70 |
+| `controls.jibHalyard.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.jibHalyard.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.jibHalyard.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.jibLead.max` | 10 | assumed | `app-convention` | the class rules leave the jib sheet car's pin position optional (Appendix H .14) and publish no hole count; app convention, a typical 10-hole car track, the same as the J/70's |
+| `controls.jibLead.min` | 0 | assumed | `app-convention` | the class rules leave the jib sheet car's pin position optional (Appendix H .14) and publish no hole count; app convention, a typical 10-hole car track, the same as the J/70's |
+| `controls.jibLead.step` | 1 | assumed | `app-convention` | the class rules leave the jib sheet car's pin position optional (Appendix H .14) and publish no hole count; app convention, a typical 10-hole car track, the same as the J/70's |
+| `controls.jibSheet.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.jibSheet.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.jibSheet.purchaseMax` | 2 | published | `class-rules-m24-2026` | Class Rules Appendix H .47 Jib sheets 2:1, shall not be modified |
+| `controls.jibSheet.purchaseMin` | 2 | published | `class-rules-m24-2026` | Class Rules Appendix H .47 Jib sheets 2:1, shall not be modified |
+| `controls.jibSheet.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.kiteHalyard.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.kiteHalyard.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.kiteHalyard.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.kiteSheet.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.kiteSheet.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.kiteSheet.purchaseMax` | 1 | published | `class-rules-m24-2026` | Class Rules Appendix H .48 Spinnaker sheets 1:1, shall not be modified |
+| `controls.kiteSheet.purchaseMin` | 1 | published | `class-rules-m24-2026` | Class Rules Appendix H .48 Spinnaker sheets 1:1, shall not be modified |
+| `controls.kiteSheet.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.lowerTurns.max` | 6 | assumed | `app-convention` | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.lowerTurns.min` | -6 | assumed | `app-convention` | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.lowerTurns.step` | 0.5 | assumed | `app-convention` | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.mainHalyard.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.mainHalyard.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.mainHalyard.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.mainsheet.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.mainsheet.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.mainsheet.purchaseMax` | 5 | published | `class-rules-m24-2026` | Class Rules Appendix H .46 Mainsail sheet 5:1, shall not be modified |
+| `controls.mainsheet.purchaseMin` | 5 | published | `class-rules-m24-2026` | Class Rules Appendix H .46 Mainsail sheet 5:1, shall not be modified |
+| `controls.mainsheet.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.outhaul.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.outhaul.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.outhaul.purchaseMax` | 6 | published | `class-rules-m24-2026` | Class Rules Appendix H .51 Mainsail outhaul 6:1 |
+| `controls.outhaul.purchaseMin` | 6 | published | `class-rules-m24-2026` | Class Rules Appendix H .51 Mainsail outhaul 6:1 |
+| `controls.outhaul.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.sprit.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.sprit.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.sprit.purchaseMax` | 2 | published | `class-rules-m24-2026` | Class Rules Appendix H .53 Bowsprit Launch system 2:1, shall not be modified |
+| `controls.sprit.purchaseMin` | 2 | published | `class-rules-m24-2026` | Class Rules Appendix H .53 Bowsprit Launch system 2:1, shall not be modified |
+| `controls.sprit.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.tackLine.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.tackLine.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.tackLine.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.traveller.max` | 100 | derived | `app-convention` | app control range; -100 to +100 % of track travel, positive up to windward |
+| `controls.traveller.min` | -100 | derived | `app-convention` | app control range; -100 to +100 % of track travel, positive up to windward |
+| `controls.traveller.purchaseMax` | 3 | published | `class-rules-m24-2026` | Class Rules Appendix H .52 Traveller Control 3:1, shall not be modified |
+| `controls.traveller.purchaseMin` | 3 | published | `class-rules-m24-2026` | Class Rules Appendix H .52 Traveller Control 3:1, shall not be modified |
+| `controls.traveller.step` | 5 | derived | `app-convention` | app control range; -100 to +100 % of track travel, positive up to windward |
+| `controls.upperTurns.max` | 6 | assumed | `app-convention` | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.upperTurns.min` | -6 | assumed | `app-convention` | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.upperTurns.step` | 0.5 | assumed | `app-convention` | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.vang.max` | 100 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.vang.min` | 0 | derived | `app-convention` | app control range; 0-100 % travel |
+| `controls.vang.purchaseMax` | 12 | published | `class-rules-m24-2026` | Class Rules Appendix H .50 Boom Vang 12:1, shall not be modified |
+| `controls.vang.purchaseMin` | 12 | published | `class-rules-m24-2026` | Class Rules Appendix H .50 Boom Vang 12:1, shall not be modified |
+| `controls.vang.step` | 5 | derived | `app-convention` | app control range; 0-100 % travel |
+| `crew.maxKg` | 350 | published | `orc-cert-m24` | ORC certificate CrewWT 350 kg. Not a class limit (there is none) but the crew weight this certificate's VPP ran, which is exactly what the validation harness needs: validation/compare.ts replays the polar at crew.maxKg |
+| `crew.maxLegsOut` | 2 | published | `class-rules-m24-2026` | Class Rules C.11.3: the crew hike sitting outboard between the foremost stanchion and the spinnaker turning block, and the helmsperson shall not hike at all. At the class minimum crew of three that leaves two hiking, which is what hydro/righting.ts reads (it takes maxLegsOut over crew.minCount). Unlike the J/70's C.3.3(c) this is not a flat cap of two: on a six-up boat five may hike, and a class where that distinction bites would need righting.ts to take the crew count it is actually solving |
+| `crew.minCount` | 3 | published | `class-rules-m24-2026` | Class Rules C.2.1(a): the crew shall consist of a minimum of 3 to a maximum of 6 persons |
+| `crew.minKg` | 262 | assumed | `app-convention` | the Melges 24 class rules publish no crew weight limit at all — C.2.1(a) limits the crew to 3-6 persons and says nothing about weight — so the slider's lower stop has no source. Taken as 0.75 x crew.maxKg, the same span the J/70's published 255-340 kg limits describe. Only the range of the crew-weight slider depends on it; the polar is replayed at maxKg |
+| `hull.beamM` | 2.49 | published | `orc-cert-m24` | ORC certificate MB (maximum beam) 2.490 m |
+| `hull.bwlM` | 2.117 | assumed | `orc-cert-m24` | estimated as 0.85 x max beam, the J/70 file's documented method for the same unpublished field; no published waterline beam found |
+| `hull.dispKg` | 945 | published | `orc-cert-m24` | ORC certificate Dspl_Measurement 945 kg. The same certificate also prints Dspl_Sailing 1400 kg, which carries crew, sails and gear; the measurement displacement is the one the J/70 file uses for this field (811 kg there, against its 812 kg class dry weight) |
+| `hull.draftM` | 1.539 | published | `orc-cert-m24` | ORC certificate Draft 1.539 m |
+| `hull.gmM` | 0.747 | assumed | `orc-cert-m24` | estimated as 0.30 x beam, the J/70 file's documented method. Unlike the J/70 this class has no RM Measured to prefer over it: the ORC public feed publishes a Stability_Index but no righting moment per degree, so hull.rmMeasuredKgMPerDeg is absent and hydro/righting.ts falls back to this GM |
+| `hull.keelAreaM2` | 0.589 | assumed | `orc-cert-m24` | estimated as keelSpanM x an assumed 0.45 m average chord, the J/70 file's documented method; no published keel area or chord found. The class rules limit the combined fin and bulb weight (E.3.6, 300-313 kg) but publish no planform |
+| `hull.keelSpanM` | 1.308 | assumed | `orc-cert-m24` | estimated as 0.85 x draft, allowing ~15 % of draft for hull depth above the keel root; the J/70 file's documented method for the same unpublished field |
+| `hull.kgM` | 0.539 | assumed | `orc-cert-m24` | estimated as 0.35 x draft, a rule-of-thumb VCG fraction for a bulb-ballasted fin-keel sportboat; the J/70 file's documented method. The ORC public certificate carries no hydrostatics at all (ADR 0020) |
+| `hull.loaM` | 7.509 | published | `orc-cert-m24` | ORC certificate LOA 7.509 m |
+| `hull.lwlM` | 7.289 | assumed | `orc-cert-m24` | ORC certificate IMSL (VPP sailing length) 7.289 m, used as LWL. ADR 0020 warns that IMSL is not LWL and that citing it as published would be an invented number wearing a citation, so it is recorded as assumed: on this plumb-bow hull it is the closest published proxy, the same reading the J/70 file makes of its own IMS 'L'. Cross-check: the J/70's LWL/LOA ratio (6.691/6.910) applied to this LOA gives 7.271 m, 0.25 % away |
+| `hull.minDryWeightKg` | 809 | published | `class-rules-m24-2026` | Class Rules C.6.1: weight of the boat in dry condition, minimum 809 kg |
+| `hull.wettedM2` | 12.28 | published | `orc-cert-m24` | ORC certificate WSS 12.28 m2 |
+| `rig.boomOuterMm` | 3800 | published | `class-rules-m24-2026` | Class Rules C.9.4(a): boom outer point distance, maximum 3800 mm |
+| `rig.bowspritOuterMm` | 1400 | published | `class-rules-m24-2026` | Class Rules C.9.5(b): centre of the tack-line 'u' bolt to the foreside of the stem, maximum 1400 mm (the 2019 Measurement Form item 10 prints the same figure in its maximum column, which resolves the rules PDF's ragged min/max columns) |
+| `rig.chainplateYM` | 0.869 | derived | `class-rules-m24-2026` | half the midpoint of Class Rules Appendix H .4, transverse distance between the shroud plates 1725-1750 mm. Published, unlike the J/70's, which the J/70 file has to assume |
+| `rig.eM` | 3.8 | published | `class-rules-m24-2026` | Class Rules C.9.4(a): boom outer point distance, maximum 3800 mm |
+| `rig.iM` | 8.315 | derived | `class-rules-m24-2026` | midpoint of Class Rules F.3.4 .8, forestay height 8300-8330 mm above the mast datum point. A manufacturing tolerance band, so the midpoint rather than the limit |
+| `rig.jM` | 2.41 | derived | `class-rules-m24-2026` | midpoint of Class Rules Appendix H .5, horizontal distance from the aft face of the furler drum recess to the forward edge of the mast step, 2405-2415 mm. The forestay tacks at the furler drum, so this is the foretriangle base to within the drum/mast-face datum |
+| `rig.mastLenM` | 9.528 | derived | `class-rules-m24-2026` | Class Rules F.3.4 .7, upper point height 9528 mm above the mast datum point. The spar continues above the band by an amount the rules do not publish, so this is the top of the mainsail hoist rather than the masthead. It is the right length for the model's mast frame, which measures every other rig height from the same datum: it puts the gooseneck at (mastLenM - pM) = 0.710 m, exactly the class lower point height, and the hounds at iM, exactly the class forestay height |
+| `rig.pM` | 8.818 | derived | `class-rules-m24-2026` | Class Rules F.3.4 .7 upper point height (max 9528 mm) minus .6 lower point height (min 710 mm), both above the mast datum point: the largest legal mainsail hoist |
+| `rig.spreaderLenM` | 0.82 | derived | `class-rules-m24-2026` | midpoint of Class Rules F.3.4 .15, spreader length 810-830 mm |
+| `rig.spreaderZM` | 4.295 | derived | `class-rules-m24-2026` | midpoint of Class Rules F.3.4 .16, spreader height 4285-4305 mm. Published, unlike the J/70's, which the J/70 file has to assume |
+| `rig.sweepDeg` | 17.4 | derived | `class-rules-m24-2026` | asin(0.245 / 0.820) from Class Rules F.3.4 .17 (230-260 mm from the aft side of the mast to a taut line across the shroud tips) over .15 (spreader length 810-830 mm), both band midpoints. The offset's datum is the mast's aft face rather than the spreader root, so this reads low: carrying the mast's half fore-and-aft section at spreader height (~50 mm, interpolating F.3.4 .1 and .3) would give 21 degrees instead |
+| `sails.asym.footMm` | 6300 | published | `class-rules-m24-2026` | Class Rules G.5.3 .3: spinnaker foot length, maximum 6300 mm (minimum 6000 mm) |
+| `sails.asym.halfMm` | 5860 | published | `class-rules-m24-2026` | Class Rules G.5.3 .5: spinnaker half width, maximum 5860 mm |
+| `sails.asym.leechMm` | 11078 | published | `class-rules-m24-2026` | Class Rules G.5.3 .2: spinnaker leech length, maximum 11078 mm (minimum 10000 mm) |
+| `sails.asym.luffMm` | 11585 | published | `class-rules-m24-2026` | Class Rules G.5.3 .1: spinnaker luff length, maximum 11585 mm (minimum 11285 mm) |
+| `sails.asym.ratedAreaM2` | 52.95 | published | `orc-cert-m24` | ORC certificate Area_Asym 52.95 m2, for the certificate this file's polar comes from. The class maxima below describe a slightly larger sail: the ORC spinnaker-area formula over them gives 56.2 m2, so this certificate's kite is about 6 % under the limit. Both numbers are kept as they are rather than one being bent to the other — the geometry is what the class allows, the area is what the boat behind the polar actually measured |
+| `sails.jib.halfMm` | 1347 | assumed | `class-rules-m24-2026` | straight-leech triangle, 0.50 x LP. See sails.jib.quarterMm |
+| `sails.jib.lpMm` | 2694 | derived | `orc-cert-m24` | the class rules publish the jib's foot length (G.4.3 .3, 2926-3026 mm) but never its luff perpendicular. LP = 2 x rated headsail area / luff = 2 x 11.53 / 8.560, a triangular approximation. On the J/70, where both are published, the same formula gives 2502 mm against a published LP of 2450 mm, so it reads about 2 % high. The foot length is not usable as LP here: it would over-read the sail by 12 %, because the clew is well aft of the perpendicular from the luff |
+| `sails.jib.luffMm` | 8560 | published | `class-rules-m24-2026` | Class Rules G.4.3 .1: jib luff length, maximum 8560 mm (minimum 8460 mm) |
+| `sails.jib.quarterMm` | 2020 | assumed | `class-rules-m24-2026` | not published: G.4.3 limits the jib's luff, leech, foot and top width but no girths, because G.4.2(d) requires the leech to be negative (hollow) and an unroached sail needs no girth cap. Taken as the straight-leech triangle, 0.75 x LP. On the J/70 the same method gives 1838 mm against a published 1860, about 1 % low; on this sail, whose leech is hollow rather than straight, it is an over-estimate instead |
+| `sails.jib.ratedAreaM2` | 11.53 | published | `orc-cert-m24` | ORC certificate Area_Jib 11.53 m2, for the certificate this file's polar comes from |
+| `sails.jib.threeQuarterMm` | 674 | assumed | `class-rules-m24-2026` | straight-leech triangle, 0.25 x LP. See sails.jib.quarterMm |
+| `sails.jib.topMm` | 50 | published | `class-rules-m24-2026` | Class Rules G.4.3 .4: jib top width, maximum 50 mm |
+| `sails.main.battens` | 4 | published | `class-rules-m24-2026` | Class Rules G.3.3(c): four battens dividing the leech into five equal parts +/- 100 mm |
+| `sails.main.footMm` | 3800 | derived | `class-rules-m24-2026` | the boom outer point distance, C.9.4(a) maximum 3800 mm — the same number as rig.eM. G.3.4 limits the mainsail's foot median (9200 mm, head to foot midpoint) rather than its foot length, so the spar limit is what bounds the foot |
+| `sails.main.halfMm` | 2700 | published | `class-rules-m24-2026` | Class Rules G.3.4 .3: mainsail half width, maximum 2700 mm |
+| `sails.main.leechMm` | 9590 | published | `class-rules-m24-2026` | Class Rules G.3.4 .1: mainsail leech length, maximum 9590 mm |
+| `sails.main.luffMm` | 8818 | derived | `class-rules-m24-2026` | the largest legal hoist, F.3.4 .7 minus .6 — the same number as rig.pM. The class rules limit the mainsail's leech, girths and foot median but not its luff, because the mast bands already do |
+| `sails.main.quarterMm` | 3250 | assumed | `class-rules-m24-2026` | not published: G.3.4 limits the half, three-quarter and top widths but not the quarter width. Linear interpolation between the published foot (3800 mm) and half (2700 mm) widths. On the J/70, whose quarter width is published, the same method gives 2505 against a published 2570 mm, so it reads about 2.6 % low |
+| `sails.main.ratedAreaM2` | 22.04 | published | `orc-cert-m24` | ORC certificate Area_Main 22.04 m2, for the certificate this file's polar comes from |
+| `sails.main.threeQuarterMm` | 1680 | published | `class-rules-m24-2026` | Class Rules G.3.4 .4: mainsail three-quarter width, maximum 1680 mm |
+| `sails.main.topMm` | 175 | published | `class-rules-m24-2026` | Class Rules G.3.4 .5: mainsail top width, maximum 175 mm |
+| `sails.main.upperMm` | 928 | assumed | `class-rules-m24-2026` | not published: G.3.4 limits no 7/8 width. Linear interpolation between the published three-quarter (1680 mm) and top (175 mm) widths. On the J/70, whose upper width is published, the same method gives 894 against a published 880 mm, so it reads about 1.6 % high |
+
 ## Reference tables
 
 - `data/tuning/north-j70.json`: 7 wind bands, retrieved 2026-08-25, © North Sails. Settings only; no prose reproduced.
 - `data/tuning/quantum-j70.json`: 11 wind bands, retrieved 2026-08-25, © Quantum Sails, 2020. Settings only; no prose reproduced.
 - `data/polar/orc-j70.json`: 182 rows at TWS 6/8/10/12/14/16/20 kt, VPP 2011 1.02, issued 2012-04-30.
+- `data/polar/orc-m24.json`: 90 rows at TWS 4/6/8/10/12/14/16/20/24 kt, ORC VPP, certificate issued 2026-03-30, issued 2026-03-30.

@@ -7,6 +7,7 @@
   import Today from '../drills/Today.svelte';
   import { dailySeed, drills } from '../drills/store.svelte';
   import { drillHash, parseDrillHash } from '../drills/progress';
+  import { activeBoat } from '../../lib/boat';
   import type { DrillTemplate, DrillTier } from '../../lib/drills';
 
   const TIER_NAME: Record<DrillTier, string> = {
@@ -73,6 +74,15 @@
     <p class="lede">Generating a drill…</p>
   {:else if drills.current}
     <DrillView drill={drills.current} onback={() => drills.close()} />
+  {:else if drills.templates.length === 0}
+    <!-- Drill templates are per class (`data/drills/<id>-templates.json`), and a
+         class with none has no drills. Say so: the how-it-works lede followed by
+         an empty page reads as a bug rather than as an honest gap. -->
+    <p class="lede">
+      No drills are committed for the {activeBoat.name} yet. A drill sets a deliberate fault on a class's
+      own controls and scores you against the solver's optimum for that rig, so the templates are per
+      boat — switch class in More to practise on one that has them.
+    </p>
   {:else}
     <p class="lede">
       Each drill is a real condition with a deliberately wrong setup, generated fresh from the day's

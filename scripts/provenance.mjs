@@ -113,17 +113,33 @@ function provenanceBody() {
   out.push('## Sources', '');
   out.push('| Id | Title | Retrieved | Edition | URL |', '|---|---|---|---|---|');
   // Deduped by id: two classes measured from the same rule book cite one row.
-  const seen = new Set();
+  //
+  // A collision where the *documents differ* is not a dedup, it is a citation
+  // pointing at the wrong paper: every `class-rules-2026` row in every boat
+  // file would resolve to whichever class was globed first. Source ids are
+  // global here, so they have to be globally unique — namespace them per class
+  // (`class-rules-m24-2026`) rather than reusing a generic id.
+  const seen = new Map();
   for (const boat of boats)
     for (const [id, s] of Object.entries(boat.sources)) {
-      if (seen.has(id)) continue;
-      seen.add(id);
+      const prev = seen.get(id);
+      if (prev) {
+        if (prev.url !== s.url || prev.title !== s.title)
+          throw new Error(
+            `source id "${id}" is used for two different documents:\n` +
+              `  ${prev.boat}: ${prev.title} <${prev.url}>\n` +
+              `  ${boat.id}: ${s.title} <${s.url}>\n` +
+              `Source ids are global in PROVENANCE.md. Give one of them a per-class id.`,
+          );
+        continue;
+      }
+      seen.set(id, { url: s.url, title: s.title, boat: boat.id });
       out.push(`| \`${id}\` | ${s.title} | ${s.retrieved} | ${s.edition ?? ''} | <${s.url}> |`);
     }
   for (const t of [...guides.map((g) => g.guide), ...polars.map((p) => p.data)]) {
     const s = t.source;
     if (seen.has(s.id)) continue;
-    seen.add(s.id);
+    seen.set(s.id, { url: s.url, title: s.title, boat: s.id });
     out.push(
       `| \`${s.id}\` | ${s.title} | ${s.retrieved} | ${s.revision ?? s.vppVersion ?? ''} | <${s.url}> |`,
     );

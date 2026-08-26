@@ -1,5 +1,5 @@
 <script lang="ts">
-  import boat from '../../../../data/boats/j70.json';
+  import { activeBoat as boat } from '../../../lib/boat';
   import type { SolveResult } from '../../../core/types';
   import BulletGauge from '../../components/BulletGauge.svelte';
   import ConfidenceBadge from '../../components/ConfidenceBadge.svelte';

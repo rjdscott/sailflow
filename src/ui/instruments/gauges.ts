@@ -3,6 +3,7 @@
  * framework: every number a gauge draws is computed here, so it is testable
  * without mounting a component and the components stay markup.
  */
+import { activeBoat } from '../../lib/boat';
 import { round } from '../format';
 import { trackPct } from '../components/logic';
 
@@ -20,11 +21,27 @@ export type BetterIs = 'more' | 'less';
 export const LEECH_STALL_BAND: readonly [number, number] = [0.5, 0.7];
 
 /**
- * Spreader stripe distances from the mast, inches.
- * prov: North Sails J/70 tuning guide (S1). Mirrors the core's
- * `STRIPE_INCHES`, for the same reason as the band above.
+ * Spreader stripe distances from the mast, inches, for the *active* class:
+ * a class paints the stripes its own guide calls for, so this is a per-boat
+ * `instruments.stripeIn*` knob, not a constant. Mirrors the core's
+ * `stripeInches()` — ADR 0003 forbids the UI importing the core, so the knob
+ * names and the reference-boat fallbacks are written on both sides of the
+ * boundary; keep them identical.
+ *
+ * Fallbacks: prov: North Sails J/70 tuning guide (S1), the reference boat's
+ * painted stripes, which is what a class that overrides none is reading.
  */
-export const STRIPE_INCHES: readonly [number, number, number] = [18, 20, 22];
+export const STRIPE_INCHES: readonly [number, number, number] = [
+  knob('instruments.stripeInLo', 18),
+  knob('instruments.stripeInMid', 20),
+  knob('instruments.stripeInHi', 22),
+];
+
+/** `core/internal.ts:knob`, restated: the UI may not import the core (ADR 0003). */
+function knob(name: string, fallback: number): number {
+  const v = activeBoat.calibration[name];
+  return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+}
 
 export interface BulletInput {
   min: number;

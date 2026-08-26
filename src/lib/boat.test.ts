@@ -1,17 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import { validateBoat } from '../core/boat/validate';
-import { boatChoices, boatFor, boatIds, DEFAULT_BOAT_ID, isBoatId } from './boat';
+import {
+  activeBoat,
+  boatChoices,
+  boatFor,
+  boatIds,
+  DEFAULT_BOAT_ID,
+  isBoatId,
+  sailM,
+} from './boat';
 
 describe('boat registry', () => {
   it('lists the default first so a picker opens on the boat the gates run on', () => {
     expect(boatIds()[0]).toBe(DEFAULT_BOAT_ID);
   });
 
-  it('validates every committed class against the schema the solver reads', () => {
-    // The registry is the app's whole supply of boats. A class that reaches it
-    // without passing `validateBoat` is one the solver will read fields off
-    // and silently get `undefined` for.
-    for (const id of boatIds()) expect(validateBoat(boatFor(id)), id).toEqual([]);
+  it('validates every committed class against the schema the solver reads', async () => {
+    // The **files**, globbed, not just the registry entries: a boat file
+    // nobody registered passes every other test in this suite by never being
+    // looked at, and a registered id with no file is the reverse. The file is
+    // also what a reviewer opens and what `scripts/provenance.mjs` reads.
+    const files = import.meta.glob('../../data/boats/*.json', { eager: true, import: 'default' });
+    const paths = Object.keys(files).sort();
+    expect(paths.length, 'a registered class with no file, or a file nobody registered').toBe(
+      boatIds().length,
+    );
+    for (const path of paths) expect(validateBoat(files[path]), path).toEqual([]);
   });
 
   it('names every class, because the picker renders the name not the id', () => {
@@ -31,5 +45,28 @@ describe('boat registry', () => {
     expect(boatFor(undefined).id).toBe(DEFAULT_BOAT_ID);
     expect(isBoatId('not-a-boat')).toBe(false);
     expect(isBoatId(DEFAULT_BOAT_ID)).toBe(true);
+  });
+
+  it('resolves an active class the whole UI can draw from', () => {
+    // Every UI module that used to import `data/boats/j70.json` now reads
+    // `activeBoat`. If this were ever undefined — or a boat outside the
+    // registry — the cockpit would draw a sail plan nothing had validated.
+    expect(isBoatId(activeBoat.id)).toBe(true);
+    expect(activeBoat).toBe(boatFor(activeBoat.id));
+    expect(validateBoat(activeBoat)).toEqual([]);
+  });
+});
+
+describe('sailM', () => {
+  it('reads a girth in metres from the mm the file carries', () => {
+    expect(sailM(boatFor(DEFAULT_BOAT_ID).sails.jib, 'lpMm')).toBeCloseTo(2.45, 6);
+  });
+
+  it('names the missing dimension instead of drawing a sail with no cloth', () => {
+    // `SailDef`'s girths are `number | string`, so an absent or textual value
+    // would otherwise reach the loft as `NaN` and silently collapse the sail.
+    const sail = boatFor(DEFAULT_BOAT_ID).sails.main;
+    expect(() => sailM(sail, 'noSuchMm')).toThrow(/noSuchMm/);
+    expect(() => sailM(sail, 'orcTable')).toThrow(/not a number/);
   });
 });

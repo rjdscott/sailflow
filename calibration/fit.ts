@@ -59,7 +59,7 @@
 import { writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { format, resolveConfig } from 'prettier';
-import northData from '../data/tuning/north-j70.json';
+import { readdirSync, readFileSync } from 'node:fs';
 import type { Comparison, Polar, PolarRow } from '../validation/compare';
 import {
   angleRows,
@@ -122,7 +122,8 @@ export interface FitPoint {
   twsKt: number;
   bsKt: number;
   twaDeg: number;
-  heelDeg: number;
+  /** `null` on a target row whose source publishes no heel column. */
+  heelDeg: number | null;
 }
 
 export interface LossWeights {
@@ -147,7 +148,10 @@ export function pointResidual(
 ): PointResidual {
   const dBs = (model.bsKt - target.bsKt) / target.bsKt;
   const dTwa = model.twaDeg - target.twaDeg;
-  const dHeel = model.heelDeg - target.heelDeg;
+  // A target with no published heel contributes no heel error, rather than an
+  // error against zero — which would be the fit chasing a boat sailing flat.
+  const dHeel =
+    target.heelDeg === null || model.heelDeg === null ? 0 : model.heelDeg - target.heelDeg;
   return {
     ...model,
     label,
@@ -192,7 +196,7 @@ export function rowPoint(r: PolarRow): FitPoint {
     twsKt: r.twsKt,
     bsKt: r.bsKt,
     twaDeg: Math.abs(r.twaDeg),
-    heelDeg: Math.abs(r.heelDeg),
+    heelDeg: r.heelDeg === null ? null : Math.abs(r.heelDeg),
   };
 }
 
@@ -207,21 +211,44 @@ export interface TuningBand {
   lowersTurns: number;
 }
 
-const NORTH_BANDS = northData.bands as (TuningBand & {
-  twsMinKt: number;
-  twsMaxKt: number | null;
-})[];
+type GuideBandRow = TuningBand & { twsMinKt: number; twsMaxKt: number | null };
 
 /**
- * The North band covering this wind speed. Bands are half-open [min, max) so a
+ * The first tuning guide committed for this class, in filename order, or
+ * `null` when the class has none.
+ *
+ * Read off disk by boat id rather than importing `north-j70.json`: stage 4
+ * fits six rig and shape knobs against the guide's published shroud turns, and
+ * pointing a second class at the J/70's guide would fit that class's rig to a
+ * boat it is not. `src/lib/reference.ts` does the same enumeration for the app
+ * with `import.meta.glob`, which is a Vite feature this harness does not run
+ * under. A guide whose `bands` array is empty is "not transcribed", the same
+ * state the app reports, and counts as absent here.
+ */
+function loadGuideBands(boatId: string): { id: string; bands: GuideBandRow[] } | null {
+  const dir = new URL('../data/tuning/', import.meta.url);
+  for (const name of readdirSync(dir).sort()) {
+    if (!name.endsWith(`-${boatId}.json`)) continue;
+    const raw = JSON.parse(readFileSync(new URL(name, dir), 'utf8')) as { bands?: GuideBandRow[] };
+    if (Array.isArray(raw.bands) && raw.bands.length > 0)
+      return { id: name.replace(/\.json$/, ''), bands: raw.bands };
+  }
+  return null;
+}
+
+const GUIDE = loadGuideBands(BOAT_ID);
+
+/**
+ * The guide band covering this wind speed. Bands are half-open [min, max) so a
  * boundary speed (10 kt sits in both the "8-10" and "10-12" rows as printed)
  * resolves to exactly one band; the last band is open-ended.
  */
-export function northBand(twsKt: number): TuningBand {
-  const b = NORTH_BANDS.find(
+export function guideBand(twsKt: number): TuningBand {
+  if (!GUIDE) throw new Error(`${BOAT_ID} has no committed tuning guide under data/tuning/`);
+  const b = GUIDE.bands.find(
     (x) => twsKt >= x.twsMinKt && (x.twsMaxKt === null || twsKt < x.twsMaxKt),
   );
-  if (!b) throw new Error(`no North band for TWS ${twsKt}`);
+  if (!b) throw new Error(`no guide band for TWS ${twsKt}`);
   return { label: b.label, uppersTurns: b.uppersTurns, lowersTurns: b.lowersTurns };
 }
 
@@ -255,7 +282,15 @@ const JIB_ROWS: PolarRow[] = FIT_TWS.flatMap((t) => [
 ]);
 /** Asymmetric rows in the fit: the running VMG row at each fitted wind speed. */
 const ASYM_ROWS: PolarRow[] = FIT_TWS.map((t) => polarRow('asym', 'vmgDn', t));
-const HEEL_ROWS: PolarRow[] = FIT_TWS_HEEL.map((t) => polarRow('jib', 'vmgUp', t));
+/**
+ * Stage 3's rows: the upwind VMG row at the two windiest fitted speeds — but
+ * only where the source publishes a heel. The free ORC certificate feed does
+ * not (`data/polar/orc-m24.json`), and fitting `crewArmMul` against rows with
+ * no heel target would be fitting it against nothing.
+ */
+const HEEL_ROWS: PolarRow[] = FIT_TWS_HEEL.map((t) => polarRow('jib', 'vmgUp', t)).filter(
+  (r) => r.heelDeg !== null,
+);
 
 function residualsFor(rows: PolarRow[], w: LossWeights): PointResidual[] {
   return rows.map((r) => {
@@ -489,7 +524,7 @@ function rigStagePoints(): TurnsResidual[] {
       grid.map((d) => lapTimeHours(twsKt, d)),
       grid,
     );
-    const band = northBand(twsKt);
+    const band = guideBand(twsKt);
     return {
       twsKt,
       band: band.label,
@@ -691,78 +726,128 @@ export async function main(): Promise<void> {
   );
 
   // --- stage 3: righting ----------------------------------------------------
-  stages.push(
-    runStage({
-      stage: 3,
-      name: 'righting',
-      target: `jib vmgUp heel at TWS ${FIT_TWS_HEEL.join('/')}`,
-      weights: WEIGHTS_HEEL,
-      maxIter: 60,
-      knobs: [{ name: 'hydro.crewArmMul', start: 1, min: 0.2, max: 1.05 }],
-      loss: () => lossFor(HEEL_ROWS, WEIGHTS_HEEL),
-      residuals: () => residualsFor(HEEL_ROWS, WEIGHTS_HEEL),
-      notes:
-        'crewArmM is capped at beam/2 by the class hiking rule, so values above ' +
-        '~1.05 have no effect; the knob can only soften the rig, never stiffen it.',
-    }),
-  );
+  // Skipped, not faked, when the source publishes no heel column: an empty row
+  // set makes the loss identically zero, so the optimiser would wander and
+  // report a fitted value for a knob nothing constrained.
+  if (HEEL_ROWS.length === 0) {
+    console.log(
+      `\nstage 3 (righting) skipped: ${BOAT_ID}'s polar publishes no heel column, so ` +
+        `hydro.crewArmMul has nothing to fit against and keeps its code default.`,
+    );
+  } else {
+    stages.push(
+      runStage({
+        stage: 3,
+        name: 'righting',
+        target: `jib vmgUp heel at TWS ${FIT_TWS_HEEL.join('/')}`,
+        weights: WEIGHTS_HEEL,
+        maxIter: 60,
+        knobs: [{ name: 'hydro.crewArmMul', start: 1, min: 0.2, max: 1.05 }],
+        loss: () => lossFor(HEEL_ROWS, WEIGHTS_HEEL),
+        residuals: () => residualsFor(HEEL_ROWS, WEIGHTS_HEEL),
+        notes:
+          'crewArmM is capped at beam/2 by the class hiking rule, so values above ' +
+          '~1.05 have no effect; the knob can only soften the rig, never stiffen it.',
+      }),
+    );
+  }
 
-  // --- stage 4: rig + shape against the North guide -------------------------
-  const rigReport = runStage({
-    stage: 4,
-    name: 'rig-shape',
-    target: `North base turns at TWS ${FIT_TWS_RIG.join('/')} (8-10 and 12-16 bands)`,
-    weights: { twa: 0, heel: 0 },
-    maxIter: 120,
-    // Bounds are the model's tested-valid region, not just numerics. Every one
-    // of these knobs can, pushed far enough, saturate a clamp in
-    // shape/flying.ts and kill the trim response the whole app is built on.
-    // `shapeHeadroom()` below is the assertion that they did not.
-    knobs: [
-      // EI is pinned within ~13 % by beam.test.ts: the mast bends 35-45 mm at
-      // the full backstay load, and that target defines the value.
-      { name: 'rig.EI', start: 6.0e5, min: 5.4e5, max: 6.85e5 },
-      { name: 'rig.turnsToN', start: 220, min: 100, max: 600 },
-      { name: 'rig.sagK', start: 45, min: 25, max: 90 },
-      // Above ~0.36, measured over the corners of the race-control box at the
-      // stiffest and softest EI in range, the mainsail draft reaches its 0.05
-      // floor and every main shape response goes flat.
-      { name: 'shape.bendToDraft', start: 0.45, min: 0.25, max: 0.36 },
-      { name: 'shape.sagToDraft', start: 0.0006, min: 3e-4, max: 1.2e-3 },
-      // Above ~0.15 twist reaches its 30 deg ceiling at full sheet ease.
-      { name: 'shape.sheetToTwist', start: 0.12, min: 0.06, max: 0.15 },
-    ],
-    loss: rigLoss,
-    residuals: rigStagePoints,
-    notes: `soft-argmin over ${rigGrid().length} dock setups, lap time at fixed TWA ${LAP_TWA_UP}/${LAP_TWA_DN}`,
-  });
-  const rigPoints = rigReport.residuals as TurnsResidual[];
-  const floor = structuralFloor(rigPoints);
-  rigReport.notes =
-    `${rigReport.notes}. The dock-setup ranking this model produces barely moves ` +
-    `with wind speed (model ${rigPoints
-      .map((p) => `TWS ${p.twsKt} ${p.uppersModel.toFixed(2)}/${p.lowersModel.toFixed(2)}`)
-      .join(', ')} against guide ${rigPoints
-      .map((p) => `${p.uppersGuide}/${p.lowersGuide}`)
-      .join(', ')}), so the best a wind-independent optimum can do is the ` +
-    `midpoint of the two bands, loss ${floor.toFixed(2)}. None of these six ` +
-    `knobs opens a wind-dependent channel.`;
-  stages.push(rigReport);
+  // --- stage 4: rig + shape against the tuning guide ------------------------
+  // The whole stage *is* the guide: it fits six rig and shape knobs so the
+  // model's preferred dock setup lands on the guide's published shroud turns.
+  // A class with no committed guide therefore has nothing to fit, and the six
+  // knobs keep their code defaults — which `ASSUMPTIONS.md` records as
+  // unfitted. Borrowing another class's guide would fit this rig to a boat it
+  // is not.
+  if (!GUIDE) {
+    console.log(
+      `\nstage 4 (rig-shape) skipped: no tuning guide committed for ${BOAT_ID} under ` +
+        `data/tuning/, so rig.EI, rig.turnsToN, rig.sagK and the three shape knobs keep ` +
+        `their code defaults.`,
+    );
+  } else {
+    const rigReport = runStage({
+      stage: 4,
+      name: 'rig-shape',
+      target: `${GUIDE.id} base turns at TWS ${FIT_TWS_RIG.join('/')}`,
+      weights: { twa: 0, heel: 0 },
+      maxIter: 120,
+      // Bounds are the model's tested-valid region, not just numerics. Every one
+      // of these knobs can, pushed far enough, saturate a clamp in
+      // shape/flying.ts and kill the trim response the whole app is built on.
+      // `shapeHeadroom()` below is the assertion that they did not.
+      knobs: [
+        // EI is pinned within ~13 % by beam.test.ts: the mast bends 35-45 mm at
+        // the full backstay load, and that target defines the value.
+        { name: 'rig.EI', start: 6.0e5, min: 5.4e5, max: 6.85e5 },
+        { name: 'rig.turnsToN', start: 220, min: 100, max: 600 },
+        { name: 'rig.sagK', start: 45, min: 25, max: 90 },
+        // Above ~0.36, measured over the corners of the race-control box at the
+        // stiffest and softest EI in range, the mainsail draft reaches its 0.05
+        // floor and every main shape response goes flat.
+        { name: 'shape.bendToDraft', start: 0.45, min: 0.25, max: 0.36 },
+        { name: 'shape.sagToDraft', start: 0.0006, min: 3e-4, max: 1.2e-3 },
+        // Above ~0.15 twist reaches its 30 deg ceiling at full sheet ease.
+        { name: 'shape.sheetToTwist', start: 0.12, min: 0.06, max: 0.15 },
+      ],
+      loss: rigLoss,
+      residuals: rigStagePoints,
+      notes: `soft-argmin over ${rigGrid().length} dock setups, lap time at fixed TWA ${LAP_TWA_UP}/${LAP_TWA_DN}`,
+    });
+    const rigPoints = rigReport.residuals as TurnsResidual[];
+    const floor = structuralFloor(rigPoints);
+    rigReport.notes =
+      `${rigReport.notes}. The dock-setup ranking this model produces barely moves ` +
+      `with wind speed (model ${rigPoints
+        .map((p) => `TWS ${p.twsKt} ${p.uppersModel.toFixed(2)}/${p.lowersModel.toFixed(2)}`)
+        .join(', ')} against guide ${rigPoints
+        .map((p) => `${p.uppersGuide}/${p.lowersGuide}`)
+        .join(', ')}), so the best a wind-independent optimum can do is the ` +
+      `midpoint of the two bands, loss ${floor.toFixed(2)}. None of these six ` +
+      `knobs opens a wind-dependent channel.`;
+    stages.push(rigReport);
+  }
 
   // --- guard: the shape layer must still respond ---------------------------
+  // Two verdicts, because the guard means two different things. When stage 4
+  // ran, the window below is an assertion about *its bounds*: a knob it pushed
+  // far enough to saturate a clamp in `shape/flying.ts` kills the trim
+  // response the whole app is built on, and shrinking the bound is the fix.
+  // When stage 4 was skipped there is no bound to shrink — the shape knobs are
+  // code defaults fitted to another class's rig — so the honest test is the
+  // weaker one the window exists to protect: does the section still *move*
+  // across the backstay's travel? A margin miss on an unfitted class is a
+  // finding, recorded in the residuals and printed here, not a hard stop that
+  // would leave the class uncalibratable until someone sources a guide.
   const headroom = shapeHeadroom();
   const clampOk =
     headroom.minDraft > 0.06 &&
     headroom.maxDraft < 0.2 &&
     headroom.minTwist > 1 &&
     headroom.maxTwist < 29;
+  const responds =
+    headroom.maxDraft - headroom.minDraft > 0.01 && headroom.maxTwist - headroom.minTwist > 1;
+  const verdict = clampOk
+    ? 'clear of every clamp'
+    : GUIDE
+      ? 'CLAMPED, shrink a stage-4 bound'
+      : responds
+        ? 'inside the tuned window but still responding; stage 4 never ran on this class, so the ' +
+          'shape knobs are unfitted code defaults'
+        : 'CLAMPED and no longer responding on the unfitted knob defaults';
   console.log(
     `\nmain half section over backstay 0..100: draft ` +
       `${headroom.minDraft.toFixed(4)}..${headroom.maxDraft.toFixed(4)}, twist ` +
-      `${headroom.minTwist.toFixed(2)}..${headroom.maxTwist.toFixed(2)} deg — ` +
-      `${clampOk ? 'clear of every clamp' : 'CLAMPED, shrink a stage-4 bound'}`,
+      `${headroom.minTwist.toFixed(2)}..${headroom.maxTwist.toFixed(2)} deg — ${verdict}`,
   );
-  if (!clampOk) throw new Error('stage 4 saturated a shape clamp; shrink the bound, not the clamp');
+  if (GUIDE && !clampOk)
+    throw new Error('stage 4 saturated a shape clamp; shrink the bound, not the clamp');
+  if (!GUIDE && !responds)
+    throw new Error(
+      `${BOAT_ID}: the shape layer does not respond to the backstay on the unfitted knob ` +
+        `defaults, so no trim on this class would move a number. Source a tuning guide for it ` +
+        `(data/tuning/<guide>-${BOAT_ID}.json) so stage 4 can fit the shape knobs.`,
+    );
 
   // --- report ---------------------------------------------------------------
   const heldOut = HELD_OUT_TWS.flatMap((tws) =>
@@ -777,7 +862,7 @@ export async function main(): Promise<void> {
       `  ${r.label.padEnd(22)} bs ${r.bsKt.toFixed(2)} vs ${r.target.bsKt.toFixed(2)} ` +
         `(${r.dBsPct >= 0 ? '+' : ''}${r.dBsPct.toFixed(1)} %), twa ${r.twaDeg.toFixed(1)} vs ` +
         `${r.target.twaDeg.toFixed(1)} (${r.dTwaDeg >= 0 ? '+' : ''}${r.dTwaDeg.toFixed(1)} deg), ` +
-        `heel ${r.heelDeg.toFixed(1)} vs ${r.target.heelDeg.toFixed(1)}`,
+        `heel ${r.heelDeg?.toFixed(1) ?? '—'} vs ${r.target.heelDeg?.toFixed(1) ?? 'unpublished'}`,
     );
 
   await writeJson(BOAT_FILE, boat);
@@ -788,7 +873,8 @@ export async function main(): Promise<void> {
     heldOutTws: HELD_OUT_TWS,
     condition: { seaState: POLAR_SEA_STATE, crewKg: POLAR_CREW_KG },
     simplexStep: SIMPLEX_STEP,
-    shapeHeadroom: headroom,
+    shapeHeadroom: { ...headroom, verdict },
+    guide: GUIDE?.id ?? null,
     stages,
     heldOut,
   });

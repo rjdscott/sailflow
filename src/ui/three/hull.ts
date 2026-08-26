@@ -12,7 +12,7 @@
  * Frame and datum are `conventions.ts`: origin at the mast heel on the sheer,
  * +x forward, +y up, +z to starboard.
  */
-import boat from '../../../data/boats/j70.json';
+import { activeBoat as boat } from '../../lib/boat';
 import { SPRIT_TIP_X, STEM_X } from './conventions';
 import { gridIndices, gridNormals } from './loft';
 

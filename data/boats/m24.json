@@ -1,0 +1,1810 @@
+{
+  "schemaVersion": 1,
+  "id": "m24",
+  "name": "Melges 24",
+  "hull": {
+    "loaM": 7.509,
+    "lwlM": 7.289,
+    "beamM": 2.49,
+    "bwlM": 2.117,
+    "draftM": 1.539,
+    "dispKg": 945,
+    "minDryWeightKg": 809,
+    "wettedM2": 12.28,
+    "keelSpanM": 1.308,
+    "keelAreaM2": 0.589,
+    "kgM": 0.539,
+    "gmM": 0.747
+  },
+  "rig": {
+    "iM": 8.315,
+    "jM": 2.41,
+    "pM": 8.818,
+    "eM": 3.8,
+    "mastLenM": 9.528,
+    "spreaderZM": 4.295,
+    "spreaderLenM": 0.82,
+    "sweepDeg": 17.4,
+    "chainplateYM": 0.869,
+    "boomOuterMm": 3800,
+    "bowspritOuterMm": 1400,
+    "wire": "4.7-5.1 mm, T-ball upper end",
+    "backstay": "3.0 mm steel wire to the masthead crane"
+  },
+  "sails": {
+    "main": {
+      "ratedAreaM2": 22.04,
+      "leechMm": 9590,
+      "luffMm": 8818,
+      "footMm": 3800,
+      "quarterMm": 3250,
+      "halfMm": 2700,
+      "threeQuarterMm": 1680,
+      "upperMm": 928,
+      "topMm": 175,
+      "battens": 4,
+      "orcTable": "5.1"
+    },
+    "jib": {
+      "ratedAreaM2": 11.53,
+      "luffMm": 8560,
+      "lpMm": 2694,
+      "quarterMm": 2020,
+      "halfMm": 1347,
+      "threeQuarterMm": 674,
+      "topMm": 50,
+      "orcTable": "5.4"
+    },
+    "asym": {
+      "ratedAreaM2": 52.95,
+      "luffMm": 11585,
+      "leechMm": 11078,
+      "footMm": 6300,
+      "halfMm": 5860,
+      "orcTable": "5.7"
+    }
+  },
+  "crew": {
+    "minKg": 262,
+    "maxKg": 350,
+    "minCount": 3,
+    "maxLegsOut": 2,
+    "hikingRule": "sitting facing outboard with part of the back of the thigh or buttocks in contact with the deck or gunwale edge, between the foremost stanchion and the spinnaker turning block; the helmsperson shall not hike (C.11.3, C.11.6)"
+  },
+  "controls": {
+    "upperTurns": {
+      "mode": "dock",
+      "unit": "turns",
+      "min": -6,
+      "max": 6,
+      "step": 0.5,
+      "label": "Upper shroud turns (from base)"
+    },
+    "lowerTurns": {
+      "mode": "dock",
+      "unit": "turns",
+      "min": -6,
+      "max": 6,
+      "step": 0.5,
+      "label": "Lower shroud turns (from base)"
+    },
+    "forestayMm": {
+      "mode": "dock",
+      "unit": "mm",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "label": "Forestay length adjustment"
+    },
+    "backstay": {
+      "mode": "race",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Backstay",
+      "purchaseMin": 8,
+      "purchaseMax": 8
+    },
+    "mainsheet": {
+      "mode": "race",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Mainsheet",
+      "purchaseMin": 5,
+      "purchaseMax": 5
+    },
+    "traveller": {
+      "mode": "race",
+      "unit": "%",
+      "min": -100,
+      "max": 100,
+      "step": 5,
+      "label": "Traveller (+ up to windward)",
+      "purchaseMin": 3,
+      "purchaseMax": 3
+    },
+    "cunningham": {
+      "mode": "race",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Cunningham",
+      "purchaseMin": 3,
+      "purchaseMax": 6
+    },
+    "outhaul": {
+      "mode": "race",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Outhaul",
+      "purchaseMin": 6,
+      "purchaseMax": 6
+    },
+    "vang": {
+      "mode": "race",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Boom vang",
+      "purchaseMin": 12,
+      "purchaseMax": 12
+    },
+    "jibSheet": {
+      "mode": "race",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Jib sheet",
+      "purchaseMin": 2,
+      "purchaseMax": 2
+    },
+    "jibLead": {
+      "mode": "race",
+      "unit": "holes",
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "label": "Jib lead car position"
+    },
+    "inhauler": {
+      "mode": "race",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Inhauler"
+    },
+    "mainHalyard": {
+      "mode": "race",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Main halyard fine-tune"
+    },
+    "jibHalyard": {
+      "mode": "race",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Jib halyard fine-tune"
+    },
+    "kiteHalyard": {
+      "mode": "down",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Gennaker halyard"
+    },
+    "tackLine": {
+      "mode": "down",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Tack line"
+    },
+    "kiteSheet": {
+      "mode": "down",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Gennaker sheet",
+      "purchaseMin": 1,
+      "purchaseMax": 1
+    },
+    "sprit": {
+      "mode": "down",
+      "unit": "%",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "label": "Bowsprit position",
+      "purchaseMin": 2,
+      "purchaseMax": 2
+    }
+  },
+  "baseRace": {
+    "backstay": 30,
+    "mainsheet": 60,
+    "traveller": 0,
+    "cunningham": 20,
+    "outhaul": 50,
+    "vang": 30,
+    "jibSheet": 60,
+    "jibLead": 5,
+    "inhauler": 30,
+    "mainHalyard": 50,
+    "jibHalyard": 50
+  },
+  "baseRaceDown": {
+    "mainsheet": 15,
+    "kiteHalyard": 100,
+    "tackLine": 50,
+    "kiteSheet": 50,
+    "sprit": 100
+  },
+  "calibration": {
+    "hydro.formFactor": 0.080497012778552,
+    "hydro.rrMul.fn20": 0.33046051500297996,
+    "hydro.rrMul.fn30": 0.7784863261402363,
+    "hydro.rrMul.fn40": 1.073120323283398,
+    "hydro.rrMul.fn50": 1.1163741931236748,
+    "hydro.rrMul.fn60": 1.7977615542681888,
+    "hydro.planingRelief": 0.06175231928990019,
+    "hydro.keelLiftSlope": 1.097454007820606,
+    "hydro.heelDragK": 0.6550800986349073,
+    "aero.hbiM": 1.4,
+    "aero.asymClMul": 1.055767731884013,
+    "aero.asymCdMul": 2.658197059093532
+  },
+  "provenance": {
+    "baseRace.backstay": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "no Melges 24 tuning guide is committed under data/tuning/, so unlike the J/70's this base trim is not a reading of a published guide: it is the mid-band starting point the app opens on, and the datum every shape delta in core/shape/toOrc.ts is measured against. The disagreement panel shows the honest no-guide-for-this-boat state rather than quoting the J/70's tables at a different rig"
+    },
+    "baseRace.cunningham": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.inhauler": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.jibHalyard": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.jibLead": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.jibSheet": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.mainHalyard": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.mainsheet": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.outhaul": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.traveller": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.vang": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRaceDown.kiteHalyard": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "halyard two-blocked at the masthead before the sheet is touched. App convention, same as the J/70's"
+    },
+    "baseRaceDown.kiteSheet": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "kite sheet mid-range, to be trimmed to the curl. core/solve/optimalTrim does not solve the downwind sheet. App convention, same as the J/70's"
+    },
+    "baseRaceDown.mainsheet": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "the mainsheet under the kite, on the same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat. Same app convention and the same value as the J/70's, which shape/sheeting.ts turns into about 67 degrees of boom; the sheeting model is class-independent, so the number carries across where a guide reading would not. Tier C cue, not a solve"
+    },
+    "baseRaceDown.sprit": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "sprit fully out. Class Rules C.11.1 requires the bowsprit to be fully retracted at all times except during a continuous hoist, while flying or while dropping the spinnaker, so on this class the pole is all the way out or the kite is not up \u2014 100 is the rule, not a chosen midpoint"
+    },
+    "baseRaceDown.tackLine": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "tack line mid-range: a trim control the sailor is expected to move, not a setting. App convention, same as the J/70's"
+    },
+    "controls.backstay.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.backstay.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.backstay.purchaseMax": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .54 Backstay 8:1, shall not be modified"
+    },
+    "controls.backstay.purchaseMin": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .54 Backstay 8:1, shall not be modified"
+    },
+    "controls.backstay.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.cunningham.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.cunningham.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.cunningham.purchaseMax": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .49 Mainsail Cunningham 3:1 - 6:1"
+    },
+    "controls.cunningham.purchaseMin": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .49 Mainsail Cunningham 3:1 - 6:1"
+    },
+    "controls.cunningham.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.forestayMm.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "range not published in the class rules; app convention for a workable forestay length adjustment sweep. F.3.3 offers both an adjustable and a fixed forestay system, and the choice may not change during an event"
+    },
+    "controls.forestayMm.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "range not published in the class rules; app convention for a workable forestay length adjustment sweep. F.3.3 offers both an adjustable and a fixed forestay system, and the choice may not change during an event"
+    },
+    "controls.forestayMm.step": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "range not published in the class rules; app convention for a workable forestay length adjustment sweep. F.3.3 offers both an adjustable and a fixed forestay system, and the choice may not change during an event"
+    },
+    "controls.inhauler.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "discrepancy: the app's control set carries an inhauler, but the Melges 24 class rules have no inhauler \u2014 Appendix H's purchase table lists none, and the only windward-sheeting system it permits is on the mainsail traveller (.30). Range and purchase are unregulated app assumptions, as they are on the J/70"
+    },
+    "controls.inhauler.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "discrepancy: the app's control set carries an inhauler, but the Melges 24 class rules have no inhauler \u2014 Appendix H's purchase table lists none, and the only windward-sheeting system it permits is on the mainsail traveller (.30). Range and purchase are unregulated app assumptions, as they are on the J/70"
+    },
+    "controls.inhauler.step": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "discrepancy: the app's control set carries an inhauler, but the Melges 24 class rules have no inhauler \u2014 Appendix H's purchase table lists none, and the only windward-sheeting system it permits is on the mainsail traveller (.30). Range and purchase are unregulated app assumptions, as they are on the J/70"
+    },
+    "controls.jibHalyard.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.jibHalyard.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.jibHalyard.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.jibLead.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "the class rules leave the jib sheet car's pin position optional (Appendix H .14) and publish no hole count; app convention, a typical 10-hole car track, the same as the J/70's"
+    },
+    "controls.jibLead.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "the class rules leave the jib sheet car's pin position optional (Appendix H .14) and publish no hole count; app convention, a typical 10-hole car track, the same as the J/70's"
+    },
+    "controls.jibLead.step": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "the class rules leave the jib sheet car's pin position optional (Appendix H .14) and publish no hole count; app convention, a typical 10-hole car track, the same as the J/70's"
+    },
+    "controls.jibSheet.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.jibSheet.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.jibSheet.purchaseMax": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .47 Jib sheets 2:1, shall not be modified"
+    },
+    "controls.jibSheet.purchaseMin": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .47 Jib sheets 2:1, shall not be modified"
+    },
+    "controls.jibSheet.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.kiteHalyard.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.kiteHalyard.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.kiteHalyard.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.kiteSheet.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.kiteSheet.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.kiteSheet.purchaseMax": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .48 Spinnaker sheets 1:1, shall not be modified"
+    },
+    "controls.kiteSheet.purchaseMin": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .48 Spinnaker sheets 1:1, shall not be modified"
+    },
+    "controls.kiteSheet.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.lowerTurns.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's"
+    },
+    "controls.lowerTurns.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's"
+    },
+    "controls.lowerTurns.step": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's"
+    },
+    "controls.mainHalyard.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.mainHalyard.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.mainHalyard.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.mainsheet.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.mainsheet.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.mainsheet.purchaseMax": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .46 Mainsail sheet 5:1, shall not be modified"
+    },
+    "controls.mainsheet.purchaseMin": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .46 Mainsail sheet 5:1, shall not be modified"
+    },
+    "controls.mainsheet.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.outhaul.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.outhaul.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.outhaul.purchaseMax": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .51 Mainsail outhaul 6:1"
+    },
+    "controls.outhaul.purchaseMin": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .51 Mainsail outhaul 6:1"
+    },
+    "controls.outhaul.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.sprit.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.sprit.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.sprit.purchaseMax": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .53 Bowsprit Launch system 2:1, shall not be modified"
+    },
+    "controls.sprit.purchaseMin": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .53 Bowsprit Launch system 2:1, shall not be modified"
+    },
+    "controls.sprit.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.tackLine.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.tackLine.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.tackLine.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.traveller.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; -100 to +100 % of track travel, positive up to windward"
+    },
+    "controls.traveller.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; -100 to +100 % of track travel, positive up to windward"
+    },
+    "controls.traveller.purchaseMax": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .52 Traveller Control 3:1, shall not be modified"
+    },
+    "controls.traveller.purchaseMin": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .52 Traveller Control 3:1, shall not be modified"
+    },
+    "controls.traveller.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; -100 to +100 % of track travel, positive up to windward"
+    },
+    "controls.upperTurns.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's"
+    },
+    "controls.upperTurns.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's"
+    },
+    "controls.upperTurns.step": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's"
+    },
+    "controls.vang.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.vang.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "controls.vang.purchaseMax": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .50 Boom Vang 12:1, shall not be modified"
+    },
+    "controls.vang.purchaseMin": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules Appendix H .50 Boom Vang 12:1, shall not be modified"
+    },
+    "controls.vang.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100 % travel"
+    },
+    "crew.maxKg": {
+      "source": "orc-cert-m24",
+      "kind": "published",
+      "note": "ORC certificate CrewWT 350 kg. Not a class limit (there is none) but the crew weight this certificate's VPP ran, which is exactly what the validation harness needs: validation/compare.ts replays the polar at crew.maxKg"
+    },
+    "crew.maxLegsOut": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules C.11.3: the crew hike sitting outboard between the foremost stanchion and the spinnaker turning block, and the helmsperson shall not hike at all. At the class minimum crew of three that leaves two hiking, which is what hydro/righting.ts reads (it takes maxLegsOut over crew.minCount). Unlike the J/70's C.3.3(c) this is not a flat cap of two: on a six-up boat five may hike, and a class where that distinction bites would need righting.ts to take the crew count it is actually solving"
+    },
+    "crew.minCount": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules C.2.1(a): the crew shall consist of a minimum of 3 to a maximum of 6 persons"
+    },
+    "crew.minKg": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "the Melges 24 class rules publish no crew weight limit at all \u2014 C.2.1(a) limits the crew to 3-6 persons and says nothing about weight \u2014 so the slider's lower stop has no source. Taken as 0.75 x crew.maxKg, the same span the J/70's published 255-340 kg limits describe. Only the range of the crew-weight slider depends on it; the polar is replayed at maxKg"
+    },
+    "hull.beamM": {
+      "source": "orc-cert-m24",
+      "kind": "published",
+      "note": "ORC certificate MB (maximum beam) 2.490 m"
+    },
+    "hull.bwlM": {
+      "source": "orc-cert-m24",
+      "kind": "assumed",
+      "note": "estimated as 0.85 x max beam, the J/70 file's documented method for the same unpublished field; no published waterline beam found"
+    },
+    "hull.dispKg": {
+      "source": "orc-cert-m24",
+      "kind": "published",
+      "note": "ORC certificate Dspl_Measurement 945 kg. The same certificate also prints Dspl_Sailing 1400 kg, which carries crew, sails and gear; the measurement displacement is the one the J/70 file uses for this field (811 kg there, against its 812 kg class dry weight)"
+    },
+    "hull.draftM": {
+      "source": "orc-cert-m24",
+      "kind": "published",
+      "note": "ORC certificate Draft 1.539 m"
+    },
+    "hull.gmM": {
+      "source": "orc-cert-m24",
+      "kind": "assumed",
+      "note": "estimated as 0.30 x beam, the J/70 file's documented method. Unlike the J/70 this class has no RM Measured to prefer over it: the ORC public feed publishes a Stability_Index but no righting moment per degree, so hull.rmMeasuredKgMPerDeg is absent and hydro/righting.ts falls back to this GM"
+    },
+    "hull.keelAreaM2": {
+      "source": "orc-cert-m24",
+      "kind": "assumed",
+      "note": "estimated as keelSpanM x an assumed 0.45 m average chord, the J/70 file's documented method; no published keel area or chord found. The class rules limit the combined fin and bulb weight (E.3.6, 300-313 kg) but publish no planform"
+    },
+    "hull.keelSpanM": {
+      "source": "orc-cert-m24",
+      "kind": "assumed",
+      "note": "estimated as 0.85 x draft, allowing ~15 % of draft for hull depth above the keel root; the J/70 file's documented method for the same unpublished field"
+    },
+    "hull.kgM": {
+      "source": "orc-cert-m24",
+      "kind": "assumed",
+      "note": "estimated as 0.35 x draft, a rule-of-thumb VCG fraction for a bulb-ballasted fin-keel sportboat; the J/70 file's documented method. The ORC public certificate carries no hydrostatics at all (ADR 0020)"
+    },
+    "hull.loaM": {
+      "source": "orc-cert-m24",
+      "kind": "published",
+      "note": "ORC certificate LOA 7.509 m"
+    },
+    "hull.lwlM": {
+      "source": "orc-cert-m24",
+      "kind": "assumed",
+      "note": "ORC certificate IMSL (VPP sailing length) 7.289 m, used as LWL. ADR 0020 warns that IMSL is not LWL and that citing it as published would be an invented number wearing a citation, so it is recorded as assumed: on this plumb-bow hull it is the closest published proxy, the same reading the J/70 file makes of its own IMS 'L'. Cross-check: the J/70's LWL/LOA ratio (6.691/6.910) applied to this LOA gives 7.271 m, 0.25 % away"
+    },
+    "hull.minDryWeightKg": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules C.6.1: weight of the boat in dry condition, minimum 809 kg"
+    },
+    "hull.wettedM2": {
+      "source": "orc-cert-m24",
+      "kind": "published",
+      "note": "ORC certificate WSS 12.28 m2"
+    },
+    "rig.boomOuterMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules C.9.4(a): boom outer point distance, maximum 3800 mm"
+    },
+    "rig.bowspritOuterMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules C.9.5(b): centre of the tack-line 'u' bolt to the foreside of the stem, maximum 1400 mm (the 2019 Measurement Form item 10 prints the same figure in its maximum column, which resolves the rules PDF's ragged min/max columns)"
+    },
+    "rig.chainplateYM": {
+      "source": "class-rules-m24-2026",
+      "kind": "derived",
+      "note": "half the midpoint of Class Rules Appendix H .4, transverse distance between the shroud plates 1725-1750 mm. Published, unlike the J/70's, which the J/70 file has to assume"
+    },
+    "rig.eM": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules C.9.4(a): boom outer point distance, maximum 3800 mm"
+    },
+    "rig.iM": {
+      "source": "class-rules-m24-2026",
+      "kind": "derived",
+      "note": "midpoint of Class Rules F.3.4 .8, forestay height 8300-8330 mm above the mast datum point. A manufacturing tolerance band, so the midpoint rather than the limit"
+    },
+    "rig.jM": {
+      "source": "class-rules-m24-2026",
+      "kind": "derived",
+      "note": "midpoint of Class Rules Appendix H .5, horizontal distance from the aft face of the furler drum recess to the forward edge of the mast step, 2405-2415 mm. The forestay tacks at the furler drum, so this is the foretriangle base to within the drum/mast-face datum"
+    },
+    "rig.mastLenM": {
+      "source": "class-rules-m24-2026",
+      "kind": "derived",
+      "note": "Class Rules F.3.4 .7, upper point height 9528 mm above the mast datum point. The spar continues above the band by an amount the rules do not publish, so this is the top of the mainsail hoist rather than the masthead. It is the right length for the model's mast frame, which measures every other rig height from the same datum: it puts the gooseneck at (mastLenM - pM) = 0.710 m, exactly the class lower point height, and the hounds at iM, exactly the class forestay height"
+    },
+    "rig.pM": {
+      "source": "class-rules-m24-2026",
+      "kind": "derived",
+      "note": "Class Rules F.3.4 .7 upper point height (max 9528 mm) minus .6 lower point height (min 710 mm), both above the mast datum point: the largest legal mainsail hoist"
+    },
+    "rig.spreaderLenM": {
+      "source": "class-rules-m24-2026",
+      "kind": "derived",
+      "note": "midpoint of Class Rules F.3.4 .15, spreader length 810-830 mm"
+    },
+    "rig.spreaderZM": {
+      "source": "class-rules-m24-2026",
+      "kind": "derived",
+      "note": "midpoint of Class Rules F.3.4 .16, spreader height 4285-4305 mm. Published, unlike the J/70's, which the J/70 file has to assume"
+    },
+    "rig.sweepDeg": {
+      "source": "class-rules-m24-2026",
+      "kind": "derived",
+      "note": "asin(0.245 / 0.820) from Class Rules F.3.4 .17 (230-260 mm from the aft side of the mast to a taut line across the shroud tips) over .15 (spreader length 810-830 mm), both band midpoints. The offset's datum is the mast's aft face rather than the spreader root, so this reads low: carrying the mast's half fore-and-aft section at spreader height (~50 mm, interpolating F.3.4 .1 and .3) would give 21 degrees instead"
+    },
+    "sails.asym.footMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.5.3 .3: spinnaker foot length, maximum 6300 mm (minimum 6000 mm)"
+    },
+    "sails.asym.halfMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.5.3 .5: spinnaker half width, maximum 5860 mm"
+    },
+    "sails.asym.leechMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.5.3 .2: spinnaker leech length, maximum 11078 mm (minimum 10000 mm)"
+    },
+    "sails.asym.luffMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.5.3 .1: spinnaker luff length, maximum 11585 mm (minimum 11285 mm)"
+    },
+    "sails.asym.ratedAreaM2": {
+      "source": "orc-cert-m24",
+      "kind": "published",
+      "note": "ORC certificate Area_Asym 52.95 m2, for the certificate this file's polar comes from. The class maxima below describe a slightly larger sail: the ORC spinnaker-area formula over them gives 56.2 m2, so this certificate's kite is about 6 % under the limit. Both numbers are kept as they are rather than one being bent to the other \u2014 the geometry is what the class allows, the area is what the boat behind the polar actually measured"
+    },
+    "sails.jib.halfMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "assumed",
+      "note": "straight-leech triangle, 0.50 x LP. See sails.jib.quarterMm"
+    },
+    "sails.jib.lpMm": {
+      "source": "orc-cert-m24",
+      "kind": "derived",
+      "note": "the class rules publish the jib's foot length (G.4.3 .3, 2926-3026 mm) but never its luff perpendicular. LP = 2 x rated headsail area / luff = 2 x 11.53 / 8.560, a triangular approximation. On the J/70, where both are published, the same formula gives 2502 mm against a published LP of 2450 mm, so it reads about 2 % high. The foot length is not usable as LP here: it would over-read the sail by 12 %, because the clew is well aft of the perpendicular from the luff"
+    },
+    "sails.jib.luffMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.4.3 .1: jib luff length, maximum 8560 mm (minimum 8460 mm)"
+    },
+    "sails.jib.quarterMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "assumed",
+      "note": "not published: G.4.3 limits the jib's luff, leech, foot and top width but no girths, because G.4.2(d) requires the leech to be negative (hollow) and an unroached sail needs no girth cap. Taken as the straight-leech triangle, 0.75 x LP. On the J/70 the same method gives 1838 mm against a published 1860, about 1 % low; on this sail, whose leech is hollow rather than straight, it is an over-estimate instead"
+    },
+    "sails.jib.ratedAreaM2": {
+      "source": "orc-cert-m24",
+      "kind": "published",
+      "note": "ORC certificate Area_Jib 11.53 m2, for the certificate this file's polar comes from"
+    },
+    "sails.jib.threeQuarterMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "assumed",
+      "note": "straight-leech triangle, 0.25 x LP. See sails.jib.quarterMm"
+    },
+    "sails.jib.topMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.4.3 .4: jib top width, maximum 50 mm"
+    },
+    "sails.main.battens": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.3.3(c): four battens dividing the leech into five equal parts +/- 100 mm"
+    },
+    "sails.main.footMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "derived",
+      "note": "the boom outer point distance, C.9.4(a) maximum 3800 mm \u2014 the same number as rig.eM. G.3.4 limits the mainsail's foot median (9200 mm, head to foot midpoint) rather than its foot length, so the spar limit is what bounds the foot"
+    },
+    "sails.main.halfMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.3.4 .3: mainsail half width, maximum 2700 mm"
+    },
+    "sails.main.leechMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.3.4 .1: mainsail leech length, maximum 9590 mm"
+    },
+    "sails.main.luffMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "derived",
+      "note": "the largest legal hoist, F.3.4 .7 minus .6 \u2014 the same number as rig.pM. The class rules limit the mainsail's leech, girths and foot median but not its luff, because the mast bands already do"
+    },
+    "sails.main.quarterMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "assumed",
+      "note": "not published: G.3.4 limits the half, three-quarter and top widths but not the quarter width. Linear interpolation between the published foot (3800 mm) and half (2700 mm) widths. On the J/70, whose quarter width is published, the same method gives 2505 against a published 2570 mm, so it reads about 2.6 % low"
+    },
+    "sails.main.ratedAreaM2": {
+      "source": "orc-cert-m24",
+      "kind": "published",
+      "note": "ORC certificate Area_Main 22.04 m2, for the certificate this file's polar comes from"
+    },
+    "sails.main.threeQuarterMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.3.4 .4: mainsail three-quarter width, maximum 1680 mm"
+    },
+    "sails.main.topMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "published",
+      "note": "Class Rules G.3.4 .5: mainsail top width, maximum 175 mm"
+    },
+    "sails.main.upperMm": {
+      "source": "class-rules-m24-2026",
+      "kind": "assumed",
+      "note": "not published: G.3.4 limits no 7/8 width. Linear interpolation between the published three-quarter (1680 mm) and top (175 mm) widths. On the J/70, whose upper width is published, the same method gives 894 against a published 880 mm, so it reads about 1.6 % high"
+    }
+  },
+  "sources": {
+    "app-convention": {
+      "title": "Sailflow app UI convention (not a published source)",
+      "url": "",
+      "retrieved": "2026-08-25",
+      "edition": "internal"
+    },
+    "class-rules-m24-2026": {
+      "title": "International Melges 24 Class Rules, effective 30 January 2026",
+      "url": "https://media.sailing.org/sailing/wp-content/uploads/2023/04/30154150/M24_CR_2026-01Jan-30.pdf",
+      "retrieved": "2026-08-26",
+      "edition": "Effective date 2026-January-30, Status: Approved. Linked from World Sailing's class page (https://www.sailing.org/document/2023-apr-19-class-rules-melgels-24/). ADR 0020 expected the 2017 edition, because the link the class association's own Measurement & Inspection page carries (d7qh6ksdplczd.cloudfront.net/.../M24CR190422.pdf, the 2022 rules) points at a host that no longer resolves; the current edition is reachable through World Sailing instead"
+    },
+    "orc-cert-m24": {
+      "title": "ORC certificate, MELGES 24 'HAIZEA' POR-210, RefNo 03510004JAJ",
+      "url": "https://data.orc.org/public/WPub.dll?action=DownBoatRMS&RefNo=03510004JAJ&ext=json",
+      "retrieved": "2026-08-26",
+      "edition": "ESP national authority, certificate 21001, C_Type INTL, issued 2026-03-30. A per-certificate document, not a class one-design certificate: ADR 0020 measured the spread across 40 Melges 24 certificates at up to 11.4 %, driven by measured displacement spanning 821-1002 kg, so every number taken from it names this boat and not the class"
+    },
+    "orc-vpp-2023": {
+      "title": "ORC VPP Documentation",
+      "url": "https://orc.org/uploads/files/ORC-VPP-Documentation-2023.pdf",
+      "retrieved": "2026-08-25",
+      "edition": "2023 edition. The coefficient tables in src/core/aero/orc/tables.ts are transcribed from this edition. ORC renumbered the sail tables in the 2026 edition (symmetric 5.6 -> 5.8, asymmetric on centreline 5.7 -> 5.9, asymmetric on pole 5.8 -> 5.10) and changed the asymmetric-on-centreline coefficients; every orcTable label in this file is 2023 numbering"
+    }
+  },
+  "polar": {
+    "schemaVersion": 1,
+    "source": {
+      "id": "orc-rms-m24-03510004JAJ",
+      "title": "ORC certificate allowances, MELGES 24 'HAIZEA' POR-210, RefNo 03510004JAJ",
+      "url": "https://data.orc.org/public/WPub.dll?action=DownBoatRMS&RefNo=03510004JAJ&ext=json",
+      "retrieved": "2026-08-26",
+      "vppVersion": "ORC VPP, certificate issued 2026-03-30",
+      "issued": "2026-03-30"
+    },
+    "twsKt": [4, 6, 8, 10, 12, 14, 16, 20, 24],
+    "rows": [
+      {
+        "twsKt": 4,
+        "sail": "jib",
+        "kind": "vmgUp",
+        "twaDeg": 46.3,
+        "bsKt": 3.3,
+        "vmgKt": 2.28,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 4,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 52,
+        "bsKt": 3.58,
+        "vmgKt": 2.2,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 4,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 60,
+        "bsKt": 3.86,
+        "vmgKt": 1.93,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 4,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 75,
+        "bsKt": 4.08,
+        "vmgKt": 1.06,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 4,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 90,
+        "bsKt": 4,
+        "vmgKt": 0,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 4,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 110,
+        "bsKt": 4.11,
+        "vmgKt": -1.41,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 4,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 120,
+        "bsKt": 3.98,
+        "vmgKt": -1.99,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 4,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 135,
+        "bsKt": 3.53,
+        "vmgKt": -2.5,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 4,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 150,
+        "bsKt": 2.92,
+        "vmgKt": -2.53,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 4,
+        "sail": "asym",
+        "kind": "vmgDn",
+        "twaDeg": 139.9,
+        "bsKt": 3.31,
+        "vmgKt": -2.53,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 6,
+        "sail": "jib",
+        "kind": "vmgUp",
+        "twaDeg": 44.5,
+        "bsKt": 4.56,
+        "vmgKt": 3.25,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 6,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 52,
+        "bsKt": 5,
+        "vmgKt": 3.08,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 6,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 60,
+        "bsKt": 5.28,
+        "vmgKt": 2.64,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 6,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 75,
+        "bsKt": 5.48,
+        "vmgKt": 1.42,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 6,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 90,
+        "bsKt": 5.58,
+        "vmgKt": 0,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 6,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 110,
+        "bsKt": 5.73,
+        "vmgKt": -1.96,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 6,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 120,
+        "bsKt": 5.59,
+        "vmgKt": -2.79,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 6,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 135,
+        "bsKt": 5.03,
+        "vmgKt": -3.56,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 6,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 150,
+        "bsKt": 4.24,
+        "vmgKt": -3.67,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 6,
+        "sail": "asym",
+        "kind": "vmgDn",
+        "twaDeg": 143.2,
+        "bsKt": 4.58,
+        "vmgKt": -3.67,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 8,
+        "sail": "jib",
+        "kind": "vmgUp",
+        "twaDeg": 41.7,
+        "bsKt": 5.28,
+        "vmgKt": 3.94,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 8,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 52,
+        "bsKt": 5.86,
+        "vmgKt": 3.61,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 8,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 60,
+        "bsKt": 6.09,
+        "vmgKt": 3.05,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 8,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 75,
+        "bsKt": 6.25,
+        "vmgKt": 1.62,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 8,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 90,
+        "bsKt": 6.44,
+        "vmgKt": 0,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 8,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 110,
+        "bsKt": 6.66,
+        "vmgKt": -2.28,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 8,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 120,
+        "bsKt": 6.57,
+        "vmgKt": -3.28,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 8,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 135,
+        "bsKt": 6.14,
+        "vmgKt": -4.34,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 8,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 150,
+        "bsKt": 5.35,
+        "vmgKt": -4.63,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 8,
+        "sail": "asym",
+        "kind": "vmgDn",
+        "twaDeg": 147.6,
+        "bsKt": 5.48,
+        "vmgKt": -4.63,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 10,
+        "sail": "jib",
+        "kind": "vmgUp",
+        "twaDeg": 39.4,
+        "bsKt": 5.69,
+        "vmgKt": 4.4,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 10,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 52,
+        "bsKt": 6.33,
+        "vmgKt": 3.9,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 10,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 60,
+        "bsKt": 6.55,
+        "vmgKt": 3.28,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 10,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 75,
+        "bsKt": 6.76,
+        "vmgKt": 1.75,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 10,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 90,
+        "bsKt": 6.85,
+        "vmgKt": 0,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 10,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 110,
+        "bsKt": 7.47,
+        "vmgKt": -2.55,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 10,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 120,
+        "bsKt": 7.43,
+        "vmgKt": -3.71,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 10,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 135,
+        "bsKt": 6.91,
+        "vmgKt": -4.89,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 10,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 150,
+        "bsKt": 6.2,
+        "vmgKt": -5.37,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 10,
+        "sail": "asym",
+        "kind": "vmgDn",
+        "twaDeg": 151.6,
+        "bsKt": 6.12,
+        "vmgKt": -5.38,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 12,
+        "sail": "jib",
+        "kind": "vmgUp",
+        "twaDeg": 39.1,
+        "bsKt": 5.88,
+        "vmgKt": 4.56,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 12,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 52,
+        "bsKt": 6.54,
+        "vmgKt": 4.03,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 12,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 60,
+        "bsKt": 6.84,
+        "vmgKt": 3.42,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 12,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 75,
+        "bsKt": 7.26,
+        "vmgKt": 1.88,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 12,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 90,
+        "bsKt": 7.37,
+        "vmgKt": 0,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 12,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 110,
+        "bsKt": 8.05,
+        "vmgKt": -2.75,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 12,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 120,
+        "bsKt": 8.36,
+        "vmgKt": -4.18,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 12,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 135,
+        "bsKt": 7.77,
+        "vmgKt": -5.49,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 12,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 150,
+        "bsKt": 6.9,
+        "vmgKt": -5.98,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 12,
+        "sail": "asym",
+        "kind": "vmgDn",
+        "twaDeg": 150.5,
+        "bsKt": 6.87,
+        "vmgKt": -5.98,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 14,
+        "sail": "jib",
+        "kind": "vmgUp",
+        "twaDeg": 39,
+        "bsKt": 5.96,
+        "vmgKt": 4.63,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 14,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 52,
+        "bsKt": 6.65,
+        "vmgKt": 4.09,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 14,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 60,
+        "bsKt": 7,
+        "vmgKt": 3.5,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 14,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 75,
+        "bsKt": 7.56,
+        "vmgKt": 1.96,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 14,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 90,
+        "bsKt": 8,
+        "vmgKt": 0,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 14,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 110,
+        "bsKt": 8.56,
+        "vmgKt": -2.93,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 14,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 120,
+        "bsKt": 9.1,
+        "vmgKt": -4.55,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 14,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 135,
+        "bsKt": 8.86,
+        "vmgKt": -6.26,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 14,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 150,
+        "bsKt": 7.63,
+        "vmgKt": -6.61,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 14,
+        "sail": "asym",
+        "kind": "vmgDn",
+        "twaDeg": 147.2,
+        "bsKt": 7.86,
+        "vmgKt": -6.61,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 16,
+        "sail": "jib",
+        "kind": "vmgUp",
+        "twaDeg": 39.2,
+        "bsKt": 6,
+        "vmgKt": 4.65,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 16,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 52,
+        "bsKt": 6.73,
+        "vmgKt": 4.14,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 16,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 60,
+        "bsKt": 7.11,
+        "vmgKt": 3.56,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 16,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 75,
+        "bsKt": 7.77,
+        "vmgKt": 2.01,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 16,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 90,
+        "bsKt": 8.46,
+        "vmgKt": 0,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 16,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 110,
+        "bsKt": 9.04,
+        "vmgKt": -3.09,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 16,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 120,
+        "bsKt": 9.7,
+        "vmgKt": -4.85,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 16,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 135,
+        "bsKt": 10.04,
+        "vmgKt": -7.1,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 16,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 150,
+        "bsKt": 8.58,
+        "vmgKt": -7.43,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 16,
+        "sail": "asym",
+        "kind": "vmgDn",
+        "twaDeg": 145.4,
+        "bsKt": 9.03,
+        "vmgKt": -7.43,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 20,
+        "sail": "jib",
+        "kind": "vmgUp",
+        "twaDeg": 39.7,
+        "bsKt": 6.08,
+        "vmgKt": 4.68,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 20,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 52,
+        "bsKt": 6.83,
+        "vmgKt": 4.2,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 20,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 60,
+        "bsKt": 7.25,
+        "vmgKt": 3.63,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 20,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 75,
+        "bsKt": 8.06,
+        "vmgKt": 2.09,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 20,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 90,
+        "bsKt": 9.05,
+        "vmgKt": 0,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 20,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 110,
+        "bsKt": 9.91,
+        "vmgKt": -3.39,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 20,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 120,
+        "bsKt": 10.84,
+        "vmgKt": -5.42,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 20,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 135,
+        "bsKt": 12.58,
+        "vmgKt": -8.9,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 20,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 150,
+        "bsKt": 11.49,
+        "vmgKt": -9.95,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 20,
+        "sail": "asym",
+        "kind": "vmgDn",
+        "twaDeg": 141.8,
+        "bsKt": 12.66,
+        "vmgKt": -9.95,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 24,
+        "sail": "jib",
+        "kind": "vmgUp",
+        "twaDeg": 41.4,
+        "bsKt": 6.09,
+        "vmgKt": 4.57,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 24,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 52,
+        "bsKt": 6.79,
+        "vmgKt": 4.18,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 24,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 60,
+        "bsKt": 7.26,
+        "vmgKt": 3.63,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 24,
+        "sail": "jib",
+        "kind": "angle",
+        "twaDeg": 75,
+        "bsKt": 8.2,
+        "vmgKt": 2.12,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 24,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 90,
+        "bsKt": 9.43,
+        "vmgKt": 0,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 24,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 110,
+        "bsKt": 11.03,
+        "vmgKt": -3.77,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 24,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 120,
+        "bsKt": 12.13,
+        "vmgKt": -6.06,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 24,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 135,
+        "bsKt": 14.45,
+        "vmgKt": -10.22,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 24,
+        "sail": "asym",
+        "kind": "angle",
+        "twaDeg": 150,
+        "bsKt": 15.08,
+        "vmgKt": -13.06,
+        "heelDeg": null
+      },
+      {
+        "twsKt": 24,
+        "sail": "asym",
+        "kind": "vmgDn",
+        "twaDeg": 147,
+        "bsKt": 15.57,
+        "vmgKt": -13.06,
+        "heelDeg": null
+      }
+    ],
+    "notes": "Fetched from ORC's public, unauthenticated certificate feed as JSON and transformed here with no hand editing (the generator is quoted in the phase-05 progress log). Four things differ from the J/70's committed Speed Guide and each is a judgement this file has to state rather than hide.\n\n1. ORC publishes allowances in seconds per nautical mile, not speeds. bsKt = 3600/allowance, which is exact. The Beat and Run allowances are VMG made good, so their boat speed is 3600/allowance divided by cos(BeatAngle) or cos(GybeAngle); vmgKt for those rows is 3600/allowance itself, negative downwind by this schema's sign convention. vmgKt on the fixed-angle rows is bsKt x cos(TWA).\n\n2. The feed does not tag which sail the VPP chose at each fixed angle; the sail-resolved Speed Guide is a paid per-boat product (ADR 0020). The tag here is read off the boat's sail plan, not off the VPP: a Melges 24 carries one headsail and one sprit-tacked asymmetric, so the 52, 60 and 75 degree rows are the jib and the 90 degrees and beyond rows are the kite. 90 degrees is the weakest of those calls -- in the lightest winds the VPP may still be under the jib there -- and it is one of the three angles ADR 0012's hold-out gate scores, so a failure on the TWS 8 or 14 90-degree row should be read as possibly a sail-tag question rather than a model error.\n\n3. The feed publishes no heel column at all (all 284 keys of the record were enumerated; there is no heel, reef or flat field), so heelDeg is null on every row. Calibration stage 3, the heel pass, has nothing to fit against on this class and says so rather than fitting the boat to a zero.\n\n4. An ORC polar is issued per certificate, for one measured hull, not per class. ADR 0020 measured the spread across 40 Melges 24 certificates at up to 11.4 %, driven by measured displacement spanning 821-1002 kg. This is HAIZEA, POR-210, ESP INTL certificate 21001 issued 2026-03-30 -- not 'the Melges 24's polar', which is not a well-formed phrase.\n\nThe DW180, DW165, DW150, WL, CR and OC allowances the feed also carries are course and fixed-heading scoring allowances rather than polar rows, and are not transcribed."
+  }
+}
