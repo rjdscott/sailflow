@@ -1,6 +1,6 @@
 # Epic 1: a validated J/70 rig-tune and trim analyser, live on GitHub Pages, that the owner uses before every regatta day
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 - **Started:** 2026-08-25
 - **Owner:** Rob Scott, executed autonomously by Claude (Fable orchestrating, Sonnet/Opus subagents)
 
@@ -23,13 +23,13 @@ three.js, Rust, multiplayer, accounts, backend.
 |----|-------|--------|-------------|
 | 00 | Repo hygiene + tooling | 🟢 Completed | 2026-08-25 |
 | 01 | Contracts + data | 🟢 Completed | 2026-08-25 |
-| 02 | Solver + calibration + validation | 🟡 In progress | 2026-08-25 |
+| 02 | Solver + calibration + validation | ⏸ Deferred | 2026-08-26 |
 | 03 | Design system + app shell | 🟢 Completed | 2026-08-25 |
 | 04 | Race mode | 🟢 Completed | 2026-08-25 |
 | 05 | Dock mode | 🟢 Completed | 2026-08-25 |
 | 06 | Disagreement panel + tuning log | 🟢 Completed | 2026-08-25 |
 | 07 | Drills | 🟢 Completed | 2026-08-25 |
-| 08 | PWA, polish, docs close-out | 🟡 In progress | 2026-08-25 |
+| 08 | PWA, polish, docs close-out | 🟢 Completed | 2026-08-26 |
 | 09 | Desktop layout + visual excellence | 🟢 Completed | 2026-08-25 |
 
 Order: 00 → 01 → 02 ∥ 03 → 04 ∥ 05 → 06 → 07 → 08. Phase 03 builds against a

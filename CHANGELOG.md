@@ -13,7 +13,38 @@ undiagnosable.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-08-26
+
+Close-out release: Epic 1 (`docs/plans/2026-08-25-mvp-analyser`) and the UX
+excellence plan are closed, the acceptance criteria are walked on the live
+site, the phase-two plan is published, and the docs and audit punchlists are
+reconciled with the code. The polar hold-out gate still reads FAIL — 8/10
+(TWS 14 upwind and downwind VMG); that residual is the first phase of
+`docs/plans/2026-08-26-phase-two/`, not a footnote.
+
+### Added
+
+- **Phase-two plan** (`docs/plans/2026-08-26-phase-two/`): downwind physics
+  that passes its gate, shareable trim URLs with pin-and-compare, tuning
+  guides as data, onboarding and explainers, a second boat class, phone
+  performance.
+- `validation/hash.test.ts` pins what the boat hash covers (#88).
+- **Release-readiness audit** `docs/audits/2026-08-26-release-01/`: a
+  cold-reader pass over the README, docs and live site; its P0/P1 docs
+  findings are fixed in this release, code findings carried in its `todo.md`.
+
 ### Changed
+
+- **README rewritten** for engineers and sailors: what it is, why it is
+  different, the known limitation in numbers, architecture, docs map. Audit
+  release-01 then corrected it: the held-out residuals are the model running
+  _fast_ and _wide_, not slow and high, and the polar — not the model — is the
+  one that runs 172° (H-01); `uv` is named as a prerequisite because
+  `make check` needs it (H-15); the audit and runbook counts match `ls` (M-05);
+  and the README now says the repo was built by Claude Code agents, so the
+  progress logs that name models parse (M-06).
+- **Boat hash covers solver data only** (#88): `provenance` and `sources`
+  prose no longer move it, so a note edit does not fail the golden test.
 
 - **First load −31 %** (#78, ux-03 M-23): `PROVENANCE.md`, `ASSUMPTIONS.md`
   and the validation report load when their sheet opens on More; More, Log
@@ -22,13 +53,35 @@ undiagnosable.
 
 ### Fixed
 
+- **ux-03 P1 Mediums** (#91): drills no longer print "Finding the optimum…"
+  while the target is withheld; Δ sign convention stated; 44 px hit areas on
+  instrument `?` buttons; chip rows are groups; bottom nav honours the
+  safe-area inset; the HELM gauge draws a track; phone verdict printed once;
+  regret card titled once; "More/Fewer readings" disclosure.
+- **Audit punchlists reconciled** (#89): dc-01, ux-01, ux-02 and ux-03 ticked
+  against git; two `ASSUMPTIONS.md` rows that #83 had reverted (`TACK_TRAVEL_M`
+  0.3 m, `LUFF_FORWARD_FRACTION`) restored.
+- `hash.test.ts` typechecks and is formatted; the docs link check skips agent
+  worktrees (#90).
+- **Audit release-01** (`docs/audits/2026-08-26-release-01/`): the repo and the
+  live site read cold by a first-time visitor. 17 findings, no Criticals; the
+  P0/P1 documentation findings are fixed in the same commit, the code ones are
+  on its punchlist.
+
 - **The kite's head opens as the sheet eases** (#80): the drawn leech bulges to
   leeward on a profile peaking at ~63 % height instead of running straight
   into the masthead, which closed every upper section.
-- **The 3D perf gate measures work, not the clock** (#66): mount plus the
-  first render, so a tab opened behind another window is not judged slow for
-  having been hidden; budget 800 ms after a cold desktop GPU measured 315 ms.
-  The compact model-vs-guides strip wraps its cells.
+- **Downwind default no longer demotes itself to tier C** (#86): the shape
+  datum under the kite is the downwind base trim, so an eased main is not
+  measured against a beat's leech twist. `%POLAR` and BSP read B under the
+  kite. Held-out validation rows byte-identical.
+- **`solveEquilibrium` rejects a non-finite condition** (#87) instead of
+  returning the seed-table speed with `converged: false`.
+- **The 3D perf gate measures work, not the clock** (#66, also summarised under
+  0.2.0's ux-03 H-12 below): mount plus the first render, so a tab opened
+  behind another window is not judged slow for having been hidden; budget
+  800 ms after a cold desktop GPU measured 315 ms. The compact model-vs-guides
+  strip wraps its cells.
 - Audit docs-consistency-01 (#81, #82, #83): the shipped validation report now
   gates ADR 0012's ten held-out rows (it scored the superseded 25-row set);
   `pnpm validate` propagates its exit code; the golden corpus fails rather
@@ -38,9 +91,12 @@ undiagnosable.
 
 ## [0.2.0] — 2026-08-26
 
-Everything from #41 to #80: drills v2 and the closed loop, the cockpit with
-the three.js hero, the desktop layout, the gennaker and the downwind
-corrections. The sections below were written as the work landed.
+Everything from #41 to #80 that had been written up when 0.2.0 was cut: drills
+v2 and the closed loop, the cockpit with the three.js hero, the desktop
+layout, the gennaker and the downwind corrections. The sections below were
+written as the work landed. Three PRs in that range were written up later and
+so appear under 0.3.0 above rather than here: #78 (first-load bundle), #80
+(kite head) and the close-out detail of #66.
 
 ### Changed
 
