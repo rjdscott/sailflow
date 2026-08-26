@@ -15,7 +15,6 @@
   import RigElevation from '../RigElevation.svelte';
   import { CONTROLS, race } from '../store.svelte';
   import ControlRow from './ControlRow.svelte';
-  import { explainText, explainTitle } from './copy';
 
   /**
    * The rig, which is not a live-trim panel: class rule C.9.5(a) freezes the
@@ -197,9 +196,14 @@
   {/snippet}
 </Panel>
 
-<Sheet bind:open={sheetOpen} title={explainTitle(explaining)}>
-  <p class="explainer">{explainText(explaining)}</p>
-</Sheet>
+<!-- The explainer copy and its schematic are a chunk, not entry weight: they
+     are only ever read after a deliberate tap on the `?` (ADR 0014's first-load
+     budget). Mounted already-open, which is what `Sheet` expects. -->
+{#if sheetOpen}
+  {#await import('./ExplainSheet.svelte') then S}
+    <S.default bind:open={sheetOpen} id={explaining} />
+  {/await}
+{/if}
 
 <Sheet bind:open={chartOpen} title={chart ? chart.source.title : 'Gear chart'}>
   {#if chart}<p class="base">{chart.base}</p>{/if}
@@ -341,12 +345,5 @@
     margin: 0 0 var(--space-2);
     font-size: var(--text-xs);
     color: var(--ink-2);
-  }
-
-  .explainer {
-    margin: 0;
-    font-size: var(--text-md);
-    line-height: 1.55;
-    color: var(--ink);
   }
 </style>

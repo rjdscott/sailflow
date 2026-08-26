@@ -365,7 +365,12 @@
     {/if}
   </div>
 
-  {#if wide}
+  <!-- Not while the log is empty: the left column already says "No entries
+       yet — start today's entry", and a second card beside it saying "Pick an
+       entry to edit it" contradicted it, on a screen that was 85 % empty
+       anyway (audit release-01 M-10). Once there is an entry, or the editor is
+       open, the pane earns its column. -->
+  {#if wide && (editorOpen || logStoreUi.entries.length > 0)}
     <div class="col-secondary">
       <section class="card">
         <h2 class="section-title">{editingId ? 'Edit entry' : 'New entry'}</h2>

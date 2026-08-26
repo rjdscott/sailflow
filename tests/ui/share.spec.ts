@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { asReturningVisitor, expect, test } from './fixtures';
 
 /**
  * The share link, end to end (ADR 0019). Vitest proves the codec round-trips;
@@ -17,6 +18,9 @@ async function fresh(browser: import('@playwright/test').Browser, clipboard = fa
   const context = await browser.newContext(
     clipboard ? { permissions: ['clipboard-read', 'clipboard-write'] } : {},
   );
+  // These contexts are built here rather than taken from the `page` fixture,
+  // so they need the same first-run tour dismissal the fixture applies.
+  await asReturningVisitor(context);
   const page = await context.newPage();
   return { context, page };
 }

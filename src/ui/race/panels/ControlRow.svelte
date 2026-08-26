@@ -5,6 +5,7 @@
   import { BASE_RACE } from '../../stores/conditions.svelte';
   import { NOT_SOLVED_HINT, optimum } from '../optimum.svelte';
   import { CONTROLS, race, type Chevron } from '../store.svelte';
+  import { settings } from '../../stores/settings.svelte';
 
   /**
    * One control in a cockpit panel: the linked slider + numeric pair, its
@@ -65,52 +66,74 @@
   const chevLabel = $derived(
     chev ? `${chev.dir > 0 ? 'Up' : 'Down'} gains ${chev.gainKt.toFixed(2)} kt` : '',
   );
+
+  /**
+   * Learn is the tier that is reading rather than trimming, so the explainer
+   * is on the page instead of behind the `?` (phase-two 04). A `{#if}` rather
+   * than the usual `[data-tier]` CSS: the alternative renders eighteen SVGs
+   * into every cockpit and hides them, which is the one thing the phone
+   * cannot afford. The `?` stays for the full paragraph either way.
+   *
+   * Dynamically imported, so the schematics and the copy stay out of the
+   * first load for the two tiers that never show them.
+   */
+  const inline = $derived(!settings.advanced);
 </script>
 
-<div class="row">
-  <div class="grow">
-    <Slider
-      label={spec.label}
-      bind:value={values[id]}
-      min={spec.min}
-      max={spec.max}
-      step={spec.step}
-      unit={spec.unit}
-      decimals={spec.step < 1 ? 1 : 0}
-      {tick}
-      tickWord="base trim"
-      {locked}
-      lockReason={lockReason ?? undefined}
-      {tier}
-      {target}
-      targetStale={optimum.stale || optimum.busy}
-      highlight={race.hovering?.includes(id) ?? false}
-      hint={optimumBug && !trimmed.has(id)
-        ? NO_EFFECT
-        : optimumBug && unsolved
-          ? NOT_SOLVED_HINT
-          : undefined}
-    />
-  </div>
-  <div class="side">
-    {#if chev}
-      <!-- Every chevron rendered is a gain, so the colour is one accent for
+<!-- One root element per control, so the panel's own `* + *` hairline still
+     falls between controls rather than between a control and its explainer. -->
+<div class="control">
+  <div class="row">
+    <div class="grow">
+      <Slider
+        label={spec.label}
+        bind:value={values[id]}
+        min={spec.min}
+        max={spec.max}
+        step={spec.step}
+        unit={spec.unit}
+        decimals={spec.step < 1 ? 1 : 0}
+        {tick}
+        tickWord="base trim"
+        {locked}
+        lockReason={lockReason ?? undefined}
+        {tier}
+        {target}
+        targetStale={optimum.stale || optimum.busy}
+        highlight={race.hovering?.includes(id) ?? false}
+        hint={optimumBug && !trimmed.has(id)
+          ? NO_EFFECT
+          : optimumBug && unsolved
+            ? NOT_SOLVED_HINT
+            : undefined}
+      />
+    </div>
+    <div class="side">
+      {#if chev}
+        <!-- Every chevron rendered is a gain, so the colour is one accent for
            both directions; only the glyph says which way, and the title says
            how much (audit ux-01 M-02). Analyse tier only: a gradient on every
            row is a wall of arrows in the tier you are trimming in. -->
-      <span class="chev" role="img" title={chevLabel} aria-label={chevLabel}>
-        {chev.dir > 0 ? '▲' : '▼'}
-      </span>
-    {/if}
-    <button
-      type="button"
-      class="info hit-44"
-      onclick={() => onexplain(id)}
-      aria-label="What {spec.label} does"
-    >
-      ?
-    </button>
+        <span class="chev" role="img" title={chevLabel} aria-label={chevLabel}>
+          {chev.dir > 0 ? '▲' : '▼'}
+        </span>
+      {/if}
+      <button
+        type="button"
+        class="info hit-44"
+        onclick={() => onexplain(id)}
+        aria-label="What {spec.label} does"
+      >
+        ?
+      </button>
+    </div>
   </div>
+
+  {#if inline}
+    {#await import('./InlineExplain.svelte') then M}
+      <M.default {id} />
+    {/await}
+  {/if}
 </div>
 
 <style>
