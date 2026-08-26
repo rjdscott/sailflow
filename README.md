@@ -1,7 +1,8 @@
 # Sailflow
 
-A free, browser-based rig-tune and sail-trim trainer for the J/70. No
-backend, no account, works offline on a phone after the first visit.
+A free, browser-based rig-tune and sail-trim trainer for one-design
+sportboats — the J/70 first, the Melges 24 second. No backend, no account,
+works offline on a phone after the first visit.
 
 ## ▶ Try it: **[rjdscott.github.io/sailflow](https://rjdscott.github.io/sailflow/)**
 
@@ -11,7 +12,7 @@ backend, no account, works offline on a phone after the first visit.
 (A/B/C); the coach line says what to move and what it is worth; the 3D view
 is the flying shape the model solved.*
 
-Sailflow answers two questions a J/70 crew asks every race day:
+Sailflow answers two questions a one-design crew asks every race day:
 
 - **Dock mode** — *what shroud, rake and forestay setting do I commit to for
   today's forecast, and what does it cost me at each end of the range?*
@@ -47,15 +48,20 @@ Most trim advice is a table in a PDF. Sailflow is a model you can argue with:
   the gate verdict in the job summary, so a regression is visible in the PR.
   The current verdict, and the rows it fails, are below.
 - **Deterministic core.** Same inputs, same outputs. No randomness, no clock,
-  no framework in `src/core`. A golden corpus of 65 solved cases catches any
+  no framework in `src/core`. A golden corpus of solved cases per boat catches any
   drift.
 
-## Current state (v0.3.0, 2026-08-26)
+## Current state (v0.4.0, 2026-08-26)
 
 Complete and live: Race cockpit with 3D hero (three.js, lazy-loaded, first-
 frame budget), gennaker mode, Dock mode with expected-regret scoring over a
-forecast distribution, disagreement panel, tuning log with export/import,
-drills v2, PWA offline, dark/light themes, desktop-first layout down to phone.
+forecast distribution, disagreement panel driven by whatever guides are in
+`data/tuning/`, tuning log with export/import, drills v2, PWA offline,
+dark/light themes, desktop-first layout down to phone. Phase two added:
+shareable trim links and pin-and-compare (ADR 0019), a first-run tour and a
+schematic explainer for every control, a downwind model that soaks
+(ADR 0018), a boat picker with the Melges 24 as a second class (ADR 0020),
+and a phone that loads the 3D chunk only when asked.
 
 **Known limitation, stated plainly.** The polar hold-out gate
 ([ADR 0012](docs/adr/0012-hold-out-split-by-wind-speed-not-by-angle.md): every
@@ -144,7 +150,7 @@ so a solve is reproducible and never blocks the frame.
 
 Stack: Svelte 5 runes, Vite, TypeScript strict, Vitest, Playwright,
 three.js (one lazy chunk, gated by a measured first-frame budget), vite-plugin-pwa,
-GitHub Pages. ~26 k lines of app code, ~14 k lines of tests, 18 ADRs.
+GitHub Pages. two boat classes, 20 ADRs.
 
 ## Documentation
 
@@ -175,18 +181,21 @@ published while it still reads FAIL.
 
 ## What's next
 
-[`docs/plans/2026-08-26-phase-two/`](docs/plans/2026-08-26-phase-two/), in
-order: downwind physics that passes its own gate; shareable trim URLs and
-pin-and-compare; more tuning guides as data; onboarding and control
-explainers; a second boat class to prove the boat file is data, not code;
-phone performance.
+Phase two is closed
+([`docs/plans/2026-08-26-phase-two/`](docs/plans/2026-08-26-phase-two/)).
+What it leaves open, each with the reason written where it lives: the
+downwind optimum angle (3° hot; needs a second mechanism, ADR 0018), a
+helm/rudder-angle readout (needs a yaw balance in the core), a third J/70
+tuning guide and any Melges 24 guide (none publicly fetchable), and the
+Melges 24's own gate (7 of 10 rows; six knobs unfitted, ±11 % polar spread).
 
 Out of scope, by the brief: multiplayer, race simulation, tactics, starts,
 accounts, any backend.
 
 ## Contributing
 
-Issues and PRs welcome, especially from J/70 sailors with measured numbers.
+Issues and PRs welcome, especially from J/70 and Melges 24 sailors with
+measured numbers.
 The rules are short: branch + PR + squash, `make check` green, every literal
 carries provenance, every model output carries a tier, tests land with the
 change. Details in [`CLAUDE.md`](CLAUDE.md#this-project) — the sections above

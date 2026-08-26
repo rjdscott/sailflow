@@ -13,6 +13,52 @@ undiagnosable.
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-08-26
+
+Phase two (`docs/plans/2026-08-26-phase-two/`), six phases, all merged.
+
+### Added
+
+- **Share a trim** (#95, ADR 0019): the address bar is a versioned share URL
+  covering conditions, sail set, every race, kite and dock control, forecast
+  and density tier, with a migration table keyed on `s=`. "Copy link" on Race,
+  Dock and each log entry. **Pin this trim**: a dashed ghost of a pinned trim
+  in plan view and 3D, instrument cells read Δ to it.
+- **First-run tour and control explainers** (#98): three-step tour in a named
+  dialog, one inline-SVG schematic for each of the eighteen controls with a
+  what-it-changes list, shroud-turn guide and a printable gear chart on Dock.
+  Explainer copy is tested to contain no digits.
+- **Second boat class** (#100, #103, ADR 0020): the core and the cockpit take a
+  `BoatDefinition`; the Melges 24 sails from its 2026 class rules and ORC
+  polar with per-boat calibration, golden corpus and validation
+  (`SAILFLOW_BOAT=m24`). Boat picker on More; `boat=` in share links. The J/70
+  corpus is byte-identical before and after.
+- **Tuning guides as data** (#93): `data/tuning/README.md` schema, validated
+  by `scripts/provenance.mjs`; the disagreement panel and Dock enumerate
+  guides from the directory, with honest states for an emptied table and for
+  a boat with no guide. Runbook `add-a-tuning-guide.md`.
+
+### Changed
+
+- **The model soaks** (#97, ADR 0018): a fitted bluff-body drag multiplier on
+  the offwind sail above the wing-to-parachute changeover, because ORC's CLmax
+  is ~0 at soak angles and the only knob multiplied it. TWS 14 downwind VMG
+  15.1 % / 25.5° → 1.9 % / 3.0°. Gate still FAIL — 8/10, stated in numbers.
+- **Phone performance** (#99): no leaked WebGL contexts (12 → 2 over five
+  visits), plan view first on phones with the three.js chunk fetched on demand
+  (first-load JS 236.9 → 97.6 KB gzip), buffer reuse on drag (300 → 0
+  allocations), `DEBOUNCE_MS` 80 → 20 (settle ~105 → ~25 ms), first screen is
+  the hero.
+- **The 3D presets frame the whole boat** (#101): the fit measures the boat's
+  world box against both FOV limits instead of an assumed sphere against the
+  vertical one; the hull no longer falls off a portrait slot.
+- README screenshots (#96, #102).
+
+### Fixed
+
+- ux-03 P1 Mediums (#91); audit punchlists reconciled and two reverted
+  `ASSUMPTIONS.md` rows restored (#89); `hash.test.ts` typecheck (#90).
+
 ## [0.3.0] — 2026-08-26
 
 Close-out release: Epic 1 (`docs/plans/2026-08-25-mvp-analyser`) and the UX

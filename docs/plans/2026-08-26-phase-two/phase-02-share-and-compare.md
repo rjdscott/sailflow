@@ -1,6 +1,6 @@
 # Phase 02: Share a trim, pin and compare
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 
 ## Goal
 
