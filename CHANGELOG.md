@@ -13,7 +13,29 @@ undiagnosable.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-08-26
+
+Close-out release: Epic 1 (`docs/plans/2026-08-25-mvp-analyser`) and the UX
+excellence plan are closed, the acceptance criteria are walked on the live
+site, the phase-two plan is published, and the docs and audit punchlists are
+reconciled with the code. The polar hold-out gate still reads FAIL — 8/10
+(TWS 14 upwind and downwind VMG); that residual is the first phase of
+`docs/plans/2026-08-26-phase-two/`, not a footnote.
+
+### Added
+
+- **Phase-two plan** (`docs/plans/2026-08-26-phase-two/`): downwind physics
+  that passes its gate, shareable trim URLs with pin-and-compare, tuning
+  guides as data, onboarding and explainers, a second boat class, phone
+  performance.
+- `validation/hash.test.ts` pins what the boat hash covers (#88).
+
 ### Changed
+
+- **README rewritten** for engineers and sailors: what it is, why it is
+  different, the known limitation in numbers, architecture, docs map.
+- **Boat hash covers solver data only** (#88): `provenance` and `sources`
+  prose no longer move it, so a note edit does not fail the golden test.
 
 - **First load −31 %** (#78, ux-03 M-23): `PROVENANCE.md`, `ASSUMPTIONS.md`
   and the validation report load when their sheet opens on More; More, Log
@@ -25,6 +47,12 @@ undiagnosable.
 - **The kite's head opens as the sheet eases** (#80): the drawn leech bulges to
   leeward on a profile peaking at ~63 % height instead of running straight
   into the masthead, which closed every upper section.
+- **Downwind default no longer demotes itself to tier C** (#86): the shape
+  datum under the kite is the downwind base trim, so an eased main is not
+  measured against a beat's leech twist. `%POLAR` and BSP read B under the
+  kite. Held-out validation rows byte-identical.
+- **`solveEquilibrium` rejects a non-finite condition** (#87) instead of
+  returning the seed-table speed with `converged: false`.
 - **The 3D perf gate measures work, not the clock** (#66): mount plus the
   first render, so a tab opened behind another window is not judged slow for
   having been hidden; budget 800 ms after a cold desktop GPU measured 315 ms.

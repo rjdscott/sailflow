@@ -1,6 +1,6 @@
 # UX excellence: make Race and Dock the best trim trainer in a browser
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 
 Remediation of audit [`ux-01`](../../audits/2026-08-25-ux-01/) plus the
 three owner-requested features from 2026-08-25: point-of-sail chips, an
@@ -31,7 +31,7 @@ already exists as `optimal` with `optimiseTwa: false`).
 | 03 | [Phone flow and loading states](phase-03-phone-flow.md) | 🟢 Completed | 2026-08-25 |
 | 04 | [Motion](phase-04-motion.md) | 🟢 Completed | 2026-08-25 |
 | 05 | [Accessibility and design system](phase-05-a11y-and-design-system.md) | 🟢 Completed | 2026-08-25 |
-| 06 | [Content and comparison](phase-06-content-and-comparison.md) | 🔵 Not started | none |
+| 06 | [Content and comparison](phase-06-content-and-comparison.md) | ⏸ Deferred | 2026-08-26 |
 
 ## Critical files
 

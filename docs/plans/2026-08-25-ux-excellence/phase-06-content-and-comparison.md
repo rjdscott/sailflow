@@ -1,5 +1,7 @@
 # Phase 06: Content and comparison
 
+- **Status:** ⏸ Deferred
+
 ## Goal
 
 What the benchmark tools teach and Sailflow does not yet: a helm-balance
@@ -32,3 +34,5 @@ make check
 ## Progress log
 
 _None yet._
+
+- 2026-08-26 — Deferred at close-out (v0.3.0), never started. Its tasks move verbatim into phase 04 of `docs/plans/2026-08-26-phase-two/` (onboarding and explainers), where the helm-balance readout and pin-this-trim ghost sit next to the share-a-trim work they depend on.
