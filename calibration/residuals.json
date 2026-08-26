@@ -25,70 +25,70 @@
       },
       "maxIter": 320,
       "restarts": 3,
-      "evals": 1790,
-      "lossStart": 0.598537592694516,
-      "lossEnd": 0.1388197716384592,
+      "evals": 1731,
+      "lossStart": 0.5311568076902536,
+      "lossEnd": 0.14315235550927743,
       "knobs": [
         {
           "name": "hydro.formFactor",
           "start": 0.1,
-          "end": 0.02965707577002189,
+          "end": 0.07172052395808019,
           "bounds": [0.02, 0.6],
           "atBound": false
         },
         {
           "name": "hydro.rrMul.fn20",
           "start": 1,
-          "end": 0.36421419027076724,
+          "end": 0.3,
           "bounds": [0.3, 3],
-          "atBound": false
+          "atBound": true
         },
         {
           "name": "hydro.rrMul.fn30",
           "start": 1,
-          "end": 0.8120760261879458,
+          "end": 0.7635019265907147,
           "bounds": [0.3, 3],
           "atBound": false
         },
         {
           "name": "hydro.rrMul.fn40",
           "start": 1,
-          "end": 0.9745628718264223,
+          "end": 0.9473711689685479,
           "bounds": [0.3, 3],
           "atBound": false
         },
         {
           "name": "hydro.rrMul.fn50",
           "start": 1,
-          "end": 1.6322587852647983,
+          "end": 1.5854148542864892,
           "bounds": [0.3, 3],
           "atBound": false
         },
         {
           "name": "hydro.rrMul.fn60",
           "start": 1,
-          "end": 1.6937102927151106,
+          "end": 1.5543662138202716,
           "bounds": [0.3, 3],
           "atBound": false
         },
         {
           "name": "hydro.planingRelief",
           "start": 0.05,
-          "end": 0.15382596493555403,
+          "end": 0.13613492804210744,
           "bounds": [0.001, 0.9],
           "atBound": false
         },
         {
           "name": "hydro.keelLiftSlope",
           "start": 1,
-          "end": 0.7517105119718539,
+          "end": 0.5811545404809886,
           "bounds": [0.4, 2],
           "atBound": false
         },
         {
           "name": "hydro.heelDragK",
           "start": 0.5,
-          "end": 1.0943785255823921,
+          "end": 0.9190791915915516,
           "bounds": [0.05, 4],
           "atBound": false
         },
@@ -103,9 +103,9 @@
       "residuals": [
         {
           "twsKt": 6,
-          "bsKt": 3.936677187332452,
-          "twaDeg": 43.46784707412529,
-          "heelDeg": 2.545612022890094,
+          "bsKt": 3.9367058532665187,
+          "twaDeg": 43.49050226681453,
+          "heelDeg": 2.5551046315180996,
           "label": "TWS 6 jib vmgUp",
           "target": {
             "twsKt": 6,
@@ -113,16 +113,16 @@
             "twaDeg": 44.1,
             "heelDeg": 3
           },
-          "dBsPct": -5.140308738977064,
-          "dTwaDeg": -0.6321529258747134,
-          "dHeelDeg": -0.45438797710990597,
-          "loss": 0.0032829970624867442
+          "dBsPct": -5.139617993577871,
+          "dTwaDeg": -0.6094977331854707,
+          "dHeelDeg": -0.44489536848190037,
+          "loss": 0.0032383849199076123
         },
         {
           "twsKt": 6,
-          "bsKt": 4.553087569465176,
+          "bsKt": 4.557671348189206,
           "twaDeg": 60,
-          "heelDeg": 2.491020003087907,
+          "heelDeg": 2.502709359531139,
           "label": "TWS 6 jib 60°",
           "target": {
             "twsKt": 6,
@@ -130,16 +130,16 @@
             "twaDeg": 60,
             "heelDeg": 3
           },
-          "dBsPct": -5.733176615627827,
+          "dBsPct": -5.638274364612705,
           "dTwaDeg": 0,
-          "dHeelDeg": -0.508979996912093,
-          "loss": 0.003338743538049502
+          "dHeelDeg": -0.49729064046886107,
+          "loss": 0.0032284733772844666
         },
         {
           "twsKt": 6,
-          "bsKt": 4.69840914996273,
+          "bsKt": 4.702755154042276,
           "twaDeg": 90,
-          "heelDeg": 1.5669529645863196,
+          "heelDeg": 1.5739713580379306,
           "label": "TWS 6 jib 90°",
           "target": {
             "twsKt": 6,
@@ -147,16 +147,16 @@
             "twaDeg": 90,
             "heelDeg": 2.1
           },
-          "dBsPct": -4.697583165056179,
+          "dBsPct": -4.609428924091767,
           "dTwaDeg": 0,
-          "dHeelDeg": -0.5330470354136805,
-          "loss": 0.002263556587654586
+          "dHeelDeg": -0.5260286419620694,
+          "loss": 0.0021800247270582704
         },
         {
           "twsKt": 6,
-          "bsKt": 3.7108351921978833,
+          "bsKt": 3.708870446244585,
           "twaDeg": 120,
-          "heelDeg": 0.4994087329014736,
+          "heelDeg": 0.5005576643296322,
           "label": "TWS 6 jib 120°",
           "target": {
             "twsKt": 6,
@@ -164,16 +164,16 @@
             "twaDeg": 120,
             "heelDeg": 0.9
           },
-          "dBsPct": -3.111352684128376,
+          "dBsPct": -3.1626515340839454,
           "dTwaDeg": 0,
-          "dHeelDeg": -0.40059126709852644,
-          "loss": 0.0010001462251584055
+          "dHeelDeg": -0.3994423356703678,
+          "loss": 0.001032147308509513
         },
         {
           "twsKt": 10,
-          "bsKt": 5.5110792745087505,
-          "twaDeg": 40.80006670304745,
-          "heelDeg": 6.25441466137468,
+          "bsKt": 5.511071509527913,
+          "twaDeg": 40.71542536311709,
+          "heelDeg": 6.273009924210434,
           "label": "TWS 10 jib vmgUp",
           "target": {
             "twsKt": 10,
@@ -181,16 +181,16 @@
             "twaDeg": 41.2,
             "heelDeg": 11.8
           },
-          "dBsPct": 0.019587559142480428,
-          "dTwaDeg": -0.399933296952554,
-          "dHeelDeg": -5.545585338625321,
-          "loss": 0.006390661679859548
+          "dBsPct": 0.019446633900413703,
+          "dTwaDeg": -0.48457463688291114,
+          "dHeelDeg": -5.526990075789567,
+          "loss": 0.006461780544797587
         },
         {
           "twsKt": 10,
-          "bsKt": 6.267275461038759,
+          "bsKt": 6.274867037643023,
           "twaDeg": 60,
-          "heelDeg": 5.788439501337382,
+          "heelDeg": 5.80897499218746,
           "label": "TWS 10 jib 60°",
           "target": {
             "twsKt": 10,
@@ -198,16 +198,16 @@
             "twaDeg": 60,
             "heelDeg": 9
           },
-          "dBsPct": -0.5194371263689039,
+          "dBsPct": -0.3989359104281982,
           "dTwaDeg": 0,
-          "dHeelDeg": -3.2115604986626183,
-          "loss": 0.0020898056601390555
+          "dHeelDeg": -3.1910250078125397,
+          "loss": 0.0020524431061599213
         },
         {
           "twsKt": 10,
-          "bsKt": 6.398509379798355,
+          "bsKt": 6.404767230272771,
           "twaDeg": 90,
-          "heelDeg": 3.496702883701921,
+          "heelDeg": 3.5083967810548633,
           "label": "TWS 10 jib 90°",
           "target": {
             "twsKt": 10,
@@ -215,16 +215,16 @@
             "twaDeg": 90,
             "heelDeg": 3.5
           },
-          "dBsPct": 0.44755698270573163,
+          "dBsPct": 0.5457963936070811,
           "dTwaDeg": 0,
-          "dHeelDeg": -0.0032971162980790503,
-          "loss": 0.00002003289947204247
+          "dHeelDeg": 0.0083967810548633,
+          "loss": 0.00002980347151386624
         },
         {
           "twsKt": 10,
-          "bsKt": 5.55300731781536,
+          "bsKt": 5.5580923856425315,
           "twaDeg": 120,
-          "heelDeg": 1.2737740935399797,
+          "heelDeg": 1.2769420287638147,
           "label": "TWS 10 jib 120°",
           "target": {
             "twsKt": 10,
@@ -232,16 +232,16 @@
             "twaDeg": 120,
             "heelDeg": 1.7
           },
-          "dBsPct": 0.597958656075367,
+          "dBsPct": 0.6900794500458682,
           "dTwaDeg": 0,
-          "dHeelDeg": -0.42622590646002023,
-          "loss": 0.00007208916010507909
+          "dHeelDeg": -0.42305797123618527,
+          "loss": 0.00008341657414285618
         },
         {
           "twsKt": 12,
-          "bsKt": 5.862463693712815,
-          "twaDeg": 38.449849173035616,
-          "heelDeg": 8.980943448654896,
+          "bsKt": 5.866911338097654,
+          "twaDeg": 38.46817760893205,
+          "heelDeg": 8.991789434400221,
           "label": "TWS 12 jib vmgUp",
           "target": {
             "twsKt": 12,
@@ -249,16 +249,16 @@
             "twaDeg": 39.4,
             "heelDeg": 19.7
           },
-          "dBsPct": 1.2515318430538018,
-          "dTwaDeg": -0.9501508269643821,
-          "dHeelDeg": -10.719056551345103,
-          "loss": 0.024490447756576286
+          "dBsPct": 1.3283478082496343,
+          "dTwaDeg": -0.9318223910679464,
+          "dHeelDeg": -10.708210565599778,
+          "loss": 0.024412044946156085
         },
         {
           "twsKt": 12,
-          "bsKt": 6.712059249580194,
+          "bsKt": 6.720401442769028,
           "twaDeg": 60,
-          "heelDeg": 7.566740393587485,
+          "heelDeg": 7.574160158123368,
           "label": "TWS 12 jib 60°",
           "target": {
             "twsKt": 12,
@@ -266,16 +266,16 @@
             "twaDeg": 60,
             "heelDeg": 20.8
           },
-          "dBsPct": -0.5620851914045356,
+          "dBsPct": -0.43849714416254226,
           "dTwaDeg": 0,
-          "dHeelDeg": -13.233259606412517,
-          "loss": 0.035055425938381464
+          "dHeelDeg": -13.225839841876633,
+          "loss": 0.035003795879138135
         },
         {
           "twsKt": 12,
-          "bsKt": 6.860893061029216,
+          "bsKt": 6.8712299112049555,
           "twaDeg": 90,
-          "heelDeg": 4.504706711514178,
+          "heelDeg": 4.511028956938847,
           "label": "TWS 12 jib 90°",
           "target": {
             "twsKt": 12,
@@ -283,16 +283,16 @@
             "twaDeg": 90,
             "heelDeg": 4.4
           },
-          "dBsPct": 0.5996050004283867,
+          "dBsPct": 0.7511717185477307,
           "dTwaDeg": 0,
-          "dHeelDeg": 0.10470671151417754,
-          "loss": 0.0000381453147410952
+          "dHeelDeg": 0.11102895693884651,
+          "loss": 0.00005889138093038077
         },
         {
           "twsKt": 12,
-          "bsKt": 6.20094437561911,
+          "bsKt": 6.200561823744756,
           "twaDeg": 120,
-          "heelDeg": 1.7334617988999896,
+          "heelDeg": 1.7333831542726357,
           "label": "TWS 12 jib 120°",
           "target": {
             "twsKt": 12,
@@ -300,16 +300,16 @@
             "twaDeg": 120,
             "heelDeg": 2.1
           },
-          "dBsPct": 1.6548258298214786,
+          "dBsPct": 1.6485544876189633,
           "dTwaDeg": 0,
-          "dHeelDeg": -0.36653820110001045,
-          "loss": 0.00030071490327756087
+          "dHeelDeg": -0.3666168457273644,
+          "loss": 0.00029865477217907863
         },
         {
           "twsKt": 16,
-          "bsKt": 6.298065164620255,
+          "bsKt": 6.29809771488249,
           "twaDeg": 37.13428742339313,
-          "heelDeg": 19.430449565931582,
+          "heelDeg": 19.197532247170223,
           "label": "TWS 16 jib vmgUp",
           "target": {
             "twsKt": 16,
@@ -317,16 +317,16 @@
             "twaDeg": 37.1,
             "heelDeg": 21.5
           },
-          "dBsPct": 5.849834699500073,
+          "dBsPct": 5.850381762730928,
           "dTwaDeg": 0.03428742339313118,
-          "dHeelDeg": -2.069550434068418,
-          "loss": 0.0042804278420824765
+          "dHeelDeg": -2.3024677528297772,
+          "loss": 0.004484731668638074
         },
         {
           "twsKt": 16,
-          "bsKt": 7.324999185320414,
+          "bsKt": 7.329150437893348,
           "twaDeg": 60,
-          "heelDeg": 17.788382476452608,
+          "heelDeg": 17.486680259815213,
           "label": "TWS 16 jib 60°",
           "target": {
             "twsKt": 16,
@@ -334,16 +334,16 @@
             "twaDeg": 60,
             "heelDeg": 23.5
           },
-          "dBsPct": 3.900697664119353,
+          "dBsPct": 3.959580679338267,
           "dTwaDeg": 0,
-          "dHeelDeg": -5.7116175235473925,
-          "loss": 0.008046059173745346
+          "dHeelDeg": -6.013319740184787,
+          "loss": 0.008799830775158097
         },
         {
           "twsKt": 16,
-          "bsKt": 7.716264299646118,
+          "bsKt": 7.709377562040998,
           "twaDeg": 90,
-          "heelDeg": 6.902327421659182,
+          "heelDeg": 6.811282334521887,
           "label": "TWS 16 jib 90°",
           "target": {
             "twsKt": 16,
@@ -351,16 +351,16 @@
             "twaDeg": 90,
             "heelDeg": 14
           },
-          "dBsPct": -2.4492503205294787,
+          "dBsPct": -2.536314007067035,
           "dTwaDeg": 0,
-          "dHeelDeg": -7.097672578340818,
-          "loss": 0.010675273919127615
+          "dHeelDeg": -7.188717665478113,
+          "loss": 0.010978821209035863
         },
         {
           "twsKt": 16,
-          "bsKt": 7.0701972399247515,
+          "bsKt": 7.05364972683584,
           "twaDeg": 120,
-          "heelDeg": 2.793582808399532,
+          "heelDeg": 2.7691864092942398,
           "label": "TWS 16 jib 120°",
           "target": {
             "twsKt": 16,
@@ -368,16 +368,16 @@
             "twaDeg": 120,
             "heelDeg": 3
           },
-          "dBsPct": 2.1704803457334036,
+          "dBsPct": 1.9313544340439255,
           "dTwaDeg": 0,
-          "dHeelDeg": -0.206417191600468,
-          "loss": 0.0004796201045191444
+          "dHeelDeg": -0.23081359070576024,
+          "loss": 0.0003836679777210104
         },
         {
           "twsKt": 20,
-          "bsKt": 6.390813033952323,
-          "twaDeg": 36.9013659222575,
-          "heelDeg": 23.043287903923133,
+          "bsKt": 6.406518170063888,
+          "twaDeg": 37.093303794807454,
+          "heelDeg": 22.877818189945803,
           "label": "TWS 20 jib vmgUp",
           "target": {
             "twsKt": 20,
@@ -385,16 +385,16 @@
             "twaDeg": 38.3,
             "heelDeg": 24.2
           },
-          "dBsPct": 7.589445016032371,
-          "dTwaDeg": -1.3986340777425,
-          "dHeelDeg": -1.1567120960768662,
-          "loss": 0.008961830064913887
+          "dBsPct": 7.853841246866787,
+          "dTwaDeg": -1.206696205192543,
+          "dHeelDeg": -1.3221818100541967,
+          "loss": 0.008702088778305368
         },
         {
           "twsKt": 20,
-          "bsKt": 7.702874524511138,
+          "bsKt": 7.695692694020442,
           "twaDeg": 60,
-          "heelDeg": 25.612785969498244,
+          "heelDeg": 24.850684885302194,
           "label": "TWS 20 jib 60°",
           "target": {
             "twsKt": 20,
@@ -402,16 +402,16 @@
             "twaDeg": 60,
             "heelDeg": 24.9
           },
-          "dBsPct": 8.034705813620452,
+          "dBsPct": 7.933978878267073,
           "dTwaDeg": 0,
-          "dHeelDeg": 0.7127859694982455,
-          "loss": 0.006557262518805339
+          "dHeelDeg": -0.04931511469780503,
+          "loss": 0.006295288480186336
         },
         {
           "twsKt": 20,
-          "bsKt": 8.973708711576302,
+          "bsKt": 8.981765769815558,
           "twaDeg": 90,
-          "heelDeg": 14.069550197174001,
+          "heelDeg": 13.200300600495165,
           "label": "TWS 20 jib 90°",
           "target": {
             "twsKt": 20,
@@ -419,16 +419,16 @@
             "twaDeg": 90,
             "heelDeg": 24.1
           },
-          "dBsPct": 3.6225024431443646,
+          "dBsPct": 3.71554006715425,
           "dTwaDeg": 0,
-          "dHeelDeg": -10.030449802826,
-          "loss": 0.02143423704446112
+          "dHeelDeg": -10.899699399504836,
+          "loss": 0.02514121319897608
         },
         {
           "twsKt": 20,
-          "bsKt": 7.828983176806493,
+          "bsKt": 7.74695376652986,
           "twaDeg": 120,
-          "heelDeg": 4.256481598228992,
+          "heelDeg": 4.205617422948316,
           "label": "TWS 20 jib 120°",
           "target": {
             "twsKt": 20,
@@ -436,10 +436,10 @@
             "twaDeg": 120,
             "heelDeg": 4.3
           },
-          "dBsPct": -0.6474216141307978,
+          "dBsPct": -1.688403978047466,
           "dTwaDeg": 0,
-          "dHeelDeg": -0.043518401771008186,
-          "loss": 0.00004229424490291334
+          "dHeelDeg": -0.09438257705168418,
+          "loss": 0.00028685241347883427
         }
       ]
     },
@@ -451,26 +451,33 @@
         "twa": 0.15,
         "heel": 0.02
       },
-      "maxIter": 80,
+      "maxIter": 160,
       "restarts": 2,
-      "evals": 130,
-      "lossStart": 0.48055870528892203,
-      "lossEnd": 0.47389505509271235,
+      "evals": 181,
+      "lossStart": 1.5265462148557252,
+      "lossEnd": 0.20851403451209385,
       "knobs": [
         {
           "name": "aero.asymClMul",
           "start": 1,
-          "end": 1.0110693296147815,
-          "bounds": [0.3, 2],
+          "end": 1,
+          "bounds": [1, 1.1],
+          "atBound": true
+        },
+        {
+          "name": "aero.asymCdMul",
+          "start": 1,
+          "end": 2.4555581245835563,
+          "bounds": [0.5, 4],
           "atBound": false
         }
       ],
       "residuals": [
         {
           "twsKt": 6,
-          "bsKt": 4.105250400207299,
-          "twaDeg": 145.39939788431465,
-          "heelDeg": 0.49198935521587256,
+          "bsKt": 4.083241493292038,
+          "twaDeg": 145.42065886995448,
+          "heelDeg": 0.474849048039893,
           "label": "TWS 6 asym vmgDn",
           "target": {
             "twsKt": 6,
@@ -478,16 +485,16 @@
             "twaDeg": 141.9,
             "heelDeg": 11.8
           },
-          "dBsPct": -4.9710555507569705,
-          "dTwaDeg": 3.4993978843146465,
-          "dHeelDeg": -11.308010644784128,
-          "loss": 0.04641403860650014
+          "dBsPct": -5.480520988610247,
+          "dTwaDeg": 3.520658869954474,
+          "dHeelDeg": -11.325150951960108,
+          "loss": 0.04724797816548
         },
         {
           "twsKt": 10,
-          "bsKt": 5.825533216221336,
-          "twaDeg": 149.4371748904358,
-          "heelDeg": 0.7868531755762205,
+          "bsKt": 5.792675909242708,
+          "twaDeg": 149.8387080090718,
+          "heelDeg": 0.7401436269149467,
           "label": "TWS 10 asym vmgDn",
           "target": {
             "twsKt": 10,
@@ -495,16 +502,16 @@
             "twaDeg": 150.7,
             "heelDeg": 12
           },
-          "dBsPct": 1.844986297575809,
-          "dTwaDeg": -1.2628251095641758,
-          "dHeelDeg": -11.213146824423779,
-          "loss": 0.02787942067105992
+          "dBsPct": 1.2705578538934974,
+          "dTwaDeg": -0.86129199092818,
+          "dHeelDeg": -11.259856373085054,
+          "loss": 0.026631040674965408
         },
         {
           "twsKt": 12,
-          "bsKt": 6.558086539665119,
-          "twaDeg": 148.7004290991627,
-          "heelDeg": 1.1238660323988299,
+          "bsKt": 5.784842721907847,
+          "twaDeg": 165.671375182607,
+          "heelDeg": 0.7226561376282395,
           "label": "TWS 12 asym vmgDn",
           "target": {
             "twsKt": 12,
@@ -512,16 +519,16 @@
             "twaDeg": 162.5,
             "heelDeg": 11.8
           },
-          "dBsPct": 10.77848884569458,
-          "dTwaDeg": -13.799570900837296,
-          "dHeelDeg": -10.67613396760117,
-          "loss": 0.32005578504936283
+          "dBsPct": -2.2830621299350216,
+          "dTwaDeg": 3.171375182606994,
+          "dHeelDeg": -11.07734386237176,
+          "loss": 0.04014917750124272
         },
         {
           "twsKt": 16,
-          "bsKt": 6.413666116691262,
-          "twaDeg": 170.66429371503125,
-          "heelDeg": 0.47799980642571605,
+          "bsKt": 6.885682917729825,
+          "twaDeg": 169.44197467013862,
+          "heelDeg": 0.9877625444185869,
           "label": "TWS 16 asym vmgDn",
           "target": {
             "twsKt": 16,
@@ -529,16 +536,16 @@
             "twaDeg": 174,
             "heelDeg": 11.7
           },
-          "dBsPct": -4.700354878287345,
-          "dTwaDeg": -3.335706284968751,
-          "dHeelDeg": -11.222000193574283,
-          "loss": 0.04408639589647026
+          "dBsPct": 2.3132677225828266,
+          "dTwaDeg": -4.55802532986138,
+          "dHeelDeg": -10.712237455581413,
+          "loss": 0.05464891937807353
         },
         {
           "twsKt": 20,
-          "bsKt": 12.948000055267213,
-          "twaDeg": 137.34008581983252,
-          "heelDeg": 8.938189678242303,
+          "bsKt": 13.070688924172856,
+          "twaDeg": 137.15995985895432,
+          "heelDeg": 8.517620691658733,
           "label": "TWS 20 asym vmgDn",
           "target": {
             "twsKt": 20,
@@ -546,13 +553,13 @@
             "twaDeg": 137.1,
             "heelDeg": 19
           },
-          "dBsPct": 12.29835260422562,
-          "dTwaDeg": 0.24008581983252952,
-          "dHeelDeg": -10.061810321757697,
-          "loss": 0.03545941486931925
+          "dBsPct": 13.362436462904222,
+          "dTwaDeg": 0.05995985895432909,
+          "dHeelDeg": -10.482379308341267,
+          "loss": 0.03983691879233219
         }
       ],
-      "notes": "The 20 kt asym row (137.1 deg at 11.53 kt, Fn 0.73) and the 16 kt row (174.0 deg at 6.73 kt, Fn 0.43) pull this knob in opposite directions: one wants far more power, the other far less. A single multiplier cannot serve both and the residuals show the split."
+      "notes": "The 20 kt asym row (137.1 deg at 11.53 kt, Fn 0.73) is a planing row against a displacement model and still pulls against the rest; the residuals show the split."
     },
     {
       "stage": 3,
@@ -565,13 +572,13 @@
       "maxIter": 60,
       "restarts": 1,
       "evals": 60,
-      "lossStart": 0.06539224288991853,
-      "lossEnd": 0.010142832929628073,
+      "lossStart": 0.08008620382666001,
+      "lossEnd": 0.014705060771781395,
       "knobs": [
         {
           "name": "hydro.crewArmMul",
           "start": 1,
-          "end": 0.7680618270897909,
+          "end": 0.7676436760862969,
           "bounds": [0.2, 1.05],
           "atBound": false
         }
@@ -579,9 +586,9 @@
       "residuals": [
         {
           "twsKt": 16,
-          "bsKt": 6.298225126511988,
-          "twaDeg": 38.324224204519574,
-          "heelDeg": 21.171935316713483,
+          "bsKt": 6.298069058342429,
+          "twaDeg": 38.29456817227852,
+          "heelDeg": 20.987691929056464,
           "label": "TWS 16 jib vmgUp",
           "target": {
             "twsKt": 16,
@@ -589,16 +596,16 @@
             "twaDeg": 37.1,
             "heelDeg": 21.5
           },
-          "dBsPct": 5.852523134655256,
-          "dTwaDeg": 1.2242242045195724,
-          "dHeelDeg": -0.3280646832865166,
-          "loss": 0.004501467068366324
+          "dBsPct": 5.849900140208881,
+          "dTwaDeg": 1.1945681722785153,
+          "dHeelDeg": -0.5123080709435364,
+          "loss": 0.0060467287605804635
         },
         {
           "twsKt": 20,
-          "bsKt": 6.321072783776921,
-          "twaDeg": 37.28524166735741,
-          "heelDeg": 24.590598621720606,
+          "bsKt": 6.344355179507381,
+          "twaDeg": 37.55914679707874,
+          "heelDeg": 24.834378667509224,
           "label": "TWS 20 jib vmgUp",
           "target": {
             "twsKt": 20,
@@ -606,10 +613,10 @@
             "twaDeg": 38.3,
             "heelDeg": 24.2
           },
-          "dBsPct": 6.415366730251184,
-          "dTwaDeg": -1.014758332642586,
-          "dHeelDeg": 0.39059862172060633,
-          "loss": 0.005641365861261749
+          "dBsPct": 6.8073262543330015,
+          "dTwaDeg": -0.740853202921258,
+          "dHeelDeg": 0.6343786675092247,
+          "loss": 0.008658332011200932
         }
       ],
       "notes": "crewArmM is capped at beam/2 by the class hiking rule, so values above ~1.05 have no effect; the knob can only soften the rig, never stiffen it."
@@ -624,9 +631,9 @@
       },
       "maxIter": 120,
       "restarts": 1,
-      "evals": 50,
-      "lossStart": 19.244511418266086,
-      "lossEnd": 15.993606975510488,
+      "evals": 230,
+      "lossStart": 15.112997699542944,
+      "lossEnd": 9.057494543141544,
       "knobs": [
         {
           "name": "rig.EI",
@@ -638,16 +645,16 @@
         {
           "name": "rig.turnsToN",
           "start": 220,
-          "end": 100,
+          "end": 600,
           "bounds": [100, 600],
           "atBound": true
         },
         {
           "name": "rig.sagK",
           "start": 45,
-          "end": 25,
+          "end": 27.639850209039135,
           "bounds": [25, 90],
-          "atBound": true
+          "atBound": false
         },
         {
           "name": "shape.bendToDraft",
@@ -675,31 +682,31 @@
         {
           "twsKt": 9,
           "band": "8-10 kt",
-          "uppersModel": 2.7200400128183904,
+          "uppersModel": 1.2145610399640954,
           "uppersGuide": 0,
-          "lowersModel": -0.4535962954003776,
+          "lowersModel": 0.6938428720456561,
           "lowersGuide": 0,
-          "loss": 7.6043672705340155
+          "loss": 1.9565764508872296
         },
         {
           "twsKt": 14,
           "band": "12-16 kt",
-          "uppersModel": 2.7041177978098494,
+          "uppersModel": 3.1333494068525027,
           "uppersGuide": 4,
-          "lowersModel": -0.5903530691825155,
+          "lowersModel": -0.5198878629120399,
           "lowersGuide": 2,
-          "loss": 8.389239704976472
+          "loss": 7.100918092254315
         }
       ],
-      "notes": "soft-argmin over 20 dock setups, lap time at fixed TWA 42/150. The dock-setup ranking this model produces barely moves with wind speed (model TWS 9 2.72/-0.45, TWS 14 2.70/-0.59 against guide 0/0, 4/2), so the best a wind-independent optimum can do is the midpoint of the two bands, loss 10.00. None of these six knobs opens a wind-dependent channel."
+      "notes": "soft-argmin over 20 dock setups, lap time at fixed TWA 42/150. The dock-setup ranking this model produces barely moves with wind speed (model TWS 9 1.21/0.69, TWS 14 3.13/-0.52 against guide 0/0, 4/2), so the best a wind-independent optimum can do is the midpoint of the two bands, loss 10.00. None of these six knobs opens a wind-dependent channel."
     }
   ],
   "heldOut": [
     {
       "twsKt": 8,
-      "bsKt": 4.724025974188821,
-      "twaDeg": 40.69277017042785,
-      "heelDeg": 4.8060065877267775,
+      "bsKt": 4.723837171358001,
+      "twaDeg": 40.74075463856535,
+      "heelDeg": 4.806786061878883,
       "label": "TWS 8 jib vmgUp",
       "target": {
         "twsKt": 8,
@@ -707,16 +714,16 @@
         "twaDeg": 40.7,
         "heelDeg": 4.5
       },
-      "dBsPct": -1.5827922043995524,
-      "dTwaDeg": -0.00722982957215379,
-      "dHeelDeg": 0.30600658772677747,
-      "loss": 0.00026932952823070024
+      "dBsPct": -1.586725596708305,
+      "dTwaDeg": 0.04075463856534611,
+      "dHeelDeg": 0.30678606187888313,
+      "loss": 0.0002730847603244514
     },
     {
       "twsKt": 8,
-      "bsKt": 5.193099193906454,
-      "twaDeg": 145.67460586351166,
-      "heelDeg": 0.909041278044414,
+      "bsKt": 5.183503054417099,
+      "twaDeg": 145.58176842716898,
+      "heelDeg": 0.8899268599009607,
       "label": "TWS 8 asym vmgDn",
       "target": {
         "twsKt": 8,
@@ -724,16 +731,16 @@
         "twaDeg": 144.8,
         "heelDeg": 12
       },
-      "dBsPct": 0.05971471881412912,
-      "dTwaDeg": 0.8746058635116469,
-      "dHeelDeg": -11.090958721955586,
-      "loss": 0.025749632783922272
+      "dBsPct": -0.12518199581697778,
+      "dTwaDeg": 0.78176842716897,
+      "dHeelDeg": -11.11007314009904,
+      "loss": 0.025605054899455065
     },
     {
       "twsKt": 8,
-      "bsKt": 5.545043564112242,
+      "bsKt": 5.545141386315259,
       "twaDeg": 60,
-      "heelDeg": 4.622899952116586,
+      "heelDeg": 4.62476601561766,
       "label": "TWS 8 jib 60°",
       "target": {
         "twsKt": 8,
@@ -741,16 +748,16 @@
         "twaDeg": 60,
         "heelDeg": 4.3
       },
-      "dBsPct": -3.0586789490866746,
+      "dBsPct": -3.0569687707122513,
       "dTwaDeg": 0,
-      "dHeelDeg": 0.32289995211658606,
-      "loss": 0.0009564045671739751
+      "dHeelDeg": 0.3247660156176604,
+      "loss": 0.0009556003994910312
     },
     {
       "twsKt": 8,
-      "bsKt": 5.692062947497127,
+      "bsKt": 5.69272626798058,
       "twaDeg": 90,
-      "heelDeg": 2.8598219126219138,
+      "heelDeg": 2.8612812303361563,
       "label": "TWS 8 jib 90°",
       "target": {
         "twsKt": 8,
@@ -758,16 +765,16 @@
         "twaDeg": 90,
         "heelDeg": 2.8
       },
-      "dBsPct": -2.198231142661054,
+      "dBsPct": -2.186833883495188,
       "dTwaDeg": 0,
-      "dHeelDeg": 0.05982191262191394,
-      "loss": 0.0004839377479024411
+      "dHeelDeg": 0.06128123033615651,
+      "loss": 0.00047897532123856713
     },
     {
       "twsKt": 8,
-      "bsKt": 4.744256678837175,
+      "bsKt": 4.7402238783730075,
       "twaDeg": 120,
-      "heelDeg": 0.977095508210748,
+      "heelDeg": 0.9767911317630049,
       "label": "TWS 8 jib 120°",
       "target": {
         "twsKt": 8,
@@ -775,16 +782,16 @@
         "twaDeg": 120,
         "heelDeg": 1.3
       },
-      "dBsPct": -1.161319190892185,
+      "dBsPct": -1.2453358672290065,
       "dTwaDeg": 0,
-      "dHeelDeg": -0.32290449178925207,
-      "loss": 0.00015571968847698296
+      "dHeelDeg": -0.32320886823699513,
+      "loss": 0.00017597893672211004
     },
     {
       "twsKt": 14,
-      "bsKt": 6.2321364074770305,
-      "twaDeg": 39.802067794470965,
-      "heelDeg": 16.38266095319089,
+      "bsKt": 6.229994819922501,
+      "twaDeg": 39.724427294092415,
+      "heelDeg": 16.34861077584911,
       "label": "TWS 14 jib vmgUp",
       "target": {
         "twsKt": 14,
@@ -792,16 +799,16 @@
         "twaDeg": 38,
         "heelDeg": 20.8
       },
-      "dBsPct": 5.808767529321406,
-      "dTwaDeg": 1.8020677944709647,
-      "dHeelDeg": -4.417339046809111,
-      "loss": 0.012147927375666926
+      "dBsPct": 5.772407808531432,
+      "dTwaDeg": 1.7244272940924148,
+      "dHeelDeg": -4.4513892241508906,
+      "loss": 0.01175551663469313
     },
     {
       "twsKt": 14,
-      "bsKt": 7.207420356993921,
-      "twaDeg": 146.49639559734422,
-      "heelDeg": 1.9612458299018227,
+      "bsKt": 6.376807155324566,
+      "twaDeg": 168.9756547870071,
+      "heelDeg": 0.8436090365546798,
       "label": "TWS 14 asym vmgDn",
       "target": {
         "twsKt": 14,
@@ -809,16 +816,16 @@
         "twaDeg": 172,
         "heelDeg": 11.7
       },
-      "dBsPct": 15.134510495110556,
-      "dTwaDeg": -25.50360440265578,
-      "dHeelDeg": -9.738754170098176,
-      "loss": 1.0175247636405271
+      "dBsPct": 1.8659289987949874,
+      "dTwaDeg": -3.0243452129928983,
+      "dHeelDeg": -10.85639096344532,
+      "loss": 0.03764041000411943
     },
     {
       "twsKt": 14,
-      "bsKt": 7.009903034824531,
+      "bsKt": 7.022305892851683,
       "twaDeg": 60,
-      "heelDeg": 14.949277348867756,
+      "heelDeg": 14.933319951914028,
       "label": "TWS 14 jib 60°",
       "target": {
         "twsKt": 14,
@@ -826,16 +833,16 @@
         "twaDeg": 60,
         "heelDeg": 23.1
       },
-      "dBsPct": 1.1530019455199356,
+      "dBsPct": 1.33197536582515,
       "dTwaDeg": 0,
-      "dHeelDeg": -8.150722651132245,
-      "loss": 0.013419797295773328
+      "dHeelDeg": -8.166680048085974,
+      "loss": 0.013516348439077609
     },
     {
       "twsKt": 14,
-      "bsKt": 7.300216649809155,
+      "bsKt": 7.313066960771231,
       "twaDeg": 90,
-      "heelDeg": 6.414493848508544,
+      "heelDeg": 6.413165924228439,
       "label": "TWS 14 jib 90°",
       "target": {
         "twsKt": 14,
@@ -843,16 +850,16 @@
         "twaDeg": 90,
         "heelDeg": 6.5
       },
-      "dBsPct": 0.1401460879170742,
+      "dBsPct": 0.3164192149688697,
       "dTwaDeg": 0,
-      "dHeelDeg": -0.08550615149145635,
-      "loss": 0.000003426352984422006
+      "dHeelDeg": -0.0868340757715611,
+      "loss": 0.000011520143303171824
     },
     {
       "twsKt": 14,
-      "bsKt": 6.662669895948565,
+      "bsKt": 6.664042893196509,
       "twaDeg": 120,
-      "heelDeg": 2.5389926957707303,
+      "heelDeg": 2.5371348958540927,
       "label": "TWS 14 jib 120°",
       "target": {
         "twsKt": 14,
@@ -860,10 +867,10 @@
         "twaDeg": 120,
         "heelDeg": 2.5
       },
-      "dBsPct": 2.188188588168186,
+      "dBsPct": 2.2092468281673225,
       "dTwaDeg": 0,
-      "dHeelDeg": 0.03899269577073028,
-      "loss": 0.00047912101580364165
+      "dHeelDeg": 0.03713489585409269,
+      "loss": 0.0004883529548747565
     }
   ]
 }

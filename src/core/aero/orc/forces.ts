@@ -33,7 +33,12 @@ import {
   WIND_Z0_M,
   WIND_Z_REF_M,
 } from './tables';
-import { ZERO_DELTAS, applyShapeDeltas, twistCeFactorInvented } from '../shape/sensitivity';
+import {
+  ZERO_DELTAS,
+  applyShapeDeltas,
+  parachuteCdMul,
+  twistCeFactorInvented,
+} from '../shape/sensitivity';
 
 /**
  * Minimal geometry the aero model needs from a sail.
@@ -186,6 +191,8 @@ function aggregate(
   fj: number,
   /** Per-sail multiplier on CLmax; 1 leaves the ORC table untouched. */
   clMul: Record<string, number>,
+  /** Deep-AWA bluff-body multiplier on the offwind sail's CD0 (INVENTED). */
+  asymCdMul: number,
 ): Aggregate {
   let arefM2 = 0;
   let sumCl = 0;
@@ -200,7 +207,9 @@ function aggregate(
     const a = geo[id].areaM2 * areaScale[id];
     if (a <= 0) continue;
     const table = sailCoeffs(tableOf(id), awaDeg, sets[id], fcoef);
-    const c = { ...table, clMax: table.clMax * (clMul[id] ?? 1) };
+    // INVENTED, see shape/sensitivity.ts: the offwind sail's parachute regime.
+    const cdMul = id === 'asym' ? parachuteCdMul(awaDeg, asymCdMul) : 1;
+    const c = { ...table, clMax: table.clMax * (clMul[id] ?? 1), cd0: table.cd0 * cdMul };
     const bk = blanketing(id, Math.abs(awaDeg), fj);
     arefM2 += a;
     sumCl += c.clMax * bk * a;
@@ -275,6 +284,11 @@ export function aeroForces(
     jib: 1,
     asym: knob(boat, 'aero.asymClMul', 1),
   };
+  // prov: assumed. CALIBRATION KNOB, not ORC. The companion to asymClMul on
+  // the coefficient that actually carries deep-running drive; see
+  // `parachuteCdMul` in ../shape/sensitivity.ts and ADR 0018.
+  // Fallback 1 = use ORC unmodified.
+  const asymCdMul = knob(boat, 'aero.asymCdMul', 1);
 
   // ---- geometry ----------------------------------------------------------
   const geo: Record<string, AeroGeometry> = {};
@@ -321,7 +335,7 @@ export function aeroForces(
   }
   let zRef = areaSum > 0 ? areaW / areaSum : hbiM;
   let aw = apparentWind(windAt(vtRefMs, zRef), input.twaDeg, vsMs, input.heelDeg);
-  let agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj, clMul);
+  let agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj, clMul, asymCdMul);
   zRef = agg.zceWaterM > 0 ? agg.zceWaterM : zRef;
   aw = apparentWind(windAt(vtRefMs, zRef), input.twaDeg, vsMs, input.heelDeg);
   // ---- sheeting (INVENTED, race mode only, see shape/sheeting.ts) --------
@@ -335,7 +349,7 @@ export function aeroForces(
       stallCd0 += e.dCd0;
     }
   }
-  agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj, clMul);
+  agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj, clMul, asymCdMul);
 
   const awaAbs = aw.awaDeg;
 

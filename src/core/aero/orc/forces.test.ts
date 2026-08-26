@@ -4,6 +4,7 @@ import type { AeroState, BoatDefinition } from '../../types';
 import type { AeroInput, ShapeDeltas } from '../../internal';
 import { aeroForces, apparentWind, fallbackGeometry, roachOf, windAt } from './forces';
 import { WIND_Z_REF_M } from './tables';
+import { PARACHUTE_AWA_HI, PARACHUTE_AWA_LO } from '../shape/sensitivity';
 
 const boat = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // module tests run on default knobs;
 
@@ -455,5 +456,41 @@ describe('other knobs move the answer in the right direction', () => {
 
   it('a fatter mast section costs drive', () => {
     expect(run({}, withCalibration({ 'aero.mastFrontM': 0.3 })).fxN).toBeLessThan(run().fxN);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The parachute-regime CD knob (INVENTED, ADR 0018)
+// ---------------------------------------------------------------------------
+
+describe('aero.asymCdMul', () => {
+  /** Deep run under the kite: TWS 14, TWA 172 lands at AWA ~165. */
+  const DEEP = { sailset: 'asym', twaDeg: 172, twsKt: 14, bsKt: 5.8 } as const;
+  /** Tight reach under the kite: AWA well below the changeover. */
+  const REACH = { sailset: 'asym', twaDeg: 100, twsKt: 14, bsKt: 6.5 } as const;
+
+  it('the deep run really is in the parachute regime and the reach is not', () => {
+    expect(Math.abs(run(DEEP).awaDeg)).toBeGreaterThan(PARACHUTE_AWA_HI);
+    expect(Math.abs(run(REACH).awaDeg)).toBeLessThan(PARACHUTE_AWA_LO);
+  });
+
+  it('raises drive on a deep run — the drag IS the drive there', () => {
+    const on = run(DEEP, withCalibration({ 'aero.asymCdMul': 2.5 })).fxN;
+    expect(on).toBeGreaterThan(run(DEEP).fxN * 1.3);
+  });
+
+  it('leaves a reach byte-identical — below the changeover the ramp is 1', () => {
+    expect(run(REACH, withCalibration({ 'aero.asymCdMul': 2.5 }))).toEqual(run(REACH));
+  });
+
+  it('never touches the jib sailset, at any angle', () => {
+    for (const twaDeg of [45, 100, 150]) {
+      const over = { sailset: 'jib', twaDeg, twsKt: 14, bsKt: 6 } as const;
+      expect(run(over, withCalibration({ 'aero.asymCdMul': 2.5 }))).toEqual(run(over));
+    }
+  });
+
+  it('the default is ORC unmodified', () => {
+    expect(run(DEEP, withCalibration({ 'aero.asymCdMul': 1 }))).toEqual(run(DEEP));
   });
 });

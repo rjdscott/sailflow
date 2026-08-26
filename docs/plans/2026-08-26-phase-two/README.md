@@ -1,6 +1,6 @@
 # Phase two: from a validated analyser to the trim platform sailors share
 
-- **Status:** 🔵 Not started
+- **Status:** 🟡 In progress
 
 ## Goal
 
@@ -22,7 +22,7 @@ Epic 3 (Rust engine) stay unstarted; nothing here pre-commits to them.
 
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
-| 01 | [Downwind physics passes its own gate](phase-01-downwind-physics.md) | 🔵 Not started | none |
+| 01 | [Downwind physics passes its own gate](phase-01-downwind-physics.md) | 🟡 In progress | 2026-08-26 |
 | 02 | [Share a trim, pin and compare](phase-02-share-and-compare.md) | 🟡 In progress | 2026-08-26 |
 | 03 | [Tuning guides as data](phase-03-guides-as-data.md) | 🟡 In progress | 2026-08-26 — schema, enumeration, selector and runbook landed; third guide blocked on sourcing |
 | 04 | [Onboarding and explainers](phase-04-onboarding-and-explainers.md) | 🔵 Not started | none |
@@ -42,10 +42,15 @@ no core), 04, 05, 06. 06 can be pulled forward if phone reports come in.
 
 ## Top risks
 
-1. **Phase 01 needs a model change, not a refit.** The 25° downwind angle
-   miss comes from an asym aero with no soak/plane switch; tuning knobs
-   cannot fix structure. Budget for an ADR at the fork (ORC's own spinnaker
-   model vs a mode-switched one) and for the golden corpus to move.
+1. **Phase 01 needs a model change, not a refit.** Confirmed 2026-08-26, and
+   the cause was more specific than this risk anticipated: the only non-ORC
+   offwind knob multiplied CLmax, which ORC puts at 0.100 by AWA 150°, so the
+   fit had no lever on a soak at all.
+   [ADR 0018](../../adr/0018-offwind-parachute-drag-knob-not-a-mode-switch.md)
+   adds a drag knob rather than a mode switch, and the golden corpus moved as
+   budgeted. After: the gate still reads 8/10, with the downwind miss down from
+   15.1 % / 25.5° to 1.9 % / 3.0° and the two remaining misses named in numbers
+   in the phase-01 progress log.
 2. **Share URLs freeze the control schema.** Once a link is in a group chat
    it must keep working; the URL carries a version and the parser has a
    migration table from day one.
@@ -64,8 +69,8 @@ no core), 04, 05, 06. 06 can be pulled forward if phone reports come in.
   01), `docs/research/2026-08-25-sailing-sim-landscape/05-second-class-readiness.md`
   (phase 05), `docs/research/2026-08-25-cockpit/` (phase 04).
 - ADRs: 0006 (tiers), 0008 (third-party data), 0012 (hold-out gate), 0015
-  (cockpit IA), 0017 (kite geometry). New ADRs expected at the phase 01 fork
-  and, if needed, for the share-URL schema.
+  (cockpit IA), 0017 (kite geometry), 0018 (the phase 01 fork). A further ADR
+  may still be needed for the share-URL schema.
 - Carries forward: `docs/plans/2026-08-25-ux-excellence/phase-06` (deferred
   into phase 04 here) and the open P2/P3 items of
   `docs/audits/2026-08-25-ux-03/todo.md` (phase 06 here).
