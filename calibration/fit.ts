@@ -526,7 +526,7 @@ export function shapeHeadroom(): ShapeHeadroom {
   let minTwist = Infinity;
   let maxTwist = -Infinity;
   for (let backstay = 0; backstay <= 100; backstay += 5) {
-    const race = { ...baseRace(), backstay };
+    const race = { ...baseRace(boat), backstay };
     const s = flyingShape(boat, rigState(boat, BASE_DOCK, backstay), race, 'main').half;
     minDraft = Math.min(minDraft, s.draft);
     maxDraft = Math.max(maxDraft, s.draft);

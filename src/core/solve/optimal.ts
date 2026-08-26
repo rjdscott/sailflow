@@ -79,7 +79,8 @@ export function optimal(
   // base is the eased main, not a beat's mainsheet. Same datum the shape
   // deltas are measured against (`shape/base.ts`), so a downwind VPP row sits
   // at zero shape deviation instead of carrying the whole ease as one.
-  const baseRaceCtl = opts.race ?? (condition.sailset === 'asym' ? baseRaceDown() : baseRace());
+  const baseRaceCtl =
+    opts.race ?? (condition.sailset === 'asym' ? baseRaceDown(boat) : baseRace(boat));
   const flatIters = opts.iters?.flat ?? FLAT_ITERS;
   const twaIters = opts.iters?.twa ?? TWA_ITERS;
   const upwind = Math.abs(condition.twaDeg) < 90; // prov: assumed, upwind/downwind split at 90° TWA

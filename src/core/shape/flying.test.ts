@@ -10,12 +10,12 @@ const boat = { ...(j70 as unknown as BoatDefinition), calibration: {} }; // modu
 const SAILS: SailId[] = ['main', 'jib', 'asym'];
 const SECTIONS = ['quarter', 'half', 'threeQuarter'] as const;
 
-function rigAt(backstay = baseRace().backstay, dock = baseDock()) {
+function rigAt(backstay = baseRace(boat).backstay, dock = baseDock()) {
   return rigState(boat, dock, backstay);
 }
 
 function shapeAt(sail: SailId, over: Partial<RaceControls> = {}): SailShape {
-  const race = { ...baseRace(), ...over };
+  const race = { ...baseRace(boat), ...over };
   return flyingShape(boat, rigAt(race.backstay), race, sail);
 }
 
@@ -58,7 +58,7 @@ describe('clamps hold across the whole control space', () => {
   // Corners of the race-control box: every control at each of its stops.
   const stops: RaceControls[] = [];
   for (const pick of [0, 1] as const) {
-    const race = baseRace();
+    const race = baseRace(boat);
     for (const key of Object.keys(race) as (keyof RaceControls)[]) {
       const spec = boat.controls[key];
       race[key] = pick === 0 ? spec.min : spec.max;
@@ -180,7 +180,7 @@ describe('jib responses', () => {
     // Sag is a rig output, so sweep it through the backstay, which sets it.
     const drafts = ramp(0, 100).map((backstay) => {
       const rig = rigAt(backstay);
-      return { sag: rig.sagMm, draft: flyingShape(boat, rig, baseRace(), 'jib').half.draft };
+      return { sag: rig.sagMm, draft: flyingShape(boat, rig, baseRace(boat), 'jib').half.draft };
     });
     monotone(
       drafts.map((d) => d.sag),
@@ -303,7 +303,7 @@ describe('asym', () => {
 describe('knobs', () => {
   it('shape.bendToDraft owns the bend-to-flattening gain and can be zeroed', () => {
     const off = { ...boat, calibration: { 'shape.bendToDraft': 0 } };
-    const race = baseRace();
+    const race = baseRace(boat);
     const soft = flyingShape(off, rigState(off, baseDock(), 0), race, 'main').half.draft;
     const hard = flyingShape(off, rigState(off, baseDock(), 100), race, 'main').half.draft;
     expect(hard).toBeCloseTo(soft, 12);
@@ -312,8 +312,8 @@ describe('knobs', () => {
   it('shape.sagToDraft owns the sag-to-camber gain', () => {
     const hot = { ...boat, calibration: { 'shape.sagToDraft': 0.002 } };
     const rig = rigState(hot, baseDock(), 0);
-    expect(flyingShape(hot, rig, baseRace(), 'jib').half.draft).toBeGreaterThan(
-      flyingShape(boat, rig, baseRace(), 'jib').half.draft,
+    expect(flyingShape(hot, rig, baseRace(boat), 'jib').half.draft).toBeGreaterThan(
+      flyingShape(boat, rig, baseRace(boat), 'jib').half.draft,
     );
   });
 });

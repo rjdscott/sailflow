@@ -9,12 +9,19 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import j70 from '../data/boats/j70.json';
-import type { BoatDefinition, SailSet, SeaState } from '../src/core/types';
+import polarJson from '../data/polar/orc-j70.json';
+import type { BoatDefinition, PolarTable, SailSet, SeaState } from '../src/core/types';
 import { baseDock } from '../src/core/shape/base';
 import { geometryFor } from '../src/core/solve/equilibrium';
 import { optimal } from '../src/core/solve/optimal';
 
-export const boat = j70 as unknown as BoatDefinition;
+/**
+ * The boat the harness gates, with its reference polar attached the same way
+ * `src/lib/boat.ts` attaches one for the app — the solver reads `boat.polar`
+ * for `pctPolar`, so a harness boat without it would gate a different model
+ * from the one that ships.
+ */
+export const boat = { ...j70, polar: polarJson as PolarTable } as unknown as BoatDefinition;
 
 /** Cached once: sail geometry never varies within a run. */
 const GEOM = geometryFor(boat);
@@ -88,10 +95,16 @@ function sha8(s: string): string {
  * calibration block and the provenance prose. A note edit is not a geometry
  * change (#84 regenerated the corpus over one), so `provenance` and `sources`
  * stay out; `boat/validate.ts` checks them, the solver never reads them.
+ *
+ * `polar` stays out too, and for a different reason: it is not part of the
+ * boat file at all, it is a separately committed reference table attached at
+ * load (`BoatDefinition.polar`). It was outside this hash before it rode on
+ * the boat object and it stays outside now — `validation/polar.test.ts` is
+ * what guards the table itself.
  */
 export function boatHash(b: BoatDefinition = boat): string {
-  const { calibration: _c, provenance: _p, sources: _s, ...rest } = b;
-  void [_c, _p, _s];
+  const { calibration: _c, provenance: _p, sources: _s, polar: _pol, ...rest } = b;
+  void [_c, _p, _s, _pol];
   return sha8(JSON.stringify(rest));
 }
 

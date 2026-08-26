@@ -65,7 +65,7 @@ function meanTwist(shapes: Partial<Record<SailId, SailShape>>): number {
  * the upgrade path if a residual ever asks for the shape of the curve.
  */
 export function targetDraftMul(boat: BoatDefinition, twsKt: number): number {
-  const refKt = knob(boat, 'shape.draftTargetRefKt', 12); // prov: assumed, the wind band baseRace() is the app's reading of
+  const refKt = knob(boat, 'shape.draftTargetRefKt', 12); // prov: assumed, the wind band baseRace(boat) is the app's reading of
   const perKt = knob(boat, 'shape.draftTargetPerKt', 0.025); // prov: assumed, fraction of base draft per kt from that band
   const span = knob(boat, 'shape.draftTargetSpan', 0.25); // prov: assumed clamp, keeps the target inside the range soft sails fly in
   return clamp(1 + perKt * (refKt - twsKt), 1 - span, 1 + span);

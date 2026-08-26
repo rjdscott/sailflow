@@ -98,7 +98,7 @@ export function polarCases(): Case[] {
  * rig -> shape -> ORC tune, small enough to stay inside the time budget.
  */
 export function trimStates(): { id: string; race: RaceControls }[] {
-  const base = baseRace();
+  const base = baseRace(boat);
   const out = [{ id: 'base', race: base }];
   for (const key of ['backstay', 'mainsheet', 'traveller', 'outhaul', 'vang'] as const)
     for (const end of ['min', 'max'] as const)

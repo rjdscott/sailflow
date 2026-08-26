@@ -14,7 +14,7 @@ describe('solver worker dispatch', () => {
       protocolVersion: 2 as unknown as 1,
       id: 1,
       type: 'trimmed',
-      controls: { dock: baseDock(), race: baseRace() },
+      controls: { dock: baseDock(), race: baseRace(boat) },
       condition: cond,
     });
     expect(r.type).toBe('error');
@@ -24,7 +24,7 @@ describe('solver worker dispatch', () => {
       protocolVersion: 1,
       id: 2,
       type: 'trimmed',
-      controls: { dock: baseDock(), race: baseRace() },
+      controls: { dock: baseDock(), race: baseRace(boat) },
       condition: cond,
     });
     expect(r).toMatchObject({ type: 'error', id: 2 });
@@ -42,7 +42,7 @@ describe('solver worker dispatch', () => {
       protocolVersion: 1,
       id: 5,
       type: 'trimmed',
-      controls: { dock: baseDock(), race: baseRace() },
+      controls: { dock: baseDock(), race: baseRace(boat) },
       condition: cond,
     });
     expect(t).toMatchObject({ type: 'ok', id: 5 });
@@ -59,7 +59,7 @@ describe('solver worker dispatch', () => {
       protocolVersion: 1,
       id: 8,
       type: 'optimalTrim',
-      controls: { dock: baseDock(), race: { ...baseRace(), backstay: 90, mainsheet: 20 } },
+      controls: { dock: baseDock(), race: { ...baseRace(boat), backstay: 90, mainsheet: 20 } },
       condition: cond,
     });
     expect(ot).toMatchObject({ type: 'ok', id: 8 });

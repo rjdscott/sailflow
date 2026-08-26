@@ -105,6 +105,29 @@ export interface CrewDef {
   hikingRule: string;
 }
 
+/** One printed row of a reference polar. */
+export interface PolarRow {
+  twsKt: number;
+  sail: SailSet;
+  kind: 'vmgUp' | 'angle' | 'vmgDn';
+  twaDeg: number;
+  bsKt: number;
+  vmgKt: number;
+  heelDeg: number;
+}
+
+/**
+ * A reference polar table, as committed under `data/polar/`. The solver reads
+ * it to report speed as a percentage of target; `validation/` gates against
+ * it (ADR 0007).
+ */
+export interface PolarTable {
+  /** The TWS columns the guide prints, ascending. */
+  twsKt: number[];
+  rows: PolarRow[];
+  source: { id?: string; title: string; url: string; vppVersion?: string; issued?: string };
+}
+
 export interface BoatDefinition {
   schemaVersion: 1;
   id: string;
@@ -128,6 +151,19 @@ export interface BoatDefinition {
   calibration: Record<string, number>;
   provenance: Record<string, ProvenanceEntry>;
   sources: Record<string, SourceRef>;
+  /**
+   * The class's reference polar, attached at load time from `data/polar/` —
+   * **not** a block of the boat JSON, which is why it is optional and why
+   * `boatHash` skips it (`validation/compare.ts`). Keeping it off the file
+   * keeps one committed polar per source (`PROVENANCE.md`) rather than a copy
+   * inlined per boat, and keeps the boat file diffable by hand.
+   *
+   * Absent is a legal state: a class with no published polar still sails, it
+   * just cannot report a percentage of target. `reference/polar.ts` reports
+   * `inGrid: false` for every lookup, which tiers `pctPolar` down to C rather
+   * than inventing a target (ADR 0006).
+   */
+  polar?: PolarTable;
 }
 
 // ---------------------------------------------------------------------------

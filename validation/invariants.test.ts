@@ -51,7 +51,7 @@ const CREW_KG = 320;
 const cond = (twsKt: number, twaDeg: number, sailset: SailSet = 'jib', seaState: SeaState = 1) =>
   ({ twsKt, twaDeg, seaState, crewKg: CREW_KG, sailset }) satisfies Condition;
 
-const controls = (dock: DockControls = baseDock(), race: RaceControls = baseRace()) => ({
+const controls = (dock: DockControls = baseDock(), race: RaceControls = baseRace(boat)) => ({
   dock,
   race,
 });
@@ -253,7 +253,7 @@ describe('8. rig signs over the full control range', () => {
     let prev: { bend: number; sag: number; draft: number; twist: number } | null = null;
     for (const backstay of sweep(boat.controls.backstay)) {
       const rig = rigState(boat, baseDock(), backstay);
-      const main = flyingShape(boat, rig, { ...baseRace(), backstay }, 'main');
+      const main = flyingShape(boat, rig, { ...baseRace(boat), backstay }, 'main');
       const now = {
         bend: peakBendMm(rig),
         sag: rig.sagMm,
@@ -309,10 +309,17 @@ describe('9. race trim cannot move the dock rig', () => {
     const dock: DockControls = { upperTurns: 2, lowerTurns: 1, forestayMm: 20 };
     const ref = trimmed(boat, controls(dock), cond(12, 42), GEOM).rig;
     const races: RaceControls[] = [
-      baseRace(),
-      { ...baseRace(), backstay: 0, mainsheet: 0, outhaul: 0, vang: 0, cunningham: 0 },
-      { ...baseRace(), backstay: 100, mainsheet: 100, outhaul: 100, vang: 100, cunningham: 100 },
-      { ...baseRace(), jibLead: 10, inhauler: 100, jibHalyard: 100, traveller: -100 },
+      baseRace(boat),
+      { ...baseRace(boat), backstay: 0, mainsheet: 0, outhaul: 0, vang: 0, cunningham: 0 },
+      {
+        ...baseRace(boat),
+        backstay: 100,
+        mainsheet: 100,
+        outhaul: 100,
+        vang: 100,
+        cunningham: 100,
+      },
+      { ...baseRace(boat), jibLead: 10, inhauler: 100, jibHalyard: 100, traveller: -100 },
     ];
     for (const race of races) {
       const rig = trimmed(boat, controls(dock, race), cond(12, 42), GEOM).rig;
@@ -470,7 +477,7 @@ describe('12. boat validator', () => {
 describe('13. per-control trim optimum', () => {
   /** Deliberately bad trim: over-flat, over-vanged, sheets eased, lead aft. */
   const mistrim: RaceControls = {
-    ...baseRace(),
+    ...baseRace(boat),
     backstay: 90,
     mainsheet: 20,
     traveller: -60,
@@ -555,7 +562,7 @@ describe('14. backstay direction matches the tuning guides', () => {
    * actually in when they reach for the backstay.
    */
   const LIGHT: RaceControls = {
-    ...baseRace(),
+    ...baseRace(boat),
     traveller: 15,
     cunningham: 0,
     outhaul: 25,
@@ -564,7 +571,7 @@ describe('14. backstay direction matches the tuning guides', () => {
     jibLead: 4,
   };
   const HEAVY: RaceControls = {
-    ...baseRace(),
+    ...baseRace(boat),
     traveller: -30,
     cunningham: 60,
     outhaul: 100,
@@ -612,7 +619,7 @@ describe('15. main leech stall rises with mainsheet', () => {
     it(`TWS ${c.twsKt}: non-decreasing across mainsheet 20 / 60 / 100 %`, () => {
       let prev = -Infinity;
       for (const mainsheet of [20, 60, 100]) {
-        const r = trimmed(boat, controls(baseDock(), { ...baseRace(), mainsheet }), c, GEOM);
+        const r = trimmed(boat, controls(baseDock(), { ...baseRace(boat), mainsheet }), c, GEOM);
         const f = r.instruments.leechStallFrac.value;
         expect(f, `stall at mainsheet ${mainsheet} %`).toBeGreaterThanOrEqual(prev);
         expect(f).toBeGreaterThanOrEqual(0);
@@ -630,7 +637,7 @@ describe('16. jib leech stripe moves outboard as the lead goes aft', () => {
     const c = cond(12, 42);
     let prev = -Infinity;
     for (const jibLead of [0, 2, 4, 6, 8, 10]) {
-      const r = trimmed(boat, controls(baseDock(), { ...baseRace(), jibLead }), c, GEOM);
+      const r = trimmed(boat, controls(baseDock(), { ...baseRace(boat), jibLead }), c, GEOM);
       const s = r.instruments.jibLeechStripe;
       expect(s, `stripe at jib lead ${jibLead}`).toBeDefined();
       expect(s!.value, `stripe at jib lead ${jibLead}`).toBeGreaterThan(prev);
@@ -646,7 +653,7 @@ describe('16. jib leech stripe moves outboard as the lead goes aft', () => {
 
 describe('17. helm load rises as the crew comes off the rail', () => {
   it('increases as crew weight is removed at a fixed trim', () => {
-    const race = baseRace();
+    const race = baseRace(boat);
     let prev = -Infinity;
     for (const crewKg of [320, 280, 240, 200]) {
       const r = trimmed(boat, controls(baseDock(), race), { ...cond(12, 42), crewKg }, GEOM);

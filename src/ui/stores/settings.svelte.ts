@@ -1,7 +1,9 @@
 /**
- * Persisted UI settings: density tier, theme, motion. localStorage access is
- * wrapped in try/catch — iOS Safari PWAs can throw in private contexts.
+ * Persisted UI settings: density tier, theme, motion, boat class.
+ * localStorage access is wrapped in try/catch — iOS Safari PWAs can throw in
+ * private contexts.
  */
+import { DEFAULT_BOAT_ID, isBoatId } from '../../lib/boat';
 
 /**
  * Density tier (cockpit phase 01, replaces Simple/Advanced):
@@ -17,6 +19,7 @@ export type Motion = 'system' | 'on' | 'off';
 const MODE_KEY = 'sailflow.mode';
 const THEME_KEY = 'sailflow.theme';
 const MOTION_KEY = 'sailflow.motion';
+const BOAT_KEY = 'sailflow.boat';
 
 const DEFAULT_MODE: Mode = 'race';
 
@@ -69,11 +72,18 @@ function readMode(): Mode {
 
 const initialTheme = readStorage(THEME_KEY);
 const initialMotion = readStorage(MOTION_KEY);
+const initialBoat = readStorage(BOAT_KEY);
 
 class Settings {
   mode: Mode = $state(readMode());
   theme: Theme = $state(isTheme(initialTheme) ? initialTheme : 'dark'); // dark-first, ADR 0015
   motion: Motion = $state(isMotion(initialMotion) ? initialMotion : 'system');
+  /**
+   * The class being sailed. Validated against the registry on read, so a
+   * stored id from a build that carried a class this one does not falls back
+   * to the default rather than blanking the app.
+   */
+  boatId: string = $state(isBoatId(initialBoat) ? initialBoat : DEFAULT_BOAT_ID);
 
   /**
    * "Show the dense version": true for race and analyse, false for learn.
@@ -97,6 +107,16 @@ class Settings {
   setMotion(motion: Motion): void {
     this.motion = motion;
     writeStorage(MOTION_KEY, motion);
+  }
+
+  /**
+   * Switch class. The solver worker holds one boat at a time, so the caller
+   * must reload it (`solverClient.setBoat`) — this only records the choice.
+   */
+  setBoatId(id: string): void {
+    if (!isBoatId(id)) return;
+    this.boatId = id;
+    writeStorage(BOAT_KEY, id);
   }
 }
 

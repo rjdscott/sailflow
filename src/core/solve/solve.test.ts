@@ -68,27 +68,27 @@ describe('equilibrium', () => {
 describe('trimmed', () => {
   it('throws on a non-finite condition instead of returning the seed unconverged', () => {
     const c = { twsKt: 12, twaDeg: 150, sailset: 'asym', seaState: 0 } as unknown as Condition;
-    expect(() => trimmed(boat, { dock: baseDock(), race: baseRace() }, c)).toThrow(/crewKg/);
+    expect(() => trimmed(boat, { dock: baseDock(), race: baseRace(boat) }, c)).toThrow(/crewKg/);
     expect(() =>
-      trimmed(boat, { dock: baseDock(), race: baseRace() }, { ...c, crewKg: NaN }),
+      trimmed(boat, { dock: baseDock(), race: baseRace(boat) }, { ...c, crewKg: NaN }),
     ).toThrow(/crewKg/);
   });
 
   it('returns tiers per ADR 0006 upwind under jib', () => {
-    const r = trimmed(boat, { dock: baseDock(), race: baseRace() }, up);
+    const r = trimmed(boat, { dock: baseDock(), race: baseRace(boat) }, up);
     expect(r.bsKt.tier).toBe('A');
     expect(r.heelDeg.tier).toBe('B');
     expect(r.shape.main && r.shape.jib).toBeTruthy();
   });
   it('backstay on flattens the main and reduces heeling moment', () => {
-    const off = trimmed(boat, { dock: baseDock(), race: { ...baseRace(), backstay: 0 } }, up);
-    const on = trimmed(boat, { dock: baseDock(), race: { ...baseRace(), backstay: 100 } }, up);
+    const off = trimmed(boat, { dock: baseDock(), race: { ...baseRace(boat), backstay: 0 } }, up);
+    const on = trimmed(boat, { dock: baseDock(), race: { ...baseRace(boat), backstay: 100 } }, up);
     expect(on.shape.main!.half.draft).toBeLessThan(off.shape.main!.half.draft);
     expect(on.aero.mxNm).toBeLessThan(off.aero.mxNm);
   });
   it('race controls cannot change the rig geometry set at the dock', () => {
-    const a = trimmed(boat, { dock: baseDock(), race: { ...baseRace(), mainsheet: 0 } }, up);
-    const b = trimmed(boat, { dock: baseDock(), race: { ...baseRace(), mainsheet: 100 } }, up);
+    const a = trimmed(boat, { dock: baseDock(), race: { ...baseRace(boat), mainsheet: 0 } }, up);
+    const b = trimmed(boat, { dock: baseDock(), race: { ...baseRace(boat), mainsheet: 100 } }, up);
     expect(a.rig.rakeMm).toBe(b.rig.rakeMm);
     expect(a.rig.upperN).toBe(b.rig.upperN);
   });
@@ -188,7 +188,7 @@ describe('optimal at a fixed angle', () => {
     const r = optimal(boat, baseDock(), { ...up, twaDeg: 90 }, { optimiseTwa: false });
     expect(r.converged).toBe(true);
     expect(r.aero.flat).toBeGreaterThan(0.6);
-    const base = trimmed(boat, { dock: baseDock(), race: baseRace() }, { ...up, twaDeg: 90 });
+    const base = trimmed(boat, { dock: baseDock(), race: baseRace(boat) }, { ...up, twaDeg: 90 });
     expect(r.bsKt.value).toBeGreaterThanOrEqual(base.bsKt.value - 0.05);
   });
 });

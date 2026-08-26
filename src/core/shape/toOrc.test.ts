@@ -15,7 +15,7 @@ function shapesAt(
   dock: DockControls = baseDock(),
   sails: SailId[] = UPWIND,
 ): { shapes: Partial<Record<SailId, SailShape>>; race: RaceControls } {
-  const race = { ...baseRace(), ...over };
+  const race = { ...baseRace(boat), ...over };
   const rig = rigState(boat, dock, race.backstay);
   const shapes: Partial<Record<SailId, SailShape>> = {};
   for (const s of sails) shapes[s] = flyingShape(boat, rig, race, s);
@@ -42,7 +42,7 @@ describe('shapeToOrc contract', () => {
   });
 
   it('handles an empty sail set without dividing by zero', () => {
-    const r = shapeToOrc(boat, {}, baseRace(), 'jib');
+    const r = shapeToOrc(boat, {}, baseRace(boat), 'jib');
     expect(Number.isFinite(r.flat)).toBe(true);
     expect(Number.isFinite(r.twistEffDeg)).toBe(true);
     for (const v of Object.values(r.deltas)) expect(Number.isFinite(v)).toBe(true);
