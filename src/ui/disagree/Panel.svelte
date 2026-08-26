@@ -7,8 +7,8 @@
    * model is calibrated to North in two bands and that the gap elsewhere is
    * information, and every disagreement of a turn or more is logged locally.
    */
+  import { activeBoat } from '../../lib/boat';
   import {
-    DEFAULT_BOAT_ID,
     GUIDE_LABELS,
     guidesFor,
     isCalibratedBand,
@@ -37,7 +37,7 @@
     stale = false,
     error = null,
     compact = false,
-    boatId = DEFAULT_BOAT_ID,
+    boatId = activeBoat.id,
   }: {
     twsKt: number;
     seaState: SeaState;

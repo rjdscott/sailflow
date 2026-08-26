@@ -1,5 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import { bulletBands, bulletScale, heelBands, pctOfTarget, sparkPoints, trendOf } from './gauges';
+import { activeBoat } from '../../lib/boat';
+import {
+  bulletBands,
+  bulletScale,
+  heelBands,
+  pctOfTarget,
+  sparkPoints,
+  STRIPE_INCHES,
+  trendOf,
+} from './gauges';
+
+describe('STRIPE_INCHES', () => {
+  it('reads the active class stripes, falling back to the reference boat', () => {
+    // A class paints the stripes its own guide calls for, so this is a
+    // per-boat `instruments.stripeIn*` knob (`core/solve/instruments.ts`) and
+    // not the J/70 literal it used to be. The J/70 overrides none, so it
+    // reads the reference spacing — 18/20/22 in, North J/70 guide (S1).
+    const { calibration } = activeBoat;
+    expect(STRIPE_INCHES).toEqual([
+      calibration['instruments.stripeInLo'] ?? 18,
+      calibration['instruments.stripeInMid'] ?? 20,
+      calibration['instruments.stripeInHi'] ?? 22,
+    ]);
+  });
+
+  it('is ascending, or the gauge would read a leech outboard as hooked', () => {
+    expect(STRIPE_INCHES[0]).toBeLessThan(STRIPE_INCHES[1]);
+    expect(STRIPE_INCHES[1]).toBeLessThan(STRIPE_INCHES[2]);
+  });
+});
 
 describe('bulletScale', () => {
   const base = { min: 0, max: 10, betterIs: 'more' as const };

@@ -12,11 +12,11 @@
   import type { ControlSpec, RaceControls } from '../../core/types';
   import type { TrimControl } from '../../worker/protocol';
   import { historyKey, type Objective } from '../race/store.svelte';
-  import j70 from '../../../data/boats/j70.json';
+  import { activeBoat } from '../../lib/boat';
 
   let { drill, onback }: { drill: Drill; onback: () => void } = $props();
 
-  const SPECS = j70.controls as Record<string, ControlSpec>;
+  const SPECS: Record<string, ControlSpec> = activeBoat.controls;
 
   const lockedKeys = $derived(RACE_KEYS.filter((k) => !(drill.free as string[]).includes(k)));
 

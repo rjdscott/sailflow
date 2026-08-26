@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { validateBoat } from '../core/boat/validate';
-import { boatChoices, boatFor, boatIds, DEFAULT_BOAT_ID, isBoatId } from './boat';
+import {
+  activeBoat,
+  boatChoices,
+  boatFor,
+  boatIds,
+  DEFAULT_BOAT_ID,
+  isBoatId,
+  sailM,
+} from './boat';
 
 describe('boat registry', () => {
   it('lists the default first so a picker opens on the boat the gates run on', () => {
@@ -31,5 +39,27 @@ describe('boat registry', () => {
     expect(boatFor(undefined).id).toBe(DEFAULT_BOAT_ID);
     expect(isBoatId('not-a-boat')).toBe(false);
     expect(isBoatId(DEFAULT_BOAT_ID)).toBe(true);
+  });
+
+  it('resolves an active class the whole UI can draw from', () => {
+    // Every UI module that used to import `data/boats/j70.json` now reads
+    // `activeBoat`. If this were ever undefined — or a boat outside the
+    // registry — the cockpit would draw a sail plan nothing had validated.
+    expect(isBoatId(activeBoat.id)).toBe(true);
+    expect(validateBoat(activeBoat)).toEqual([]);
+  });
+});
+
+describe('sailM', () => {
+  it('reads a girth in metres from the mm the file carries', () => {
+    expect(sailM(boatFor(DEFAULT_BOAT_ID).sails.jib, 'lpMm')).toBeCloseTo(2.45, 6);
+  });
+
+  it('names the missing dimension instead of drawing a sail with no cloth', () => {
+    // `SailDef`'s girths are `number | string`, so an absent or textual value
+    // would otherwise reach the loft as `NaN` and silently collapse the sail.
+    const sail = boatFor(DEFAULT_BOAT_ID).sails.main;
+    expect(() => sailM(sail, 'noSuchMm')).toThrow(/noSuchMm/);
+    expect(() => sailM(sail, 'orcTable')).toThrow(/not a number/);
   });
 });

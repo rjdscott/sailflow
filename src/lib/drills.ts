@@ -39,9 +39,7 @@ import type { OptimalTrimRequest, TrimmedRequest } from '../worker/protocol';
 import type { SolverClient } from '../worker/client';
 import { bandFor, guideFor, GUIDE_IDS, GUIDE_LABELS } from './reference';
 import { hashSeed, mulberry32, pick, randInt } from './prng';
-import j70 from '../../data/boats/j70.json';
-import polarJson from '../../data/polar/orc-j70.json';
-import templatesJson from '../../data/drills/j70-templates.json';
+import { activeBoat } from './boat';
 
 export type DrillTier = 1 | 2 | 3;
 export type Medal = 'gold' | 'silver' | 'bronze' | 'none';
@@ -110,7 +108,20 @@ export interface Drill {
   cTier?: boolean;
 }
 
-export const TEMPLATES = templatesJson as unknown as DrillTemplate[];
+/**
+ * Templates are per class, one file per boat, enumerated the same way
+ * `reference.ts` enumerates the tuning guides — adding a class's drills is a
+ * file, not a code change. **Empty is a real answer**: a class with no
+ * committed templates has no drills, and the screen says so rather than
+ * setting a J/70 fault on another boat's rig.
+ */
+const TEMPLATE_FILES: Record<string, DrillTemplate[]> = import.meta.glob(
+  '../../data/drills/*-templates.json',
+  { eager: true, import: 'default' },
+);
+
+export const TEMPLATES: DrillTemplate[] =
+  TEMPLATE_FILES[`../../data/drills/${activeBoat.id}-templates.json`] ?? [];
 
 /** Exhaustive by construction: TS errors here if `RaceControls` gains a key. */
 const RACE_KEY_MAP: Record<keyof RaceControls, true> = {
@@ -136,7 +147,7 @@ interface Spec {
   max: number;
   step: number;
 }
-const CONTROLS = j70.controls as Record<string, Spec>;
+const CONTROLS = activeBoat.controls as Record<string, Spec>;
 
 export function controlSpec(key: string): Spec {
   return CONTROLS[key];
@@ -159,20 +170,32 @@ interface PolarRow {
   kind: string;
   twaDeg: number;
 }
-const POLAR_ROWS = (polarJson as unknown as { rows: PolarRow[] }).rows;
+const POLAR_ROWS = (activeBoat.polar as unknown as { rows?: PolarRow[] } | undefined)?.rows ?? [];
 
 /**
- * VMG-optimal TWA at this wind speed, straight off the ORC Speed Guide rows
- * (`kind: 'vmgUp'` upwind, `'vmgDn'` under the kite), linearly interpolated
- * between the published wind speeds and clamped outside them.
+ * VMG-optimal TWA at this wind speed, straight off the active class's
+ * reference polar rows (`kind: 'vmgUp'` upwind, `'vmgDn'` under the kite),
+ * linearly interpolated between the published wind speeds and clamped outside
+ * them.
  *
- * prov: `data/polar/orc-j70.json`, ORC Speed Guide J/70, VPP 2011 1.02.
+ * prov: the class's own polar file, attached by `lib/boat.ts` and sourced in
+ * `PROVENANCE.md` — for the J/70, `data/polar/orc-j70.json`, ORC Speed Guide
+ * J/70, VPP 2011 1.02.
+ *
+ * A class with no committed polar has no published VMG angle, and a drill
+ * asking for one is a drill that cannot be built: it says so by name rather
+ * than reading `undefined[0]`.
  */
 export function optimalTwaDeg(twsKt: number, sailset: SailSet): number {
   const kind = sailset === 'jib' ? 'vmgUp' : 'vmgDn';
   const pts = POLAR_ROWS.filter((r) => r.sail === sailset && r.kind === kind).sort(
     (a, b) => a.twsKt - b.twsKt,
   );
+  if (pts.length === 0) {
+    throw new Error(
+      `${activeBoat.id} has no committed reference polar: no published VMG-optimal angle to build a drill from`,
+    );
+  }
   const first = pts[0];
   const last = pts[pts.length - 1];
   if (twsKt <= first.twsKt) return first.twaDeg;

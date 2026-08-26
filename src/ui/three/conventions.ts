@@ -46,7 +46,7 @@
  * sags, so the spanwise grid lines are not vertical and the surface normals
  * tilt with them.
  */
-import boat from '../../../data/boats/j70.json';
+import { activeBoat as boat } from '../../lib/boat';
 import { tackSide, type Side } from '../race/boat';
 
 export { tackSide };

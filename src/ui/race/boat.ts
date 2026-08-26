@@ -11,7 +11,7 @@
  * `Side` is +1 on starboard tack and −1 on port; every athwartships term
  * carries it, which is the whole of the port-tack mirror.
  */
-import boat from '../../../data/boats/j70.json';
+import { activeBoat as boat, sailM } from '../../lib/boat';
 import type { SectionShape } from '../../core/types';
 import { camberControl, type Pt } from './geometry';
 
@@ -46,11 +46,11 @@ export const DIMS = {
   halfBeamM: HALF_BEAM,
   spritM: boat.rig.bowspritOuterMm / 1000,
   boomM: boat.rig.boomOuterMm / 1000,
-  jibFootM: boat.sails.jib.lpMm / 1000,
+  jibFootM: sailM(boat.sails.jib, 'lpMm'),
   /** ¾-height chord over the foot: how long the twist ghost's chord is. */
   headChord: {
-    main: boat.sails.main.threeQuarterMm / boat.sails.main.footMm,
-    jib: boat.sails.jib.threeQuarterMm / boat.sails.jib.lpMm,
+    main: sailM(boat.sails.main, 'threeQuarterMm') / sailM(boat.sails.main, 'footMm'),
+    jib: sailM(boat.sails.jib, 'threeQuarterMm') / sailM(boat.sails.jib, 'lpMm'),
   },
 } as const;
 

@@ -27,7 +27,7 @@
  * length less the tack-to-head distance — is the whole of the sag magnitude;
  * `luffLateral` is the whole of its direction.
  */
-import boat from '../../../data/boats/j70.json';
+import { activeBoat as boat, sailM } from '../../lib/boat';
 import type { DownControls } from '../../core/types';
 import {
   add,
@@ -49,7 +49,7 @@ const asym = boat.sails.asym;
 const SPRIT_M = boat.rig.bowspritOuterMm / 1000;
 const MAST_LEN_M = boat.rig.mastLenM;
 /** Luff length, m. prov: Class Rules / ORC sail definition, `sails.asym`. */
-const LUFF_M = asym.luffMm / 1000;
+const LUFF_M = sailM(asym, 'luffMm');
 /**
  * Leech and foot, m. prov: published — J/70 Class Rules G.5.3, carried in
  * `sails.asym`. These two are not decoration: together with the head and the
@@ -57,8 +57,8 @@ const LUFF_M = asym.luffMm / 1000;
  * sheet then chooses a point. Before research doc 02 §6 the drawn leech
  * carried 25–40 % more cloth than the sail has.
  */
-const LEECH_M = asym.leechMm / 1000;
-const FOOT_M = asym.footMm / 1000;
+const LEECH_M = sailM(asym, 'leechMm');
+const FOOT_M = sailM(asym, 'footMm');
 
 // ---------------------------------------------------------------------------
 // Chords
@@ -84,8 +84,8 @@ export const FLYING_CHORD_FRACTION = 0.85;
  * than two guesses. prov: ORC spinnaker area formula (see `sailplan.ts`).
  */
 export function kiteGirthM(x: number): number {
-  const a = asym.footMm / 1000;
-  const d = 4 * (a / 2 - asym.halfMm / 1000);
+  const a = FOOT_M;
+  const d = 4 * (a / 2 - sailM(asym, 'halfMm'));
   const b = -a - d;
   const t = Math.min(1, Math.max(0, x));
   return Math.max(0, a + b * t + d * t * t);

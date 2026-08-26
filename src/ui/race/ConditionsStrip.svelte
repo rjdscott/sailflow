@@ -1,5 +1,5 @@
 <script lang="ts">
-  import boat from '../../../data/boats/j70.json';
+  import { activeBoat as boat } from '../../lib/boat';
   import type { SailSet, SeaState } from '../../core/types';
   import Segmented from '../components/Segmented.svelte';
   import Sheet from '../components/Sheet.svelte';

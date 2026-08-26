@@ -3,7 +3,7 @@
  * localStorage access is wrapped in try/catch — iOS Safari PWAs can throw in
  * private contexts.
  */
-import { DEFAULT_BOAT_ID, isBoatId } from '../../lib/boat';
+import { activeBoat, BOAT_KEY, isBoatId } from '../../lib/boat';
 
 /**
  * Density tier (cockpit phase 01, replaces Simple/Advanced):
@@ -19,7 +19,6 @@ export type Motion = 'system' | 'on' | 'off';
 const MODE_KEY = 'sailflow.mode';
 const THEME_KEY = 'sailflow.theme';
 const MOTION_KEY = 'sailflow.motion';
-const BOAT_KEY = 'sailflow.boat';
 /** Phase-two 04: the first-run tour is dismissed once, per browser. */
 const TOUR_KEY = 'sailflow.tourSeen';
 
@@ -74,18 +73,19 @@ function readMode(): Mode {
 
 const initialTheme = readStorage(THEME_KEY);
 const initialMotion = readStorage(MOTION_KEY);
-const initialBoat = readStorage(BOAT_KEY);
 
 class Settings {
   mode: Mode = $state(readMode());
   theme: Theme = $state(isTheme(initialTheme) ? initialTheme : 'dark'); // dark-first, ADR 0015
   motion: Motion = $state(isMotion(initialMotion) ? initialMotion : 'system');
   /**
-   * The class being sailed. Validated against the registry on read, so a
-   * stored id from a build that carried a class this one does not falls back
-   * to the default rather than blanking the app.
+   * The class being sailed. The id of `activeBoat`, so the picker and every
+   * module that draws the boat cannot disagree about which class is on
+   * screen; `boatFor` has already validated the stored id against the
+   * registry, so one from a build that carried a class this one does not
+   * falls back to the default rather than blanking the app.
    */
-  boatId: string = $state(isBoatId(initialBoat) ? initialBoat : DEFAULT_BOAT_ID);
+  boatId: string = $state(activeBoat.id);
   /**
    * Whether the first-run tour has been dismissed. A settings flag rather than
    * a store of its own: it is one boolean with the same persistence rules as

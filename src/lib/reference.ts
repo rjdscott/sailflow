@@ -12,6 +12,7 @@
  * ~30 kB; switch to a lazy per-guide `import()` if the directory ever grows
  * past a handful.
  */
+import { activeBoat } from './boat';
 
 /** A guide id is whatever is in front of the boat id in the filename. */
 export type GuideId = string;
@@ -59,9 +60,6 @@ export interface GuideEntry {
   guide: Guide | null;
 }
 
-/** The one boat in the MVP; phase 05 passes another id to `guidesFor`. */
-export const DEFAULT_BOAT_ID = 'j70';
-
 const FILES: Record<string, Guide> = import.meta.glob('../../data/tuning/*.json', {
   eager: true,
   import: 'default',
@@ -83,8 +81,12 @@ const ENTRIES: GuideEntry[] = Object.keys(FILES)
     };
   });
 
-/** Every guide committed for a boat, loaded or not. Empty is a real answer. */
-export function guidesFor(boatId: string = DEFAULT_BOAT_ID): GuideEntry[] {
+/**
+ * Every guide committed for a boat, loaded or not. Empty is a real answer,
+ * and the one a second class starts life with: the disagreement panel says
+ * "no guide for this boat" rather than quoting another class's tables.
+ */
+export function guidesFor(boatId: string = activeBoat.id): GuideEntry[] {
   return ENTRIES.filter((e) => e.boatId === boatId);
 }
 

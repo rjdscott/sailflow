@@ -11,12 +11,12 @@ import type {
   DockScore,
   Forecast,
 } from '../../core/types';
-import j70 from '../../../data/boats/j70.json';
-import { bandFor, DEFAULT_BOAT_ID, guidesFor } from '../../lib/reference';
+import { activeBoat } from '../../lib/boat';
+import { bandFor, guidesFor } from '../../lib/reference';
 import { fmt, round, snap } from '../format';
 
-/** The one boat in the MVP. JSON is validated by `src/core/boat/validate`. */
-export const boat = j70 as unknown as BoatDefinition;
+/** The class being sailed. Validated by `src/core/boat/validate` on registration. */
+export const boat: BoatDefinition = activeBoat;
 
 export const specs: Record<keyof DockControls, ControlSpec> = {
   upperTurns: boat.controls.upperTurns,
@@ -197,7 +197,7 @@ export interface GuideBand {
  * The guide the Dock quotes when nothing is selected: the first one committed
  * for the boat, in filename order. `null` when the boat has no guide at all.
  */
-export function defaultGuideId(boatId: string = DEFAULT_BOAT_ID): string | null {
+export function defaultGuideId(boatId?: string): string | null {
   return guidesFor(boatId).find((e) => e.guide !== null)?.id ?? null;
 }
 
