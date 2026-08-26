@@ -1,6 +1,6 @@
 # Phase 01: Downwind physics passes its own gate
 
-- **Status:** 🟡 In progress
+- **Status:** ⏸ Deferred
 
 ## Goal
 

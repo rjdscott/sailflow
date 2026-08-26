@@ -1,6 +1,6 @@
 # Phase two: from a validated analyser to the trim platform sailors share
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 
 ## Goal
 
@@ -22,9 +22,9 @@ Epic 3 (Rust engine) stay unstarted; nothing here pre-commits to them.
 
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
-| 01 | [Downwind physics passes its own gate](phase-01-downwind-physics.md) | 🟡 In progress | 2026-08-26 |
-| 02 | [Share a trim, pin and compare](phase-02-share-and-compare.md) | 🟡 In progress | 2026-08-26 |
-| 03 | [Tuning guides as data](phase-03-guides-as-data.md) | 🟡 In progress | 2026-08-26 — schema, enumeration, selector and runbook landed; third guide blocked on sourcing |
+| 01 | [Downwind physics passes its own gate](phase-01-downwind-physics.md) | ⏸ Deferred | 2026-08-26 — the model soaks (ADR 0018); gate 8/10, downwind angle 3.0° vs 2°, needs a second mechanism |
+| 02 | [Share a trim, pin and compare](phase-02-share-and-compare.md) | 🟢 Completed | 2026-08-26 — rudder-angle readout re-scoped as a core task (no yaw balance) |
+| 03 | [Tuning guides as data](phase-03-guides-as-data.md) | 🟢 Completed | 2026-08-26 — schema, enumeration, selector and runbook; third guide unsourceable |
 | 04 | [Onboarding and explainers](phase-04-onboarding-and-explainers.md) | 🟢 Completed | 2026-08-26 |
 | 05 | [Second boat class](phase-05-second-boat.md) | 🟢 Completed | 2026-08-26 — the cockpit reads the active boat; Melges 24 registered, calibrated and gated at 7/10 (ADR 0020) |
 | 06 | [Phone performance](phase-06-phone-performance.md) | 🟢 Completed | 2026-08-26 — ux-03 M-20/21/22/24/25 and every P3 low fixed with measured before/after; the seven remaining P2 mediums are instrument content, deferred to 04 with reasons |
@@ -78,3 +78,7 @@ no core), 04, 05, 06. 06 can be pulled forward if phone reports come in.
 - Carries forward: `docs/plans/2026-08-25-ux-excellence/phase-06` (deferred
   into phase 04 here) and the open P2/P3 items of
   `docs/audits/2026-08-25-ux-03/todo.md` (phase 06 here).
+
+## State at close (2026-08-26, v0.4.0)
+
+All six phases merged (#93–#103). Open, with reasons in the phase files: downwind optimum angle 3° hot (01), rudder-angle readout needs a core yaw balance (02), no third J/70 guide and no Melges 24 guide fetchable (03, 05), Melges 24 gate 7/10 (05). Next plan should start from the downwind angle mechanism — it is the last physics item between the J/70 and a PASS.
