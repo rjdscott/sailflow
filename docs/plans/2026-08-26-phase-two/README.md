@@ -26,7 +26,7 @@ Epic 3 (Rust engine) stay unstarted; nothing here pre-commits to them.
 | 02 | [Share a trim, pin and compare](phase-02-share-and-compare.md) | 🟡 In progress | 2026-08-26 |
 | 03 | [Tuning guides as data](phase-03-guides-as-data.md) | 🟡 In progress | 2026-08-26 — schema, enumeration, selector and runbook landed; third guide blocked on sourcing |
 | 04 | [Onboarding and explainers](phase-04-onboarding-and-explainers.md) | 🟢 Completed | 2026-08-26 |
-| 05 | [Second boat class](phase-05-second-boat.md) | 🟡 In progress | 2026-08-26 |
+| 05 | [Second boat class](phase-05-second-boat.md) | 🟢 Completed | 2026-08-26 — the cockpit reads the active boat; Melges 24 registered, calibrated and gated at 7/10 (ADR 0020) |
 | 06 | [Phone performance](phase-06-phone-performance.md) | 🟢 Completed | 2026-08-26 — ux-03 M-20/21/22/24/25 and every P3 low fixed with measured before/after; the seven remaining P2 mediums are instrument content, deferred to 04 with reasons |
 
 Order: 01 first (credibility), then 02 and 03 in parallel (both data/UI,
@@ -57,9 +57,13 @@ no core), 04, 05, 06. 06 can be pulled forward if phone reports come in.
 3. **Guide transcription is copyright-adjacent.** ADR 0008 covers it;
    every new guide file needs the same provenance block and a retrieval
    date, and the disagreement panel must degrade when a guide is absent.
-4. **A second boat exposes J/70 constants in code.** Ten `src/core` files
-   still name the J/70 (`grep -rl j70 src/core`). Phase 05 moves them into
-   the boat file; the J/70 golden corpus must stay byte-identical.
+4. **A second boat exposes J/70 constants in code.** ~~Ten `src/core` files
+   still name the J/70.~~ Closed 2026-08-26. It was three layers, not one: ten
+   `src/core` files, thirteen UI files importing `data/boats/j70.json` by path,
+   and — the one no inventory caught until the Melges 24 was calibrated —
+   `calibration/fit.ts` importing `north-j70.json`, which would have fitted a
+   second class's rig to the J/70's tuning guide. All three are per-boat now and
+   the J/70 corpus is byte-identical (`boatHash 6272af4c`).
 5. **Phone perf work can regress the desktop first-frame gate.** Both are
    measured in CI (`bundle_check.mjs`, `FIRST_FRAME_BUDGET_MS`); keep them.
 

@@ -426,6 +426,8 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
 ## Assumed boat parameters
 
+### `data/boats/j70.json`
+
 | Path | Value | Note |
 |---|---|---|
 | `baseRace.backstay` | 30 | the app's own reading of the North guide's base wind band onto the 0-100 control scales; the guide publishes qualitative settings ("Firm", "Snug", "5-6 holes showing"), not percentages. This is the datum every shape delta in core/shape/toOrc.ts is measured against and the trim the cockpit's leech-stall and spreader-stripe meters are calibrated on, so the solver and Race mode's default trim read the one block instead of keeping two |
@@ -472,7 +474,57 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 | `rig.spreaderZM` | 4.4 | estimated as 0.55 x rig.iM, a typical single-spreader height fraction; not published |
 | `rig.sweepDeg` | 20 | assumed 20 degrees, typical swept-spreader angle for a rig with no runners/checkstays (ORC cert confirms Runners/Checkstays: 0); not published |
 
+### `data/boats/m24.json`
+
+| Path | Value | Note |
+|---|---|---|
+| `baseRace.backstay` | 30 | no Melges 24 tuning guide is committed under data/tuning/, so unlike the J/70's this base trim is not a reading of a published guide: it is the mid-band starting point the app opens on, and the datum every shape delta in core/shape/toOrc.ts is measured against. The disagreement panel shows the honest no-guide-for-this-boat state rather than quoting the J/70's tables at a different rig |
+| `baseRace.cunningham` | 20 | see baseRace.backstay |
+| `baseRace.inhauler` | 30 | see baseRace.backstay |
+| `baseRace.jibHalyard` | 50 | see baseRace.backstay |
+| `baseRace.jibLead` | 5 | see baseRace.backstay |
+| `baseRace.jibSheet` | 60 | see baseRace.backstay |
+| `baseRace.mainHalyard` | 50 | see baseRace.backstay |
+| `baseRace.mainsheet` | 60 | see baseRace.backstay |
+| `baseRace.outhaul` | 50 | see baseRace.backstay |
+| `baseRace.traveller` | 0 | see baseRace.backstay |
+| `baseRace.vang` | 30 | see baseRace.backstay |
+| `baseRaceDown.kiteHalyard` | 100 | halyard two-blocked at the masthead before the sheet is touched. App convention, same as the J/70's |
+| `baseRaceDown.kiteSheet` | 50 | kite sheet mid-range, to be trimmed to the curl. core/solve/optimalTrim does not solve the downwind sheet. App convention, same as the J/70's |
+| `baseRaceDown.mainsheet` | 15 | the mainsheet under the kite, on the same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat. Same app convention and the same value as the J/70's, which shape/sheeting.ts turns into about 67 degrees of boom; the sheeting model is class-independent, so the number carries across where a guide reading would not. Tier C cue, not a solve |
+| `baseRaceDown.tackLine` | 50 | tack line mid-range: a trim control the sailor is expected to move, not a setting. App convention, same as the J/70's |
+| `controls.forestayMm.max` | 40 | range not published in the class rules; app convention for a workable forestay length adjustment sweep. F.3.3 offers both an adjustable and a fixed forestay system, and the choice may not change during an event |
+| `controls.forestayMm.min` | 0 | range not published in the class rules; app convention for a workable forestay length adjustment sweep. F.3.3 offers both an adjustable and a fixed forestay system, and the choice may not change during an event |
+| `controls.forestayMm.step` | 2 | range not published in the class rules; app convention for a workable forestay length adjustment sweep. F.3.3 offers both an adjustable and a fixed forestay system, and the choice may not change during an event |
+| `controls.inhauler.max` | 100 | discrepancy: the app's control set carries an inhauler, but the Melges 24 class rules have no inhauler — Appendix H's purchase table lists none, and the only windward-sheeting system it permits is on the mainsail traveller (.30). Range and purchase are unregulated app assumptions, as they are on the J/70 |
+| `controls.inhauler.min` | 0 | discrepancy: the app's control set carries an inhauler, but the Melges 24 class rules have no inhauler — Appendix H's purchase table lists none, and the only windward-sheeting system it permits is on the mainsail traveller (.30). Range and purchase are unregulated app assumptions, as they are on the J/70 |
+| `controls.inhauler.step` | 5 | discrepancy: the app's control set carries an inhauler, but the Melges 24 class rules have no inhauler — Appendix H's purchase table lists none, and the only windward-sheeting system it permits is on the mainsail traveller (.30). Range and purchase are unregulated app assumptions, as they are on the J/70 |
+| `controls.jibLead.max` | 10 | the class rules leave the jib sheet car's pin position optional (Appendix H .14) and publish no hole count; app convention, a typical 10-hole car track, the same as the J/70's |
+| `controls.jibLead.min` | 0 | the class rules leave the jib sheet car's pin position optional (Appendix H .14) and publish no hole count; app convention, a typical 10-hole car track, the same as the J/70's |
+| `controls.jibLead.step` | 1 | the class rules leave the jib sheet car's pin position optional (Appendix H .14) and publish no hole count; app convention, a typical 10-hole car track, the same as the J/70's |
+| `controls.lowerTurns.max` | 6 | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.lowerTurns.min` | -6 | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.lowerTurns.step` | 0.5 | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.upperTurns.max` | 6 | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.upperTurns.min` | -6 | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `controls.upperTurns.step` | 0.5 | turns on the shroud rigging screws either side of a boat's own base tune, not an absolute setting: F.6.1 lets the rigging screws be adjusted while racing but publishes no travel. App convention, the same sweep as the J/70's |
+| `crew.minKg` | 262 | the Melges 24 class rules publish no crew weight limit at all — C.2.1(a) limits the crew to 3-6 persons and says nothing about weight — so the slider's lower stop has no source. Taken as 0.75 x crew.maxKg, the same span the J/70's published 255-340 kg limits describe. Only the range of the crew-weight slider depends on it; the polar is replayed at maxKg |
+| `hull.bwlM` | 2.117 | estimated as 0.85 x max beam, the J/70 file's documented method for the same unpublished field; no published waterline beam found |
+| `hull.gmM` | 0.747 | estimated as 0.30 x beam, the J/70 file's documented method. Unlike the J/70 this class has no RM Measured to prefer over it: the ORC public feed publishes a Stability_Index but no righting moment per degree, so hull.rmMeasuredKgMPerDeg is absent and hydro/righting.ts falls back to this GM |
+| `hull.keelAreaM2` | 0.589 | estimated as keelSpanM x an assumed 0.45 m average chord, the J/70 file's documented method; no published keel area or chord found. The class rules limit the combined fin and bulb weight (E.3.6, 300-313 kg) but publish no planform |
+| `hull.keelSpanM` | 1.308 | estimated as 0.85 x draft, allowing ~15 % of draft for hull depth above the keel root; the J/70 file's documented method for the same unpublished field |
+| `hull.kgM` | 0.539 | estimated as 0.35 x draft, a rule-of-thumb VCG fraction for a bulb-ballasted fin-keel sportboat; the J/70 file's documented method. The ORC public certificate carries no hydrostatics at all (ADR 0020) |
+| `hull.lwlM` | 7.289 | ORC certificate IMSL (VPP sailing length) 7.289 m, used as LWL. ADR 0020 warns that IMSL is not LWL and that citing it as published would be an invented number wearing a citation, so it is recorded as assumed: on this plumb-bow hull it is the closest published proxy, the same reading the J/70 file makes of its own IMS 'L'. Cross-check: the J/70's LWL/LOA ratio (6.691/6.910) applied to this LOA gives 7.271 m, 0.25 % away |
+| `sails.jib.halfMm` | 1347 | straight-leech triangle, 0.50 x LP. See sails.jib.quarterMm |
+| `sails.jib.quarterMm` | 2020 | not published: G.4.3 limits the jib's luff, leech, foot and top width but no girths, because G.4.2(d) requires the leech to be negative (hollow) and an unroached sail needs no girth cap. Taken as the straight-leech triangle, 0.75 x LP. On the J/70 the same method gives 1838 mm against a published 1860, about 1 % low; on this sail, whose leech is hollow rather than straight, it is an over-estimate instead |
+| `sails.jib.threeQuarterMm` | 674 | straight-leech triangle, 0.25 x LP. See sails.jib.quarterMm |
+| `sails.main.quarterMm` | 3250 | not published: G.3.4 limits the half, three-quarter and top widths but not the quarter width. Linear interpolation between the published foot (3800 mm) and half (2700 mm) widths. On the J/70, whose quarter width is published, the same method gives 2505 against a published 2570 mm, so it reads about 2.6 % low |
+| `sails.main.upperMm` | 928 | not published: G.3.4 limits no 7/8 width. Linear interpolation between the published three-quarter (1680 mm) and top (175 mm) widths. On the J/70, whose upper width is published, the same method gives 894 against a published 880 mm, so it reads about 1.6 % high |
+
+
 ## Calibrated free parameters
+
+### `data/boats/j70.json`
 
 | Knob | Value | Stage | Fit loss |
 |---|---|---|---|
@@ -497,3 +549,23 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 | `shape.sheetToTwist` | 0.15 | 4 rig-shape | 9.057 |
 
 Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out split), 0007 (tolerances)). Per-point residuals: `calibration/residuals.json`.
+
+### `data/boats/m24.json`
+
+| Knob | Value | Stage | Fit loss |
+|---|---|---|---|
+| `hydro.formFactor` | 0.080497 | 1 hydro-jib | 0.1653 |
+| `hydro.rrMul.fn20` | 0.330461 | 1 hydro-jib | 0.1653 |
+| `hydro.rrMul.fn30` | 0.778486 | 1 hydro-jib | 0.1653 |
+| `hydro.rrMul.fn40` | 1.07312 | 1 hydro-jib | 0.1653 |
+| `hydro.rrMul.fn50` | 1.11637 | 1 hydro-jib | 0.1653 |
+| `hydro.rrMul.fn60` | 1.79776 | 1 hydro-jib | 0.1653 |
+| `hydro.planingRelief` | 0.0617523 | 1 hydro-jib | 0.1653 |
+| `hydro.keelLiftSlope` | 1.09745 | 1 hydro-jib | 0.1653 |
+| `hydro.heelDragK` | 0.65508 | 1 hydro-jib | 0.1653 |
+| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.1653 |
+| `aero.asymClMul` | 1.05577 | 2 asym | 0.05930 |
+| `aero.asymCdMul` | 2.6582 | 2 asym | 0.05930 |
+
+Fit set: TWS 4/6/10/12/16/20/24 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out split), 0007 (tolerances)). Per-point residuals: `calibration/residuals-m24.json`.
+

@@ -6,10 +6,13 @@
  * `validation/` only ever READS (ADR 0007). Nothing here writes calibration.
  *
  * **Which boat.** Every entry point here is per-boat: `pnpm calibrate --boat
- * <id>`, `pnpm golden --boat <id>`, `pnpm validate --boat <id>`. The id is
- * read from argv once at module load, because these are CLIs and a boat that
- * could change mid-run would make the golden corpus meaningless. Default is
- * the J/70, which is the class every gate in CI runs on.
+ * <id>` and `pnpm golden --boat <id>` take the flag; `pnpm validate` takes
+ * `SAILFLOW_BOAT=<id>` instead, because half of it is a vitest run and vitest
+ * rejects an option it does not know (`CACError: Unknown option --boat`) —
+ * the flag never reached the harness at all. The id is read once at module
+ * load, because these are CLIs and a boat that could change mid-run would
+ * make the golden corpus meaningless. Default is the J/70, which is the class
+ * every gate in CI runs on.
  */
 import { createHash } from 'node:crypto';
 import type { BoatDefinition, PolarRow, PolarTable, SailSet, SeaState } from '../src/core/types';
@@ -19,14 +22,19 @@ import { geometryFor } from '../src/core/solve/equilibrium';
 import { optimal } from '../src/core/solve/optimal';
 
 /**
- * `--boat <id>` from argv, or the default. An unknown id is a hard error here,
- * unlike in the app: a typo on a calibration run would otherwise silently fit
- * the J/70 and write the result under the name of another class.
+ * `--boat <id>` from argv, else `SAILFLOW_BOAT`, else the default. An unknown
+ * id is a hard error here, unlike in the app: a typo on a calibration run
+ * would otherwise silently fit the J/70 and write the result under the name of
+ * another class.
+ *
+ * Two channels because `pnpm validate` runs vitest, which refuses an unknown
+ * CLI option, so the flag cannot survive the trip. The env var does, into the
+ * test workers as well.
  */
-function boatIdFromArgv(): string {
+function boatIdFromEnv(): string {
   const i = process.argv.indexOf('--boat');
-  if (i === -1) return DEFAULT_BOAT_ID;
-  const id = process.argv[i + 1];
+  const id = i === -1 ? process.env.SAILFLOW_BOAT : process.argv[i + 1];
+  if (id === undefined || id === '') return DEFAULT_BOAT_ID;
   if (!isBoatId(id))
     throw new Error(
       `--boat ${String(id)}: unknown class. Register it in src/lib/boat.ts first ` +
@@ -35,7 +43,7 @@ function boatIdFromArgv(): string {
   return id;
 }
 
-export const BOAT_ID = boatIdFromArgv();
+export const BOAT_ID = boatIdFromEnv();
 
 /**
  * The boat the harness gates, with its reference polar attached — the same
@@ -135,7 +143,8 @@ export interface Comparison {
   kind: PolarRow['kind'];
   /** True when this TWS was withheld from the fit. */
   heldOut: boolean;
-  polar: { twaDeg: number; bsKt: number; heelDeg: number };
+  /** `heelDeg` is `null` where the source publishes no heel column. */
+  polar: { twaDeg: number; bsKt: number; heelDeg: number | null };
   model: { twaDeg: number; bsKt: number; heelDeg: number; vmgKt: number; flat: number };
   converged: boolean;
   bsErrFrac: number;

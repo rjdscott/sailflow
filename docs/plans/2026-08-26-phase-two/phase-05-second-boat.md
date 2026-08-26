@@ -1,6 +1,6 @@
 # Phase 05: Second boat class
 
-- **Status:** 🟡 In progress
+- **Status:** 🟢 Completed
 
 ## Goal
 
@@ -14,17 +14,18 @@ class.
 - [x] Inventory: `grep -rl j70 src/core` (ten files at close-out) — for each, move the constant into `BoatDefinition` or justify it as class-independent with a `prov:` tag.
 - [x] `validateBoat` covers every field the solver reads; a missing field is an error, not a silent default.
 - [x] Boat picker (More screen), persisted; router carries `boat=` in share URLs (phase 02 schema).
-- [ ] Second boat file with full provenance; polar from ORC if published, else the class association; drills templates optional. — **blocked on the UI task below**; class chosen and sourced ([ADR 0020](../../adr/0020-melges-24-is-the-second-class-blocked-on-the-ui-boat-switch.md))
+- [x] Second boat file with full provenance; polar from ORC if published, else the class association; drills templates optional. — `data/boats/m24.json` (137 provenance rows: 45 published, 50 derived, 42 assumed) and `data/polar/orc-m24.json`; no drill templates sourced, and the screen says so ([ADR 0020](../../adr/0020-melges-24-is-the-second-class-blocked-on-the-ui-boat-switch.md))
 - [x] Calibration per boat: `pnpm calibrate --boat <id>`; residuals and golden corpus per boat.
 - [x] Runbook `docs/runbooks/add-a-boat-class.md` re-verified by actually following it.
-- [ ] **New, carried out of this phase:** repoint the thirteen UI components that still import `data/boats/j70.json` for control ranges and drawing dimensions.
+- [x] **New, carried out of this phase:** repoint the thirteen UI components that still import `data/boats/j70.json` for control ranges and drawing dimensions.
 
 ## Verification
 
 ```bash
 make check
 pnpm golden --boat j70 && git diff --exit-code validation/golden
-pnpm validate --boat <second>
+SAILFLOW_BOAT=m24 pnpm validate   # NOT `--boat`: vitest eats the flag, see the runbook
+pnpm test:ui
 ```
 
 ## Artifacts
@@ -204,3 +205,118 @@ by any gate that runs — `boat.test.ts` only validates *registered* classes, an
 `golden.test.ts` only replays them. The sourcing is done and recorded in
 ADR 0020; the transcription lands with the UI change it depends on.
 - 2026-08-26 — Merged onto main after phases 04 and 06 (keep-both conflicts in `settings.svelte.ts` and `More.svelte`: boat id and tour flag coexist). Bundle +3378 B — registry + polar on the entry; baseline raised with attribution, to be re-measured when the thirteen UI import sites are repointed.
+
+### 2026-08-26 — the cockpit takes the active boat; the Melges 24 sails
+
+Two commits. The phase closes 🟢.
+
+**The thirteen import sites, and why the fix is a const rather than a rune.**
+Every one of `race/{store.svelte.ts,RigElevation.svelte,ConditionsStrip.svelte,
+boat.ts}`, `race/panels/Helm.svelte`, `drills/DrillView.svelte`,
+`dock/logic.ts`, `stores/conditions.svelte.ts`, `three/{conventions,hull,rig3d,
+kite}.ts` and `lib/drills.ts` now reads `activeBoat` from `src/lib/boat.ts`.
+`activeBoat` is a **const**, read once at module load from the same
+`sailflow.boat` key the settings store writes — not a `$derived`. Switching
+class reloads the page precisely because every store takes its ranges and base
+trim at construction (the `ponytail:` note in `More.svelte`), so within one page
+the active boat cannot change and a rune would only pretend otherwise. It reads
+storage directly rather than through `settings`, because `settings` imports the
+registry and the reverse edge would be a cycle whose evaluation order decides
+whether the app boots.
+
+Four things were more than a swap. Presets are snapped onto the active class's
+own stops and crew range (`trim()`, `crewOf()`), the rule `share.ts` already
+applies to a link — the preset numbers are J/70 guide readings and a jib lead
+runs to a different number of holes on another boat. `gauges.ts:STRIPE_INCHES`
+reads the per-boat `instruments.stripeIn*` knobs instead of mirroring the J/70
+literal. `lib/drills.ts` enumerates `data/drills/*-templates.json` the way
+`reference.ts` enumerates the guides, takes its polar off the boat, and names
+the class when there is no polar to read a VMG angle from. And `guidesFor()`
+defaults to the active class, so a class with no guide gets the honest empty
+state. New `sailM()` narrows `SailDef`'s `number | string` girths once,
+mirroring `core/geometry/sailplan.ts:mm`.
+
+**The Melges 24 is data, and finding the data changed one of ADR 0020's
+premises.** The ADR expected the 2017 rules, because the class association's own
+Measurement & Inspection page links a CloudFront host that no longer resolves.
+The **2026 edition** (effective 2026-01-30, Approved) is reachable through World
+Sailing and is what `data/boats/m24.json` cites. It publishes more than the ADR
+hoped: spreader height, length and sweep offset, chainplate spacing, mast lower
+and upper point heights, forestay height, boom outer point and bowsprit limit,
+plus the mainsail, jib and spinnaker dimension tables and the Appendix H
+purchase ratios. Fifty of the 137 provenance rows are `derived` from those with
+the arithmetic in the note (P = 9528 − 710; sweep = asin(0.245/0.820); the
+chainplate is half the published transverse spacing), 45 are `published`, 42 are
+`assumed` — the six hydrostatics by the J/70's documented estimators exactly as
+the ADR sanctioned, the two unpublished mainsail girths by interpolation between
+published ones (checked against the J/70, where the same method reads 2.6 % low
+and 1.6 % high), the jib's girths by a straight-leech triangle off an LP derived
+from the ORC rated area, and the crew-weight slider's lower stop, because the
+class publishes **no crew weight limit at all**.
+
+**Four things the ORC feed does not publish, each of which cost code.**
+
+1. *Speeds.* It gives allowances in s/mile. `3600/allowance` is exact; the Beat
+   and Run allowances are VMG made good, so boat speed is that over the cosine
+   of the printed angle.
+2. *A sail tag.* The fixed-angle rows do not say which sail the VPP chose. The
+   tag in `orc-m24.json` is read off the sail plan — one headsail, one
+   sprit-tacked kite, so 52/60/75° are the jib and 90° out is the kite — and the
+   file's `notes` name the 90° row as the weakest call, which matters because it
+   is one of the three angles the gate scores.
+3. *Heel.* No heel column exists (all 284 keys enumerated). `PolarRow.heelDeg`
+   is now `number | null`; calibration stage 3 skips itself and says so rather
+   than fitting `crewArmMul` against a zero, and the report prints an em dash.
+4. *A tuning guide.* `fit.ts` imported `north-j70.json` **by path**, so stage 4
+   would have fitted the Melges 24's six rig and shape knobs to North's J/70
+   shroud turns — the exact "resolve the disagreement silently" failure
+   `CLAUDE.md` forbids, and a J/70 file the phase's own inventory missed because
+   it greps `src/core`, not `calibration/`. The guide is now resolved by boat id
+   and the stage skips when there is none.
+
+**Verdict: 7 of 10 gated rows inside tolerance, and the misses are named.**
+`SAILFLOW_BOAT=m24 pnpm validate` fails TWS 8 jib vmgUp (6.6 % against 3 %),
+TWS 8 jib 60° (14.3 % against 5 %) and TWS 14 asym 90° (6.0 % against 5 %).
+Nothing was tuned on those rows and no tolerance moved. Three known reasons, in
+order of size: six rig and shape knobs are unfitted for want of a guide; the
+polar is one certificate whose per-hull spread ADR 0020 measured at up to
+11.4 %, wider than the 3 % the gate applies; and the 90° sail tag is a judgement.
+The J/70 is unmoved throughout — `boatHash 6272af4c`, `calibHash 12b5f6f6`,
+`validation/golden/j70/` byte-identical, `report.md` identical but for its
+timestamp.
+
+**Bundle: +9258 B, and one attempted saving reverted for being a broken
+build.** Repointing the UI was +250 B (the boat JSON was already on the entry
+via the registry); the second class is the other +9007 B, 9.6 KB gzip of boat
+file plus 2.6 KB of polar. About 5.8 KB of the boat file is `provenance` and
+`sources`, which nothing at runtime reads, so `boat.ts` was switched to named
+JSON imports of the ten fields the app does read. The bundle dropped 12 KB,
+`make check` stayed green — and the app rendered nothing. Vite stringifies a
+JSON module above ~10 KB (`json.stringify: 'auto'`), a stringified module has
+only a default export, and every named import had resolved to `undefined`. 42
+of the 69 Playwright specs caught it; Vitest caught none of it, because its
+transform does not stringify. Reverted, baseline raised to 111130 B with the
+attribution, and both the runbook and `boat.ts` now carry the warning. Taking
+that payload off the entry needs a per-class dynamic import or a sidecar file
+for the prose, not a leaner import statement.
+
+**Five runbook steps were wrong and are fixed** (`docs/runbooks/add-a-boat-class.md`,
+re-verified by executing it rather than reading it). The worst:
+`pnpm validate --boat <id>` never worked — vitest rejects the unknown option, so
+the flag was dropped, the J/70 was gated instead, and `validation/report.md` was
+overwritten with a run nobody asked for. It is `SAILFLOW_BOAT=<id> pnpm validate`
+now, and the report is per class. Second worst: source ids are global across
+`PROVENANCE.md`, so the M24's `class-rules-2026` and `orc-cert` were silently
+swallowed by the J/70's rows and every Melges 24 citation resolved to the J/70's
+rules PDF. Ids are namespaced and `scripts/provenance.mjs` throws on the
+collision now.
+
+**Not done, deliberately.** No tuning guide and no drill templates are committed
+for the class — neither could be sourced without a paid product, both surfaces
+say so in as many words, and `tests/ui/boat.spec.ts` asserts they do. The
+`instruments.stripeIn*` knobs are unset for the M24, so its spreader gauge reads
+the reference boat's 18/20/22 in spacing; `gauges.ts` documents the fallback.
+The heel-target anchors in `gauges.ts` are still read off the North J/70 guide
+for every class — they are a gauge band rather than a solved number, and moving
+them per class needs a source this class does not have. Carried into phase 03's
+guide backlog rather than guessed at here.

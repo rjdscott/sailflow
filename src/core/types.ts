@@ -113,7 +113,13 @@ export interface PolarRow {
   twaDeg: number;
   bsKt: number;
   vmgKt: number;
-  heelDeg: number;
+  /**
+   * `null` where the source publishes no heel column. An ORC Speed Guide
+   * prints one; the free ORC certificate feed does not (`data/polar/orc-m24.json`),
+   * and a zero there would be the calibration fitting the boat to sailing flat.
+   * The heel pass of the fit skips rows with no heel, and reports that it did.
+   */
+  heelDeg: number | null;
 }
 
 /**

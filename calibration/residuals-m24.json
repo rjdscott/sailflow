@@ -1,0 +1,909 @@
+{
+  "schemaVersion": 1,
+  "adr": "0012 (fit/hold-out split), 0007 (tolerances)",
+  "fitTws": [4, 6, 10, 12, 16, 20, 24],
+  "heldOutTws": [8, 14],
+  "condition": {
+    "seaState": 1,
+    "crewKg": 350
+  },
+  "simplexStep": 0.35,
+  "shapeHeadroom": {
+    "minDraft": 0.059230410774336974,
+    "maxDraft": 0.0843800332804978,
+    "minTwist": 8.651931410460127,
+    "maxTwist": 10.105020710816087,
+    "verdict": "inside the tuned window but still responding; stage 4 never ran on this class, so the shape knobs are unfitted code defaults"
+  },
+  "guide": null,
+  "stages": [
+    {
+      "stage": 1,
+      "name": "hydro-jib",
+      "target": "jib vmgUp + 60/90/120 rows at TWS 4/6/10/12/16/20/24 (28 rows)",
+      "weights": {
+        "twa": 0.15,
+        "heel": 0.02
+      },
+      "maxIter": 320,
+      "restarts": 3,
+      "evals": 1875,
+      "lossStart": 0.41526285887520736,
+      "lossEnd": 0.16532286751127187,
+      "knobs": [
+        {
+          "name": "hydro.formFactor",
+          "start": 0.1,
+          "end": 0.080497012778552,
+          "bounds": [0.02, 0.6],
+          "atBound": false
+        },
+        {
+          "name": "hydro.rrMul.fn20",
+          "start": 1,
+          "end": 0.33046051500297996,
+          "bounds": [0.3, 3],
+          "atBound": false
+        },
+        {
+          "name": "hydro.rrMul.fn30",
+          "start": 1,
+          "end": 0.7784863261402363,
+          "bounds": [0.3, 3],
+          "atBound": false
+        },
+        {
+          "name": "hydro.rrMul.fn40",
+          "start": 1,
+          "end": 1.073120323283398,
+          "bounds": [0.3, 3],
+          "atBound": false
+        },
+        {
+          "name": "hydro.rrMul.fn50",
+          "start": 1,
+          "end": 1.1163741931236748,
+          "bounds": [0.3, 3],
+          "atBound": false
+        },
+        {
+          "name": "hydro.rrMul.fn60",
+          "start": 1,
+          "end": 1.7977615542681888,
+          "bounds": [0.3, 3],
+          "atBound": false
+        },
+        {
+          "name": "hydro.planingRelief",
+          "start": 0.05,
+          "end": 0.06175231928990019,
+          "bounds": [0.001, 0.9],
+          "atBound": false
+        },
+        {
+          "name": "hydro.keelLiftSlope",
+          "start": 1,
+          "end": 1.097454007820606,
+          "bounds": [0.4, 2],
+          "atBound": false
+        },
+        {
+          "name": "hydro.heelDragK",
+          "start": 0.5,
+          "end": 0.6550800986349073,
+          "bounds": [0.05, 4],
+          "atBound": false
+        },
+        {
+          "name": "aero.hbiM",
+          "start": 0.75,
+          "end": 1.4,
+          "bounds": [0.5, 1.4],
+          "atBound": true
+        }
+      ],
+      "residuals": [
+        {
+          "twsKt": 4,
+          "bsKt": 2.7606277647564723,
+          "twaDeg": 48.823388926211194,
+          "heelDeg": 1.593291004854063,
+          "label": "TWS 4 jib vmgUp",
+          "target": {
+            "twsKt": 4,
+            "bsKt": 3.3,
+            "twaDeg": 46.3,
+            "heelDeg": null
+          },
+          "dBsPct": -16.344613189197805,
+          "dTwaDeg": 2.5233889262111973,
+          "dHeelDeg": 0,
+          "loss": 0.03626587553983783
+        },
+        {
+          "twsKt": 4,
+          "bsKt": 3.193539694466975,
+          "twaDeg": 60,
+          "heelDeg": 1.6198084568151188,
+          "label": "TWS 4 jib 60°",
+          "target": {
+            "twsKt": 4,
+            "bsKt": 3.86,
+            "twaDeg": 60,
+            "heelDeg": null
+          },
+          "dBsPct": -17.265811024171633,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.029810823032240665
+        },
+        {
+          "twsKt": 4,
+          "bsKt": 3.5349569491699175,
+          "twaDeg": 90,
+          "heelDeg": 2.5982184251383873,
+          "label": "TWS 4 asym 90°",
+          "target": {
+            "twsKt": 4,
+            "bsKt": 4,
+            "twaDeg": 90,
+            "heelDeg": null
+          },
+          "dBsPct": -11.626076270752062,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.013516564945334417
+        },
+        {
+          "twsKt": 4,
+          "bsKt": 3.5852628039619465,
+          "twaDeg": 120,
+          "heelDeg": 1.501440976028601,
+          "label": "TWS 4 asym 120°",
+          "target": {
+            "twsKt": 4,
+            "bsKt": 3.98,
+            "twaDeg": 120,
+            "heelDeg": null
+          },
+          "dBsPct": -9.918020000956117,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.009836712073936557
+        },
+        {
+          "twsKt": 6,
+          "bsKt": 4.108646625814976,
+          "twaDeg": 43.8490487364662,
+          "heelDeg": 3.6649089893753066,
+          "label": "TWS 6 jib vmgUp",
+          "target": {
+            "twsKt": 6,
+            "bsKt": 4.56,
+            "twaDeg": 44.5,
+            "heelDeg": null
+          },
+          "dBsPct": -9.898100311075078,
+          "dTwaDeg": -0.6509512635337984,
+          "dHeelDeg": 0,
+          "loss": 0.010432845298054829
+        },
+        {
+          "twsKt": 6,
+          "bsKt": 5.019594589275782,
+          "twaDeg": 60,
+          "heelDeg": 2.6445776584924143,
+          "label": "TWS 6 jib 60°",
+          "target": {
+            "twsKt": 6,
+            "bsKt": 5.28,
+            "twaDeg": 60,
+            "heelDeg": null
+          },
+          "dBsPct": -4.931920657655656,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.0024323841373410596
+        },
+        {
+          "twsKt": 6,
+          "bsKt": 5.13100952782677,
+          "twaDeg": 90,
+          "heelDeg": 5.736404747066754,
+          "label": "TWS 6 asym 90°",
+          "target": {
+            "twsKt": 6,
+            "bsKt": 5.58,
+            "twaDeg": 90,
+            "heelDeg": null
+          },
+          "dBsPct": -8.046424232495172,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.00647449429292855
+        },
+        {
+          "twsKt": 6,
+          "bsKt": 5.191934040747613,
+          "twaDeg": 120,
+          "heelDeg": 3.2589677537282937,
+          "label": "TWS 6 asym 120°",
+          "target": {
+            "twsKt": 6,
+            "bsKt": 5.59,
+            "twaDeg": 120,
+            "heelDeg": null
+          },
+          "dBsPct": -7.121036838146454,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.005070916565023884
+        },
+        {
+          "twsKt": 10,
+          "bsKt": 5.563706267241325,
+          "twaDeg": 39.79506695491916,
+          "heelDeg": 9.252584125487815,
+          "label": "TWS 10 jib vmgUp",
+          "target": {
+            "twsKt": 10,
+            "bsKt": 5.69,
+            "twaDeg": 39.4,
+            "heelDeg": null
+          },
+          "dBsPct": -2.2195735106972845,
+          "dTwaDeg": 0.3950669549191588,
+          "dHeelDeg": 0,
+          "loss": 0.0007267675052425518
+        },
+        {
+          "twsKt": 10,
+          "bsKt": 6.480017319708137,
+          "twaDeg": 60,
+          "heelDeg": 9.072984213559963,
+          "label": "TWS 10 jib 60°",
+          "target": {
+            "twsKt": 10,
+            "bsKt": 6.55,
+            "twaDeg": 60,
+            "heelDeg": null
+          },
+          "dBsPct": -1.0684378670513341,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.00011415594757492046
+        },
+        {
+          "twsKt": 10,
+          "bsKt": 6.7470791264136905,
+          "twaDeg": 90,
+          "heelDeg": 23.479270451295154,
+          "label": "TWS 10 asym 90°",
+          "target": {
+            "twsKt": 10,
+            "bsKt": 6.85,
+            "twaDeg": 90,
+            "heelDeg": null
+          },
+          "dBsPct": -1.5024945049096234,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.00022574897372836143
+        },
+        {
+          "twsKt": 10,
+          "bsKt": 7.362761147335492,
+          "twaDeg": 120,
+          "heelDeg": 7.641111647314272,
+          "label": "TWS 10 asym 120°",
+          "target": {
+            "twsKt": 10,
+            "bsKt": 7.43,
+            "twaDeg": 120,
+            "heelDeg": null
+          },
+          "dBsPct": -0.9049643696434397,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.00008189605103241483
+        },
+        {
+          "twsKt": 12,
+          "bsKt": 5.752383547851742,
+          "twaDeg": 38.05031907479827,
+          "heelDeg": 16.20635322443915,
+          "label": "TWS 12 jib vmgUp",
+          "target": {
+            "twsKt": 12,
+            "bsKt": 5.88,
+            "twaDeg": 39.1,
+            "heelDeg": null
+          },
+          "dBsPct": -2.1703478256506483,
+          "dTwaDeg": -1.0496809252017343,
+          "dHeelDeg": 0,
+          "loss": 0.002123786035529203
+        },
+        {
+          "twsKt": 12,
+          "bsKt": 6.908652566273114,
+          "twaDeg": 60,
+          "heelDeg": 16.64069320956903,
+          "label": "TWS 12 jib 60°",
+          "target": {
+            "twsKt": 12,
+            "bsKt": 6.84,
+            "twaDeg": 60,
+            "heelDeg": null
+          },
+          "dBsPct": 1.0036924893730101,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.000100739861322379
+        },
+        {
+          "twsKt": 12,
+          "bsKt": 7.164912231170105,
+          "twaDeg": 90,
+          "heelDeg": 30.236480213905427,
+          "label": "TWS 12 asym 90°",
+          "target": {
+            "twsKt": 12,
+            "bsKt": 7.37,
+            "twaDeg": 90,
+            "heelDeg": null
+          },
+          "dBsPct": -2.7827377046118795,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.0007743629132668593
+        },
+        {
+          "twsKt": 12,
+          "bsKt": 8.241896501950821,
+          "twaDeg": 120,
+          "heelDeg": 15.961204324379981,
+          "label": "TWS 12 asym 120°",
+          "target": {
+            "twsKt": 12,
+            "bsKt": 8.36,
+            "twaDeg": 120,
+            "heelDeg": null
+          },
+          "dBsPct": -1.4127212685308423,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.00019957813825593923
+        },
+        {
+          "twsKt": 16,
+          "bsKt": 6.05201304474337,
+          "twaDeg": 38.88603614306584,
+          "heelDeg": 20.965205523026583,
+          "label": "TWS 16 jib vmgUp",
+          "target": {
+            "twsKt": 16,
+            "bsKt": 6,
+            "twaDeg": 39.2,
+            "heelDeg": null
+          },
+          "dBsPct": 0.8668840790561738,
+          "dTwaDeg": -0.3139638569341656,
+          "dHeelDeg": 0,
+          "loss": 0.00022300875584357286
+        },
+        {
+          "twsKt": 16,
+          "bsKt": 7.430103635763874,
+          "twaDeg": 60,
+          "heelDeg": 28.301567570720554,
+          "label": "TWS 16 jib 60°",
+          "target": {
+            "twsKt": 16,
+            "bsKt": 7.11,
+            "twaDeg": 60,
+            "heelDeg": null
+          },
+          "dBsPct": 4.502160840560816,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.002026945223427927
+        },
+        {
+          "twsKt": 16,
+          "bsKt": 7.78493243511469,
+          "twaDeg": 90,
+          "heelDeg": 39.68912819440016,
+          "label": "TWS 16 asym 90°",
+          "target": {
+            "twsKt": 16,
+            "bsKt": 8.46,
+            "twaDeg": 90,
+            "heelDeg": null
+          },
+          "dBsPct": -7.979522043561599,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.0063672772043685474
+        },
+        {
+          "twsKt": 16,
+          "bsKt": 9.245648658099425,
+          "twaDeg": 120,
+          "heelDeg": 27.300069210952362,
+          "label": "TWS 16 asym 120°",
+          "target": {
+            "twsKt": 16,
+            "bsKt": 9.7,
+            "twaDeg": 120,
+            "heelDeg": null
+          },
+          "dBsPct": -4.6840344525832425,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.00219401787529868
+        },
+        {
+          "twsKt": 20,
+          "bsKt": 6.098857042786603,
+          "twaDeg": 39.16694211233897,
+          "heelDeg": 24.487564729292327,
+          "label": "TWS 20 jib vmgUp",
+          "target": {
+            "twsKt": 20,
+            "bsKt": 6.08,
+            "twaDeg": 39.7,
+            "heelDeg": null
+          },
+          "dBsPct": 0.31014873004281696,
+          "dTwaDeg": -0.5330578876610303,
+          "dHeelDeg": 0,
+          "loss": 0.0004358452908711767
+        },
+        {
+          "twsKt": 20,
+          "bsKt": 7.677611324901915,
+          "twaDeg": 60,
+          "heelDeg": 33.60152218406235,
+          "label": "TWS 20 jib 60°",
+          "target": {
+            "twsKt": 20,
+            "bsKt": 7.25,
+            "twaDeg": 60,
+            "heelDeg": null
+          },
+          "dBsPct": 5.898087240026412,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.0034787433090962385
+        },
+        {
+          "twsKt": 20,
+          "bsKt": 8.170137953998749,
+          "twaDeg": 90,
+          "heelDeg": 43.3328974778532,
+          "label": "TWS 20 asym 90°",
+          "target": {
+            "twsKt": 20,
+            "bsKt": 9.05,
+            "twaDeg": 90,
+            "heelDeg": null
+          },
+          "dBsPct": -9.722232552500019,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.009452180580489104
+        },
+        {
+          "twsKt": 20,
+          "bsKt": 10.595585892638388,
+          "twaDeg": 120,
+          "heelDeg": 35.417812145337344,
+          "label": "TWS 20 asym 120°",
+          "target": {
+            "twsKt": 20,
+            "bsKt": 10.84,
+            "twaDeg": 120,
+            "heelDeg": null
+          },
+          "dBsPct": -2.254742687837749,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.0005083864588357796
+        },
+        {
+          "twsKt": 24,
+          "bsKt": 6.01935434568004,
+          "twaDeg": 40.33422370077617,
+          "heelDeg": 28.01048588055045,
+          "label": "TWS 24 jib vmgUp",
+          "target": {
+            "twsKt": 24,
+            "bsKt": 6.09,
+            "twaDeg": 41.4,
+            "heelDeg": null
+          },
+          "dBsPct": -1.1600271645313605,
+          "dTwaDeg": -1.0657762992238276,
+          "dHeelDeg": 0,
+          "loss": 0.0018383849822259232
+        },
+        {
+          "twsKt": 24,
+          "bsKt": 7.758947886439042,
+          "twaDeg": 60,
+          "heelDeg": 37.67071023222455,
+          "label": "TWS 24 jib 60°",
+          "target": {
+            "twsKt": 24,
+            "bsKt": 7.26,
+            "twaDeg": 60,
+            "heelDeg": null
+          },
+          "dBsPct": 6.872560419270557,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.004723208671652429
+        },
+        {
+          "twsKt": 24,
+          "bsKt": 8.326936964525249,
+          "twaDeg": 90,
+          "heelDeg": 45,
+          "label": "TWS 24 asym 90°",
+          "target": {
+            "twsKt": 24,
+            "bsKt": 9.43,
+            "twaDeg": 90,
+            "heelDeg": null
+          },
+          "dBsPct": -11.697381076084316,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.013682872403913545
+        },
+        {
+          "twsKt": 24,
+          "bsKt": 12.6995090475553,
+          "twaDeg": 120,
+          "heelDeg": 41.36171236828584,
+          "label": "TWS 24 asym 120°",
+          "target": {
+            "twsKt": 24,
+            "bsKt": 12.13,
+            "twaDeg": 120,
+            "heelDeg": null
+          },
+          "dBsPct": 4.695045734173935,
+          "dTwaDeg": 0,
+          "dHeelDeg": 0,
+          "loss": 0.002204345444598487
+        }
+      ]
+    },
+    {
+      "stage": 2,
+      "name": "asym",
+      "target": "asym vmgDn at TWS 4/6/10/12/16/20/24",
+      "weights": {
+        "twa": 0.15,
+        "heel": 0.02
+      },
+      "maxIter": 160,
+      "restarts": 2,
+      "evals": 211,
+      "lossStart": 0.06553652694359079,
+      "lossEnd": 0.05930379434562662,
+      "knobs": [
+        {
+          "name": "aero.asymClMul",
+          "start": 1,
+          "end": 1.055767731884013,
+          "bounds": [1, 1.1],
+          "atBound": false
+        },
+        {
+          "name": "aero.asymCdMul",
+          "start": 1,
+          "end": 2.658197059093532,
+          "bounds": [0.5, 4],
+          "atBound": false
+        }
+      ],
+      "residuals": [
+        {
+          "twsKt": 4,
+          "bsKt": 3.0296831315612205,
+          "twaDeg": 137.6845697274773,
+          "heelDeg": 0.5995471684717079,
+          "label": "TWS 4 asym vmgDn",
+          "target": {
+            "twsKt": 4,
+            "bsKt": 3.31,
+            "twaDeg": 139.9,
+            "heelDeg": null
+          },
+          "dBsPct": -8.46878756612627,
+          "dTwaDeg": -2.2154302725226955,
+          "dHeelDeg": 0,
+          "loss": 0.014534233222632469
+        },
+        {
+          "twsKt": 6,
+          "bsKt": 4.352011418123735,
+          "twaDeg": 143.1813670167121,
+          "heelDeg": 0.8980279993263673,
+          "label": "TWS 6 asym vmgDn",
+          "target": {
+            "twsKt": 6,
+            "bsKt": 4.58,
+            "twaDeg": 143.2,
+            "heelDeg": null
+          },
+          "dBsPct": -4.977916634852953,
+          "dTwaDeg": -0.018632983287886873,
+          "dHeelDeg": 0,
+          "loss": 0.002478486184453885
+        },
+        {
+          "twsKt": 10,
+          "bsKt": 6.0884224838418906,
+          "twaDeg": 148.6551326719794,
+          "heelDeg": 1.2811753425293249,
+          "label": "TWS 10 asym vmgDn",
+          "target": {
+            "twsKt": 10,
+            "bsKt": 6.12,
+            "twaDeg": 151.6,
+            "heelDeg": null
+          },
+          "dBsPct": -0.5159724862436201,
+          "dTwaDeg": -2.9448673280205924,
+          "dHeelDeg": 0,
+          "loss": 0.013034988130120755
+        },
+        {
+          "twsKt": 12,
+          "bsKt": 6.821822648456882,
+          "twaDeg": 149.62781286072186,
+          "heelDeg": 1.5538202877973333,
+          "label": "TWS 12 asym vmgDn",
+          "target": {
+            "twsKt": 12,
+            "bsKt": 6.87,
+            "twaDeg": 150.5,
+            "heelDeg": null
+          },
+          "dBsPct": -0.7012714926218062,
+          "dTwaDeg": -0.8721871392781395,
+          "dHeelDeg": 0,
+          "loss": 0.0011902437795196787
+        },
+        {
+          "twsKt": 16,
+          "bsKt": 8.885584200733769,
+          "twaDeg": 142.63248473982145,
+          "heelDeg": 4.6824982396193064,
+          "label": "TWS 16 asym vmgDn",
+          "target": {
+            "twsKt": 16,
+            "bsKt": 9.03,
+            "twaDeg": 145.4,
+            "heelDeg": null
+          },
+          "dBsPct": -1.5992890284189425,
+          "dTwaDeg": -2.7675152601785555,
+          "dHeelDeg": 0,
+          "loss": 0.011744483612623889
+        },
+        {
+          "twsKt": 20,
+          "bsKt": 11.70304602767955,
+          "twaDeg": 140.34565187741964,
+          "heelDeg": 11.4765868217353,
+          "label": "TWS 20 asym vmgDn",
+          "target": {
+            "twsKt": 20,
+            "bsKt": 12.66,
+            "twaDeg": 141.8,
+            "heelDeg": null
+          },
+          "dBsPct": -7.558878138392182,
+          "dTwaDeg": -1.4543481225803703,
+          "dHeelDeg": 0,
+          "loss": 0.008886356563585898
+        },
+        {
+          "twsKt": 24,
+          "bsKt": 14.589632878942442,
+          "twaDeg": 145.47894885534595,
+          "heelDeg": 12.488643566686095,
+          "label": "TWS 24 asym vmgDn",
+          "target": {
+            "twsKt": 24,
+            "bsKt": 15.57,
+            "twaDeg": 147,
+            "heelDeg": null
+          },
+          "dBsPct": -6.296513301589968,
+          "dTwaDeg": -1.5210511446540522,
+          "dHeelDeg": 0,
+          "loss": 0.007435002852690043
+        }
+      ],
+      "notes": "The 20 kt asym row (137.1 deg at 11.53 kt, Fn 0.73) is a planing row against a displacement model and still pulls against the rest; the residuals show the split."
+    }
+  ],
+  "heldOut": [
+    {
+      "twsKt": 8,
+      "bsKt": 4.930163670340974,
+      "twaDeg": 40.59680123415288,
+      "heelDeg": 6.07036612296141,
+      "label": "TWS 8 jib vmgUp",
+      "target": {
+        "twsKt": 8,
+        "bsKt": 5.28,
+        "twaDeg": 41.7,
+        "heelDeg": null
+      },
+      "dBsPct": -6.625688061723979,
+      "dTwaDeg": -1.1031987658471252,
+      "dHeelDeg": 0,
+      "loss": 0.006215545504577096
+    },
+    {
+      "twsKt": 8,
+      "bsKt": 5.338254796552205,
+      "twaDeg": 146.4836390059603,
+      "heelDeg": 1.1323425273199468,
+      "label": "TWS 8 asym vmgDn",
+      "target": {
+        "twsKt": 8,
+        "bsKt": 5.48,
+        "twaDeg": 147.6,
+        "heelDeg": null
+      },
+      "dBsPct": -2.5865913037918924,
+      "dTwaDeg": -1.1163609940396952,
+      "dHeelDeg": 0,
+      "loss": 0.002538438260805129
+    },
+    {
+      "twsKt": 8,
+      "bsKt": 5.221026459807841,
+      "twaDeg": 60,
+      "heelDeg": 3.7936519576474614,
+      "label": "TWS 8 jib 60°",
+      "target": {
+        "twsKt": 8,
+        "bsKt": 6.09,
+        "twaDeg": 60,
+        "heelDeg": null
+      },
+      "dBsPct": -14.268859444863038,
+      "dTwaDeg": 0,
+      "dHeelDeg": 0,
+      "loss": 0.020360034985725715
+    },
+    {
+      "twsKt": 8,
+      "bsKt": 6.1992008362570825,
+      "twaDeg": 90,
+      "heelDeg": 12.855698871312727,
+      "label": "TWS 8 asym 90°",
+      "target": {
+        "twsKt": 8,
+        "bsKt": 6.44,
+        "twaDeg": 90,
+        "heelDeg": null
+      },
+      "dBsPct": -3.7391174494241906,
+      "dTwaDeg": 0,
+      "dHeelDeg": 0,
+      "loss": 0.0013980999300588462
+    },
+    {
+      "twsKt": 8,
+      "bsKt": 6.400852806570167,
+      "twaDeg": 120,
+      "heelDeg": 5.5583017744768055,
+      "label": "TWS 8 asym 120°",
+      "target": {
+        "twsKt": 8,
+        "bsKt": 6.57,
+        "twaDeg": 120,
+        "heelDeg": null
+      },
+      "dBsPct": -2.574538712782856,
+      "dTwaDeg": 0,
+      "dHeelDeg": 0,
+      "loss": 0.0006628249583617604
+    },
+    {
+      "twsKt": 14,
+      "bsKt": 5.8859404582390225,
+      "twaDeg": 37.858381202248296,
+      "heelDeg": 19.14712014249126,
+      "label": "TWS 14 jib vmgUp",
+      "target": {
+        "twsKt": 14,
+        "bsKt": 5.96,
+        "twaDeg": 39,
+        "heelDeg": null
+      },
+      "dBsPct": -1.2426097610902267,
+      "dTwaDeg": -1.141618797751704,
+      "dHeelDeg": 0,
+      "loss": 0.0021093481209057403
+    },
+    {
+      "twsKt": 14,
+      "bsKt": 7.842162319932462,
+      "twaDeg": 147.3832650027755,
+      "heelDeg": 2.5175864723628023,
+      "label": "TWS 14 asym vmgDn",
+      "target": {
+        "twsKt": 14,
+        "bsKt": 7.86,
+        "twaDeg": 147.2,
+        "heelDeg": null
+      },
+      "dBsPct": -0.22694249449794385,
+      "dTwaDeg": 0.1832650027754994,
+      "dHeelDeg": 0,
+      "loss": 0.00005552938144435063
+    },
+    {
+      "twsKt": 14,
+      "bsKt": 7.2176749378203855,
+      "twaDeg": 60,
+      "heelDeg": 24.442615601417536,
+      "label": "TWS 14 jib 60°",
+      "target": {
+        "twsKt": 14,
+        "bsKt": 7,
+        "twaDeg": 60,
+        "heelDeg": null
+      },
+      "dBsPct": 3.10964196886265,
+      "dTwaDeg": 0,
+      "dHeelDeg": 0,
+      "loss": 0.0009669873174511978
+    },
+    {
+      "twsKt": 14,
+      "bsKt": 7.523507596583612,
+      "twaDeg": 90,
+      "heelDeg": 35.58451532208162,
+      "label": "TWS 14 asym 90°",
+      "target": {
+        "twsKt": 14,
+        "bsKt": 8,
+        "twaDeg": 90,
+        "heelDeg": null
+      },
+      "dBsPct": -5.956155042704847,
+      "dTwaDeg": 0,
+      "dHeelDeg": 0,
+      "loss": 0.003547578289273838
+    },
+    {
+      "twsKt": 14,
+      "bsKt": 8.805048115303396,
+      "twaDeg": 120,
+      "heelDeg": 23.518124457228538,
+      "label": "TWS 14 asym 120°",
+      "target": {
+        "twsKt": 14,
+        "bsKt": 9.1,
+        "twaDeg": 120,
+        "heelDeg": null
+      },
+      "dBsPct": -3.2412295021604756,
+      "dTwaDeg": 0,
+      "dHeelDeg": 0,
+      "loss": 0.0010505568685675443
+    }
+  ]
+}

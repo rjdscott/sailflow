@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   fromX,
   gridCells,
-  northBand,
+  guideBand,
   pointResidual,
   polarRow,
   rowPoint,
@@ -125,27 +125,29 @@ describe('polar row lookup', () => {
   });
 });
 
-describe('North band lookup', () => {
+// The harness resolves the guide by boat id; under test that is the default
+// class, whose first committed guide in filename order is North's.
+describe('guide band lookup', () => {
   it('returns the base band for the 8-10 kt range', () => {
-    expect(northBand(9)).toEqual({ label: '8-10 kt', uppersTurns: 0, lowersTurns: 0 });
+    expect(guideBand(9)).toEqual({ label: '8-10 kt', uppersTurns: 0, lowersTurns: 0 });
   });
 
   it('returns the 12-16 band for 14 kt', () => {
-    expect(northBand(14)).toEqual({ label: '12-16 kt', uppersTurns: 4, lowersTurns: 2 });
+    expect(guideBand(14)).toEqual({ label: '12-16 kt', uppersTurns: 4, lowersTurns: 2 });
   });
 
   it('resolves a boundary speed to exactly one band (half-open)', () => {
-    expect(northBand(10).label).toBe('10-12 kt');
-    expect(northBand(12).label).toBe('12-16 kt');
+    expect(guideBand(10).label).toBe('10-12 kt');
+    expect(guideBand(12).label).toBe('12-16 kt');
   });
 
   it('covers the open-ended top band', () => {
-    expect(northBand(30).label).toBe('20+ kt');
-    expect(northBand(30).lowersTurns).toBe(5);
+    expect(guideBand(30).label).toBe('20+ kt');
+    expect(guideBand(30).lowersTurns).toBe(5);
   });
 
   it('throws below the printed range instead of guessing', () => {
-    expect(() => northBand(-1)).toThrow(/no North band/);
+    expect(() => guideBand(-1)).toThrow(/no guide band/);
   });
 });
 

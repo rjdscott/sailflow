@@ -12,9 +12,9 @@
  * and a commit stamp could only ever name the pre-merge commit the report was
  * generated on (audit docs-consistency-01 M-09).
  */
-import { writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import north from '../data/tuning/north-j70.json';
+import { DEFAULT_BOAT_ID } from '../src/lib/boat';
 import type { DockControls, Forecast } from '../src/core/types';
 import { geometryFor } from '../src/core/solve/equilibrium';
 import { candidateGrid, lapTimeHours } from '../src/core/solve/dock';
@@ -36,14 +36,54 @@ import {
   TOL_VMG_TWA_DEG,
 } from './compare';
 
-const OUT = fileURLToPath(new URL('./report.md', import.meta.url));
+/**
+ * The default class keeps `report.md`: the More screen loads that path with
+ * `?raw`, and half a dozen docs cite it. Other classes get a suffix, the same
+ * convention `calibration/fit.ts` uses for its residuals — a second class must
+ * not overwrite the report the app ships.
+ */
+const OUT = fileURLToPath(
+  new URL(boat.id === DEFAULT_BOAT_ID ? './report.md' : `./report-${boat.id}.md`, import.meta.url),
+);
 const GEOM = geometryFor(boat);
 
+interface GuideBandRow {
+  label: string;
+  twsMinKt: number;
+  twsMaxKt: number | null;
+  uppersTurns: number;
+  lowersTurns: number;
+}
+
 /**
- * What this model is bad at. Kept here as prose rather than derived, because
- * these are judgements about the model, not measurements of it (ADR 0006).
+ * The first tuning guide committed for this class, or `null`. Same rule as
+ * `calibration/fit.ts`: a guide belongs to one class, and quoting the J/70's
+ * shroud turns at another rig would be the report inventing a disagreement.
  */
-const WEAKNESSES = [
+function loadGuide(boatId: string): { id: string; bands: GuideBandRow[] } | null {
+  const dir = new URL('../data/tuning/', import.meta.url);
+  for (const name of readdirSync(dir).sort()) {
+    if (!name.endsWith(`-${boatId}.json`)) continue;
+    const raw = JSON.parse(readFileSync(new URL(name, dir), 'utf8')) as {
+      source?: { label?: string };
+      bands?: GuideBandRow[];
+    };
+    if (Array.isArray(raw.bands) && raw.bands.length > 0)
+      return { id: raw.source?.label ?? name.replace(/\.json$/, ''), bands: raw.bands };
+  }
+  return null;
+}
+
+const GUIDE = loadGuide(boat.id);
+
+/**
+ * What this model is bad at **on the default class**. Kept as prose rather
+ * than derived, because these are judgements about the model, not
+ * measurements of it (ADR 0006) — and they are judgements about *this* boat:
+ * every one of them quotes a J/70 number or a J/70 source. `weaknesses()`
+ * below is what decides whether they apply to the class being reported.
+ */
+const DEFAULT_BOAT_WEAKNESSES = [
   '**Heel is tier B, everywhere.** The righting model is anchored on one published number (`rmMeasuredKgMPerDeg`, 18.5 kg·m/deg) and an assumed 25° knee; crew hiking is a linear ramp with an assumed 8° reference. Heel angles are directionally right and quantitatively a band, not a number.',
   '**The asymmetric is tier C for anything but speed.** The ORC offwind coefficient set is applied on centreline with no tack-line, sprit or rotation model, so asymmetric heel and leeway are direction-only. The guide’s own downwind advice (ease the tack 4–6 in before planing) has no representation in the physics.',
   '**The offwind sail’s deep-angle drag is a fitted number, not a measurement (ADR 0018).** Above AWA 115° the ORC CD0 is multiplied by `aero.asymCdMul`, ramped to full at 150°. Without it the model made 264 N of drive at TWS 14 / TWA 172° where 351 N is needed, and never soaked at any wind speed below 16 kt. The fitted 2.456 lands inside the published wind-tunnel band once the reference-area conventions are reconciled, but it is standing in for a mechanism the model does not contain — ORC gives the spinnaker no blanketing term, so the main’s shadow on the kite is absent and the sprit and tack line act on nothing.',
@@ -54,6 +94,42 @@ const WEAKNESSES = [
   '**The 20 kt asymmetric row is a planing row and this is a displacement model.** The ORC polar prints 11.53 kt at TWA 137° in 20 kt, which is the hull up and planing. The residuary curve here has a `hydro.planingRelief` knob whose fallback is zero, so the model has no planing regime to fit. Treat the 20 kt downwind numbers as out of range, not as a validated answer.',
   '**The source polar is VPP 2011 1.02 and the coefficients implemented are the 2023 edition.** Part of every residual below is ORC’s own revisions between the two, not model error (ADR 0007).',
 ];
+
+/**
+ * The weakness list for the class being reported.
+ *
+ * A second class does not inherit the default class's list: those bullets name
+ * the J/70's righting number, its Speed Guide's VPP edition and its own fitted
+ * knobs. What a second class *does* inherit is whatever its own run skipped,
+ * which is knowable from the boat and the guide rather than written by hand.
+ */
+function weaknesses(): string[] {
+  if (boat.id === DEFAULT_BOAT_ID) return DEFAULT_BOAT_WEAKNESSES;
+  const out = [
+    '**The whole shape layer is invented.** `rig/state.ts`, `shape/flying.ts` and `shape/toOrc.ts` are sign-correct heuristics with calibration knobs (ADR 0006). Nothing published maps turnbuckle turns to shroud tension, tension to forestay sag, or sag to flying shape for any class. Every magnitude in that chain is an assumption; only the signs are tested.',
+    '**This is one certificate, not a class polar.** An ORC polar is issued per measured hull. ' +
+      'ADR 0020 measured the spread across 40 Melges 24 certificates at up to 11.4 %, wider than ' +
+      `the ${pct(TOL_VMG_BS_FRAC)} boat-speed tolerance the gate applies — so a failing row may ` +
+      "be the model, or may be a different boat. The polar file's source block names which.",
+  ];
+  if (!GUIDE)
+    out.push(
+      `**Six rig and shape knobs are unfitted.** No tuning guide is committed for ${boat.id}, ` +
+        'so calibration stage 4 never ran: `rig.EI`, `rig.turnsToN`, `rig.sagK` and the three ' +
+        "`shape.*` knobs hold code defaults fitted against another class's rig. Every dock-tune " +
+        'number this class reports is tier C until a guide is sourced.',
+    );
+  if (polarRowsLackHeel())
+    out.push(
+      "**Heel is unfitted and ungated.** This class's polar publishes no heel column, so calibration stage 3 never ran (`hydro.crewArmMul` holds its code default) and no row below has a heel to compare against. The model heel in the tables is an output nothing checked.",
+    );
+  return out;
+}
+
+/** True when no committed polar row carries a heel angle. */
+function polarRowsLackHeel(): boolean {
+  return (boat.polar?.rows ?? []).every((r) => r.heelDeg === null);
+}
 
 const pct = (f: number) => `${(f * 100).toFixed(1)} %`;
 const progress = (msg: string) => process.stderr.write(`${msg}\n`);
@@ -73,7 +149,7 @@ function comparisonRow(c: Comparison, gated: boolean): string {
       ? `${pct(c.limitBsFrac)}`
       : `${pct(c.limitBsFrac)} / 2°`;
   const verdict = !gated ? 'fit residual' : c.pass ? 'ok' : '**FAIL**';
-  return `| ${label} | ${c.polar.bsKt.toFixed(2)} | ${c.model.bsKt.toFixed(2)} | ${pct(c.bsErrFrac)} | ${c.polar.twaDeg.toFixed(1)} | ${c.model.twaDeg.toFixed(1)} | ${twa} | ${c.polar.heelDeg.toFixed(1)} | ${c.model.heelDeg.toFixed(1)} | ${limit} | ${verdict} |`;
+  return `| ${label} | ${c.polar.bsKt.toFixed(2)} | ${c.model.bsKt.toFixed(2)} | ${pct(c.bsErrFrac)} | ${c.polar.twaDeg.toFixed(1)} | ${c.model.twaDeg.toFixed(1)} | ${twa} | ${c.polar.heelDeg === null ? '—' : c.polar.heelDeg.toFixed(1)} | ${c.model.heelDeg.toFixed(1)} | ${limit} | ${verdict} |`;
 }
 
 const TABLE_HEAD = [
@@ -186,20 +262,39 @@ function main(): void {
   }
   out.push('');
 
-  // --- model optimum vs the North guide ------------------------------------
-  out.push('## Model optimum vs North base settings');
+  // --- model optimum vs the tuning guide -----------------------------------
+  out.push(`## Model optimum vs ${GUIDE ? `${GUIDE.id} base settings` : 'a tuning guide'}`);
   out.push('');
   const grid = candidateGrid();
-  out.push(
-    `For each North tuning-guide band, the dock setup the model picks at the band midpoint (best over \`candidateGrid()\`, ${grid.length} legal setups, scored on windward-leeward lap time) against the setting the guide publishes. Stage-4 rig calibration targets the 8–10 and 12–16 kt bands only; every other band is a genuine disagreement (ADR 0007), and the panel shows both sides rather than resolving it.`,
-  );
-  out.push('');
-  out.push(
-    '| band | TWS | guide uppers | guide lowers | model uppers | model lowers | model forestay | |',
-  );
-  out.push('| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |');
+  if (!GUIDE) {
+    out.push(
+      `**No tuning guide is committed for \`${boat.id}\`** (\`data/tuning/*-${boat.id}.json\` is empty). There is nothing to compare the model's own dock optimum against, and another class's guide would describe a different rig, so this section is skipped rather than filled. Stage 4 of the calibration — the six rig and shape knobs — was skipped for the same reason and they hold their code defaults, which \`ASSUMPTIONS.md\` records as unfitted. The app's disagreement panel shows the same empty state for this class.`,
+    );
+    out.push('');
+  } else {
+    out.push(
+      `For each ${GUIDE.id} tuning-guide band, the dock setup the model picks at the band midpoint (best over \`candidateGrid()\`, ${grid.length} legal setups, scored on windward-leeward lap time) against the setting the guide publishes. Stage-4 rig calibration targets the 8–10 and 12–16 kt bands only; every other band is a genuine disagreement (ADR 0007), and the panel shows both sides rather than resolving it.`,
+    );
+    out.push('');
+    out.push(
+      '| band | TWS | guide uppers | guide lowers | model uppers | model lowers | model forestay | |',
+    );
+    out.push('| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |');
+    guideTable(out, grid);
+  }
 
-  for (const band of north.bands) {
+  // --- weaknesses ----------------------------------------------------------
+  out.push('## Honest weaknesses');
+  out.push('');
+  for (const w of weaknesses()) out.push(`- ${w}`);
+  out.push('');
+
+  writeFileSync(OUT, out.join('\n'));
+  progress(`wrote ${OUT} in ${((Date.now() - started) / 1000).toFixed(1)} s`);
+}
+
+function guideTable(out: string[], grid: DockControls[]): void {
+  for (const band of GUIDE?.bands ?? []) {
     const tws = bandMidpoint(band);
     progress(`dock optimum: ${band.label} (TWS ${tws} kt, ${grid.length} setups)`);
     const forecast: Forecast = {
@@ -229,15 +324,6 @@ function main(): void {
     'Guide turns are relative to the guide base (Loos PT-2 22 uppers / 12 lowers); model turns are on the same scale. A row where the two disagree is information, not a bug: the guide optimises for a fleet and a sail inventory, the model for lap time under this hydro fit.',
   );
   out.push('');
-
-  // --- weaknesses ----------------------------------------------------------
-  out.push('## Honest weaknesses');
-  out.push('');
-  for (const w of WEAKNESSES) out.push(`- ${w}`);
-  out.push('');
-
-  writeFileSync(OUT, out.join('\n'));
-  progress(`wrote ${OUT} in ${((Date.now() - started) / 1000).toFixed(1)} s`);
 }
 
 main();

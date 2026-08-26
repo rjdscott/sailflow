@@ -15,11 +15,17 @@ describe('boat registry', () => {
     expect(boatIds()[0]).toBe(DEFAULT_BOAT_ID);
   });
 
-  it('validates every committed class against the schema the solver reads', () => {
-    // The registry is the app's whole supply of boats. A class that reaches it
-    // without passing `validateBoat` is one the solver will read fields off
-    // and silently get `undefined` for.
-    for (const id of boatIds()) expect(validateBoat(boatFor(id)), id).toEqual([]);
+  it('validates every committed class against the schema the solver reads', async () => {
+    // The **files**, globbed, not just the registry entries: a boat file
+    // nobody registered passes every other test in this suite by never being
+    // looked at, and a registered id with no file is the reverse. The file is
+    // also what a reviewer opens and what `scripts/provenance.mjs` reads.
+    const files = import.meta.glob('../../data/boats/*.json', { eager: true, import: 'default' });
+    const paths = Object.keys(files).sort();
+    expect(paths.length, 'a registered class with no file, or a file nobody registered').toBe(
+      boatIds().length,
+    );
+    for (const path of paths) expect(validateBoat(files[path]), path).toEqual([]);
   });
 
   it('names every class, because the picker renders the name not the id', () => {
@@ -46,6 +52,7 @@ describe('boat registry', () => {
     // `activeBoat`. If this were ever undefined — or a boat outside the
     // registry — the cockpit would draw a sail plan nothing had validated.
     expect(isBoatId(activeBoat.id)).toBe(true);
+    expect(activeBoat).toBe(boatFor(activeBoat.id));
     expect(validateBoat(activeBoat)).toEqual([]);
   });
 });

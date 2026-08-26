@@ -15,7 +15,9 @@
  * gates the size.
  */
 import j70 from '../../data/boats/j70.json';
+import m24 from '../../data/boats/m24.json';
 import polarJ70 from '../../data/polar/orc-j70.json';
+import polarM24 from '../../data/polar/orc-m24.json';
 import type { BoatDefinition, PolarTable, SailDef } from '../core/types';
 
 /** The class shown when nothing has been chosen, and the one every gate runs on. */
@@ -24,7 +26,21 @@ export const DEFAULT_BOAT_ID = 'j70';
 /** Where the chosen class is persisted. `settings.svelte.ts` does the writing. */
 export const BOAT_KEY = 'sailflow.boat';
 
-function withPolar(raw: unknown, polar?: PolarTable): BoatDefinition {
+/**
+ * A registry entry: the boat file plus its reference polar.
+ *
+ * The whole file, `provenance` and `sources` included, even though nothing at
+ * runtime reads either and the two blocks are ~5.8 KB gzip per class on first
+ * load. Naming only the fields the app reads *looks* like it would let Rollup
+ * drop them, and the bundle duly shrank by 12 KB — because Vite had stringified
+ * these files (`json.stringify: 'auto'` above ~10 KB) and emits only a default
+ * export for a stringified module, so every named import resolved to
+ * `undefined` and the cockpit rendered nothing. Vitest did not catch it; 42 of
+ * the 69 Playwright specs did. If this payload ever has to come off the entry,
+ * the honest ways are a per-class dynamic import or splitting the prose into a
+ * sidecar file, not a leaner import statement.
+ */
+function entry(raw: unknown, polar?: PolarTable): BoatDefinition {
   return { ...(raw as BoatDefinition), ...(polar ? { polar } : {}) };
 }
 
@@ -34,7 +50,8 @@ function withPolar(raw: unknown, polar?: PolarTable): BoatDefinition {
  * target (`core/reference/polar.ts`).
  */
 const BOATS: Record<string, BoatDefinition> = {
-  j70: withPolar(j70, polarJ70 as PolarTable),
+  j70: entry(j70, polarJ70 as PolarTable),
+  m24: entry(m24, polarM24 as unknown as PolarTable),
 };
 
 /** Ids of every committed class, stable order, default first. */
