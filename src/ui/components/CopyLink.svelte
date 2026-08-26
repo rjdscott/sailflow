@@ -37,6 +37,10 @@
 
   function live(): ShareState {
     return {
+      // The class rides along: the trim below is in its units, and a crewmate
+      // opening the link on another class would read numbers that never
+      // described this boat.
+      boat: settings.boatId,
       condition: conditions.value,
       race: $state.snapshot(race.controls.race),
       down: race.controls.down ? $state.snapshot(race.controls.down) : undefined,

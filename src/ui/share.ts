@@ -15,8 +15,9 @@
  * to survive a chat client and readable enough to hand-edit in an address bar.
  * Pure: no DOM except `shareUrl` and `copyText` at the bottom, which say so.
  */
-import boat from '../../data/boats/j70.json';
+import { boatFor, isBoatId } from '../lib/boat';
 import type {
+  BoatDefinition,
   Condition,
   ControlSpec,
   DockControls,
@@ -30,7 +31,18 @@ import { snap } from './format';
 import { buildHash, type Params, type Route } from './router.svelte';
 import type { Mode } from './stores/settings.svelte';
 
-const SPECS = boat.controls as Record<string, ControlSpec>;
+/**
+ * Control specs for a class. A link's values are snapped to the stops of the
+ * boat *the link names*, not to the default class's: a J/24 jib lead runs to a
+ * different number of holes, and snapping its link to the J/70's grid would
+ * quietly move the trim the sender was looking at.
+ */
+function specsFor(boat: BoatDefinition): Record<string, ControlSpec> {
+  return boat.controls as Record<string, ControlSpec>;
+}
+
+/** The class a caller means when it names none. */
+const defaultBoat = (): BoatDefinition => boatFor(undefined);
 
 /** Bump only for a change no migration can express as a rewrite of the query. */
 export const SHARE_VERSION = 1;
@@ -81,6 +93,13 @@ const TIERS: readonly Mode[] = ['learn', 'race', 'analyse'];
 /** Everything a link carries. Every part is optional: a hand-written link may
  *  name one field, and a Dock link never has a trim. */
 export interface ShareState {
+  /**
+   * The class the trim belongs to. Additive in v1 (ADR 0019): a link written
+   * before this field existed carries no `boat`, and the absent value means
+   * exactly what it meant then — the default class. So no version bump and no
+   * migration entry; the schema did not change meaning, it grew a field.
+   */
+  boat?: string;
   /** Partial: a log entry knows the wind it was sailed in but not the angle. */
   condition?: Partial<Condition>;
   race?: RaceControls;
@@ -93,6 +112,12 @@ export interface ShareState {
 export interface DecodedShare {
   /** The version the link declared, before migration. 0 = a pre-`s=` link. */
   version: number;
+  /**
+   * The class named by the link, or null when it named none *or* named one
+   * this build does not carry. Null means "use the default": a crewmate on an
+   * older build opening a J/24 link should get the app, not a blank screen.
+   */
+  boat: string | null;
   condition: Partial<Condition>;
   race: RaceControls | null;
   down: DownControls | null;
@@ -135,8 +160,8 @@ export function migrate(params: Params): { params: Params; version: number } {
 
 /** Legal value for a control id: snapped to its own grid, clamped to its own
  *  range. A link is user input, so nothing reaches a store unsnapped. */
-function toSpec(id: string, value: number): number {
-  const s = SPECS[id];
+function toSpec(specs: Record<string, ControlSpec>, id: string, value: number): number {
+  const s = specs[id];
   return s ? snap(value, s.min, s.max, s.step) : value;
 }
 
@@ -150,7 +175,11 @@ function encodeGroup<T>(keys: readonly (keyof T)[], values: T): string {
  * is a link from a version this parser does not understand, and half-applying
  * it would put a control somewhere its owner never set it.
  */
-function decodeGroup<T>(keys: readonly string[], text: string | undefined): T | null {
+function decodeGroup<T>(
+  keys: readonly string[],
+  text: string | undefined,
+  specs: Record<string, ControlSpec>,
+): T | null {
   if (text === undefined) return null;
   const parts = text.split(SEP);
   if (parts.length !== keys.length) return null;
@@ -158,7 +187,7 @@ function decodeGroup<T>(keys: readonly string[], text: string | undefined): T | 
   for (const [i, key] of keys.entries()) {
     const v = Number(parts[i]);
     if (!Number.isFinite(v)) return null;
-    out[key] = toSpec(key, v);
+    out[key] = toSpec(specs, key, v);
   }
   return out as T;
 }
@@ -174,20 +203,27 @@ const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.m
 const seaStateOf = (v: number): SeaState => clamp(Math.round(v), 0, 4) as SeaState;
 
 /** A whole race trim from a plain object, or null if any field is missing. */
-export function normaliseRace(value: unknown): RaceControls | null {
+export function normaliseRace(
+  value: unknown,
+  boat: BoatDefinition = defaultBoat(),
+): RaceControls | null {
   if (typeof value !== 'object' || value === null) return null;
+  const specs = specsFor(boat);
   const src = value as Record<string, unknown>;
   const out = {} as RaceControls;
   for (const key of RACE_KEYS) {
     const v = num(src[key]);
     if (v === null) return null;
-    out[key] = toSpec(key, v);
+    out[key] = toSpec(specs, key, v);
   }
   return out;
 }
 
 /** A hand-written link may carry one field, so every field is optional. */
-export function normaliseCondition(value: unknown): Partial<Condition> {
+export function normaliseCondition(
+  value: unknown,
+  boat: BoatDefinition = defaultBoat(),
+): Partial<Condition> {
   if (typeof value !== 'object' || value === null) return {};
   const src = value as Record<string, unknown>;
   const out: Partial<Condition> = {};
@@ -203,7 +239,10 @@ export function normaliseCondition(value: unknown): Partial<Condition> {
   return out;
 }
 
-export function normaliseForecast(value: unknown): Forecast | null {
+export function normaliseForecast(
+  value: unknown,
+  boat: BoatDefinition = defaultBoat(),
+): Forecast | null {
   if (typeof value !== 'object' || value === null) return null;
   const src = value as Record<string, unknown>;
   const min = num(src.minKt);
@@ -226,6 +265,7 @@ export function normaliseForecast(value: unknown): Forecast | null {
 /** Short keys, because this string is meant to be read in an address bar. */
 export function encodeShare(state: ShareState): Params {
   const p: Params = { s: String(SHARE_VERSION) };
+  if (state.boat) p.boat = state.boat;
   const c = state.condition;
   if (c) {
     // Field by field: a link that omits the angle is asking for "this wind,
@@ -249,6 +289,11 @@ export function encodeShare(state: ShareState): Params {
 
 export function decodeShare(raw: Params): DecodedShare {
   const { params, version } = migrate(raw);
+  // Resolve the class first: every value below is snapped to *its* stops and
+  // clamped to *its* crew range.
+  const boatId = isBoatId(params.boat) ? params.boat : null;
+  const boat = boatFor(boatId ?? undefined);
+  const specs = specsFor(boat);
   const cond: Record<string, unknown> = {};
   if (params.tws !== undefined) cond.twsKt = Number(params.tws);
   if (params.twa !== undefined) cond.twaDeg = Number(params.twa);
@@ -261,10 +306,14 @@ export function decodeShare(raw: Params): DecodedShare {
 
   return {
     version,
-    condition: normaliseCondition(cond),
-    race: decodeGroup<RaceControls>(RACE_KEYS, params.r),
-    down: decodeGroup<DownControls>(DOWN_KEYS, params.w),
-    dock: decodeGroup<DockControls>(DOCK_KEYS, params.d),
+    // Validated against the registry, not passed through: an unknown class
+    // reads as null so the caller falls back rather than asking the worker to
+    // load a boat that does not exist.
+    boat: boatId,
+    condition: normaliseCondition(cond, boat),
+    race: decodeGroup<RaceControls>(RACE_KEYS, params.r, specs),
+    down: decodeGroup<DownControls>(DOWN_KEYS, params.w, specs),
+    dock: decodeGroup<DockControls>(DOCK_KEYS, params.d, specs),
     // The forecast is validated by the same function the session store uses:
     // it is five loose numbers with no control spec to snap them onto.
     forecast:

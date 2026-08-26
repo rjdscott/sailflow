@@ -56,7 +56,25 @@
    */
   function applyUrl(): void {
     if (router.route !== 'race' && router.route !== 'dock') return;
-    const { condition, race: trim, down, dock: setup, forecast, tier } = decodeShare(router.params);
+    const {
+      boat,
+      condition,
+      race: trim,
+      down,
+      dock: setup,
+      forecast,
+      tier,
+    } = decodeShare(router.params);
+    // The class first, and nothing else on this pass: every value below is in
+    // the named class's units, and the stores were seeded from the previous
+    // one. The reload re-enters here with the same URL and the right boat, so
+    // the trim is applied exactly once, against the class that owns it.
+    // `decodeShare` only ever returns a registered id, so this cannot loop.
+    if (boat && boat !== settings.boatId) {
+      settings.setBoatId(boat);
+      location.reload();
+      return;
+    }
     // A link that names the kite but carries no `r=` has specified the sail
     // plan and not the trim, so it lands on the trim for that sail plan rather
     // than on a beat's mainsheet with a spinnaker up (`race.hoistKite`).
@@ -97,7 +115,15 @@
       if (shareable) {
         router.replaceParams({
           ...router.params,
-          ...encodeShare({ condition, race: trim, down, dock: setup, forecast, tier }),
+          ...encodeShare({
+            boat: settings.boatId,
+            condition,
+            race: trim,
+            down,
+            dock: setup,
+            forecast,
+            tier,
+          }),
         });
       }
     }, WRITE_MS);

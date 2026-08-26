@@ -8,6 +8,7 @@ import type {
   Forecast,
   RaceControls,
 } from '../core/types';
+import { DEFAULT_BOAT_ID } from '../lib/boat';
 import { snap } from './format';
 import {
   decodeShare,
@@ -193,5 +194,43 @@ describe('the query stays short and readable', () => {
     // Nothing percent-encoded: `_`, `-` and `.` are unreserved, which is what
     // keeps the link legible after a chat client has been at it.
     expect(query).not.toContain('%');
+  });
+});
+
+/**
+ * Phase 05: `boat=` is additive in v1 (ADR 0019). A link that names no class
+ * means the default, which is exactly what every link written before this
+ * field existed meant — so there is no version bump and no migration entry,
+ * and these tests are what say so.
+ */
+describe('boat= in a share link', () => {
+  it('round-trips the class', () => {
+    const p = encodeShare({ boat: DEFAULT_BOAT_ID, condition: { twsKt: 12 } });
+    expect(p.boat).toBe(DEFAULT_BOAT_ID);
+    expect(decodeShare(p).boat).toBe(DEFAULT_BOAT_ID);
+  });
+
+  it('stays out of the query when no class is named', () => {
+    // Otherwise every existing link would grow a parameter on the next copy,
+    // and links already in a group chat would stop matching new ones.
+    expect(encodeShare({ condition: { twsKt: 12 } }).boat).toBeUndefined();
+  });
+
+  it('does not bump the schema version, because it added no meaning', () => {
+    expect(encodeShare({ boat: DEFAULT_BOAT_ID }).s).toBe(String(SHARE_VERSION));
+  });
+
+  it('reads a pre-boat v1 link as the default class, not as an error', () => {
+    const decoded = decodeShare({ s: '1', tws: '12' });
+    expect(decoded.boat).toBeNull();
+    expect(decoded.condition.twsKt).toBe(12);
+  });
+
+  it('reads an unknown class as null so an older build still opens the link', () => {
+    // A crewmate on a build that predates a class must get the app, not a
+    // blank screen. Null means "fall back to the default".
+    const decoded = decodeShare({ s: '1', boat: 'not-a-boat', tws: '12' });
+    expect(decoded.boat).toBeNull();
+    expect(decoded.condition.twsKt).toBe(12);
   });
 });
