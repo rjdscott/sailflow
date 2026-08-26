@@ -432,6 +432,10 @@
     align-items: center;
     gap: var(--space-2);
     flex-wrap: wrap;
+    /* The row sat flush on the card below it, where every other card on the
+       screen has `--space-4` between it and its neighbour, so the two buttons
+       read as fused to the card border (audit ux-03 L-04). */
+    margin-bottom: var(--space-4);
   }
 
   .spacer {
