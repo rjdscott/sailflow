@@ -7,6 +7,7 @@ import {
   BASE_DOWN,
   bestProbe,
   DEBOUNCE_MS,
+  PROBE_DEBOUNCE_MS,
   gradients,
   historyKey,
   OBJECTIVE_METRIC,
@@ -15,6 +16,13 @@ import {
 } from './store.svelte';
 import { BASE_RACE, BASE_RACE_DOWN, conditions, PRESETS } from '../stores/conditions.svelte';
 import { optimum } from './optimum.svelte';
+
+/**
+ * Long enough for the main solve *and* the coach line's probe pass. The two
+ * are debounced separately (audit ux-03 M-25): the numbers answer in a frame,
+ * the eight-solve probe waits for the drag to stop.
+ */
+const SETTLED_MS = DEBOUNCE_MS + PROBE_DEBOUNCE_MS;
 
 const CONDITION: Condition = { twsKt: 12, twaDeg: 42, seaState: 1, crewKg: 300, sailset: 'jib' };
 
@@ -145,11 +153,43 @@ describe('RaceStore.request', () => {
 });
 
 describe('coach line', () => {
+  /**
+   * The point of the split debounce (audit ux-03 M-25): the instruments settle
+   * a frame after the control stops, and the eight-solve probe pass does not
+   * ride along with them. Without the split this test sees nine calls at
+   * `DEBOUNCE_MS` and a drag posts a probe burst per step.
+   */
+  it('answers the numbers a frame after the drag and holds the probe pass back', async () => {
+    const { client, seen } = scoringClient(() => 5);
+    const store = new RaceStore(client);
+    store.request(controls(), CONDITION);
+
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    expect(seen).toHaveLength(1); // the trimmed solve, and nothing else yet
+    expect(store.result).not.toBeNull();
+    expect(store.busy).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(PROBE_DEBOUNCE_MS);
+    expect(seen).toHaveLength(9);
+  });
+
+  it('drops a probe pass the next control move overtook', async () => {
+    const { client, seen } = scoringClient(() => 5);
+    const store = new RaceStore(client);
+    store.request(controls({ mainsheet: 60 }), CONDITION);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    // Still inside the probe's window: a second move cancels the first pass.
+    store.request(controls({ mainsheet: 65 }), CONDITION);
+    await vi.advanceTimersByTimeAsync(SETTLED_MS);
+    // Two trimmed solves and exactly one probe burst, not two.
+    expect(seen).toHaveLength(2 + 8);
+  });
+
   it('probes the four influential controls one legal step each way, after the main solve', async () => {
     const { client, seen } = scoringClient(() => 5);
     const store = new RaceStore(client);
     store.request(controls(), CONDITION);
-    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await vi.advanceTimersByTimeAsync(SETTLED_MS);
     // 1 main solve + 4 controls x 2 directions
     expect(seen).toHaveLength(9);
     expect(store.coach).toBeNull(); // nothing gains, so nothing to say
@@ -165,7 +205,7 @@ describe('coach line', () => {
     });
     const store = new RaceStore(client);
     store.request(controls(), CONDITION);
-    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await vi.advanceTimersByTimeAsync(SETTLED_MS);
 
     expect(store.coach?.control).toBe('mainsheet');
     expect(store.coach?.dir).toBe(-1);
@@ -179,7 +219,7 @@ describe('coach line', () => {
     const { client, seen } = scoringClient(() => 5);
     const store = new RaceStore(client);
     store.request(controls(), { ...CONDITION, twaDeg: 150, sailset: 'asym' });
-    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await vi.advanceTimersByTimeAsync(SETTLED_MS);
     // 1 main solve + 3 controls x 2 directions: jibLead is not asked.
     expect(seen).toHaveLength(7);
     expect(seen.some((r) => r.jibLead !== BASE_RACE.jibLead)).toBe(false);
@@ -190,7 +230,7 @@ describe('coach line', () => {
     const store = new RaceStore(client);
     // jibLead at its maximum: only the downward probe is legal.
     store.request(controls({ jibLead: 10, backstay: 100 }), CONDITION);
-    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await vi.advanceTimersByTimeAsync(SETTLED_MS);
     expect(seen).toHaveLength(7);
   });
 });
@@ -261,7 +301,7 @@ describe('coach wording per point of sail', () => {
   it('says boat speed on a reach, and probes boat speed to get there', async () => {
     const store = new RaceStore(splitClient);
     store.request(controls(), { ...CONDITION, twaDeg: 90 });
-    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await vi.advanceTimersByTimeAsync(SETTLED_MS);
     expect(store.coach?.control).toBe('mainsheet');
     expect(store.coach?.text).toContain('kt boat speed');
   });
@@ -269,7 +309,7 @@ describe('coach wording per point of sail', () => {
   it('says VMG, and scores VMG, inside 90 degrees under the jib', async () => {
     const store = new RaceStore(splitClient);
     store.request(controls(), { ...CONDITION, twaDeg: 42 });
-    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await vi.advanceTimersByTimeAsync(SETTLED_MS);
     expect(store.coach?.control).toBe('traveller');
     expect(store.coach?.text).toContain('kt VMG');
   });
@@ -318,7 +358,7 @@ describe('coach line downwind', () => {
     );
     const store = new RaceStore(client);
     store.request(controls(), { ...CONDITION, twaDeg: 150, sailset: 'asym' });
-    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await vi.advanceTimersByTimeAsync(SETTLED_MS);
     expect(store.coach?.control).toBe('mainsheet');
     expect(store.coach?.dir).toBe(-1);
     expect(store.coach?.gainKt).toBeCloseTo(0.2, 5);
