@@ -25,7 +25,7 @@ Epic 3 (Rust engine) stay unstarted; nothing here pre-commits to them.
 | 01 | [Downwind physics passes its own gate](phase-01-downwind-physics.md) | 🔵 Not started | none |
 | 02 | [Share a trim, pin and compare](phase-02-share-and-compare.md) | 🟡 In progress | 2026-08-26 |
 | 03 | [Tuning guides as data](phase-03-guides-as-data.md) | 🟡 In progress | 2026-08-26 — schema, enumeration, selector and runbook landed; third guide blocked on sourcing |
-| 04 | [Onboarding and explainers](phase-04-onboarding-and-explainers.md) | 🔵 Not started | none |
+| 04 | [Onboarding and explainers](phase-04-onboarding-and-explainers.md) | 🟡 In progress | 2026-08-26 — all six tasks landed on `feat/onboarding-explainers`; gates green, awaiting merge |
 | 05 | [Second boat class](phase-05-second-boat.md) | 🔵 Not started | none |
 | 06 | [Phone performance](phase-06-phone-performance.md) | 🔵 Not started | none |
 
