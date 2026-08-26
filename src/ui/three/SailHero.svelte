@@ -1,3 +1,26 @@
+<script module lang="ts">
+  /**
+   * Does this browser do WebGL at all? Probing costs a throwaway canvas and a
+   * context that nothing releases, so it is answered once per page load rather
+   * than once per mount — the hero mounts twice per Race visit (both
+   * responsive layouts) and Race is the default route, so the per-mount
+   * version leaked ~0.8 contexts a visit against a browser ceiling of about
+   * sixteen (audit ux-03 M-21).
+   */
+  let webglMemo: boolean | undefined;
+
+  function hasWebGL(): boolean {
+    if (webglMemo !== undefined) return webglMemo;
+    try {
+      const c = document.createElement('canvas');
+      webglMemo = !!(c.getContext('webgl2') ?? c.getContext('webgl'));
+    } catch {
+      webglMemo = false;
+    }
+    return webglMemo;
+  }
+</script>
+
 <script lang="ts">
   /**
    * The Race hero slot: a 3D sail view when the device can carry one, the 2D
@@ -64,21 +87,38 @@
    */
   let tooSlow = $state(false);
 
-  function hasWebGL(): boolean {
-    try {
-      const c = document.createElement('canvas');
-      return !!(c.getContext('webgl2') ?? c.getContext('webgl'));
-    } catch {
-      return false;
-    }
+  /**
+   * A phone, by input and by width. Either alone is enough: a touch laptop is
+   * coarse-pointing on a wide screen, and a narrow desktop window is a phone
+   * layout with a mouse — both get the cheap picture first, and both are one
+   * tap from the other.
+   */
+  function phoneFirst(): boolean {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(pointer: coarse), (max-width: 719px)').matches;
   }
 
+  /**
+   * Which picture the slot opens with. A stored choice always wins; with none
+   * stored, a phone gets the plan view and a desktop gets 3D.
+   *
+   * The phone default is the whole of the download saving: `SailView3D` is
+   * 139 KB gzip against a 95 KB first load, and the audit measured the phone
+   * fetching it 3.2 s into a 3G visit for a hero it had not been asked for
+   * (ux-03 M-22). ADR 0014's own constraint is that a 380 px phone must still
+   * work and its fallback is this exact view, so the phone starts there and
+   * the 3D chunk is fetched when the *user* asks — the `3D` toggle above, or
+   * a hero that scrolls into view on a screen wide enough to default to it.
+   * The choice persists, so a sailor who wants 3D on their phone asks once.
+   */
   function readHero(): Hero {
     try {
-      return localStorage.getItem(KEY) === 'plan' ? 'plan' : '3d';
+      const stored = localStorage.getItem(KEY);
+      if (stored === 'plan' || stored === '3d') return stored;
     } catch {
-      return '3d'; // private mode, or storage disabled
+      // private mode, or storage disabled: fall through to the default
     }
+    return phoneFirst() ? 'plan' : '3d';
   }
 
   let hero = $state<Hero>(readHero());
@@ -120,20 +160,39 @@
   let View = $state<View3D | null>(null);
 
   /**
-   * Race renders both responsive layouts and lets CSS hide one, so this
-   * component mounts twice on every screen. Without this gate both copies
-   * would build a scene and take a WebGL context — one of them permanently
-   * invisible, and browsers only hand out about sixteen. Zero width means
-   * `display: none` somewhere above, so the hidden copy keeps the (cheap,
-   * also hidden) SVG and the chunk is never even fetched for it.
+   * The gate on the 142 KB three.js chunk: this slot has to be on screen.
+   *
+   * It answers two questions with one observer. Race renders both responsive
+   * layouts and lets CSS hide one, so the component mounts twice per visit and
+   * the `display: none` copy must never build a scene or take a context. And
+   * on a phone the hero sits ~370 px below the fold under a screen's worth of
+   * band and panels, so a width-only gate downloaded the whole renderer for a
+   * picture nobody had scrolled to — 3.2 s of it on 3G (audit ux-03 M-22).
+   * A hidden or off-screen element never intersects, so both fall out for
+   * free, and the desktop cockpit — hero above the fold — is unchanged.
+   *
+   * Latching, not tracking: once the hero has been seen the chunk is in
+   * memory, and re-gating on scroll would unmount and rebuild the scene every
+   * time it left the viewport. `SailView3D`'s own observer already parks the
+   * render loop while it is off screen, which is the cost that matters after
+   * the first paint.
    */
   let slot: HTMLDivElement;
   let shown = $state(false);
 
   onMount(() => {
-    const ro = new ResizeObserver(([e]) => (shown = e.contentRect.width > 0));
-    ro.observe(slot);
-    return () => ro.disconnect();
+    // rootMargin: start the fetch a little before the hero arrives, so a
+    // scroll towards it meets a picture rather than a swap.
+    const io = new IntersectionObserver(
+      (es) => {
+        if (!es.some((e) => e.isIntersecting)) return;
+        shown = true;
+        io.disconnect();
+      },
+      { rootMargin: '200px' },
+    );
+    io.observe(slot);
+    return () => io.disconnect();
   });
 
   const webgl = typeof document === 'undefined' ? false : hasWebGL();

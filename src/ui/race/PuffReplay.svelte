@@ -77,7 +77,11 @@
   .chip {
     min-height: var(--hit-min);
     padding: 0 var(--space-2);
-    border: 1px solid var(--line);
+    /* The one control outline the `--line-strong` sweep missed: 1.28:1 dark,
+       1.17:1 light, against ADR 0015's 3:1 for every non-text component
+       (audit ux-03 L-02). Same token as `ConditionsStrip`'s chips and
+       `Slider`'s steppers, already gated by `scripts/contrast_check.mjs`. */
+    border: 1px solid var(--line-strong);
     border-radius: var(--radius);
     background: transparent;
     color: var(--ink-2);

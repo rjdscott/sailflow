@@ -45,7 +45,38 @@ export const BASE_DOWN: DownControls = {
   sprit: boatJson.baseRaceDown.sprit,
 };
 
-export const DEBOUNCE_MS = 80;
+/**
+ * How long a control has to stop moving before the main `trimmed` solve is
+ * posted, ms.
+ *
+ * One frame at 60 Hz plus a little, because the answer costs almost nothing:
+ * the worker round trip for `trimmed`, measured by wrapping
+ * `Worker.prototype.postMessage` and correlating ids across a 25-step drag on
+ * `vite preview`, is a **1.4–2.0 ms median** (n = 36 per run, min 0.4, p90
+ * 8.8–11.9; the ux-03 audit measured 2.4 ms on a laptop). The margin is for
+ * the p90, not the median. At the old 80 ms the instruments settled
+ * ~105 ms after the last input and stepped at 7–9 Hz while the 3D sail — whose
+ * `$effect` reads the controls directly — followed the finger, so the two
+ * halves of the cockpit disagreed about the boat during the one interaction
+ * they were grouped for (audit ux-03 M-25). Research §3 principle 7 asks for
+ * feedback under ~100 ms and continuous during a drag.
+ *
+ * Not zero: a drag still fires at pointer rate, and the id correlation in
+ * `#solve` only discards stale *answers*, it does not stop the requests.
+ */
+export const DEBOUNCE_MS = 20;
+
+/**
+ * The extra wait before the coach line's finite differences, ms, measured from
+ * the solve that settled.
+ *
+ * The probe pass is eight more solves, not one, and it is the only part of the
+ * cockpit that has no business running mid-drag: the coach line answers "what
+ * should I move next", which is a question about a trim you have stopped
+ * changing. Keeping the old 80 ms here is what lets the main solve go to one
+ * frame without turning a one-second drag into ~150 worker requests.
+ */
+export const PROBE_DEBOUNCE_MS = 80;
 
 /** The four controls worth spending finite differences on. */
 export const PROBE_CONTROLS = ['backstay', 'mainsheet', 'traveller', 'jibLead'] as const;
@@ -307,6 +338,7 @@ export class RaceStore {
 
   #client: Client;
   #timer: ReturnType<typeof setTimeout> | undefined;
+  #probeTimer: ReturnType<typeof setTimeout> | undefined;
   #seq = 0;
   #posSeq = 0;
 
@@ -317,6 +349,7 @@ export class RaceStore {
   /** Debounced solve. Call it with plain snapshots, not proxies. */
   request(controls: ControlState, condition: Condition): void {
     clearTimeout(this.#timer);
+    clearTimeout(this.#probeTimer);
     this.busy = true;
     this.#timer = setTimeout(() => void this.#solve(controls, condition), DEBOUNCE_MS);
   }
@@ -554,7 +587,15 @@ export class RaceStore {
     }
     this.busy = false;
     this.error = null;
-    await this.#probe(seq, controls, condition, result);
+    // The coach line waits, the numbers do not: the probe pass is eight more
+    // solves and it answers a question about a trim you have stopped moving
+    // (audit ux-03 M-25). A newer `request()` clears this timer, and `#probe`
+    // re-checks the sequence after its awaits, so a stale pass costs nothing.
+    clearTimeout(this.#probeTimer);
+    this.#probeTimer = setTimeout(
+      () => void this.#probe(seq, controls, condition, result),
+      PROBE_DEBOUNCE_MS,
+    );
   }
 
   /** Finite differences on the four influential controls, one legal step each way. */

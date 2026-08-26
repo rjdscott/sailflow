@@ -176,6 +176,9 @@
 
   let mast: Mesh | null = null;
   let boom: Mesh | null = null;
+  /** The spar points the current tube was built from; see `rebuild`. */
+  let mastKey = '';
+  let boomKey = '';
 
   // Telltales: one merged geometry, animated in the vertex shader off `uTime`.
   // Six ribbons is one draw call, and freezing is a uniform, not a rebuild.
@@ -415,7 +418,22 @@
     for (let i = 0; i < pts.length - 1; i++) out.push(...pts[i], ...pts[i + 1]);
   }
 
+  /**
+   * The line meshes get `applySail`'s reuse path: the vertex count only moves
+   * when the sail grid or the set of drawn sails does, and every other rebuild
+   * is the same points in new places. Recreating the geometry each time cost a
+   * GL buffer created and destroyed per mesh per slider event — 273 pairs a
+   * second through a drag (audit ux-03 M-24).
+   */
   function setLines(target: LineSegments | Line, verts: number[]): void {
+    const pos = target.geometry.getAttribute('position');
+    if (pos && pos.array.length === verts.length) {
+      (pos.array as Float32Array).set(verts);
+      pos.needsUpdate = true;
+      // The points moved, so the sphere three culls against has to move too.
+      target.geometry.computeBoundingSphere();
+      return;
+    }
     target.geometry.dispose();
     const g = new BufferGeometry();
     g.setAttribute('position', new Float32BufferAttribute(verts, 3));
@@ -535,20 +553,38 @@
     }
 
     telltales.visible = n > 0;
-    telltales.geometry.dispose();
-    const g = new BufferGeometry();
-    g.setAttribute('aRoot', new Float32BufferAttribute(root, 3));
-    g.setAttribute('aDir', new Float32BufferAttribute(dir, 3));
-    g.setAttribute('aUp', new Float32BufferAttribute(up, 3));
-    g.setAttribute('aUv', new Float32BufferAttribute(uv, 2));
-    g.setAttribute('aPhase', new Float32BufferAttribute(phase, 1));
-    g.setAttribute('aLimp', new Float32BufferAttribute(limp, 1));
-    // The shader ignores `position`, but three needs one to size the draw.
-    g.setAttribute('position', new Float32BufferAttribute(new Float32Array(root.length), 3));
-    g.setIndex(index);
-    g.boundingSphere = null;
-    telltales.frustumCulled = false;
-    telltales.geometry = g;
+    // Same reuse path as `setLines`: through a drag the ribbon count is fixed
+    // and only the roots and directions move, so the six attribute buffers are
+    // written in place rather than rebuilt (audit ux-03 M-24). The count only
+    // changes when a sail is set or furled, or the grid resolution moves.
+    const attrs: [string, number[], number][] = [
+      ['aRoot', root, 3],
+      ['aDir', dir, 3],
+      ['aUp', up, 3],
+      ['aUv', uv, 2],
+      ['aPhase', phase, 1],
+      ['aLimp', limp, 1],
+    ];
+    const old = telltales.geometry.getAttribute('aRoot');
+    if (old && old.array.length === root.length) {
+      for (const [name, data] of attrs) {
+        const a = telltales.geometry.getAttribute(name);
+        (a.array as Float32Array).set(data);
+        a.needsUpdate = true;
+      }
+    } else {
+      telltales.geometry.dispose();
+      const g = new BufferGeometry();
+      for (const [name, data, size] of attrs) {
+        g.setAttribute(name, new Float32BufferAttribute(data, size));
+      }
+      // The shader ignores `position`, but three needs one to size the draw.
+      g.setAttribute('position', new Float32BufferAttribute(new Float32Array(root.length), 3));
+      g.setIndex(index);
+      g.boundingSphere = null;
+      telltales.frustumCulled = false;
+      telltales.geometry = g;
+    }
     // A sail that is not set reads as null, not as a hidden mesh: the
     // Playwright smoke shot asks "is the kite up and the jib furled?" and that
     // question should not need `.visible` archaeology. Published on a
@@ -654,19 +690,30 @@
     segmentsOf(r.forestay, stayVerts);
     setLines(forestay, stayVerts);
 
-    if (mast) {
-      boat.remove(mast);
-      mast.geometry.dispose();
-    }
     // prov: assumed 0.055 m mast radius, 0.045 m boom — spar section is not published.
-    mast = new Mesh(tube(r.mast, 0.055), sparMat);
-    boat.add(mast);
-    if (boom) {
-      boat.remove(boom);
-      boom.geometry.dispose();
+    // A `TubeGeometry` has no reuse path worth writing — its vertex layout is
+    // derived from the curve — so the saving is not rebuilding it at all. Mast
+    // bend moves with the backstay and the shroud turns and the boom with the
+    // mainsheet and traveller, so on a jib-sheet or downwind drag neither spar
+    // moves and both rebuilds were pure churn (audit ux-03 M-24).
+    if (String(r.mast) !== mastKey) {
+      mastKey = String(r.mast);
+      if (mast) {
+        boat.remove(mast);
+        mast.geometry.dispose();
+      }
+      mast = new Mesh(tube(r.mast, 0.055), sparMat);
+      boat.add(mast);
     }
-    boom = new Mesh(tube(r.boom, 0.045), sparMat);
-    boat.add(boom);
+    if (String(r.boom) !== boomKey) {
+      boomKey = String(r.boom);
+      if (boom) {
+        boat.remove(boom);
+        boom.geometry.dispose();
+      }
+      boom = new Mesh(tube(r.boom, 0.045), sparMat);
+      boat.add(boom);
+    }
 
     buildTelltales(main, jib, kite, kg?.curl ?? false, side);
     boat.rotation.x = heelRad(heelDeg, side);
@@ -741,22 +788,26 @@
       ro.disconnect();
       if (raf) cancelAnimationFrame(raf);
       orbit?.dispose();
+      // Everything in the scene, geometry and material both. The old version
+      // traversed for geometries but listed the materials by hand, and the
+      // list had drifted: the hull, deck and water materials and the grid
+      // helper's were all constructed inline and never disposed (audit ux-03
+      // M-21). A traverse cannot go out of date the next time something is
+      // added; disposing a shared material twice is a no-op.
       scene.traverse((o) => {
         const m = o as Mesh;
         m.geometry?.dispose?.();
+        for (const mat of Array.isArray(m.material) ? m.material : [m.material]) {
+          mat?.dispose?.();
+        }
       });
-      for (const mat of [
-        sailMat,
-        kiteMat,
-        sparMat,
-        wireMat,
-        stripeMat,
-        edgeMat,
-        pinMat,
-        telltaleMat,
-      ]) {
-        mat.dispose();
-      }
+      // `dispose()` frees three's own caches but leaves the GL context alive,
+      // and a live context pins its canvas, which pins the detached Race
+      // subtree behind it — 2,404 DOM nodes and ~2 contexts leaked per visit,
+      // against a browser ceiling of about sixteen (audit ux-03 M-21).
+      // `forceContextLoss()` is the call that actually hands it back, and it
+      // has to come first: three needs the context to tear its state down.
+      renderer?.forceContextLoss();
       renderer?.dispose();
       renderer = null;
       delete (window as unknown as { __sail?: unknown }).__sail;

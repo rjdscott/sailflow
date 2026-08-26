@@ -94,6 +94,14 @@ for the owner.
   dropped the `h2` and names the section with `aria-label`. The existing
   `tests/ui/a11y.spec.ts` case asserts the words appear exactly once. No code
   change (phase-two 04).
-- [ ] **L-14** — on the phone the "Sailflow" wordmark strip sits over the
+- [x] **L-14** — on the phone the "Sailflow" wordmark strip sits over the
   scrolling content above the tab bar and cuts the last line. *(code,
   `src/ui/` shell, 20 min)* → [02](02-live-first-run.md#l-14)
+  **Fixed** (phase-two 06, `perf/phone`): the strip was already opaque — the
+  fault was its `--line` top edge at 1.28:1 against `--surface`, which is also
+  the card colour, so text scrolling under it stopped mid-word with no visible
+  boundary and read as clipping rather than as a bar. `--line-strong` in
+  `BottomNav.svelte` gives it the edge. Nothing was unreachable either way:
+  measured at 390×844 at the end of the scroll, `main` ends at 766 px and the
+  sticky bar is back in flow from 766, so the last line always clears; what
+  remains is the ordinary sticky-tab-bar overlay.

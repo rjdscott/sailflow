@@ -29,7 +29,12 @@ export default defineConfig({
         // which is exactly the cost the lazy import exists to avoid. It is
         // fetched on demand; offline, the Race screen keeps the 2D plan view,
         // which is already the designed fallback.
-        globIgnores: ['**/SailView3D-*.js', '**/SailView3D-*.css'],
+        // `Kit` is the component demo: dev always, production only behind
+        // `?kit=1` (KIT_ENABLED). The dynamic import already keeps a normal
+        // visit from fetching it — but the service worker precached it on
+        // install regardless, 3.8 KB gzip for a screen the app hides (audit
+        // ux-03 L-05).
+        globIgnores: ['**/SailView3D-*.js', '**/SailView3D-*.css', '**/Kit-*.js', '**/Kit-*.css'],
         navigateFallback: 'index.html',
       },
       includeAssets: ['icons/icon.svg', 'icons/icon-maskable.svg'],
