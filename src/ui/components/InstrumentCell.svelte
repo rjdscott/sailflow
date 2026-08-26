@@ -42,7 +42,7 @@
     {#if onexplain}
       <!-- The label is the affordance: a quiet ? on a text button, so the band
            still reads as numbers rather than as a row of controls. -->
-      <button type="button" class="explain" onclick={() => onexplain?.(id)}>
+      <button type="button" class="explain hit-44" onclick={() => onexplain?.(id)}>
         {label}<span aria-hidden="true" class="q">?</span>
       </button>
     {:else}
@@ -92,6 +92,17 @@
     letter-spacing: inherit;
     text-transform: inherit;
     cursor: pointer;
+  }
+
+  /* The label line is 17 px tall, so the bare text was a 17 px target against
+     the repo's own 44 px token (audit ux-03 M-13). `.hit-44` grows the hit
+     area with a pseudo-element and paints nothing — except in the ≥ 1280 px
+     cockpit, where phase 06's height budget puts instrument rows 37 px apart
+     and two 44 px overlays would overlap and steal each other's presses. */
+  @media (min-width: 1280px) {
+    .explain::after {
+      display: none;
+    }
   }
 
   .q {

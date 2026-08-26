@@ -383,8 +383,92 @@ test('the phone instrument band keeps four readings and hides the rest behind Mo
   await expect(readings.getByText('HEEL')).toBeVisible();
   await expect(readings.getByText('TWA')).toBeHidden();
 
-  await bar.getByRole('button', { name: 'More' }).click();
+  // M-19: "More" is also the fifth bottom-nav destination, on screen at the
+  // same time, and a bare pill said nothing about what was behind it.
+  const disclosure = bar.getByRole('button', { name: /readings/ });
+  await expect(disclosure).toHaveText(/More readings/);
+  await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
+
+  await disclosure.click();
   await expect(readings.getByText('TWA')).toBeVisible();
+  await expect(disclosure).toHaveText(/Fewer readings/);
+  await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
+  // Neither label may collide with the nav tab that shares the screen.
+  await expect(bar.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
+});
+
+/**
+ * M-17: the band printed the verdict and the insight card below it repeated the
+ * same sentence verbatim, costing ~14 % of the phone's first screen. The card's
+ * copy is the one that survives — it carries the tier badge and the actions.
+ */
+test('the phone prints the verdict once, not twice back to back', async ({ page }) => {
+  await raceTier(page);
+  await page.setViewportSize(PHONE);
+  await page.goto('/#/race');
+
+  const line = page.locator('.insight .line');
+  await expect(line).toBeVisible();
+  await expect(page.locator('.bar .verdict')).toBeHidden();
+
+  // Desktop has the room and the band's copy carries the gap, so it stays.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.locator('.bar .verdict')).toBeVisible();
+});
+
+/**
+ * M-16: with no `ranges` the gauge drew zero band rects onto a transparent
+ * background, so HELM was two hairlines floating on nothing — on the phone band
+ * and in the desktop Helm panel both. The fallback track is in `BulletGauge`,
+ * so every symbol-mode gauge that omits the optional prop gets a scale.
+ */
+test('a gauge with no qualitative bands still draws a track under its marks', async ({ page }) => {
+  await raceTier(page);
+  await page.setViewportSize(PHONE);
+  await page.goto('/#/race');
+
+  await page.locator('.bar').getByRole('button', { name: /readings/ }).click();
+
+  const helm = page.locator('.bar svg[aria-label^="HELM"]');
+  await expect(helm).toBeVisible();
+  await expect(helm.locator('rect.track')).toHaveCount(1);
+  // The marks are still there: the value and the target bug, over the track.
+  await expect(helm.locator('line')).toHaveCount(2);
+
+  // The banded gauge beside it is untouched: its bands are its scale, so it
+  // gets no fallback track.
+  await expect(page.locator('.bar svg[aria-label^="HEEL"] .track')).toHaveCount(0);
+
+  // And the same gauge in the desktop Helm panel, which was the other half of
+  // the finding, has its track too.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.locator('svg[aria-label^="HELM LOAD"] rect.track').first()).toBeVisible();
+});
+
+/**
+ * M-06: `.lede { display: none }` at ≥ 1280 px left the default surface with no
+ * statement of what Race is for, and nothing in the content pointed a novice at
+ * the guided path.
+ */
+test('the desktop cockpit says what it is for and points at the drills', async ({ page }) => {
+  await raceTier(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/race');
+
+  const lede = page.locator('.head .lede');
+  await expect(lede).toBeVisible();
+  // One line in the header row, which is what phase 06 was protecting: it must
+  // not cost the hero a row by wrapping.
+  const lines = await lede.evaluate((el) => {
+    const line = parseFloat(getComputedStyle(el).lineHeight);
+    return el.getBoundingClientRect().height / line;
+  });
+  expect(lines).toBeLessThan(1.5);
+
+  const toDrills = page.getByRole('link', { name: /Try a drill/ });
+  await expect(toDrills).toBeVisible();
+  await toDrills.click();
+  await expect(page).toHaveURL(/#\/drills/);
 });
 
 /**

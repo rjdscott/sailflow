@@ -52,10 +52,10 @@ export const EXPLAIN: Record<string, string> = {
  * the label, so renaming a label does not orphan its explanation.
  */
 export const READOUT_EXPLAIN: Record<string, string> = {
-  bsp: 'Boat speed through the water, in knots, at the trim and condition on screen. It is the solver’s converged answer, not a measurement: treat it as what this boat should do here, and the tier badge as how much of that to believe.',
+  bsp: 'Boat speed through the water, in knots, at the trim and condition on screen. It is the solver’s converged answer, not a measurement: treat it as what this boat should do here, and the tier badge as how much of that to believe. Where a target is on screen, “Δ to optimum” is signed so that a plus means the optimum is faster than you are and a minus means you are ahead of it.',
   height:
     'True wind angle — the angle between the wind and the bow, so 0° is head to wind and 180° is dead downwind. Upwind, a smaller angle is pointing higher; on a run it is sailing deeper. It is the angle you set, not one the model chooses, except when a point-of-sail chip solves for the VMG-optimal one.',
-  vmg: 'Velocity made good: the part of your boat speed that goes towards the mark, upwind or downwind. Pointing higher but slower can lower it, and footing off faster can raise it, which is why it, and not boat speed, is the number the coach line and Apply optimum chase on a beat or a run.',
+  vmg: 'Velocity made good: the part of your boat speed that goes towards the mark, upwind or downwind. Pointing higher but slower can lower it, and footing off faster can raise it, which is why it, and not boat speed, is the number the coach line and Apply optimum chase on a beat or a run. Where a target is on screen, “Δ to optimum” is signed so that a plus means the optimum is faster than you are and a minus means you are ahead of it.',
   heel: 'Heel angle in degrees, from the righting moment the crew and hull provide against the sails’ heeling moment. Too much and the rudder loads up and the foils stall; too little upwind and the rig is not loaded. Downwind the model is weakest here — see the tier badge, and ASSUMPTIONS.md.',
   leeway:
     'The angle between where the bow points and where the boat actually goes: the keel needs some slip to make side force. It grows as you slow down or load up, so a big number in chop usually means the boat is being sailed too high for the sea state.',

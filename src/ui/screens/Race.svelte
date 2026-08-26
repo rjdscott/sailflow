@@ -541,6 +541,13 @@
       order: 2;
     }
 
+    /* The insight card below repeats this sentence verbatim, and carries the
+       tier badge and the actions with it, so on the one screen with no room
+       to spare the band gives its copy up (audit ux-03 M-17). */
+    .bar :global(.verdict) {
+      display: none;
+    }
+
     .bar {
       order: 3;
     }
@@ -742,12 +749,17 @@
       gap: var(--space-2) var(--space-4);
     }
 
-    /* The rail is chips, and chips are what the cockpit reads. The sentence
-       is for someone arriving on a phone; here it is a wrapped paragraph
-       wedged between the title and the wind, and the row it costs comes
-       straight off the hero. */
+    /* Was `display: none` here, which left the desktop — the default surface,
+       and the one Learn opens on — with no statement of what the screen is
+       for at all (audit ux-03 M-06). It keeps its row off the hero by staying
+       one line: it shrinks and ellipsises inside the header row rather than
+       wrapping the row, which is what phase 06 was actually protecting. */
     .lede {
-      display: none;
+      flex: 1 1 20ch;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     /* The title row's own furniture at mouse size: the density toggle is the
