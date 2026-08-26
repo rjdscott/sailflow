@@ -222,6 +222,7 @@
         {objective}
         busy={drills.loading}
         target={targets}
+        targetWithheld={!targets}
         {history}
         twsKt={drill.condition.twsKt}
       />

@@ -28,17 +28,17 @@ every High is P0 here.
 ## P1 — before public release
 
 - [x] **M-01** (#70) (P1, M) Cockpit panels hide 54–81 % of their content behind an internal scroll with no styled affordance, worst on Rig (19 % visible) and tighter in Learn than Race — lower `Panel.svelte`'s 560 px container threshold or widen the column so the three-column layout fires; pin each panel's cue and add a scroll shadow.
-- [ ] **M-02** (P1, S) A drill prints "Finding the optimum…" indefinitely while it is actually waiting for the user, because `verdict.ts:61` returns loading copy for the deliberately withheld target — add a distinct branch and copy that names the state, plus a `verdict.test.ts` case.
+- [x] **M-02** (close-out) (P1, S) A drill prints "Finding the optimum…" indefinitely while it is actually waiting for the user, because `verdict.ts:61` returns loading copy for the deliberately withheld target — add a distinct branch and copy that names the state, plus a `verdict.test.ts` case.
 - [x] **M-04** (#70) (P1, S) The Learn tier ellipsises seven control names it is specified to spell out, while the hint text refers to them in full — scope the ellipsis to the race and analyse tiers and let Learn wrap to two lines.
-- [ ] **M-05** (P1, S) The Δ sign convention is stated only in a source comment, so the band reads "+0.4" beside "0.29 kt below target" — extend the label once per band or flip to the loss reading, and add the sentence to the BSP/VMG explainers.
-- [ ] **M-06** (P1, S) Race's purpose sentence is `display: none` at ≥ 1280 px and no in-content link points to Drills — keep the lede as one header-row line and add "New to this? Try a drill →" to the actions strip.
-- [ ] **M-13** (P1, S) Thirteen instrument `?` buttons are 17.4 px tall on the phone against the repo's own 44 px token, and "Jib leech?" fails SC 2.5.8's spacing exception at 23.1 px — add `.hit-44` to `.explain` in `InstrumentCell` and `BulletGauge` only; leave `ConfidenceBadge` at its documented 24 px.
-- [ ] **M-14** (P1, S) `aria-label` on role-less `<div>`s means the point-of-sail and conditions groups have no accessible name — add `role="group"` to `ConditionsStrip.svelte:39,53`.
-- [ ] **M-15** (P1, S) `height: 56px` plus `padding-bottom: env(safe-area-inset-bottom)` under `border-box` means the tab bar does not grow on notched phones: all five labels sit in the gesture-reserved strip and Dock's commit bar floats 34 px clear — `height: calc(56px + env(safe-area-inset-bottom))`, which leaves Dock and Toast correct as written.
-- [ ] **M-16** (P1, S) The HELM gauge is passed no `ranges`, so `symbol` mode draws two hairlines on an invisible track, on the phone band and the desktop Helm panel — pass a band split around `HELM_TARGET` and add a scale legend, or give `BulletGauge` a fallback track rect.
-- [ ] **M-17** (P1, S) The verdict sentence is printed twice back-to-back on the phone, costing ~14 % of the first screen — `display: none` on the band's copy under `max-width: 719px`.
-- [ ] **M-18** (P1, S) Dock's regret card prints "Expected regret" as an `h2` and again as the cell label — drop the `h2` and give the section `aria-labelledby` on the cell's label.
-- [ ] **M-19** (P1, S) The instrument band's "More" disclosure and the "More" nav tab are on screen together at 390 px, and the pill gives no cue that three readings are hidden — "More readings ▾" / "Fewer readings ▴" plus a chevron.
+- [x] **M-05** (close-out) (P1, S) The Δ sign convention is stated only in a source comment, so the band reads "+0.4" beside "0.29 kt below target" — extend the label once per band or flip to the loss reading, and add the sentence to the BSP/VMG explainers.
+- [x] **M-06** (close-out) (P1, S) Race's purpose sentence is `display: none` at ≥ 1280 px and no in-content link points to Drills — keep the lede as one header-row line and add "New to this? Try a drill →" to the actions strip.
+- [x] **M-13** (close-out) (P1, S) Thirteen instrument `?` buttons are 17.4 px tall on the phone against the repo's own 44 px token, and "Jib leech?" fails SC 2.5.8's spacing exception at 23.1 px — add `.hit-44` to `.explain` in `InstrumentCell` and `BulletGauge` only; leave `ConfidenceBadge` at its documented 24 px.
+- [x] **M-14** (close-out) (P1, S) `aria-label` on role-less `<div>`s means the point-of-sail and conditions groups have no accessible name — add `role="group"` to `ConditionsStrip.svelte:39,53`.
+- [x] **M-15** (close-out) (P1, S) `height: 56px` plus `padding-bottom: env(safe-area-inset-bottom)` under `border-box` means the tab bar does not grow on notched phones: all five labels sit in the gesture-reserved strip and Dock's commit bar floats 34 px clear — `height: calc(56px + env(safe-area-inset-bottom))`, which leaves Dock and Toast correct as written.
+- [x] **M-16** (close-out) (P1, S) The HELM gauge is passed no `ranges`, so `symbol` mode draws two hairlines on an invisible track, on the phone band and the desktop Helm panel — pass a band split around `HELM_TARGET` and add a scale legend, or give `BulletGauge` a fallback track rect.
+- [x] **M-17** (close-out) (P1, S) The verdict sentence is printed twice back-to-back on the phone, costing ~14 % of the first screen — `display: none` on the band's copy under `max-width: 719px`.
+- [x] **M-18** (close-out) (P1, S) Dock's regret card prints "Expected regret" as an `h2` and again as the cell label — drop the `h2` and give the section `aria-labelledby` on the cell's label.
+- [x] **M-19** (close-out) (P1, S) The instrument band's "More" disclosure and the "More" nav tab are on screen together at 390 px, and the pill gives no cue that three readings are hidden — "More readings ▾" / "Fewer readings ▴" plus a chevron.
 
 ## P2 — soon
 
@@ -63,3 +63,14 @@ every High is P0 here.
 - [ ] **L-03** (P3, S) `RigElevation.svelte:147-161` puts a `<button>` as a direct child of a `<dl>` — move it into the `<figure>` beside the `<figcaption>`.
 - [ ] **L-04** (P3, S) Log's actions row abuts the card below it with a 0 px gap where every other card has `--space-4` — add the margin.
 - [ ] **L-05** (P3, S) The production-gated Kit chunk is still precached by the service worker (3.8 KB per install) — add `Kit-*` to the existing `workbox.globIgnores` beside `SailView3D`.
+
+## Log
+
+- **2026-08-26 — P1 Mediums closed out** (`fix/ux03-p1-mediums`). M-02, M-05,
+  M-06, M-13, M-14, M-15, M-16, M-17, M-18, M-19 fixed, each with a unit test
+  or a Playwright check. M-13 and M-16 landed in the shared components
+  (`InstrumentCell`, `BulletGauge`) rather than per call site, so the desktop
+  Helm panel and every future symbol-mode gauge are covered with them. M-13
+  keeps phase 06's cockpit carve-out: the 44 px overlay is off at ≥ 1280 px,
+  where instrument rows are 37 px apart and two overlays would overlap. The 3D
+  screenshot baselines did not move.

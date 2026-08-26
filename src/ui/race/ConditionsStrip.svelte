@@ -36,7 +36,9 @@
   }
 </script>
 
-<div class="chip-row" aria-label="Point of sail">
+<!-- `role="group"`, or the browser drops the `aria-label` on the implicit
+     generic role and the chips are announced with no grouping (audit ux-03 M-14). -->
+<div class="chip-row" role="group" aria-label="Point of sail">
   {#each POINTS_OF_SAIL as p (p.id)}
     <button
       type="button"
@@ -50,7 +52,7 @@
   {/each}
 </div>
 
-<div class="chip-row" aria-label="Conditions">
+<div class="chip-row" role="group" aria-label="Conditions">
   <span class="chip stepper">
     <button
       type="button"

@@ -65,7 +65,7 @@
   <span class="head">
     <span class="section-title">
       {#if onexplain && id}
-        <button type="button" class="explain" onclick={() => onexplain?.(id)}>
+        <button type="button" class="explain hit-44" onclick={() => onexplain?.(id)}>
           {label}<span aria-hidden="true" class="q">?</span>
         </button>
       {:else}
@@ -85,6 +85,15 @@
     role="img"
     aria-label={aria}
   >
+    <!-- A gauge with no `ranges` had no bands and no background, so in symbol
+         mode it drew two hairlines on nothing — HELM, on the phone band and in
+         the Helm panel (audit ux-03 M-16). One plain track behind the marks
+         restores the scale for every gauge that omits the optional prop,
+         rather than for the one call site that was reported. -->
+    {#if bands.length === 0}
+      <rect class="track" x="0" y="0" width="100" height="28" />
+    {/if}
+
     {#each bands as b (b.shade)}
       <rect
         class:r1={b.shade === 1}
@@ -156,6 +165,14 @@
     cursor: pointer;
   }
 
+  /* Same 44 px hit area, and the same cockpit carve-out, as `InstrumentCell`
+     (audit ux-03 M-13). */
+  @media (min-width: 1280px) {
+    .explain::after {
+      display: none;
+    }
+  }
+
   .q {
     margin-left: 3px;
     color: var(--accent);
@@ -172,6 +189,12 @@
     display: block;
     border-radius: var(--radius);
     overflow: hidden;
+  }
+
+  /* No qualitative bands to draw, so the track says nothing but "this is the
+     scale". */
+  .track {
+    fill: var(--line);
   }
 
   /* Three intensities of one hue. Darkest is the worst band, whichever end of

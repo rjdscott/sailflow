@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Instruments, SolveResult } from '../../core/types';
-import { DOWNWIND_CUE, verdict } from './verdict';
+import { DOWNWIND_CUE, verdict, WITHHELD_LINE } from './verdict';
 
 const INSTRUMENTS: Instruments = {
   leechStallFrac: { value: 0.55, tier: 'C', sign: 1 },
@@ -64,6 +64,28 @@ describe('verdict', () => {
 
   it('says the optimum is still coming when there is no target', () => {
     expect(verdict({ result: result(), objective: 'vmgUp' })).toBe('Finding the optimum…');
+  });
+
+  /**
+   * A drill holds the answer key back until Check, so the same "no target"
+   * state lasted the whole attempt and printed loading copy at someone the app
+   * was itself waiting on (audit ux-03 M-02).
+   */
+  it('names the withheld target instead of pretending to still be solving', () => {
+    expect(verdict({ result: result(), objective: 'vmgUp', targetWithheld: true })).toBe(
+      WITHHELD_LINE,
+    );
+    // It is a state, not a progress message: nothing in it may read as working.
+    expect(WITHHELD_LINE).not.toMatch(/…|finding|solving|searching/i);
+    // And once the target is there it is the gap that matters, not the state.
+    expect(
+      verdict({
+        result: result(),
+        target: { vmgKt: 4.7 },
+        objective: 'vmgUp',
+        targetWithheld: true,
+      }),
+    ).toContain('0.20 kt below target');
   });
 
   it('is on target inside the display resolution', () => {

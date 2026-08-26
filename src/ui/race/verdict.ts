@@ -30,6 +30,14 @@ const HELM_HEAVY = 1.2;
  */
 export const DOWNWIND_CUE = 'sail to the polar angle, and sheet to the curl';
 
+/**
+ * A drill withholds the answer key until the first Check, so `target` is
+ * undefined for the whole of the attempt. The loading copy read as a solve
+ * that never finished (audit ux-03 M-02): this names the state instead, and
+ * points at the control that ends it.
+ */
+export const WITHHELD_LINE = 'Trim, then press Check — the target stays hidden until you do.';
+
 export interface VerdictInput {
   result: SolveResult | null;
   /** What the solver's optimal trim reaches here, if it has answered. */
@@ -37,6 +45,8 @@ export interface VerdictInput {
   objective: Objective;
   /** The coach line's probe sentence, used when no instrument explains the gap. */
   coach?: string;
+  /** The target is deliberately hidden, not still solving (audit ux-03 M-02). */
+  targetWithheld?: boolean;
 }
 
 /**
@@ -62,12 +72,18 @@ function cue(result: SolveResult, objective: Objective): string | undefined {
  * positive means the target is faster than you, downwind included, because
  * `objectiveKt` has already flipped VMG to leeward so that more is better.
  */
-export function verdict({ result, target, objective, coach }: VerdictInput): string {
+export function verdict({
+  result,
+  target,
+  objective,
+  coach,
+  targetWithheld,
+}: VerdictInput): string {
   if (!result) return 'Solving…';
   if (!result.converged) return 'Solver did not settle';
 
   const to = objective === 'speed' ? target?.bsKt : target?.vmgKt;
-  if (to === undefined) return 'Finding the optimum…';
+  if (to === undefined) return targetWithheld ? WITHHELD_LINE : 'Finding the optimum…';
 
   // Same flip `objectiveKt` applies, so the two sides are in one space.
   const targetKt = objective === 'vmgDown' ? -to : to;
