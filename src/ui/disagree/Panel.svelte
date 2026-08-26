@@ -1,19 +1,22 @@
 <script lang="ts">
   /**
-   * The disagreement panel: model, North and Quantum side by side, with the
-   * delta in native units. It never picks a winner — the copy line says the
+   * The disagreement panel: the model first, then every tuning guide committed
+   * for this boat, with the delta in native units. The guides come from
+   * `data/tuning/` (`guidesFor`), so adding one is a file — see
+   * `data/tuning/README.md`. It never picks a winner: the copy line says the
    * model is calibrated to North in two bands and that the gap elsewhere is
    * information, and every disagreement of a turn or more is logged locally.
    */
   import {
-    GUIDE_IDS,
+    DEFAULT_BOAT_ID,
     GUIDE_LABELS,
-    guideFor,
-    guideRecommendation,
+    guidesFor,
     isCalibratedBand,
     type GuideId,
     type GuideRecommendation,
   } from '../../lib/reference';
+  import { guideColumns, needsSelector } from './guides';
+  import Segmented from '../components/Segmented.svelte';
   import {
     divergenceSummary,
     listDivergences,
@@ -23,7 +26,7 @@
   import { fmt } from '../format';
   import InstrumentCell from '../components/InstrumentCell.svelte';
   import type { SeaState, Tier } from '../../core/types';
-  import { cellState, NOISE, verdict, type ModelOptimum } from './store.svelte';
+  import { cellState, guideSelection, NOISE, verdict, type ModelOptimum } from './store.svelte';
 
   let {
     twsKt,
@@ -34,12 +37,15 @@
     stale = false,
     error = null,
     compact = false,
+    boatId = DEFAULT_BOAT_ID,
   }: {
     twsKt: number;
     seaState: SeaState;
     crewKg: number;
     modelOptimum: ModelOptimum | null;
     busy?: boolean;
+    /** Which boat's guides to compare against (`data/tuning/*-<boatId>.json`). */
+    boatId?: string;
     /** Numbers are on screen but a newer solve is in flight. */
     stale?: boolean;
     error?: string | null;
@@ -51,12 +57,15 @@
     compact?: boolean;
   } = $props();
 
-  const recs = $derived(
-    GUIDE_IDS.map((id) => {
-      const guide = guideFor(id);
-      return { id, guide, rec: guide ? guideRecommendation(guide, twsKt) : null };
-    }),
-  );
+  const entries = $derived(guidesFor(boatId));
+  /** Every guide, for the divergence log: hiding a column must not stop logging it. */
+  const allRecs = $derived(guideColumns(entries, twsKt));
+  const recs = $derived(guideColumns(entries, twsKt, guideSelection.id));
+  const selectorOptions = $derived([
+    { value: '', label: 'All' },
+    ...entries.map((e) => ({ value: e.id, label: e.label })),
+  ]);
+  let selected = $state(guideSelection.id ?? '');
 
   const calibrated = $derived(isCalibratedBand(twsKt));
 
@@ -73,7 +82,7 @@
     const m = modelOptimum;
     if (!m) return;
     let logged = false;
-    for (const { id, rec } of recs) {
+    for (const { id, rec } of allRecs) {
       if (!rec || rec.uppersTurns === null || rec.lowersTurns === null) continue;
       logged =
         logDivergence({
@@ -189,7 +198,7 @@
      the model's beside it (ADR 0015) and the delta rides underneath in plain
      ink: the panel never picks a winner (audit ux-01 M-06). -->
 {#snippet guideCell(
-  gid: GuideId,
+  label: string,
   id: string,
   loaded: boolean,
   text: string | null,
@@ -198,13 +207,13 @@
 )}
   <span class="cell" role="cell">
     {#if !loaded}
-      <span class="section-title">{GUIDE_LABELS[gid]}</span>
+      <span class="section-title">{label}</span>
       <span class="missing">not loaded</span>
     {:else if text === null}
-      <span class="section-title">{GUIDE_LABELS[gid]}</span>
+      <span class="section-title">{label}</span>
       {@render noValue('no published value in this guide')}
     {:else}
-      <InstrumentCell label={GUIDE_LABELS[gid]} {id} size="sm" value={text} {unit} />
+      <InstrumentCell {label} {id} size="sm" value={text} {unit} />
       {#if d}<span class="delta tabular-nums">&Delta; {d}</span>{/if}
     {/if}
   </span>
@@ -220,10 +229,25 @@
       >
     {/if}
     {#if stale}<span class="updating">updating&hellip;</span>{/if}
+    <!-- Only once the columns stop fitting: two guides plus the model is the
+         layout this grid was designed for. -->
+    {#if !compact && needsSelector(entries)}
+      <Segmented
+        options={selectorOptions}
+        bind:value={selected}
+        ariaLabel="Which guide to compare with"
+        onchange={(v) => (guideSelection.id = v === '' ? null : v)}
+      />
+    {/if}
   </header>
 
   {#if error}
     <p class="copy err" role="alert">The model could not be solved: {error}</p>
+  {:else if entries.length === 0}
+    <p class="copy verdict">
+      No tuning guide is committed for this boat &mdash; nothing matches
+      <code>data/tuning/*-{boatId}.json</code>. The model's own numbers stand alone.
+    </p>
   {:else if compact}
     <p class="copy verdict">{COMPACT_VERDICT[headline]}</p>
   {:else if headline === 'comparing'}
@@ -266,11 +290,11 @@
           unit,
           tier,
         )}
-        {#each recs as { id, rec } (id)}
+        {#each recs as { id, label, rec } (id)}
           {@const v = rec ? pick(rec) : null}
           {@const d = rec ? delta(modelValue, v) : null}
           {@render guideCell(
-            id,
+            label,
             `${rowId}-${id}`,
             !!rec,
             v === null ? null : fmt(v, decimals),
@@ -308,9 +332,9 @@
           modelOptimum ? signed(modelOptimum.dock.forestayMm, 0, '') : '',
           'mm forestay',
         )}
-        {#each recs as { id, rec } (id)}
+        {#each recs as { id, label, rec } (id)}
           <span class="cell" role="cell">
-            <span class="section-title">{GUIDE_LABELS[id]}</span>
+            <span class="section-title">{label}</span>
             {#if !rec}
               <span class="missing">not loaded</span>
             {:else if rec.rakeNote === null || rec.rakeNote === undefined}
@@ -344,10 +368,10 @@
   </div>
 
   {#if !compact}
-    {#each recs as { id, guide, rec } (id)}
+    {#each recs as { id, label, guide, rec } (id)}
       {#if rec && guide}
         <details class="notes">
-          <summary>{GUIDE_LABELS[id]} race notes &mdash; {rec.band.label}</summary>
+          <summary>{label} race notes &mdash; {rec.band.label}</summary>
           <dl>
             {#each raceNotes(rec) as [key, value] (key)}
               <dt>{RACE_LABELS[key] ?? key}</dt>
@@ -357,8 +381,8 @@
         </details>
       {:else}
         <p class="missing">
-          {GUIDE_LABELS[id]}: reference tables not loaded &mdash;
-          <code>data/tuning/{id}-j70.json</code>
+          {label}: reference tables not loaded &mdash;
+          <code>data/tuning/{id}-{boatId}.json</code>
         </p>
       {/if}
     {/each}
@@ -372,7 +396,7 @@
           {#each Object.entries(history.summary) as [id, s] (id)}
             {#if s}
               <li>
-                {GUIDE_LABELS[id as GuideId]}: {s.count} logged, mean
+                {GUIDE_LABELS[id as GuideId] ?? id}: {s.count} logged, mean
                 {signed(s.meanUppers, 1, '')} uppers / {signed(s.meanLowers, 1, '')} lowers
               </li>
             {/if}
@@ -382,7 +406,7 @@
           {#each history.rows as row (row.at + row.guide)}
             <li>
               {row.at.slice(0, 16).replace('T', ' ')} &middot; {fmt(row.twsKt, 0, 'kt')} &middot;
-              {GUIDE_LABELS[row.guide]} &middot;
+              {GUIDE_LABELS[row.guide] ?? row.guide} &middot;
               <span class={deltaClass(row.delta.uppers)}>{signed(row.delta.uppers, 1, '')}</span> /
               <span class={deltaClass(row.delta.lowers)}>{signed(row.delta.lowers, 1, '')}</span>
             </li>

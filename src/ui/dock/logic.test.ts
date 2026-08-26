@@ -6,7 +6,9 @@ import {
   candidateSetups,
   clampForecast,
   describeSetup,
+  defaultGuideId,
   guideBand,
+  guideLabel,
   legalAxis,
   pickBest,
   seq,
@@ -226,8 +228,20 @@ describe('guideBand', () => {
   });
 
   it('clamps outside the table instead of returning undefined', () => {
-    expect(guideBand(0).label).toBe('<6 kt');
-    expect(guideBand(40).label).toBe('20+ kt');
+    expect(guideBand(0)?.label).toBe('<6 kt');
+    expect(guideBand(40)?.label).toBe('20+ kt');
+  });
+
+  it('reads whichever committed guide is named, not a hard-coded North', () => {
+    expect(defaultGuideId()).toBe('north');
+    expect(guideBand(11, 'quantum')).toMatchObject({ label: '10-12 kt', uppersTurns: 0 });
+    expect(guideLabel('quantum')).toBe('Quantum');
+  });
+
+  it('has no band and no label to quote when the guide is not committed', () => {
+    expect(guideBand(11, 'doyle')).toBeNull();
+    expect(guideBand(11, null)).toBeNull();
+    expect(guideLabel('doyle')).toBe('No guide');
   });
 });
 

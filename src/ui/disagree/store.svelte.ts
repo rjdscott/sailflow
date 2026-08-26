@@ -94,6 +94,13 @@ export function verdict(
   return real.some((d) => Math.abs(d) > NOISE) ? 'disagree' : 'agree';
 }
 
+/**
+ * Which guide the panel and the Dock recommendation are showing. `null` means
+ * all of them, which is the default and the only state below
+ * `SELECTOR_THRESHOLD` guides. Shared so the two screens agree.
+ */
+export const guideSelection = $state<{ id: string | null }>({ id: null });
+
 const DEBOUNCE_MS = 400;
 
 /**

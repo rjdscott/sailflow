@@ -11,10 +11,10 @@
   import SuggestButton from '../dock/SuggestButton.svelte';
   import CommitButton from '../dock/CommitButton.svelte';
   import { fmt } from '../format';
-  import { candidateSetups, guideBand, guideSource, shortSetup, signed } from '../dock/logic';
+  import { candidateSetups, guideBand, guideLabel, shortSetup, signed } from '../dock/logic';
   import { track } from '../../lib/telemetry';
   import Panel from '../disagree/Panel.svelte';
-  import { ModelOptimumStore } from '../disagree/store.svelte';
+  import { guideSelection, ModelOptimumStore } from '../disagree/store.svelte';
   import { getClient } from '../dock/client';
   import { logStoreUi } from '../log/store.svelte';
 
@@ -41,7 +41,7 @@
   const score = $derived(dock.score);
   /** The guide's band for the likely wind, so the printed card carries the
       published numbers next to the modelled ones (audit ux-02 M-25). */
-  const band = $derived(guideBand(dock.forecast.likelyKt));
+  const band = $derived(guideBand(dock.forecast.likelyKt, guideSelection.id ?? undefined));
   const printedOn = new Date().toLocaleDateString();
   /** Phone: the bar arms first, so the setup can be read before it is locked. */
   const commitLabel = $derived(`Commit ${shortSetup(dock.setup)} for today`);
@@ -183,9 +183,17 @@
     <dd>{signed(dock.setup.lowerTurns)} turns</dd>
     <dt>Forestay</dt>
     <dd>{fmt(dock.setup.forestayMm, 0, 'mm')}</dd>
-    <dt>{guideSource}</dt>
+    <dt>{guideLabel(guideSelection.id ?? undefined)}</dt>
     <dd>
-      {band.label}: uppers {signed(band.uppersTurns)}, lowers {signed(band.lowersTurns)}
+      {#if !band}
+        no tuning guide committed for this boat
+      {:else}
+        {band.label}: uppers {band.uppersTurns === null
+          ? 'not published'
+          : signed(band.uppersTurns)}, lowers {band.lowersTurns === null
+          ? 'not published'
+          : signed(band.lowersTurns)}
+      {/if}
     </dd>
   </dl>
 
