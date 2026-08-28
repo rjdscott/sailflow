@@ -173,6 +173,31 @@ test('sea state opens a segmented popover on the value itself', async ({ page })
 });
 
 /**
+ * The popover used to light-dismiss on neither Escape nor an outside tap:
+ * both handlers lived on `.pop`, which is never focused — the trigger button
+ * is — so Escape did nothing and a click elsewhere left it open.
+ */
+test('the sea state popover light-dismisses on Escape and an outside tap', async ({ page }) => {
+  await raceTier(page);
+  await page.setViewportSize(COCKPIT);
+  await page.goto('/#/sim');
+
+  const trigger = page.getByRole('button', { name: 'SEA: Ripple' });
+  const pop = page.getByRole('radiogroup', { name: 'Sea state' });
+
+  await trigger.click();
+  await expect(pop).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(pop).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  await expect(pop).toBeVisible();
+  await page.getByRole('button', { name: 'Close-hauled' }).click();
+  await expect(pop).toHaveCount(0);
+});
+
+/**
  * M-03. The presets set the wind *and* rewrite all eleven trim controls, so
  * they left the conditions surface for the actions bar, and every item says so.
  */
