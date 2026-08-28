@@ -373,4 +373,16 @@ export const PLAN_LAYOUT = {
   rose: { dx: 49, dy: 18, radius: 22, labelY: [87, 96] },
   /** Heel figure, leeward of the transom, in the corner the sails never reach. */
   heelTag: { dx: -40, y: 186 },
+  /**
+   * Under the gennaker, `PlanView` swaps the jib-settings `0 0 w h` viewBox
+   * for `origin.x - asymHalfW, 0, 2*asymHalfW, h`: same origin, same scale,
+   * just a wider window, so nothing but the crop moves. `asymHalfW` covers
+   * the kite's own worst lateral reach at the class's baseRaceDown trim
+   * (kiteHalyard 100, tackLine 50, kiteSheet 50, sprit 100), AWA 150°, either
+   * tack: 86.65 viewBox units from `origin.x` (`kite.ts` `kiteGeometry`,
+   * sampled at the luff and leech), plus headroom. Not a sweep of every kite
+   * control the way `PLAN_LAYOUT`'s own fit test sweeps heel — the trim that
+   * actually ships as the downwind default.
+   */
+  asymHalfW: 90,
 } as const;

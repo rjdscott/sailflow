@@ -48,6 +48,14 @@
   const L = PLAN_LAYOUT;
   const D = deck(L.scale);
   const ORIGIN = L.origin;
+  // Under the gennaker the kite's belly swings well past the hull's own crop
+  // (PLAN_LAYOUT.asymHalfW's doc comment has the numbers); jib settings keep
+  // the tight `0 0 w h` box so nothing there moves.
+  const viewBox = $derived(
+    conditions.sailset === 'asym'
+      ? `${(ORIGIN.x - L.asymHalfW).toFixed(0)} 0 ${(L.asymHalfW * 2).toFixed(0)} ${L.h}`
+      : `0 0 ${L.w} ${L.h}`,
+  );
   const MAST = { x: ORIGIN.x, y: ORIGIN.y + D.mast.y };
   const TACK = { x: ORIGIN.x, y: ORIGIN.y };
   /** Heel pivot: the middle of the boat's whole length, bowsprit tip to transom. */
@@ -227,7 +235,7 @@
 </script>
 
 <div class="plan">
-  <svg viewBox="0 0 {L.w} {L.h}" role="img" aria-label={alt}>
+  <svg {viewBox} role="img" aria-label={alt}>
     <defs>
       <marker
         id="plan-cap-twa"

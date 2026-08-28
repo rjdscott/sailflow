@@ -23,6 +23,8 @@ import {
 } from './boat';
 import { cropBox, rotate, type Pt } from './geometry';
 import { BASE_RACE, BASE_RACE_DOWN } from '../stores/conditions.svelte';
+import type { DownControls } from '../../core/types';
+import { BARE_SPAR, kiteGeometry } from '../three/kite';
 
 const section = (over: Partial<SectionShape> = {}): SectionShape => ({
   draft: 0.13,
@@ -411,5 +413,39 @@ describe('PLAN_LAYOUT', () => {
     const D2 = deck(L.scale);
     const beam = Math.max(...coords(D2.hull).map((p) => Math.abs(p.x)));
     expect(L.rose.dx - L.rose.radius).toBeGreaterThan(beam);
+  });
+
+  describe('under the gennaker', () => {
+    // The class's own downwind default (data/boats/j70.json baseRaceDown):
+    // halyard two-blocked, tack line and sheet mid-range, sprit fully out.
+    // Not a sweep of every kite control — PlanView.svelte's `viewBox` doc
+    // comment has the numbers behind `asymHalfW`.
+    const KITE_DOWN: DownControls = { kiteHalyard: 100, tackLine: 50, kiteSheet: 50, sprit: 100 };
+    const AWA_RUN = 150; // kite.test.ts's own stand-in for a run
+
+    /** Same world-z → viewBox-x map as `PlanView.svelte`'s `toPlan`. */
+    const toPlanX = (worldZ: number): number => ORIGIN.x + worldZ * L.scale;
+
+    it('keeps the kite luff and leech inside the widened viewBox, both tacks', () => {
+      const asymMinX = ORIGIN.x - L.asymHalfW;
+      const asymMaxX = ORIGIN.x + L.asymHalfW;
+      for (const side of [1, -1] as Side[]) {
+        const g = kiteGeometry(KITE_DOWN, BARE_SPAR, side, AWA_RUN);
+        const [headY, clewY] = [g.head[1], g.clew[1]];
+        const pts = [
+          ...Array.from({ length: 9 }, (_, i) => g.spine(i / 8)),
+          ...Array.from({ length: 9 }, (_, i) => g.leechAt(headY + ((clewY - headY) * i) / 8)),
+        ];
+        const xs = pts.map((p) => toPlanX(p[2]));
+        expect(Math.min(...xs), `side ${side} minX`).toBeGreaterThanOrEqual(asymMinX);
+        expect(Math.max(...xs), `side ${side} maxX`).toBeLessThanOrEqual(asymMaxX);
+      }
+    });
+
+    it('leaves the jib-settings viewBox untouched', () => {
+      // asymHalfW only widens the crop when the kite might be drawn; the hull
+      // test above already holds `0 0 w h` for every jib trim and heel.
+      expect(2 * L.asymHalfW).toBeGreaterThan(L.w);
+    });
   });
 });
