@@ -31,7 +31,9 @@
   import { optimum } from '../race/optimum.svelte';
   import { play as playPuff } from '../race/PuffReplay.svelte';
   import { puffPlayer } from '../race/puffPlayer.svelte';
-  import { BASE_RACE, conditions } from '../stores/conditions.svelte';
+  import { BASE_RACE, DEFAULT_CONDITION, conditions } from '../stores/conditions.svelte';
+  import { readSession, sessionDiffersFromDefaults } from '../scenario';
+  import Toast from '../components/Toast.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
   import { dock } from '../dock/store.svelte';
@@ -184,6 +186,32 @@
     router.navigate('log');
   }
 
+  /**
+   * Cold load with no link: the screen may be showing yesterday's session, and
+   * used to say nothing about it (audit ux-04 L-01). Read at script init, not
+   * in an effect — `App.svelte` rewrites the hash 400 ms after mount with the
+   * whole scenario in it, and after that "did the user arrive on a link?" is
+   * unanswerable.
+   *
+   * The allowlist is the app's own params, not a link's; anything unrecognised
+   * counts as a link, which is the safe way to be wrong — a shared link is not
+   * "your last session" and must not be announced as one.
+   */
+  const OWN_PARAMS = new Set(['sub', 'view', 'freeze', 'kit']);
+  let restoredOpen = $state(
+    Object.keys(router.params).every((k) => OWN_PARAMS.has(k)) &&
+      sessionDiffersFromDefaults(readSession()),
+  );
+
+  /** The toast's Reset: the condition and the trim the app opens on. */
+  function resetSession(): void {
+    race.remember();
+    applied = null;
+    conditions.apply(DEFAULT_CONDITION);
+    Object.assign(race.controls.race, BASE_RACE);
+    restoredOpen = false;
+  }
+
   /** Back to the base trim, leaving the condition alone. Undoable like a preset. */
   function resetTrim(): void {
     race.remember();
@@ -282,7 +310,7 @@
 <div class="cockpit">
   <div class="head">
     <TopBar title="Simulator" mode />
-    <p class="lede">Trim for the wind in front of you, and see what the move is worth.</p>
+    <p class="lede">Trim for the wind in front of you.</p>
   </div>
 
   <div class="bar">
@@ -440,6 +468,15 @@
 
 <ShortcutsSheet bind:open={shortcutsOpen} />
 
+<!-- Long enough to read and act on: the point is the Reset, and three seconds
+     is not long enough to notice a toast, read it and reach for a button. -->
+<Toast
+  message="Restored your last session"
+  bind:open={restoredOpen}
+  durationMs={8000}
+  action={{ label: 'Reset', onclick: resetSession }}
+/>
+
 <style>
   /* ---------------------------------------------------------------- phone */
   /* Below 720 the cockpit is one column, ordered by the `order` block further
@@ -575,8 +612,11 @@
     }
 
     /* release-01 L-12 wants the orientation line on the phone too, so it
-       stays — on one ellipsised line, the desktop treatment, not two wrapped
-       ones. */
+       stays — on one line, and now a whole one. The sentence used to carry
+       "and see what the move is worth" and ellipsised to "…and see what the
+       move …" at 390 px: a truncated sentence in the one place that explains
+       the screen (audit ux-04 L-02). Shortened at the source rather than
+       unclamped, so it still costs exactly one line. */
     .lede {
       min-width: 0;
       margin: 0;

@@ -42,6 +42,24 @@ async function settled(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: /Apply optimum/ })).toBeEnabled({
     timeout: 30_000,
   });
+  // And the band's numbers have finished travelling. The three primary
+  // readings tween over 260 ms (phase 01), so a read taken the instant the
+  // optimum lands catches them mid-flight: the sender's `before` was 6.0 kt
+  // where the receiver's cold load, whose tween starts at the settled value,
+  // read 6.1. Two identical reads a frame budget apart is the honest gate for
+  // "the screen has stopped changing on its own", which is what this waits for.
+  let last = '';
+  await expect
+    .poll(
+      async () => {
+        const now = await instruments(page);
+        const same = now === last && now !== '';
+        last = now;
+        return same;
+      },
+      { intervals: [300, 300, 300, 300, 300] },
+    )
+    .toBe(true);
 }
 
 test('a link generated in one session reproduces the instruments in a fresh one', async ({

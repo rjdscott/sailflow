@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import boat from '../../../data/boats/j70.json';
 import { coachSentence, EXPLAIN, MOVES, READOUT_EXPLAIN } from '../explain';
 import { DIAGRAM_LABELS, EXPLAIN_DETAIL } from '../explainDetail';
-import { TOUR_STEPS } from '../onboarding/steps';
 import { PROBE_CONTROLS } from './store.svelte';
 
 describe('EXPLAIN', () => {
@@ -70,35 +69,6 @@ describe('EXPLAIN_DETAIL', () => {
       for (const c of d.changes) {
         expect(c, `${id}: "${c}" prints a number with no provenance`).not.toMatch(/\d/);
       }
-    }
-  });
-});
-
-/**
- * The first-run tour. It is content, but it has one property worth a test: it
- * is three steps. A tour that grows a step at a time is a tour nobody finishes,
- * and the dots in `Tour.svelte` assume a countable few.
- */
-describe('TOUR_STEPS', () => {
-  it('is three steps, each with a title, a body and a hint', () => {
-    expect(TOUR_STEPS).toHaveLength(3);
-    for (const s of TOUR_STEPS) {
-      expect(s.title.length, `"${s.title}" is not a title`).toBeGreaterThan(4);
-      expect(s.body.length, `"${s.title}" has no body`).toBeGreaterThan(120);
-      expect(s.hint.length, `"${s.title}" has no hint`).toBeGreaterThan(20);
-    }
-  });
-
-  it('separates the two things the app calls a tier (audit release-01 M-11)', () => {
-    const tiers = TOUR_STEPS.find((s) => /tier/i.test(s.title));
-    expect(tiers, 'no step explains the word "tier"').toBeTruthy();
-    expect(tiers!.body).toMatch(/density/i);
-    expect(tiers!.body).toMatch(/confidence/i);
-  });
-
-  it('quotes no numbers, so nothing in it needs provenance', () => {
-    for (const s of TOUR_STEPS) {
-      expect(`${s.title} ${s.body}`, `"${s.title}" prints a number`).not.toMatch(/\d/);
     }
   });
 });

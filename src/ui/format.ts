@@ -5,6 +5,8 @@
  */
 import type { SeaState } from '../core/types';
 import type { LogEntry, LogNumber } from '../lib/logStore';
+// Type only, so nothing about the race store's runes reaches this module.
+import type { Objective } from './race/store.svelte';
 
 /** Round to `decimals` places, avoiding float artefacts like 0.1 + 0.2. */
 export function round(value: number, decimals: number): number {
@@ -36,6 +38,26 @@ export function targetOf(
   return {
     text: fmt(to, decimals),
     delta: `${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d).toFixed(decimals)}`,
+  };
+}
+
+/**
+ * VMG for an instrument face: the magnitude, and the direction as a glyph.
+ *
+ * Downwind VMG counts towards the leeward mark, so the solver carries it
+ * negative — but no instrument on a boat shows a negative VMG, and a sailor
+ * reads `−4.95` as a broken readout (audit ux-04 H-04). The sign stays
+ * where it means something: the solver, the objective comparison, and the
+ * share link. Only the face loses it, and the glyph says which mark the
+ * number is made good towards.
+ */
+export function vmgDisplay(
+  value: number,
+  objective: Objective,
+): { value: string; glyph: '↑' | '↓' } {
+  return {
+    value: fmt(Math.abs(value), 2),
+    glyph: objective === 'vmgDown' ? '↓' : '↑',
   };
 }
 

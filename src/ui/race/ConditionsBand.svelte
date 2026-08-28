@@ -123,7 +123,10 @@
 
 <!-- `role="group"`, or the browser drops the `aria-label` on the implicit
      generic role and the cells are announced with no grouping (audit ux-03 M-14). -->
-<div class="conditions" role="group" aria-label="Conditions">
+<!-- `data-tour` is the first-run tour's spotlight anchor: card 1 is about the
+     wind, and the card that says "everything on the left answers to it" has to
+     be able to point at the half it means (audit ux-04 H-02). -->
+<div class="conditions" data-tour="conditions" role="group" aria-label="Conditions">
   <div class="cond-cells">
     <div class="cond tws">
       {#if editable}

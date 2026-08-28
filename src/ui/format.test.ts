@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fmt, round, snap, targetOf, windLine } from './format';
+import { fmt, round, snap, targetOf, vmgDisplay, windLine } from './format';
 import type { LogEntry } from '../lib/logStore';
 
 describe('round', () => {
@@ -120,5 +120,40 @@ describe('targetOf', () => {
   it('flips downwind, where a more negative VMG is the gain', () => {
     expect(targetOf(-5.0, -5.02, 2, 'less')).toEqual({ text: '-5.02', delta: '+0.02' });
     expect(targetOf(-5.0, -4.9, 2, 'less')?.delta).toBe('−0.10');
+  });
+});
+
+describe('vmgDisplay', () => {
+  /**
+   * Upwind the solver's VMG is already positive and the glyph only says which
+   * mark it is made good towards; downwind it is negative, and the face must
+   * not show that — no instrument on a boat does (audit ux-04 H-04).
+   */
+  it('shows the magnitude with the mark it is made good towards', () => {
+    expect(vmgDisplay(3.8471, 'vmgUp')).toEqual({ value: '3.85', glyph: '↑' });
+    expect(vmgDisplay(-4.9512, 'vmgDown')).toEqual({ value: '4.95', glyph: '↓' });
+    // A speed-objective reach is still made good up the course.
+    expect(vmgDisplay(2.5, 'speed').glyph).toBe('↑');
+  });
+
+  it('never renders a minus sign, whatever the sign of the solve', () => {
+    for (const v of [-0.001, -12.3, 0, 7.7]) {
+      const shown = vmgDisplay(v, 'vmgDown').value;
+      expect(shown.startsWith('-'), `${v} rendered as ${shown}`).toBe(false);
+      expect(shown).not.toContain('−');
+    }
+  });
+
+  /**
+   * The pairing the VMG cell actually renders: an unsigned face beside a delta
+   * that keeps the app's one convention — + means the optimum is faster, which
+   * downwind means more VMG to leeward even though both numbers are negative.
+   * The audit found `−4.95` / `+0.03` reading as "I am slower" when it means
+   * the opposite; this is the assertion that the two halves still agree.
+   */
+  it('pairs with a delta that is positive when the optimum makes more VMG to leeward', () => {
+    expect(vmgDisplay(-4.95, 'vmgDown').value).toBe('4.95');
+    expect(targetOf(-4.95, -4.99, 2, 'less')?.delta).toBe('+0.04');
+    expect(targetOf(-4.99, -4.95, 2, 'less')?.delta).toBe('−0.04');
   });
 });

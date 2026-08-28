@@ -11,6 +11,7 @@
  */
 import type { Condition, Forecast, RaceControls } from '../core/types';
 import { normaliseCondition, normaliseForecast, normaliseRace } from './share';
+import { BASE_RACE, DEFAULT_CONDITION } from './stores/conditions.svelte';
 
 export const SESSION_KEY = 'sailflow.session.v1';
 
@@ -40,6 +41,35 @@ export function readSession(): Session {
   const forecast = normaliseForecast(src.forecast);
   if (forecast) out.forecast = forecast;
   return out;
+}
+
+/**
+ * Is this session something the user would notice arriving?
+ *
+ * `/` with no link silently rewrote itself to whatever this browser was last
+ * doing — correct for the owner, a mystery for a new visitor on a shared
+ * device who lands on a run under a kite (audit ux-04 L-01). The cockpit
+ * shows a "Restored your last session" toast when this says yes, and its
+ * Reset puts `DEFAULT_CONDITION` + `BASE_RACE` back.
+ *
+ * The forecast is deliberately not compared: it belongs to the Dock half,
+ * which the Rig panel is still absorbing (ADR 0021, plan phase 04), and a
+ * forecast alone changes nothing the cockpit draws.
+ */
+export function sessionDiffersFromDefaults(session: Session): boolean {
+  const c = session.condition;
+  if (c) {
+    for (const k of Object.keys(c) as (keyof Condition)[]) {
+      if (c[k] !== DEFAULT_CONDITION[k]) return true;
+    }
+  }
+  const r = session.race;
+  if (r) {
+    for (const k of Object.keys(r) as (keyof RaceControls)[]) {
+      if (r[k] !== BASE_RACE[k]) return true;
+    }
+  }
+  return false;
 }
 
 export function writeSession(session: Session): void {
