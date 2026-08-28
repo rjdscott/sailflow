@@ -18,11 +18,8 @@
     sailPath,
     sailPoints,
     tackSide,
-    localAoa,
-    luffRibbon,
-    leechRibbon,
-    type Ribbon,
   } from './boat';
+  import { jibLuffStates, leechStates, type TelltaleState } from './telltales';
   import type { Pt } from './geometry';
   import { race } from './store.svelte';
   import { conditions } from '../stores/conditions.svelte';
@@ -192,48 +189,32 @@
   /** The solved angle, uncapped, in the corner the sails never reach. */
   const heelX = $derived(ORIGIN.x + side * L.heelTag.dx);
 
-  // Target entry AoA; the shape's entryDeg mixes datums (camber + inhauler) so it is not used here.
-  const entryDeg = 12; // prov: assumed
   /** Ribbons stream along the chord; the group's own rotation is the flow. */
   const streamDeg = $derived((Math.atan2(jibClew.y - TACK.y, jibClew.x - TACK.x) * 180) / Math.PI);
   const boomStreamDeg = $derived(
     (Math.atan2(boomTip.y - MAST.y, boomTip.x - MAST.x) * 180) / Math.PI,
   );
-  // Jib luff telltales at ¼ ½ ¾ and the head: local AoA = AWA − sheeting angle
-  // − twist at that height, read against the sail's entry angle.
-  const telltales: { at: number; p: Pt; state: Ribbon }[] = $derived(
-    jib && jibUp
-      ? sailPoints(TACK, jibClew, jib.half, side, 4)
-          .slice(1)
-          .map((p, i) => {
-            const at = (i + 1) / 4;
-            const aoa = localAoa(aero.awaDeg, jibDeg, jib.threeQuarter.twistDeg, at);
-            return { at, p, state: luffRibbon(aoa, entryDeg) };
-          })
-      : [],
-  );
-  // Main leech telltales: top batten (¾ ghost head) and mid-leech.
-  const mainTelltales: { at: number; p: Pt; state: Ribbon }[] = $derived(
-    main
-      ? [
-          {
-            at: 0.75,
-            p: openBy(
-              MAST,
-              clewAt(MAST, boomDeg, D.boomPx * DIMS.headChord.main, side),
-              main.threeQuarter.twistDeg,
-              side,
-            ),
-            state: leechRibbon(aero.awaDeg, boomDeg, main.threeQuarter.twistDeg, 0.75),
-          },
-          {
-            at: 0.5,
-            p: clewAt(MAST, boomDeg, D.boomPx * 0.88, side),
-            state: leechRibbon(aero.awaDeg, boomDeg, main.threeQuarter.twistDeg, 0.5),
-          },
-        ]
-      : [],
-  );
+  // Jib luff telltales at ¼ ½ ¾ and the head, main leech telltales at the top
+  // batten and mid-leech. The states come from `race/telltales.ts`, which the
+  // 3D hero reads too, so the two pictures of the same trim cannot disagree
+  // about which ribbon is stalled (plan 2026-08-28 phase 03).
+  const telltales: (TelltaleState & { p: Pt })[] = $derived.by(() => {
+    if (!jib || !jibUp) return [];
+    const pts = sailPoints(TACK, jibClew, jib.half, side, 4).slice(1);
+    return jibLuffStates(aero.awaDeg, jibDeg, jib.threeQuarter.twistDeg).map((t, i) => ({
+      ...t,
+      p: pts[i],
+    }));
+  });
+  const mainTelltales: (TelltaleState & { p: Pt })[] = $derived.by(() => {
+    if (!main) return [];
+    const twistDeg = main.threeQuarter.twistDeg;
+    const pts = [
+      openBy(MAST, clewAt(MAST, boomDeg, D.boomPx * DIMS.headChord.main, side), twistDeg, side),
+      clewAt(MAST, boomDeg, D.boomPx * 0.88, side),
+    ];
+    return leechStates(aero.awaDeg, boomDeg, twistDeg).map((t, i) => ({ ...t, p: pts[i] }));
+  });
 
   const fmt = (v: number) => Math.abs(v).toFixed(0);
 
@@ -323,8 +304,14 @@
         />
       </g>
 
+      <!-- `data-sail`/`data-at` are the test seam: the 3D hero publishes the
+           same two keys per ribbon on its DEV handle (at its loft rows, which
+           land a hair off these stations), which is how one spec can ask both
+           pictures whether the same station is stalled. -->
       {#each telltales as t (t.at)}
         <g
+          data-sail="jibLuff"
+          data-at={t.at}
           transform="translate({t.p.x.toFixed(2)} {t.p.y.toFixed(2)}) rotate({streamDeg.toFixed(
             2,
           )}) scale(1 {side})"
@@ -336,6 +323,8 @@
 
       {#each mainTelltales as t (t.at)}
         <g
+          data-sail="mainLeech"
+          data-at={t.at}
           transform="translate({t.p.x.toFixed(2)} {t.p.y.toFixed(2)}) rotate({boomStreamDeg.toFixed(
             2,
           )}) scale(1 {side})"

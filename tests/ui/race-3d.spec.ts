@@ -197,3 +197,64 @@ test('the first-frame gate falls back to 2D when the hero is too slow to mount',
   await expect(hero.locator('canvas')).toHaveCount(0);
   await expect(hero.locator('svg[role="img"]').first()).toBeVisible();
 });
+
+/**
+ * Plan risk 2: the hero and the plan view are two pictures of one trim and
+ * must not contradict each other. Both now read `race/telltales.ts` — the 3D
+ * hero per ribbon on its DEV handle, the plan view as the CSS class on each
+ * `.ribbon` — so one spec can put the same question to both.
+ *
+ * The stations differ by a hair: the plan view draws ¼ ½ ¾ and the head,
+ * the loft samples its own rows (row 17 of 24 is 0.739 of the height), so the
+ * 3D assertion is on the nearest station rather than on an equal `at`.
+ */
+async function jibLuffStates(page: Page): Promise<{ at: number; state: string }[]> {
+  return page.evaluate(() => {
+    const s = (window as unknown as { __sail?: { telltaleStates?: unknown } }).__sail;
+    const all = (s?.telltaleStates ?? []) as { sail: string; at: number; state: string }[];
+    return all.filter((t) => t.sail === 'jibLuff').map((t) => ({ at: t.at, state: t.state }));
+  });
+}
+
+/** The published station nearest ¾ height, which is the one the plan view draws. */
+const upperOf = (s: { at: number; state: string }[]): { at: number; state: string } | null =>
+  s.length === 0 ? null : s.reduce((a, b) => (Math.abs(b.at - 0.75) < Math.abs(a.at - 0.75) ? b : a));
+
+test('over-sheeting the jib stalls its ¾ ribbon in both pictures', async ({ page }) => {
+  await openHero(page, 'view=leeward&freeze=1');
+  const hero = page.locator(HERO);
+  await expect(hero.locator('canvas')).toBeVisible();
+
+  const sheet = page
+    .locator('#headsail-controls')
+    .getByRole('slider', { name: 'Jib sheet', exact: true });
+
+  // Sheet fully home: the sheeting angle collapses toward the centreline, the
+  // same apparent wind meets the luff at a much larger angle, and the entry
+  // chokes. Every jib luff station reads stalled, the ¾ one included.
+  await sheet.fill('100');
+  await expect.poll(async () => (await jibLuffStates(page)).map((t) => t.state)).toEqual([
+    'stalled',
+    'stalled',
+    'stalled',
+  ]);
+  const upper = upperOf(await jibLuffStates(page));
+  expect(upper?.at).toBeGreaterThan(0.6);
+  expect(upper?.state).toBe('stalled');
+
+  // Same trim, other picture: the toggle swaps the hero without a reload.
+  await hero.getByRole('radio', { name: 'Plan' }).click();
+  await expect(hero.locator('canvas')).toHaveCount(0);
+  const plan = hero.locator('[data-sail="jibLuff"][data-at="0.75"] .ribbon');
+  await expect(plan).toHaveClass(/stalled/);
+
+  // And the agreement is not vacuous: eased right off, the same station leaves
+  // the stalled band in both pictures.
+  await sheet.fill('20');
+  await expect(plan).not.toHaveClass(/stalled/);
+  await hero.getByRole('radio', { name: '3D' }).click();
+  await expect(hero.locator('canvas')).toBeVisible();
+  await expect.poll(async () => upperOf(await jibLuffStates(page))?.state ?? null).not.toBe(
+    'stalled',
+  );
+});

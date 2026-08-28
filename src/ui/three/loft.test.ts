@@ -354,4 +354,21 @@ describe('ribbonAnchor', () => {
       expect(Math.hypot(root[0] - on[0], root[2] - on[2])).toBeCloseTo(0.04, 6);
     }
   });
+
+  // The 3D hero hangs a windward and a leeward ribbon at the same station and
+  // gives them different states (a windward telltale lifts, a leeward one
+  // stalls), so the sign of `lift` has to mean the same face on both tacks.
+  // The chord's own horizontal normal does not: it flips with the tack.
+  it.each([1, -1] as const)('signs `lift` to leeward on tack %d', (side) => {
+    const m = buildSail(sectionStack(shape, chords), (h) => [0, h * 8, 0], 0.15, side);
+    const j = nearestColumn(m, 0.15);
+    for (const row of m.stripeRows) {
+      const on = gridRow(m, row)[j];
+      const lee = ribbonAnchor(m, row, j, 0.04).root;
+      const wind = ribbonAnchor(m, row, j, -0.04).root;
+      // Leeward is -z on starboard tack, +z on port (`conventions.lee`).
+      expect(Math.sign(lee[2] - on[2])).toBe(side === 1 ? -1 : 1);
+      expect(Math.sign(wind[2] - on[2])).toBe(side === 1 ? 1 : -1);
+    }
+  });
 });
