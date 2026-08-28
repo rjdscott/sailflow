@@ -4,7 +4,7 @@
   import { fmt } from '../format';
   import { track } from '../../lib/telemetry';
   import { buildHash } from '../router.svelte';
-  import { conditions } from '../stores/conditions.svelte';
+  import { conditions, PRESETS } from '../stores/conditions.svelte';
   import { optimum, OPTIMUM_REASON, OPTIMUM_TIER } from './optimum.svelte';
   import PuffReplay from './PuffReplay.svelte';
   import { CONTROLS, OBJECTIVE_METRIC, race, raceObjective } from './store.svelte';
@@ -61,6 +61,28 @@
 
   function preview(ids: string[] | null): void {
     race.hovering = ids;
+  }
+
+  /**
+   * The presets left the conditions surface (audit ux-04 M-03). They set the
+   * wind *and* rewrite all eleven trim controls, six of them off-screen in
+   * Simple mode, so living in a sheet titled "Conditions" made the rewrite
+   * invisible — a user opened it to change the wind and left with a different
+   * boat. They belong with the other whole-trim actions, and every item says
+   * what it moves.
+   */
+  let presetsOpen = $state(false);
+
+  function startFrom(id: string): void {
+    const p = PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    race.applyPreset(p);
+    presetsOpen = false;
+  }
+
+  function closePresets(e: FocusEvent): void {
+    const next = e.relatedTarget as Node | null;
+    if (!next || !(e.currentTarget as HTMLElement).contains(next)) presetsOpen = false;
   }
 </script>
 
@@ -124,6 +146,47 @@
       Back to my trim
     </button>
   {/if}
+
+  <!-- Start from: the four presets, out of the conditions surface and in with
+       the other actions that rewrite the whole trim (M-03). -->
+  <span class="menu" onfocusout={closePresets}>
+    <button
+      type="button"
+      class="ghost"
+      aria-haspopup="true"
+      aria-expanded={presetsOpen}
+      onclick={() => (presetsOpen = !presetsOpen)}
+    >
+      Start from <span aria-hidden="true">▾</span>
+    </button>
+    {#if presetsOpen}
+      <!-- Escape closes the menu from anywhere inside it; the buttons in it are
+           what the keyboard actually operates. -->
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <div
+        class="menu-body"
+        role="group"
+        aria-label="Start from"
+        onkeydown={(e) => {
+          if (e.key === 'Escape') presetsOpen = false;
+        }}
+      >
+        {#each PRESETS as p (p.id)}
+          <button
+            type="button"
+            onclick={() => startFrom(p.id)}
+            onpointerenter={() => preview(race.willMoveTo(p.race))}
+            onfocus={() => preview(race.willMoveTo(p.race))}
+            onpointerleave={() => preview(null)}
+            onblur={() => preview(null)}
+          >
+            {p.label} — wind + trim
+          </button>
+        {/each}
+        <p class="menu-note">Starting points for the sliders, not tuning-guide settings.</p>
+      </div>
+    {/if}
+  </span>
 
   <button
     type="button"
@@ -297,6 +360,54 @@
 
   .delta {
     font-weight: 400;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  /* The menu hangs off its own button rather than opening a sheet: a preset is
+     one press, and a sheet for four items is the `Edit` pattern this phase is
+     deleting. Escape and focus leaving both close it. */
+  .menu {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .menu-body {
+    position: absolute;
+    bottom: calc(100% + var(--space-1));
+    left: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 22ch;
+    padding: var(--space-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 35%);
+  }
+
+  .menu-body button {
+    min-height: var(--hit-min);
+    padding: 0 var(--space-2);
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink);
+    font-size: var(--text-sm);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .menu-body button:hover,
+  .menu-body button:focus-visible {
+    background: var(--surface);
+    color: var(--accent);
+  }
+
+  .menu-note {
+    margin: var(--space-1) 0 0;
     font-size: var(--text-xs);
     color: var(--ink-2);
   }

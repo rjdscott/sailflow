@@ -145,3 +145,31 @@ describe('READOUT_EXPLAIN', () => {
     }
   });
 });
+
+/**
+ * The conditions half of the instrument band (ADR 0021). Every value over
+ * there is a control, and every control carries the same `?` the boat's
+ * numbers do, so a missing entry is a `?` that opens an empty sheet.
+ */
+describe('READOUT_EXPLAIN for the conditions half', () => {
+  const CONDITION_IDS = ['tws', 'twa', 'sea', 'crew', 'sailset'];
+
+  it('explains every value the conditions half draws', () => {
+    for (const id of CONDITION_IDS) {
+      expect(READOUT_EXPLAIN[id], `no explainer for ${id}`).toBeTruthy();
+      expect(READOUT_EXPLAIN[id].length, `${id} is a caption, not a paragraph`).toBeGreaterThan(
+        120,
+      );
+    }
+  });
+
+  it('says what sea state actually is, and where it is modelled', () => {
+    expect(READOUT_EXPLAIN.sea).toMatch(/added resistance/i);
+    expect(READOUT_EXPLAIN.sea).toMatch(/waves\.ts/);
+    expect(READOUT_EXPLAIN.sea).toMatch(/tier B/i);
+  });
+
+  it('keeps no explainer for a readout the band no longer draws', () => {
+    expect(READOUT_EXPLAIN.height, 'TWA is the conditions half`s `twa` now').toBeUndefined();
+  });
+});

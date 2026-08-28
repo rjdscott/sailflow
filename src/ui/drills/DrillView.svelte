@@ -218,13 +218,13 @@
     {#if drills.result}
       <InstrumentBar
         result={drills.result}
-        twaDeg={drill.condition.twaDeg}
+        condition={drill.condition}
+        conditionsEditable={false}
         {objective}
         busy={drills.loading}
         target={targets}
         targetWithheld={!targets}
         {history}
-        twsKt={drill.condition.twsKt}
       />
     {:else}
       <section class="card"><p class="quiet">Solving…</p></section>

@@ -1,11 +1,9 @@
 <script lang="ts">
-  import { activeBoat as boat } from '../../../lib/boat';
   import type { SolveResult } from '../../../core/types';
   import BulletGauge from '../../components/BulletGauge.svelte';
   import ConfidenceBadge from '../../components/ConfidenceBadge.svelte';
   import Panel from '../../components/Panel.svelte';
   import Segmented from '../../components/Segmented.svelte';
-  import Slider from '../../components/Slider.svelte';
   import { HEEL_SCALE_MAX, HELM_TARGET, heelBands } from '../../instruments/gauges';
   import { panelControlsId } from '../../keys';
   import { track } from '../../../lib/telemetry';
@@ -21,9 +19,12 @@
   } from '../store.svelte';
 
   /**
-   * Helm & conditions: the two gauges that only mean anything together, the
-   * mode you are steering, and where the crew is (ADR 0015, research §3
-   * panel 4).
+   * Helm: the two gauges that only mean anything together, the mode you are
+   * steering, and where the crew sits (ADR 0015, research §3 panel 4).
+   *
+   * Crew *weight* left for the conditions half of the instrument band, which
+   * is the one home for every condition now (ADR 0021); the panel used to be
+   * called "Helm & conditions" and contain none (audit ux-04 L-03, M-02).
    *
    * The downwind controls used to live here behind a checkbox. They are the
    * Gennaker panel's now: under the kite the Headsail slot *is* that panel, so
@@ -59,7 +60,7 @@
 </script>
 
 <Panel
-  title="Helm & conditions"
+  title="Helm"
   id="helm-title"
   lit={puffPlayer.litIndex('helm')}
   cue="Hold heel steady — helm load only tells the truth when heel is not moving."
@@ -85,18 +86,6 @@
         {/if}
       </p>
 
-      <div class="field">
-        <span class="section-title">Crew</span>
-      </div>
-      <Slider
-        label="Crew weight"
-        bind:value={conditions.crewKg}
-        min={boat.crew.minKg}
-        max={boat.crew.maxKg}
-        step={5}
-        unit="kg"
-        decimals={0}
-      />
       <div class="field">
         <span class="section-title">
           Fore-aft <ConfidenceBadge
