@@ -29,7 +29,7 @@ export const specs: Record<keyof DockControls, ControlSpec> = {
  * in place so it works directly on a `$state` forecast, and is a no-op once
  * the forecast is already ordered (so the caller's effect settles).
  */
-export function clampForecast(f: Forecast): void {
+export function clampForecast(f: Pick<Forecast, 'minKt' | 'likelyKt' | 'maxKt'>): void {
   if (f.maxKt < f.minKt) f.maxKt = f.minKt;
   if (f.likelyKt < f.minKt) f.likelyKt = f.minKt;
   if (f.likelyKt > f.maxKt) f.likelyKt = f.maxKt;

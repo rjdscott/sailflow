@@ -3,9 +3,8 @@
  *
  * Still no dependency: five screens, a couple of optional path segments and a
  * query string do not need a routing library. A hash is `#/<screen>` plus
- * either `/<a>/<b>` (drills: template id, seed), `/<sub>` (the simulator's one
- * sub-path) or `?k=v` (sim: the whole scenario), and `parseHash` returns both
- * as one `{ screen, params }` object.
+ * either `/<a>/<b>` (drills: template id, seed) or `?k=v` (sim: the whole
+ * scenario), and `parseHash` returns both as one `{ screen, params }` object.
  * `buildHash` is its inverse, so a scenario round-trips through the URL.
  */
 
@@ -28,18 +27,23 @@ export const TITLES: Record<Route, string> = {
 /**
  * Slugs that were routes and are now one (ADR 0021). `#/race?…` and `#/dock?…`
  * links are in group chats and in the tuning log, so they resolve rather than
- * warn: both land on `sim`, keeping their query verbatim, and `dock` keeps the
- * Dock screen under the `sim/dock` sub-path until the phase that folds it into
- * the Rig panel.
+ * warn: both land on `sim` keeping their query verbatim, and a `dock` link
+ * additionally scrolls to the Rig panel, which is where everything it used to
+ * point at now lives (`Router.landedFrom`).
  *
  * This is the route half of ADR 0019's promise. It is not a share migration:
  * the query schema did not change meaning, so `SHARE_VERSION` does not move
  * (`share.test.ts` holds that).
  */
-const ALIASES: Record<string, { screen: Route; sub?: string }> = {
-  race: { screen: 'sim' },
-  dock: { screen: 'sim', sub: 'dock' },
+const ALIASES: Record<string, Route> = {
+  race: 'sim',
+  dock: 'sim',
 };
+
+/** The first path segment of a hash — the screen slug, or '' for a bare hash. */
+export function hashSlug(hash: string): string {
+  return hash.replace(/^#\/?/, '').split('?')[0].split('/').filter(Boolean)[0] ?? '';
+}
 
 /**
  * `kit` is a design-system scratch screen with invented numbers, so it is not
@@ -63,9 +67,8 @@ export type Params = Record<string, string>;
 export interface ParsedRoute {
   screen: Route;
   /**
-   * Query params, plus `template`/`seed` lifted out of the drills path and
-   * `sub` out of the simulator's, so a consumer reads one flat bag whichever
-   * form the link used.
+   * Query params, plus `template`/`seed` lifted out of the drills path, so a
+   * consumer reads one flat bag whichever form the link used.
    */
   params: Params;
 }
@@ -78,25 +81,20 @@ export function parseHash(hash: string): ParsedRoute {
   const alias = known ? undefined : ALIASES[slug];
   if (slug && !known && !alias)
     console.warn(`Sailflow: no screen called "${slug}" — showing the Simulator.`);
-  const screen = known ? (slug as Route) : (alias?.screen ?? DEFAULT_ROUTE);
+  const screen = known ? (slug as Route) : (alias ?? DEFAULT_ROUTE);
 
   const params: Params = Object.fromEntries(new URLSearchParams(query));
   if (screen === 'drills' && known) {
     if (segments[1]) params.template = segments[1];
     if (segments[2]) params.seed = segments[2];
   }
-  if (screen === 'sim') {
-    const sub = known ? segments[1] : alias?.sub;
-    if (sub) params.sub = sub;
-  }
   return { screen, params };
 }
 
 export function buildHash(screen: Route, params: Params = {}): string {
-  const { template, seed, sub, ...query } = params;
+  const { template, seed, ...query } = params;
   let out = `#/${screen}`;
   if (screen === 'drills' && template) out += seed ? `/${template}/${seed}` : `/${template}`;
-  if (screen === 'sim' && sub) out += `/${sub}`;
   const search = new URLSearchParams(Object.entries(query).filter(([, v]) => v !== '')).toString();
   return search ? `${out}?${search}` : out;
 }
@@ -108,6 +106,14 @@ function currentHash(): string {
 class Router {
   route: Route = $state(DEFAULT_ROUTE);
   params: Params = $state.raw({});
+  /**
+   * The slug this session was opened on, when it was one of the merged ones —
+   * `'dock'` means "someone followed a link to the old Dock screen", which the
+   * Rig panel reads to scroll itself into view. Entry only: a link pasted into
+   * the address bar mid-session is a hashchange, and the panel is already on
+   * the page by then.
+   */
+  readonly landedFrom: string = hashSlug(currentHash());
 
   constructor() {
     const initial = parseHash(currentHash());

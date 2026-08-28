@@ -20,6 +20,9 @@
     locked = false,
     lockReason,
     tier,
+    tick: tickOverride,
+    tickWord = 'base trim',
+    hint: hintOverride,
     onexplain,
   }: {
     id: string;
@@ -30,6 +33,15 @@
     locked?: boolean;
     lockReason?: string;
     tier?: Tier;
+    /**
+     * A mark on the track that is not the base trim — the Rig panel's shroud
+     * rows put the tuning guide's published turns there, which is the one
+     * number on those sliders that comes from outside the model.
+     */
+    tick?: number;
+    tickWord?: string;
+    /** Overrides the optimum-bug hint; the caller owns the sentence. */
+    hint?: string;
     onexplain: (id: string) => void;
   } = $props();
 
@@ -60,7 +72,9 @@
   );
 
   /** The base trim, marked on the track. Not a tuning-guide number (base.ts). */
-  const tick = $derived(id in BASE_RACE ? BASE_RACE[id as keyof RaceControls] : undefined);
+  const trackTick = $derived(
+    tickOverride ?? (id in BASE_RACE ? BASE_RACE[id as keyof RaceControls] : undefined),
+  );
 
   /** ARIA drops a name on a bare span, so the chevron carries a role too. */
   const chevLabel = $derived(
@@ -93,19 +107,20 @@
         step={spec.step}
         unit={spec.unit}
         decimals={spec.step < 1 ? 1 : 0}
-        {tick}
-        tickWord="base trim"
+        tick={trackTick}
+        {tickWord}
         {locked}
         lockReason={lockReason ?? undefined}
         {tier}
         {target}
         targetStale={optimum.stale || optimum.busy}
         highlight={race.hovering?.includes(id) ?? false}
-        hint={optimumBug && !trimmed.has(id)
-          ? NO_EFFECT
-          : optimumBug && unsolved
-            ? NOT_SOLVED_HINT
-            : undefined}
+        hint={hintOverride ??
+          (optimumBug && !trimmed.has(id)
+            ? NO_EFFECT
+            : optimumBug && unsolved
+              ? NOT_SOLVED_HINT
+              : undefined)}
       />
     </div>
     <div class="side">

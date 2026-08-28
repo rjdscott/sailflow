@@ -355,9 +355,11 @@ export class RaceStore {
   }
 
   /**
-   * Race solves the rig the Dock committed (rule C.9.5). Mutates in place:
-   * ControlPanel's sliders alias this object. With no commit today the base
-   * tune stays and the three controls are free to explore.
+   * The cockpit solves the committed rig where there is one (rule C.9.5), and
+   * the rig the Rig panel's sliders are exploring where there is not — which
+   * is what makes a shroud turn move the headstay sag, the jib entry and the
+   * boat speed on one screen (ADR 0021). Mutates in place: the solve request
+   * aliases this object.
    */
   syncDock(setup: DockControls | null): void {
     Object.assign(this.controls.dock, setup ?? BASE_DOCK);

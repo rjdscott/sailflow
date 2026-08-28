@@ -110,14 +110,14 @@ test('a class with no committed tuning guide says so instead of quoting another 
     .click();
   await expect(page.getByRole('radio', { name: 'Melges 24' })).toBeChecked();
 
-  await page.goto('/#/dock');
+  await page.goto('/#/sim');
   // Phase 03's third state. The failure this guards is the opposite of a
   // blank: the panel quietly comparing a Melges 24 against North's J/70
   // shroud turns, which is the "resolve the disagreement silently" failure
   // CLAUDE.md forbids.
   // Three places say it, which is the point: the disagreement panel's verdict
-  // and the hint under each shroud slider, whose guide tick would otherwise be
-  // an invented number.
+  // and the hint under each shroud slider on the Rig panel, whose guide tick
+  // would otherwise be an invented number.
   const said = page.getByText(/No tuning guide is committed for this boat/);
   await expect(said).toHaveCount(3);
   await expect(said.first()).toBeVisible();

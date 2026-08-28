@@ -4,12 +4,9 @@
   import { settings } from './ui/stores/settings.svelte';
   import BottomNav from './ui/components/BottomNav.svelte';
   import NavRail from './ui/components/NavRail.svelte';
-  // The Simulator's two halves stay static: the cockpit is the default route,
-  // and Dock is the same page's temporary `sim/dock` sub-path until the Rig
-  // panel absorbs it (ADR 0021, plan phase 04). Log, Drills and More are
-  // dynamic (audit ux-03 M-23) — see the markup below.
+  // The Simulator is one screen and the default route, so it is static. Log,
+  // Drills and More are dynamic (audit ux-03 M-23) — see the markup below.
   import Race from './ui/screens/Race.svelte';
-  import Dock from './ui/screens/Dock.svelte';
   import Toast from './ui/components/Toast.svelte';
   import { conditions } from './ui/stores/conditions.svelte';
   import { race } from './ui/race/store.svelte';
@@ -45,16 +42,17 @@
     const stored = readSession();
     if (stored.condition) Object.assign(conditions, stored.condition);
     if (stored.race) Object.assign(race.controls.race, stored.race);
-    if (stored.forecast) Object.assign(dock.forecast, stored.forecast);
+    if (stored.forecast) dock.applyForecast(stored.forecast);
     applyUrl();
   }
 
   /**
-   * A share link is applied on the whole Simulator, both halves (ADR 0019): an
-   * old `#/dock` link carries a forecast and a rig, a `#/race` link carries a
-   * trim, and both live in stores the whole app reads. What a link never sets
-   * is the *rig the cockpit solves* — that is the recipient's own committed
-   * tune under class rule C.9.5, and `race.syncDock` would overwrite it anyway.
+   * A share link is applied on the whole Simulator (ADR 0019): an old `#/dock`
+   * link carries a forecast and a rig, a `#/race` link carries a trim, and both
+   * live in stores the whole app reads. The rig lands on the Rig panel's
+   * sliders, which is what the cockpit solves *unless* the recipient has
+   * committed their own tune today — class rule C.9.5 wins over a link
+   * (`Race.svelte`'s `syncDock`).
    */
   function applyUrl(): void {
     if (router.route !== 'sim') return;
@@ -85,7 +83,14 @@
     if (trim) Object.assign(race.controls.race, trim);
     if (down && race.controls.down) Object.assign(race.controls.down, down);
     if (setup) Object.assign(dock.setup, setup);
-    if (forecast) Object.assign(dock.forecast, forecast);
+    if (forecast) {
+      dock.applyForecast(forecast);
+      // A pre-ADR-0021 `#/dock?f=` link carried sea state and crew inside the
+      // forecast; they live in `conditions` now, so they land there unless the
+      // link also names them in its own right.
+      if (condition.seaState === undefined) conditions.seaState = forecast.seaState;
+      if (condition.crewKg === undefined) conditions.crewKg = forecast.crewKg;
+    }
     if (tier) settings.setMode(tier);
   }
 
@@ -152,17 +157,9 @@
 <div class="shell">
   <div class="rail-slot"><NavRail /></div>
 
-  <main class:cockpit-wide={router.route === 'sim' && router.params.sub !== 'dock'}>
+  <main class:cockpit-wide={router.route === 'sim'}>
     {#if router.route === 'sim'}
-      <!-- One route, two halves for now: `#/sim/dock` is where an old `#/dock`
-           link lands so nothing is lost mid-plan. Phase 04 folds the Dock into
-           the Rig panel and this branch goes with it (ADR 0021). Any other
-           sub-path falls through to the cockpit rather than a blank screen. -->
-      {#if router.params.sub === 'dock'}
-        <Dock />
-      {:else}
-        <Race />
-      {/if}
+      <Race />
       <!-- Log, Drills and More are secondary tabs: a visitor lands on the
            Simulator and most never open them, so they are chunks fetched on
            navigation rather than entry-chunk weight everyone pays for

@@ -1,9 +1,16 @@
 <script lang="ts">
-  import type { DockControls } from '../../core/types';
+  import LockIcon from '../components/LockIcon.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
-  import { describeSetup, shortSetup } from './logic';
 
-  let { setup, oncommit }: { setup: DockControls; oncommit: () => void } = $props();
+  /**
+   * Commit for today, and the way back out of it.
+   *
+   * Since ADR 0021 the sliders it freezes are on the same panel, so this is a
+   * toggle beside them rather than a screen boundary: committed, they grey and
+   * this line says when and offers the unlock; uncommitted, it says the day is
+   * still free. The copy carries the rule, because navigation no longer does.
+   */
+  let { oncommit }: { oncommit: () => void } = $props();
 
   /** Two-tap: the first tap arms, the second unlocks. No modal to mis-tap. */
   let armed = $state(false);
@@ -26,35 +33,37 @@
 </script>
 
 {#if lock}
-  <section class="card committed">
-    <h2 class="section-title">Committed {at}</h2>
-    <p class="line tabular-nums">{describeSetup(lock.setup)}</p>
+  <p class="line">
+    <LockIcon />
+    <span class="tabular-nums">Committed {at}</span>
+    <span aria-hidden="true">·</span>
     <button type="button" class="unlock" class:armed onclick={unlock}>
-      {armed ? 'Tap again to unlock' : 'Unlock (rule C.9.5 — only before leaving the dock)'}
+      {armed ? 'Tap again to unlock' : 'Unlock'}
     </button>
-    {#if armed}
-      <p class="warn">
-        C.9.5(a): the forestay may not be adjusted from the time the boat leaves the dock until
-        racing has finished for the day.
-      </p>
-    {/if}
-  </section>
+  </p>
+  <p class="note">
+    Committed — class rule C.9.5(a) freezes the standing rigging once you leave the dock. Unlock to
+    explore.
+  </p>
+  {#if armed}
+    <p class="warn">
+      C.9.5(a): the forestay may not be adjusted from the time the boat leaves the dock until racing
+      has finished for the day.
+    </p>
+  {/if}
 {:else}
-  <section class="card">
-    <h2 class="section-title">Commit</h2>
-    <button type="button" class="commit tabular-nums" onclick={oncommit}>
-      Commit {shortSetup(setup)} for today
-    </button>
-    <p class="note">Locks the rig for the day and starts a log entry.</p>
-  </section>
+  <button type="button" class="commit" onclick={oncommit}>
+    <LockIcon /> Commit for today
+  </button>
+  <p class="note">Not committed — free to explore. Commit greys these and stamps the log.</p>
 {/if}
 
 <style>
-  .committed {
-    border-color: var(--good);
-  }
-
   .commit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
     width: 100%;
     min-height: var(--hit-min);
     border: none;
@@ -67,21 +76,31 @@
   }
 
   .line {
-    margin: 0 0 var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
     font-size: var(--text-sm);
     color: var(--ink);
   }
 
-  .note {
-    margin: var(--space-2) 0 0;
+  .note,
+  .warn {
+    margin: var(--space-1) 0 0;
     font-size: var(--text-xs);
     color: var(--ink-2);
   }
 
+  .warn {
+    color: var(--bad);
+  }
+
+  /* A text button, not a plate: unlocking is the C.9.5-violating direction, so
+     it is deliberately quieter than Commit was (audit ux-01 M-07). */
   .unlock {
-    width: 100%;
     min-height: var(--hit-min);
-    border: 1px solid var(--ink-2);
+    padding: 0 var(--space-2);
+    border: 1px solid var(--line-strong);
     border-radius: var(--radius);
     background: transparent;
     color: var(--ink-2);
@@ -91,12 +110,6 @@
 
   .unlock.armed {
     border-color: var(--bad);
-    color: var(--bad);
-  }
-
-  .warn {
-    margin: var(--space-2) 0 0;
-    font-size: var(--text-xs);
     color: var(--bad);
   }
 </style>
