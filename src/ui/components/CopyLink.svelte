@@ -24,7 +24,7 @@
    * and drag its copy of the boat file out of the entry with it.
    */
   let {
-    route = 'race',
+    route = 'sim',
     shareState,
     label = 'Copy link',
     title = 'Copy a link to this exact state — conditions, trim and rig — to paste to a crewmate.',

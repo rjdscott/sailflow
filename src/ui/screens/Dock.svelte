@@ -190,7 +190,7 @@
            you think of this tune for tomorrow?" is a Dock question, and it was
            unanswerable without one (ADR 0019). -->
       <CopyLink
-        route="dock"
+        route="sim"
         title="Copy a link to this forecast and rig setup, to paste to a crewmate."
       />
     </div>

@@ -73,7 +73,7 @@ test('a link generated in one session reproduces the instruments in a fresh one'
     const link = await sender.page.evaluate(() => navigator.clipboard.readText());
 
     // It is a real, versioned share link and not the bare route.
-    expect(link).toContain('#/race?');
+    expect(link).toContain('#/sim?');
     expect(link).toContain('s=1');
 
     await receiver.page.goto(link);

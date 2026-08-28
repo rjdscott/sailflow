@@ -87,9 +87,11 @@ test('five Race visits leave no WebGL context behind', async ({ page }) => {
   expect(first.made - first.lost).toBeLessThanOrEqual(2);
 
   for (let i = 0; i < 5; i++) {
-    await page.getByRole('link', { name: 'Dock', exact: true }).click();
+    // Any screen that is not the cockpit unmounts the hero; Log is the
+    // cheapest one to bounce off since ADR 0021 merged Dock into Simulator.
+    await page.getByRole('link', { name: 'Log', exact: true }).click();
     await expect(page.locator('.hero-boat')).toHaveCount(0);
-    await page.getByRole('link', { name: 'Race', exact: true }).click();
+    await page.getByRole('link', { name: 'Simulator', exact: true }).click();
     await heroReady(page);
   }
 

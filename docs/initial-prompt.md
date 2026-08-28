@@ -26,6 +26,8 @@ International J/70 Class Rules, effective 1 February 2026, rule C.9.5(a): the fo
 
 Therefore the app has two modes:
 
+> **Superseded, 2026-08-28.** The two modes are still two questions, but they are no longer two screens: they share one Simulator page at `#/sim` ([ADR 0021](adr/0021-dock-and-race-merge-into-one-simulator-page.md)). The rest of this brief stands as written — it is the original prompt, kept as a record.
+
 **Dock mode.** Shroud tension (upper and lower), mast rake, prebend, forestay length. These are committed once per day against a forecast wind range, then locked. Score the chosen setup across the whole forecast range, not a single wind speed, and show what it costs at the top and bottom of that range. This is the mode nobody else has built and it is the most valuable part of the app.
 
 **Race mode.** Only running rigging moves: backstay, mainsheet, traveller, cunningham, outhaul, vang, jib sheet, jib lead car, inhauler, main and jib halyard fine tunes. Downwind adds gennaker halyard, tack line, sheet and bowsprit position.

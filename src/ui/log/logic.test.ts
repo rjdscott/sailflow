@@ -165,9 +165,11 @@ describe('entryShare', () => {
     jibHalyard: 50,
   };
 
-  it('opens on Race when the entry recorded a trim, on Dock when it did not', () => {
-    expect(entryShare(entry({ race: RACE })).route).toBe('race');
-    expect(entryShare(entry()).route).toBe('dock');
+  // ADR 0021: one screen answers both, so the route no longer forks on what
+  // the entry happens to carry.
+  it('opens on the Simulator whether or not the entry recorded a trim', () => {
+    expect(entryShare(entry({ race: RACE })).route).toBe('sim');
+    expect(entryShare(entry()).route).toBe('sim');
   });
 
   it('round-trips the rig, the trim and the forecast through a link', () => {

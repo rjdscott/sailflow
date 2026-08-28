@@ -10,6 +10,7 @@ import type {
 } from '../core/types';
 import { DEFAULT_BOAT_ID } from '../lib/boat';
 import { snap } from './format';
+import { parseHash } from './router.svelte';
 import {
   decodeShare,
   DOCK_KEYS,
@@ -194,6 +195,57 @@ describe('the query stays short and readable', () => {
     // Nothing percent-encoded: `_`, `-` and `.` are unreserved, which is what
     // keeps the link legible after a chat client has been at it.
     expect(query).not.toContain('%');
+  });
+});
+
+/**
+ * ADR 0021 merged Dock and Race into one Simulator page. That moved the
+ * *route*, not the query: the groups, their order and their meaning are
+ * untouched, so `SHARE_VERSION` does not move and `MIGRATIONS` gains no entry.
+ * What carries the old links is the router's alias table — and these tests are
+ * what say that the whole link, hash and query together, lands the same state.
+ */
+describe('links written before the Simulator merge', () => {
+  const trim = stateAt(SHARE_RACE_KEYS, 3) as unknown as RaceControls;
+  const setup = stateAt(DOCK_KEYS, 2) as unknown as DockControls;
+
+  /** The whole link, the way it sits in a group chat, back to a state. */
+  function open(hash: string) {
+    const { screen, params } = parseHash(hash);
+    return { screen, sub: params.sub, ...decodeShare(params) };
+  }
+
+  const query = (state: Parameters<typeof encodeShare>[0]): string =>
+    new URLSearchParams(encodeShare(state)).toString();
+
+  it('opens a v1 `#/race?…` link on the simulator with the same trim', () => {
+    const opened = open(`#/race?${query({ condition: CONDITION, race: trim })}`);
+    expect(opened.screen).toBe('sim');
+    expect(opened.sub).toBeUndefined();
+    expect(opened.condition).toEqual(CONDITION);
+    expect(opened.race).toEqual(trim);
+  });
+
+  it('opens a v1 `#/dock?…` link on the dock sub-path, forecast intact', () => {
+    const opened = open(`#/dock?${query({ forecast: FORECAST, dock: setup })}`);
+    expect(opened.screen).toBe('sim');
+    expect(opened.sub).toBe('dock');
+    expect(opened.forecast).toEqual(FORECAST);
+    expect(opened.dock).toEqual(setup);
+  });
+
+  it('opens a v0 dot-separated `#/race?…` link — both rewrites at once', () => {
+    const r = RACE_KEYS.map((k) => String(trim[k])).join('.');
+    const opened = open(`#/race?tws=18&twa=42&sea=2&crew=320&set=jib&r=${r}`);
+    expect(opened.screen).toBe('sim');
+    expect(opened.version).toBe(0);
+    expect(opened.race).toEqual(trim);
+    expect(opened.condition).toEqual(CONDITION);
+  });
+
+  it('does not bump the schema version, because the query did not change', () => {
+    expect(SHARE_VERSION).toBe(1);
+    expect(encodeShare({ condition: CONDITION }).s).toBe('1');
   });
 });
 

@@ -25,14 +25,14 @@ describe('telemetry counters', () => {
   });
 
   it('counts each event independently and cumulatively', async () => {
-    await count('view.race');
-    await count('view.race');
+    await count('view.sim');
+    await count('view.sim');
     await count('drill.started');
 
     const s = await snapshot();
-    expect(s['view.race']).toBe(2);
+    expect(s['view.sim']).toBe(2);
     expect(s['drill.started']).toBe(1);
-    expect(s['view.dock']).toBe(0);
+    expect(s['view.log']).toBe(0);
   });
 
   it('survives sequential counts of every event', async () => {

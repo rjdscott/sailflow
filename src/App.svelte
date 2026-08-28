@@ -4,9 +4,10 @@
   import { settings } from './ui/stores/settings.svelte';
   import BottomNav from './ui/components/BottomNav.svelte';
   import NavRail from './ui/components/NavRail.svelte';
-  // Race and Dock stay static: Race is the default route, and Dock is the
-  // other half of the same before-and-during-the-race pair. Log, Drills and
-  // More are dynamic (audit ux-03 M-23) — see the markup below.
+  // The Simulator's two halves stay static: the cockpit is the default route,
+  // and Dock is the same page's temporary `sim/dock` sub-path until the Rig
+  // panel absorbs it (ADR 0021, plan phase 04). Log, Drills and More are
+  // dynamic (audit ux-03 M-23) — see the markup below.
   import Race from './ui/screens/Race.svelte';
   import Dock from './ui/screens/Dock.svelte';
   import Toast from './ui/components/Toast.svelte';
@@ -37,7 +38,7 @@
 
   // --- Scenario: URL and session (audit ux-02 M-05) ------------------------
   // Storage first, then the URL over the top: a link someone sent you beats
-  // whatever this browser was last doing, and a plain `#/race` keeps the
+  // whatever this browser was last doing, and a plain `#/sim` keeps the
   // session it had. Both are validated in `scenario.ts`; nothing here trusts
   // either enough to skip that.
   function restore(): void {
@@ -49,14 +50,14 @@
   }
 
   /**
-   * A share link is applied on every screen, not only Race (ADR 0019): a Dock
-   * link carries a forecast and a rig, a Race link carries a trim, and both
-   * live in stores the whole app reads. What a link never sets is the *rig
-   * Race solves* — that is the recipient's own committed tune under class rule
-   * C.9.5, and `race.syncDock` would overwrite it anyway.
+   * A share link is applied on the whole Simulator, both halves (ADR 0019): an
+   * old `#/dock` link carries a forecast and a rig, a `#/race` link carries a
+   * trim, and both live in stores the whole app reads. What a link never sets
+   * is the *rig the cockpit solves* — that is the recipient's own committed
+   * tune under class rule C.9.5, and `race.syncDock` would overwrite it anyway.
    */
   function applyUrl(): void {
-    if (router.route !== 'race' && router.route !== 'dock') return;
+    if (router.route !== 'sim') return;
     const {
       boat,
       condition,
@@ -107,7 +108,7 @@
     const setup = $state.snapshot(dock.setup);
     const forecast = $state.snapshot(dock.forecast);
     const tier = settings.mode;
-    const shareable = router.route === 'race' || router.route === 'dock';
+    const shareable = router.route === 'sim';
     clearTimeout(writeTimer);
     writeTimer = setTimeout(() => {
       writeSession({ condition, race: trim, forecast });
@@ -151,15 +152,22 @@
 <div class="shell">
   <div class="rail-slot"><NavRail /></div>
 
-  <main class:cockpit-wide={router.route === 'race'}>
-    {#if router.route === 'race'}
-      <Race />
-    {:else if router.route === 'dock'}
-      <Dock />
-      <!-- Log, Drills and More are secondary tabs: a visitor lands on Race,
-           and most never open them, so they are chunks fetched on navigation
-           rather than entry-chunk weight everyone pays for (ux-03 M-23). The
-           service worker precaches them, so an offline dock still opens them. -->
+  <main class:cockpit-wide={router.route === 'sim' && router.params.sub !== 'dock'}>
+    {#if router.route === 'sim'}
+      <!-- One route, two halves for now: `#/sim/dock` is where an old `#/dock`
+           link lands so nothing is lost mid-plan. Phase 04 folds the Dock into
+           the Rig panel and this branch goes with it (ADR 0021). Any other
+           sub-path falls through to the cockpit rather than a blank screen. -->
+      {#if router.params.sub === 'dock'}
+        <Dock />
+      {:else}
+        <Race />
+      {/if}
+      <!-- Log, Drills and More are secondary tabs: a visitor lands on the
+           Simulator and most never open them, so they are chunks fetched on
+           navigation rather than entry-chunk weight everyone pays for
+           (ux-03 M-23). The service worker precaches them, so an offline dock
+           still opens them. -->
     {:else if router.route === 'log'}
       {#await import('./ui/screens/Log.svelte') then Log}
         <Log.default />
@@ -257,7 +265,7 @@
       padding-block: var(--space-6);
     }
 
-    /* Race only: the cockpit fills the window past the rail up to its own cap.
+    /* The cockpit only: it fills the window past the rail up to its own cap.
        A 1920 px monitor was giving 640 px of it back to the margins while the
        panels scrolled inside themselves (ADR 0016, audit ux-03 M-01). */
     main.cockpit-wide {

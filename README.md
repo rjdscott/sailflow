@@ -20,6 +20,12 @@ Sailflow answers two questions a one-design crew asks every race day:
   backstay, vang, outhaul, cunningham, leads and kite controls go for the wind
   in front of me, and what does each move do to the sail?*
 
+Both are answered on one page, the **Simulator** at
+[`#/sim`](https://rjdscott.github.io/sailflow/#/sim) — rig and sails on the
+same screen, so a shroud turn and its effect on the jib are visible together
+([ADR 0021](docs/adr/0021-dock-and-race-merge-into-one-simulator-page.md)).
+Links written against the old `#/race` and `#/dock` URLs still open.
+
 It solves a steady-state velocity-prediction model (VPP) in a Web Worker, draws
 the flying shape of every sail in 3D and plan view, compares its answer against
 the North and Quantum tuning guides, logs what you tried, and drills you on
@@ -136,7 +142,7 @@ CI — see [`docs/runbooks/`](docs/runbooks/README.md).
 src/core      pure physics — geometry, rig, shape, aero (ORC), hydro, solve
               no DOM, no framework, no Math.random, no Date
 src/worker    the typed request/response protocol; the UI's only door to core
-src/ui        Svelte 5 — race cockpit, dock, log, drills, three.js hero
+src/ui        Svelte 5 — simulator cockpit, log, drills, three.js hero
 data/         boats, tuning guides, ORC polar: one JSON per source
 calibration/  fits the invented-layer knobs to the polar; writes the golden corpus
 validation/   replays the polar through the solver; hold-out gate; report

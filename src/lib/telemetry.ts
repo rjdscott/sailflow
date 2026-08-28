@@ -13,8 +13,10 @@
  */
 
 export const TELEMETRY_EVENTS = [
-  'view.race',
-  'view.dock',
+  // One counter since ADR 0021 merged Dock and Race. A device that already had
+  // `view.race`/`view.dock` counts keeps them in the blob and they simply stop
+  // being read — a usage counter is not worth a migration.
+  'view.sim',
   'view.log',
   'view.drills',
   'view.more',
@@ -35,8 +37,7 @@ export type TelemetryEvent = (typeof TELEMETRY_EVENTS)[number];
 
 /** Human labels for the More screen. Same order as `TELEMETRY_EVENTS`. */
 export const TELEMETRY_LABELS: Record<TelemetryEvent, string> = {
-  'view.race': 'Race opened',
-  'view.dock': 'Dock opened',
+  'view.sim': 'Simulator opened',
   'view.log': 'Log opened',
   'view.drills': 'Drills opened',
   'view.more': 'More opened',

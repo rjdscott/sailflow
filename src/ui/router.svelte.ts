@@ -1,28 +1,44 @@
 /**
  * Hash router v2 (audit ux-02 M-05, M-14, L-01).
  *
- * Still no dependency: six screens, one optional pair of path segments and a
+ * Still no dependency: five screens, a couple of optional path segments and a
  * query string do not need a routing library. A hash is `#/<screen>` plus
- * either `/<a>/<b>` (drills: template id, seed) or `?k=v` (race: the whole
- * scenario), and `parseHash` returns both as one `{ screen, params }` object.
+ * either `/<a>/<b>` (drills: template id, seed), `/<sub>` (the simulator's one
+ * sub-path) or `?k=v` (sim: the whole scenario), and `parseHash` returns both
+ * as one `{ screen, params }` object.
  * `buildHash` is its inverse, so a scenario round-trips through the URL.
  */
 
 import { track } from '../lib/telemetry';
 
-export const ROUTES = ['race', 'dock', 'log', 'drills', 'more', 'kit'] as const;
+export const ROUTES = ['sim', 'log', 'drills', 'more', 'kit'] as const;
 export type Route = (typeof ROUTES)[number];
 
-export const DEFAULT_ROUTE: Route = 'race';
+export const DEFAULT_ROUTE: Route = 'sim';
 
-/** Browser-tab title per screen. "Race · Sailflow", so history reads. */
+/** Browser-tab title per screen. "Simulator · Sailflow", so history reads. */
 export const TITLES: Record<Route, string> = {
-  race: 'Race',
-  dock: 'Dock',
+  sim: 'Simulator',
   log: 'Log',
   drills: 'Drills',
   more: 'More',
   kit: 'Kit',
+};
+
+/**
+ * Slugs that were routes and are now one (ADR 0021). `#/race?…` and `#/dock?…`
+ * links are in group chats and in the tuning log, so they resolve rather than
+ * warn: both land on `sim`, keeping their query verbatim, and `dock` keeps the
+ * Dock screen under the `sim/dock` sub-path until the phase that folds it into
+ * the Rig panel.
+ *
+ * This is the route half of ADR 0019's promise. It is not a share migration:
+ * the query schema did not change meaning, so `SHARE_VERSION` does not move
+ * (`share.test.ts` holds that).
+ */
+const ALIASES: Record<string, { screen: Route; sub?: string }> = {
+  race: { screen: 'sim' },
+  dock: { screen: 'sim', sub: 'dock' },
 };
 
 /**
@@ -47,8 +63,9 @@ export type Params = Record<string, string>;
 export interface ParsedRoute {
   screen: Route;
   /**
-   * Query params, plus `template`/`seed` lifted out of the drills path so a
-   * consumer reads one flat bag whichever form the link used.
+   * Query params, plus `template`/`seed` lifted out of the drills path and
+   * `sub` out of the simulator's, so a consumer reads one flat bag whichever
+   * form the link used.
    */
   params: Params;
 }
@@ -58,21 +75,28 @@ export function parseHash(hash: string): ParsedRoute {
   const segments = path.split('/').filter(Boolean);
   const slug = segments[0] ?? '';
   const known = LIVE_ROUTES.includes(slug);
-  if (slug && !known) console.warn(`Sailflow: no screen called "${slug}" — showing Race.`);
-  const screen = known ? (slug as Route) : DEFAULT_ROUTE;
+  const alias = known ? undefined : ALIASES[slug];
+  if (slug && !known && !alias)
+    console.warn(`Sailflow: no screen called "${slug}" — showing the Simulator.`);
+  const screen = known ? (slug as Route) : (alias?.screen ?? DEFAULT_ROUTE);
 
   const params: Params = Object.fromEntries(new URLSearchParams(query));
   if (screen === 'drills' && known) {
     if (segments[1]) params.template = segments[1];
     if (segments[2]) params.seed = segments[2];
   }
+  if (screen === 'sim') {
+    const sub = known ? segments[1] : alias?.sub;
+    if (sub) params.sub = sub;
+  }
   return { screen, params };
 }
 
 export function buildHash(screen: Route, params: Params = {}): string {
-  const { template, seed, ...query } = params;
+  const { template, seed, sub, ...query } = params;
   let out = `#/${screen}`;
   if (screen === 'drills' && template) out += seed ? `/${template}/${seed}` : `/${template}`;
+  if (screen === 'sim' && sub) out += `/${sub}`;
   const search = new URLSearchParams(Object.entries(query).filter(([, v]) => v !== '')).toString();
   return search ? `${out}?${search}` : out;
 }
