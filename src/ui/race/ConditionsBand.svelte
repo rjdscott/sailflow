@@ -1,6 +1,6 @@
 <script lang="ts">
   import { activeBoat as boat } from '../../lib/boat';
-  import type { Condition, SailSet, SeaState } from '../../core/types';
+  import type { Condition, SeaState } from '../../core/types';
   import InstrumentCell from '../components/InstrumentCell.svelte';
   import Segmented from '../components/Segmented.svelte';
   import { fmt } from '../format';
@@ -58,6 +58,12 @@
     conditions.twsKt = Math.min(TWS_MAX, Math.max(TWS_MIN, conditions.twsKt + delta));
   }
 
+  const otherSailLabel = $derived(condition.sailset === 'asym' ? 'jib' : 'gennaker');
+
+  function toggleSail(): void {
+    conditions.sailset = condition.sailset === 'asym' ? 'jib' : 'asym';
+  }
+
   function stepCrew(delta: number): void {
     conditions.crewKg = Math.min(
       boat.crew.maxKg,
@@ -91,10 +97,14 @@
   up: () => void,
   atMin: boolean,
   atMax: boolean,
+  cell: import('svelte').Snippet,
 )}
-  <!-- The group carries the range, because a pair of ± buttons has nowhere else
-       to put it: the slider these replaced announced its own bounds, and a
-       stepper that does not is a control whose limits you find by pressing. -->
+  <!-- `− 10 kt +`: the buttons flank the value they change rather than sitting
+       under it, which is a row of the phone's band budget and reads as one
+       control instead of two things stacked. The group carries the range,
+       because a pair of ± buttons has nowhere else to put it — the slider
+       these replaced announced its own bounds, and a stepper that does not is
+       a control whose limits you find by pressing. -->
   <span class="stepper" role="group" aria-label="{name}, {range}">
     <button
       type="button"
@@ -103,6 +113,7 @@
       onclick={down}
       disabled={atMin}>−</button
     >
+    {@render cell()}
     <button
       type="button"
       class="step"
@@ -113,12 +124,19 @@
   </span>
 {/snippet}
 
+{#snippet twsCell()}
+  <InstrumentCell label="TWS" id="tws" unit="kt" value={fmt(condition.twsKt, 0)} {onexplain} />
+{/snippet}
+
+{#snippet crewCell()}
+  <InstrumentCell label="CREW" id="crew" unit="kg" value={fmt(condition.crewKg, 0)} {onexplain} />
+{/snippet}
+
 <!-- `role="group"`, or the browser drops the `aria-label` on the implicit
      generic role and the cells are announced with no grouping (audit ux-03 M-14). -->
 <div class="conditions" role="group" aria-label="Conditions">
   <div class="cond-cells">
     <div class="cond tws">
-      <InstrumentCell label="TWS" id="tws" unit="kt" value={fmt(condition.twsKt, 0)} {onexplain} />
       {#if editable}
         {@render stepper(
           'Wind speed',
@@ -128,7 +146,10 @@
           () => stepTws(1),
           condition.twsKt <= TWS_MIN,
           condition.twsKt >= TWS_MAX,
+          twsCell,
         )}
+      {:else}
+        {@render twsCell()}
       {/if}
     </div>
 
@@ -178,14 +199,7 @@
       {/if}
     </div>
 
-    <div class="cond">
-      <InstrumentCell
-        label="CREW"
-        id="crew"
-        unit="kg"
-        value={fmt(condition.crewKg, 0)}
-        {onexplain}
-      />
+    <div class="cond crew">
       {#if editable}
         {@render stepper(
           'Crew weight',
@@ -195,23 +209,24 @@
           () => stepCrew(CREW_STEP),
           condition.crewKg <= boat.crew.minKg,
           condition.crewKg >= boat.crew.maxKg,
+          crewCell,
         )}
+      {:else}
+        {@render crewCell()}
       {/if}
     </div>
 
+    <!-- Two sails, so the value is the toggle: a segmented under a 28 px `Jib`
+         was the same fact twice, once as a readout and once as a control. -->
     <div class="cond">
-      <InstrumentCell label="SAIL" id="sailset" value={sailLabel} {onexplain} />
-      {#if editable}
-        <Segmented
-          ariaLabel="Sail set"
-          options={[
-            { value: 'jib', label: 'Jib' },
-            { value: 'asym', label: 'Gennaker' },
-          ]}
-          value={condition.sailset}
-          onchange={(v) => (conditions.sailset = v as SailSet)}
-        />
-      {/if}
+      <InstrumentCell
+        label="SAIL"
+        id="sailset"
+        value={sailLabel}
+        {onexplain}
+        onactivate={editable ? toggleSail : undefined}
+        activateHint={editable ? `switch to ${otherSailLabel}` : undefined}
+      />
     </div>
   </div>
 
@@ -268,16 +283,16 @@
   }
 
   /* Wrap, don't tile: these five cells are different widths — a rose beside a
-     number, a word rather than a figure, a two-option segmented — and an
-     equal-track grid sized every column to the widest of them and then clipped
-     it. Flex wrap gives each cell what it needs and breaks the row when the
-     next one does not fit: five across in the cockpit, three then two on a
+     number, a word rather than a figure, a stepper either side of a figure —
+     and an equal-track grid sized every column to the widest of them and then
+     clipped it. Flex wrap gives each cell what it needs and breaks the row
+     when the next one does not fit: five across in the cockpit, two rows on a
      390 px phone. */
   .cond-cells {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3) var(--space-4);
-    align-items: flex-start;
+    gap: var(--space-2) var(--space-4);
+    align-items: center;
   }
 
   .cond {
@@ -295,11 +310,12 @@
     gap: var(--space-2);
   }
 
-  /* One-tap wind speed and crew weight. 44 px buttons on a phone, mouse-sized
-     in the cockpit, exactly as the old rail's stepper was. */
+  /* One-tap wind speed and crew weight, the buttons flanking the value. 44 px
+     on a phone, mouse-sized in the cockpit, exactly as the old rail's was. */
   .stepper {
     display: inline-flex;
-    gap: var(--space-1);
+    align-items: center;
+    gap: var(--space-2);
   }
 
   .step {
@@ -338,12 +354,25 @@
     margin-left: var(--space-1);
   }
 
+  /* The chips scroll sideways rather than wrapping to a second row on a phone,
+     where every 44 px row is one the band cannot spare. Snap so a flick lands
+     on a chip, and fade the trailing edge so the two chips over the horizon —
+     Broad reach and Run — read as "there is more", not as "there are three". */
   .points {
-    /* The chips scroll sideways rather than wrapping to a second row on a
-       phone, where every 44 px row is a row the band cannot spare. */
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    -webkit-mask-image: linear-gradient(to right, #000 85%, transparent);
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+  }
+
+  .points::-webkit-scrollbar {
+    display: none;
+  }
+
+  .points > :global(*) {
+    scroll-snap-align: start;
   }
 
   .locked {
@@ -363,17 +392,19 @@
       min-height: 28px;
     }
 
-    /* Mouse-sized, and narrow enough that `Jib | Gennaker` is a cell rather
-       than a row of its own. */
+    /* The sea popover's five options, mouse-sized like everything else here. */
     .conditions :global(.segmented button) {
       min-height: 28px;
       padding: 0 var(--space-2);
       font-size: var(--text-xs);
     }
 
+    /* All five chips fit, so nothing scrolls and nothing is faded out. */
     .points {
       flex-wrap: wrap;
       overflow-x: visible;
+      -webkit-mask-image: none;
+      mask-image: none;
     }
   }
 </style>

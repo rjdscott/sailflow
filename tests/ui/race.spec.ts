@@ -189,8 +189,8 @@ test('at 1920x1080 the cockpit is one short scroll and the hero is worth looking
  * control of each is a nudge below the fold.
  *
  * The band pays for the conditions now (ADR 0021): what used to be a 90 px
- * strip of readings is a 184 px band of readings *and* the five inputs that
- * drive them, and ADR 0016's 480 px hero floor is what it is. Measured 939 px
+ * strip of readings is a 168 px band of readings *and* the five inputs that
+ * drive them, and ADR 0016's 480 px hero floor is what it is. Measured 922 px
  * for the first Mainsail slider against 845 before, on a 864 px screen — so
  * the promise this size can keep is the whole band, the whole hero and both
  * panels *started*, with the first slider one wheel-notch down. ADR 0021 took

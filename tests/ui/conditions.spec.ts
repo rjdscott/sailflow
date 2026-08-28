@@ -35,7 +35,7 @@ test('every conditions value is a control, in the band, with the boat half besid
 }) => {
   await raceTier(page);
   await page.setViewportSize(COCKPIT);
-  await page.goto('/#/race');
+  await page.goto('/#/sim');
 
   const band = page.locator('.cockpit > .bar');
   const conditions = band.getByRole('group', { name: 'Conditions' });
@@ -65,7 +65,7 @@ test('the wind speed and crew steppers move the condition and the boat answers',
 }) => {
   await raceTier(page);
   await page.setViewportSize(COCKPIT);
-  await page.goto('/#/race');
+  await page.goto('/#/sim');
 
   const tws = page.locator('.cond.tws .value');
   await expect(tws).toHaveText(/^10/);
@@ -82,7 +82,7 @@ test('the wind speed and crew steppers move the condition and the boat answers',
 test('the wind rose is a slider you can drag and drive from the keyboard', async ({ page }) => {
   await raceTier(page);
   await page.setViewportSize(COCKPIT);
-  await page.goto('/#/race');
+  await page.goto('/#/sim');
 
   const rose = page.getByRole('slider', { name: 'True wind angle' });
   await expect(rose).toHaveAttribute('aria-valuenow', '42');
@@ -113,7 +113,7 @@ test('the wind rose is a slider you can drag and drive from the keyboard', async
 test('the point-of-sail chips deselect when the angle leaves their band', async ({ page }) => {
   await raceTier(page);
   await page.setViewportSize(COCKPIT);
-  await page.goto('/#/race');
+  await page.goto('/#/sim');
 
   const chips = page.getByRole('group', { name: 'Point of sail' });
   const beam = chips.getByRole('button', { name: 'Beam reach' });
@@ -137,11 +137,28 @@ test('the point-of-sail chips deselect when the angle leaves their band', async 
   expect(await chips.locator('button[aria-pressed="true"]').count()).toBe(0);
 });
 
+/** One control per value: the sail set is the value, not a segmented under it. */
+test('the sail set is the value itself, and says what pressing it would do', async ({ page }) => {
+  await raceTier(page);
+  await page.setViewportSize(COCKPIT);
+  await page.goto('/#/sim');
+
+  const conditions = page.getByRole('group', { name: 'Conditions' });
+  // One control, not a readout with a segmented under it repeating it.
+  await expect(conditions.getByRole('radiogroup', { name: 'Sail set' })).toHaveCount(0);
+
+  const sail = conditions.getByRole('button', { name: 'SAIL: Jib, switch to gennaker' });
+  await sail.click();
+  await expect(
+    conditions.getByRole('button', { name: 'SAIL: Gennaker, switch to jib' }),
+  ).toBeVisible();
+});
+
 /** The sea state popover: five options, light-dismissed, no sheet. */
 test('sea state opens a segmented popover on the value itself', async ({ page }) => {
   await raceTier(page);
   await page.setViewportSize(COCKPIT);
-  await page.goto('/#/race');
+  await page.goto('/#/sim');
 
   const trigger = page.getByRole('button', { name: 'SEA: Ripple' });
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
@@ -162,7 +179,7 @@ test('sea state opens a segmented popover on the value itself', async ({ page })
 test('the presets live in the actions bar and say they move the trim too', async ({ page }) => {
   await raceTier(page);
   await page.setViewportSize(COCKPIT);
-  await page.goto('/#/race');
+  await page.goto('/#/sim');
 
   const menu = page.getByRole('button', { name: /Start from/ });
   await expect(menu).toHaveAttribute('aria-expanded', 'false');
@@ -188,11 +205,20 @@ test('at 390 the whole band is above the fold and every control is thumb-sized',
 }) => {
   await raceTier(page);
   await page.setViewportSize(PHONE);
-  await page.goto('/#/race');
+  await page.goto('/#/sim');
   await expect(page.getByRole('group', { name: 'Conditions' })).toBeVisible();
 
   const bar = await page.locator('.cockpit > .bar').boundingBox();
   expect(bar!.y + bar!.height, 'the band must fit a 390x844 screen').toBeLessThan(PHONE.height);
+
+  // The budget the band is held to at 390, measured after the steppers moved
+  // inline: the conditions half is two lines of cells, a line for the sail and
+  // the chip scroller; the boat half is its three numbers, the More readings
+  // pill and the heel gauge. Both are pinned so the next thing to grow has to
+  // argue with a failing test.
+  const half = (await page.locator('.conditions').boundingBox())!.height;
+  expect(half, 'the conditions half at 390').toBeLessThanOrEqual(300);
+  expect(bar!.height, 'the whole band at 390').toBeLessThanOrEqual(560);
 
   const small = await page.evaluate(() => {
     const out: string[] = [];

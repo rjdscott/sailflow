@@ -23,6 +23,7 @@
     onexplain,
     onactivate,
     expanded,
+    activateHint,
   }: {
     label: string;
     /** Key into the caller's explain copy; stable across label renames. */
@@ -46,6 +47,13 @@
     onactivate?: () => void;
     /** For an `onactivate` that opens a popover: its state, for the button. */
     expanded?: boolean;
+    /**
+     * What pressing the value does, for a cell where that is not obvious from
+     * the value itself: `SAIL: Jib, switch to gennaker`. A toggle whose whole
+     * label is its current state tells a screen reader nothing about what it
+     * would do.
+     */
+    activateHint?: string;
   } = $props();
 </script>
 
@@ -71,7 +79,9 @@
         type="button"
         class="value fade trigger"
         class:hero-number={size === 'lg'}
-        aria-label="{label}: {value}{unit ? ` ${unit}` : ''}"
+        aria-label="{label}: {value}{unit ? ` ${unit}` : ''}{activateHint
+          ? `, ${activateHint}`
+          : ''}"
         aria-haspopup={expanded === undefined ? undefined : 'true'}
         aria-expanded={expanded}
         onclick={onactivate}

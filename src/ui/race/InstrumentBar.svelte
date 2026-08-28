@@ -24,6 +24,7 @@
   import Sheet from '../components/Sheet.svelte';
   import { READOUT_EXPLAIN } from '../explain';
   import { heelBands, HEEL_SCALE_MAX, HELM_TARGET } from '../instruments/gauges';
+  import { settings } from '../stores/settings.svelte';
   import type { History } from '../instruments/history';
   import type { Objective } from './store.svelte';
   import { verdict } from './verdict';
@@ -111,6 +112,8 @@
    * slider drag's next solve is not queueing behind it.
    */
   const TWEEN_MS = 260;
+  const reduceMotion = (): boolean =>
+    settings.motion === 'off' || (settings.motion !== 'on' && prefersReducedMotion.current);
   const numbers = (): { bs: number; pct: number; vmg: number } => ({
     bs: result.bsKt.value,
     pct: result.instruments.pctPolar.value,
@@ -120,7 +123,12 @@
     // The first solve is where the tween starts, not something it travels to:
     // a band that spun up from zero on load would read as a gauge test.
     untrack(numbers),
-    { duration: () => (prefersReducedMotion.current ? 1 : TWEEN_MS), easing: cubicOut },
+    // The app's own Motion setting, not just the OS one: `off` in More kills
+    // CSS animation through `data-motion`, which a JS tween never sees, and a
+    // reader who asked for no motion should not get numbers that travel
+    // (audit ux-02 L-03's setting, applied to the one animation that is not
+    // CSS).
+    { duration: () => (reduceMotion() ? 1 : TWEEN_MS), easing: cubicOut },
   );
   $effect(() => {
     void shown.set(numbers());

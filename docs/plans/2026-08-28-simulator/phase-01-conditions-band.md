@@ -143,3 +143,44 @@ rebuilds a `TubeGeometry`.
 1285 vitest tests green. `pnpm test:ui`: 77 passed. Nothing red for reasons
 outside this change.
 
+### 2026-08-28 — review pass on PR #108
+
+Rebased onto `origin/main` after phase 03 (`0885843`) merged: no conflicts,
+both status rows intact, and the cockpit's `<h1>` now reads **Simulator**,
+which phase 03 left for whoever next touched `Race.svelte`. Specs moved from
+`#/race` to `#/sim`.
+
+- *Rose legibility.* 72 px in the cockpit, 64 px below; the hull is `--hull`
+  fill with a 2-unit `--ink` outline so it reads as a boat; the TWA arrow is
+  solid `--ink` and the AWA arrow a 3-unit `--accent` hairline; the grip is
+  r=5 on the rim where the wind blows in from, never over the hull; and a
+  bow-up tick at 0° says which way the boat points.
+- *One control per value.* The SAIL cell was a 28 px `Jib` **and** a
+  Jib/Gennaker segmented saying the same thing. The value is the toggle now,
+  as the sea cell's is; `InstrumentCell` gained `activateHint` so the button
+  announces "SAIL: Jib, switch to gennaker" rather than just its own state.
+- *Phone band height.* The steppers moved inline — `− 10 kt +` on one line —
+  and the chip row is a snapping scroller with a masked trailing edge. The
+  conditions half went 430 → **272 px** and the whole band 650 → **532 px**
+  (targets 260 / 460). The last 12 px of the conditions half is the SAIL cell,
+  which will not fit beside SEA and CREW at 390 px without dropping the type
+  ramp below the boat half's, and the band's remaining 70 px is the boat
+  half's More-readings pill and heel gauge, which this phase did not touch.
+  Both numbers are pinned in `conditions.spec.ts` at 300 / 560.
+- *Drag flood.* Not a flood: `race.request()` and `optimum.request()` both
+  clear and reset a timer per call (`DEBOUNCE_MS` 20, `OPTIMUM_DEBOUNCE_MS`
+  300, `PROBE_DEBOUNCE_MS` 80), so a pointermove per frame writes a rune and
+  buys exactly one solve 20 ms after the drag stops. No throttle added.
+- *One real bug the review shook out.* The number tween read only
+  `prefersReducedMotion`, so the app's own Motion `off` setting — which kills
+  CSS animation through `data-motion` — did not reach it, and a settled band
+  could still be mid-travel. It reads `settings.motion` now.
+  `Race.svelte`'s apply-optimum tween has the same gap and is left alone:
+  phase 05, or whoever next owns that file.
+
+The 1536×864 first-slider measurement improves with the inline steppers:
+922 px, from 939.
+
+**Gates after the review pass.** `make check`: 1293 vitest tests green,
+`svelte-check` 0 errors 0 warnings. `pnpm test:ui`: 78 passed.
+

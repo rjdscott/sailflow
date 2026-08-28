@@ -280,7 +280,7 @@
      and sessions (principle 19). -->
 <div class="cockpit">
   <div class="head">
-    <TopBar title="Race" mode />
+    <TopBar title="Simulator" mode />
     <p class="lede">Trim for the wind in front of you, and see what the move is worth.</p>
   </div>
 

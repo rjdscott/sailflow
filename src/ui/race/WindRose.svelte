@@ -121,8 +121,12 @@
 
   <circle class="rim" cx={C.x} cy={C.y} r={R} />
 
+  <!-- Bow-up tick at 0°: the one mark that says which way the boat is pointing,
+       so the arrows read as angles off the bow rather than off nothing. -->
+  <line class="tick" x1={C.x} y1={C.y - R - 3} x2={C.x} y2={C.y - R + 5} />
+
   <!-- The boat, bow up: the arrows are angles off this. -->
-  <path class="hull" d="M50 34 C57 43 58 54 56 64 L44 64 C42 54 43 43 50 34 Z" />
+  <path class="hull" d="M50 30 C58 41 59 54 57 66 L43 66 C41 54 42 41 50 30 Z" />
 
   {#if awa}
     <line
@@ -147,18 +151,18 @@
       class="grip"
       cx={twa.tail.x.toFixed(2)}
       cy={twa.tail.y.toFixed(2)}
-      r="8"
+      r="5"
     />{/if}
 </svg>
 
 <style>
-  /* 56 px is a thumb, and it is the same 56 px in the cockpit: the rose is the
-     one control here that cannot fall back to a bigger hit area — the whole
-     face of it is the target — and a mouse-sized one is a smudge rather than
-     a picture of where the wind is. */
+  /* Big enough to be a picture rather than a smudge. The rose is the one
+     control here that cannot fall back to a bigger hit area — its whole face
+     is the target — and at 56 px the hull, the rim and two arrows were four
+     marks inside 25 px of radius. */
   .rose {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     flex: none;
     touch-action: none;
     overflow: visible;
@@ -183,14 +187,21 @@
   .rim {
     fill: none;
     stroke: var(--line-strong);
-    stroke-width: 2.4;
+    stroke-width: 2;
     stroke-dasharray: 5 6;
   }
 
+  .tick {
+    stroke: var(--line-strong);
+    stroke-width: 3;
+  }
+
+  /* Deck fill, ink outline: the same pair the plan view draws a hull with, so
+     the glyph in the middle of the rose reads as a boat and not as a blob. */
   .hull {
     fill: var(--hull);
-    stroke: var(--line-strong);
-    stroke-width: 2.6;
+    stroke: var(--ink);
+    stroke-width: 2;
   }
 
   line {
@@ -198,13 +209,15 @@
     stroke-linecap: butt;
   }
 
+  /* The true wind is the one you drag, so it is the solid, heavier arrow; the
+     apparent wind is the accent hairline that follows it. */
   .twa {
     stroke: var(--ink);
-    stroke-dasharray: 6 4;
   }
 
   .awa {
     stroke: var(--accent);
+    stroke-width: 3;
   }
 
   .cap-twa {
@@ -216,10 +229,19 @@
   }
 
   /* Where the hand goes. Filled with the same ink as the arrow it drags. */
+  /* On the rim, where the true wind blows in from — never over the hull, which
+     is the one thing in the rose that has to stay readable. */
   .grip {
     fill: var(--ink);
-    fill-opacity: 0.2;
-    stroke: var(--ink);
-    stroke-width: 2;
+    stroke: var(--bg);
+    stroke-width: 1.5;
+  }
+
+  /* The cockpit has the room, and this is a picture as much as a control. */
+  @media (min-width: 1280px) {
+    .rose {
+      width: 72px;
+      height: 72px;
+    }
   }
 </style>
