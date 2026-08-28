@@ -26,12 +26,43 @@
  * line from tack to head, so it *has* to bow. That surplus — the sail's luff
  * length less the tack-to-head distance — is the whole of the sag magnitude;
  * `luffLateral` is the whole of its direction.
+ *
+ * ## Flying shape (2026-08-28, plan `2026-08-28-downwind-fidelity` phase 02)
+ *
+ * The owner's report on 0.5.0 was "the spinnaker doesn't look the right
+ * shape", and the number behind it is the class half width. Every section
+ * here spans from the bowed luff to `leechAt`, so **the leech is the
+ * silhouette**: a leech drawn nearly straight into the masthead left the
+ * drawn half width at 4.79–5.15 m against the class's published 5.560 mm,
+ * 7–14 % narrow at exactly the height a spinnaker carries its shoulders. A
+ * sail that narrow *measures* — on ORC's own formula, taken off the drawn
+ * loft — 39.9–42.4 m² against the class's 45.64. It read as a big headsail
+ * because at those dimensions it was one. The three changes, all in the
+ * constants below:
+ *
+ * - the leech stands off far enough to restore the half width, and its bulge
+ *   grows on ease so the head opens (`LEECH_BULGE_*`);
+ * - the bulge's *direction* is the head's own chord angle, `sheetRad` plus a
+ *   published foot-to-head twist (`TWIST_TRIM_DEG`), instead of a constant
+ *   66° that pinned the head whatever the sheet did;
+ * - the sheet band narrowed to 40°–55°, which is the widest band whose twist
+ *   still opens with ease rather than closing (`SHEET_TRIM_DEG`);
+ * - the luff bows further forward and correspondingly less across
+ *   (`LUFF_FORWARD_FRACTION`), which is what puts the sail's body to leeward
+ *   of the main instead of on the centreline behind it;
+ * - the foot hangs, because a gennaker's foot is a free edge with nothing
+ *   under it (`FOOT_SKIRT_M`, drawn by `loft.ts`'s `Section.dropM`).
+ *
+ * Camber and draft position are untouched: they come off `shape.asym`, which
+ * research `2026-08-25-spinnaker` already re-based on the measured flying
+ * shapes (#76), and `src/core` is out of scope for this phase.
  */
 import { activeBoat as boat, sailM } from '../../lib/boat';
 import type { DownControls } from '../../core/types';
 import {
   add,
   along,
+  chordDir,
   DEG2RAD,
   lee,
   lerp3,
@@ -140,16 +171,29 @@ export const HALYARD_DROP_M = 1.2;
 
 /**
  * Sheeting angle off the centreline at full trim and full ease, degrees.
- * prov: assumed 25 → 60, but now only as a *band*: the clew's distance from
- * the tack and from the head is no longer a choice at all (`clewOnCircle`),
- * so these two pick an arc on a derived circle rather than inventing a clew
+ * prov: assumed 40 → 55, but only as a *band*: the clew's distance from the
+ * tack and from the head is no longer a choice at all (`clewOnCircle`), so
+ * these two pick an arc on a derived circle rather than inventing a clew
  * position. Both endpoints sit inside the circle's achievable 18°–89°
  * (research doc 04 §2.2). Trimmed, the clew is aft, inboard and low; eased, it
  * swings forward, outboard and *up*. All three are monotone in the sheet
  * across this range, which is the claim `kite.test.ts` holds.
+ *
+ * Narrowed from 25 → 60 on 2026-08-28, and the reason is the *twist*. The head
+ * is pinned at the masthead, so the only thing the sheet can rotate is the
+ * foot; over a 35° band the foot outran the upper leech and the drawn
+ * foot-to-head twist came out **backwards** — 25° at full trim falling to 4°
+ * at full ease, the exact inverse of the 4° reaching / 26° running `F1`
+ * measured (doc 02 §2c). Measured on the drawn loft, the widest band whose
+ * twist still rises monotonically with ease is 15°; wider than that and the
+ * mid-sheet state dips below the trimmed one. What it costs is expressiveness
+ * — the sheet now swings the sail 15° rather than 35° — and what it buys back
+ * is a leech that opens when you ease it. The clew's rise across the band is
+ * unaffected at 1.42 m, against Deparday's measured 1.4 m (`F1`), because the
+ * leech bulge's travel grew to compensate.
  */
-export const SHEET_TRIM_DEG = 25;
-export const SHEET_EASE_DEG = 60;
+export const SHEET_TRIM_DEG = 40;
+export const SHEET_EASE_DEG = 55;
 
 /**
  * The apparent wind angles at which the luff was measured wholly to leeward
@@ -206,15 +250,29 @@ export function luffLateral(awaDeg: number): number {
 export const CURL_EASE_THRESHOLD = 0.55;
 
 /**
- * How far forward the luff bows, as a fraction of how far it bows to leeward.
- * prov: assumed 0.6. A free luff flies out ahead of the boat as well as to
- * leeward — further forward than the forestay's own forward fraction
+ * How far forward the luff bows, as a fraction of how far it bows athwartships.
+ * prov: assumed 1.1. A free luff flies out ahead of the boat as well as to the
+ * side — much further forward than the forestay's own forward fraction
  * (`SAG_FORWARD_FRACTION` = 0.35 in `rig3d.ts`), because a forestay is held at
  * both ends and a free luff is not. Only the two directions are claimed, not
  * the split. Named for the luff, not "sag", so it cannot be confused with the
  * forestay constant again: the two shared a name and disagreed on value.
+ *
+ * Raised from 0.6 on 2026-08-28, because this split is what decides whether
+ * the sail's *body* sits to leeward. The bow's magnitude is fixed by the cloth
+ * surplus (2.4-2.5 m); at 0.6 that threw the mid-luff 2.1 m to windward at
+ * running angles — past the windward rail — and dragged the whole sail onto
+ * the centreline, so from astern the kite sat directly behind the mainsail
+ * with only its edges showing. Measured on the drawn loft at AWA 150°, the
+ * half-height section's centroid was 0.87 m to leeward of the mast against the
+ * main's 1.04 m: the kite's body was *inboard of the main*. At 1.1 the same
+ * centroid is 1.26 m and the sail is where a photograph of a run puts it. The
+ * luff still crosses to windward at deep angles — that direction is published
+ * (`luffLateral`) and untouched — it just crosses by 1.5 m instead of 2.1. The
+ * same change widens the tight-reach sail, whose measured half width goes
+ * 2.86 m to 4.16 m against a published 5.560.
  */
-export const LUFF_FORWARD_FRACTION = 0.6;
+export const LUFF_FORWARD_FRACTION = 1.1;
 
 /**
  * Cap on the luff bow, as a fraction of the sail's luff length.
@@ -227,24 +285,101 @@ export const LUFF_FORWARD_FRACTION = 0.6;
 export const SAG_MAX_FRACTION = 0.3;
 
 /**
- * Leech bulge: how far the leech stands out to leeward and forward of the
- * straight head→clew line, m, at full trim and the travel added by full ease.
- * A straight leech into the masthead makes every upper section hook inboard
- * — the top of the sail reads closed, and easing the sheet cannot open it,
- * because the head is pinned. The real leech falls away to leeward in its
- * upper half (the shoulders every photograph of a J/70 kite shows), most
- * of all when the sheet is eased and the leech twists open.
- * prov: assumed 0.4 m trimmed, +0.7 m eased, peak at ~63 % height, 0.4 of
- * the bulge forward — read off photographs (owner-supplied, 2026-08-26) and
- * the twist-opens-with-ease direction in research doc 02 §5; no measured
- * leech profile exists. The leech's cloth length stays the published
- * 8.8 m: the straight head→clew distance is shortened by the arc surplus.
+ * Leech bulge: how far the leech stands out from the straight head→clew line,
+ * m, at full trim and the travel added by full ease.
+ *
+ * This one constant carries the sail's shoulders, because in this loft the
+ * leech *is* the silhouette: every section spans from the bowed luff to
+ * `leechAt`, so the girth at a height is whatever the leech leaves it. Drawn
+ * straight, the sail runs out of width above half height and reads as a
+ * headsail — which is the 0.5.0 report this phase answers. Measured on the
+ * drawn loft, the old 0.4 m/+0.7 m bulge left a half width of **4.85 m**
+ * against the class's published **5.560 m**, and the whole sail therefore
+ * *measured* 40.3 m² on ORC's own formula against a published 45.64 — 12 %
+ * narrow at half height and 12 % small overall.
+ *
+ * prov: assumed 0.7 m trimmed, +1.1 m eased, peak at ~65 % of the leech.
+ * Amount and peak height are a fit, not a measurement: they are the values at
+ * which the drawn sail measures within ±8 % of the published 45.64 m² on ORC's
+ * own formula across the whole sheet band at the angles the kite is used at,
+ * with a half width of 5.14-6.01 m against the class's 5.560 — the tightest
+ * the four class dimensions can be held simultaneously. The bulge also
+ * shortens the straight head→clew chord (`chordForArc`) and so lifts the clew,
+ * which is the other thing the travel is fitted to: 1.1 m of travel lifts it
+ * 1.42 m across the sheet band, against Deparday's measured 1.4 m of clew rise
+ * (`F1`). No measured leech profile exists for any asymmetric (research
+ * `2026-08-25-spinnaker` doc 02 §6 constrains the leech's *length* and nothing
+ * else). The leech's cloth length stays the published 8.8 m: the straight
+ * head→clew distance is shortened by the arc surplus (`chordForArc`).
+ *
+ * The *direction* stopped being a constant on 2026-08-28. It was a fixed
+ * vector 66° off the centreline, which pinned the head's chord angle whatever
+ * the sheet did and is half of why the drawn twist ran backwards; it is now
+ * `chordDir(sheetRad + twist)` — see `TWIST_TRIM_DEG`.
  */
-export const LEECH_BULGE_MIN_M = 0.4;
-export const LEECH_BULGE_TRAVEL_M = 0.7;
-export const LEECH_BULGE_FORWARD_FRACTION = 0.4;
-/** `sin(π·t^k)` peaks where t^k = ½: k = 1.5 puts it at ~63 % of the leech. */
-export const LEECH_BULGE_PEAK_EXPONENT = 1.5;
+export const LEECH_BULGE_MIN_M = 0.7;
+export const LEECH_BULGE_TRAVEL_M = 1.1;
+/**
+ * Foot-to-head twist at full trim and at full ease, degrees.
+ * prov: **published** — `F1` Fig 3.3 via research doc 02 §2c: foot-to-top
+ * twist is ~4° at AWA 64°, over 20° at 96°, 26° at 124° and 28° at 141°. The
+ * sheet is in on a tight reach and out on a run, so those two ends of the
+ * measured range are the two ends of the sheet band.
+ *
+ * These set the *direction the upper leech stands off in*, which is what
+ * makes them reach the picture. Near the head the luff and the leech both
+ * converge on the masthead, so the section chord there points wherever the
+ * bulge does — meaning `bulgeDir`'s plan angle *is* the head's chord angle,
+ * and setting it to `sheetRad + twist` is the twist mapping. It was a fixed
+ * ~66° off the centreline, which is why the drawn twist ran backwards: the
+ * sheet band swung the foot 25° → 60° while the head stayed put, so twist
+ * measured 25° trimmed and 4° eased, the exact inverse of `F1`.
+ *
+ * The *height profile* is not a separate constant: it is
+ * `leechBulgeProfile`, which already carries a `prov:` tag and an
+ * `ASSUMPTIONS.md` row of its own. Doc 02 §2c has twist rising near-linearly
+ * from the foot to half height and then flattening, and that is the shape the
+ * profile gives — measured 8°/17°/23°/25° at ¼/½/¾/⅞ height at full ease.
+ */
+export const TWIST_TRIM_DEG = 4;
+export const TWIST_EASE_DEG = 26;
+/** `sin(π·t^k)` peaks where t^k = ½: k = 1.6 puts it at ~65 % of the leech. */
+export const LEECH_BULGE_PEAK_EXPONENT = 1.6;
+
+/**
+ * The skirt: how far the middle of the foot hangs below the straight line
+ * between the tack and the clew, m, and the height fraction over which that
+ * sag blends away.
+ *
+ * A main's foot is on a boom and a jib's is on the deck; a gennaker's is a
+ * free edge between two corners with nothing under it, so it hangs. Drawn as
+ * a straight line it is the single clearest tell that the picture is of a
+ * headsail — the sail meets the water in a hard diagonal instead of a belly.
+ *
+ * prov: assumed 0.55 m over the bottom 30 % of the height. Nothing published
+ * gives a J/70 foot round: the class rules cap the *straight* foot at
+ * 5 700 mm (`sails.asym.footMm`) and say nothing about the cloth in it, and
+ * the research corpus measures luff and leech but never the foot
+ * (`2026-08-25-spinnaker` doc 02 §6 is a leech constraint). 0.55 m is ~10 %
+ * of the foot, which is the round a photograph shows and is the same order as
+ * the 8.9 % measured luff excess (`F1`) on an edge with no forestay to hold
+ * it. Only the sign is claimed: the foot hangs *below* the tack–clew line,
+ * never above it.
+ */
+export const FOOT_SKIRT_M = 0.55;
+export const FOOT_SKIRT_SPAN = 0.3;
+
+/**
+ * The skirt's amplitude at height fraction `h`: full at the foot, gone by
+ * `FOOT_SKIRT_SPAN`, with zero slope at both ends so the blend leaves no
+ * crease across the lower sail. The sag itself is a half-sine along the
+ * chord (`loft.ts:buildSail`), so both corners stay exactly where the tack
+ * and the leech line put them.
+ */
+export function footSkirtM(h: number): number {
+  if (h >= FOOT_SKIRT_SPAN) return 0;
+  return FOOT_SKIRT_M * 0.5 * (1 + Math.cos((Math.PI * h) / FOOT_SKIRT_SPAN));
+}
 
 /**
  * The straight chord that, bulged by `bulge` on `leechBulgeProfile`, has arc
@@ -435,7 +570,13 @@ export function kiteGeometry(
   const bulge = LEECH_BULGE_MIN_M + ease * LEECH_BULGE_TRAVEL_M;
   const leechChord = chordForArc(LEECH_M, bulge);
   const clew = clewOnCircle(tack, head, sheetRad, side, leechChord);
-  const bulgeDir = norm([LEECH_BULGE_FORWARD_FRACTION, 0, lee(side)]);
+  // The upper leech stands off in the direction the head's own chord points:
+  // `sheetRad` plus the measured foot-to-head twist for this sheet setting.
+  // Near the head the luff and the leech both converge on the masthead, so
+  // this direction *is* the head's chord angle — which is how a published
+  // twist range reaches a drawing whose sections are otherwise emergent.
+  const twistTopRad = (TWIST_TRIM_DEG + ease * (TWIST_EASE_DEG - TWIST_TRIM_DEG)) * DEG2RAD;
+  const bulgeDir = chordDir(sheetRad + twistTopRad, side);
 
   // The leech runs head → clew and then stands off that line by its own
   // bulge, most of all in the upper half where the shoulders are. It is not
@@ -458,7 +599,8 @@ export function kiteGeometry(
   // twist between knots, and five cannot follow a parabolic luff closely
   // enough to keep the leech on its line (measured 0.57 m off; 17 keeps it
   // under a few centimetres). Camber, draft position and entry are the
-  // stack's, interpolated the same way the loft would have.
+  // stack's, interpolated the same way the loft would have; the skirt is
+  // this sail's alone (`footSkirtM`), so it is set here and not in the stack.
   const sections = (shape: SailShape): Section[] => {
     const stack = sectionStack(shape, KITE_CHORDS);
     const hs = stack.map((k) => k.h);
@@ -488,7 +630,12 @@ export function kiteGeometry(
         camber: camber(h),
         draftPos: draftPos(h),
         entryRad: entry(h),
+        // Emergent, and it has to be: the three published edges pin every
+        // section's angle once the clew is on its circle. What the twist
+        // mapping steers is `bulgeDir`, which is where the upper leech stands
+        // off to — see `TWIST_TRIM_DEG`.
         twistRad: theta - sheetRad,
+        dropM: footSkirtM(h),
       };
     });
   };

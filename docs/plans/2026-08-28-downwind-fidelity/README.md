@@ -31,7 +31,7 @@ reviewed on Fable.
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
 | 01 | [VMG magnitude everywhere](phase-01-vmg-sign.md) | 🟢 Done | 2026-08-28 |
-| 02 | [Kite flying shape](phase-02-kite-shape.md) | 🔵 Not started | none |
+| 02 | [Kite flying shape](phase-02-kite-shape.md) | 🟢 Done | 2026-08-28 |
 | 03 | [3D telltales from aero state](phase-03-telltales-3d.md) | 🟢 Done | 2026-08-28 |
 
 ## File ownership (parallel build)
@@ -57,6 +57,21 @@ functions, `src/ui/race/PlanView.svelte` 195–235.
    the two pictures contradict each other on the same screen.
 3. Bundle gate has 749 B of headroom (phase 05 of the simulator plan); a new
    shader attribute or geometry pass must stay inside it.
+
+## Follow-ups
+
+- **The plan view clips the gennaker.** At 150° TWA on starboard the kite runs
+  off the left of `PLAN_LAYOUT`'s viewBox, before and after phase 02, so the
+  2D picture shows the boat and a sliver of sail. `PLAN_LAYOUT` is cropped to
+  the boat and the kite tacks 1.5 m ahead of the stem and swings well outboard,
+  so the frame has to grow or the kite has to be scaled into it. Not phase 02's
+  (it owns `kite.ts` and the outline that reads it, not the layout), and not
+  phase 03's either. Raised 2026-08-28 from phase 02's visual review.
+- **The drawn twist's *range* is short**: 2°→8° at three-quarter height against
+  `F1`'s 4°→26°. Direction was fixed in phase 02; the range is capped by the
+  clew circle, and closing it needs the head given a rotation of its own —
+  a mapping change, with an ADR, not a constant. See `ASSUMPTIONS.md`
+  "Leech twist" and research doc 02's addendum.
 
 ## Related
 

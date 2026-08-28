@@ -456,3 +456,131 @@ centreline, camber and draft, plus the sail's angle to vertical at the stripe
 luff. Its stated resolution is better than **5 mm at full scale**, and it
 assumes a flat head with a small chord — which is what `KITE_CHORDS.head = 0`
 already does.
+
+---
+
+## Addendum — 2026-08-28: what the drawn kite now takes from this document
+
+Added by plan
+[`2026-08-28-downwind-fidelity`](../../plans/2026-08-28-downwind-fidelity/phase-02-kite-shape.md)
+phase 02, after the owner's 0.5.0 report: "the spinnaker doesn't look the
+right shape". This section records what the drawing takes from the sections
+above and, more usefully, **where this document could not answer and the code
+had to fit instead**. It adds no new source and revises no finding; §§1–9
+above stand as written on 2026-08-25.
+
+### The measurement that turned the visual complaint into a number
+
+Every drawn section spans from the bowed luff to the drawn leech
+(`kiteGeometry.sections`), so in that loft **the leech is the silhouette** —
+the girth at a height is whatever the leech leaves it. Taking a measurer's
+four dimensions off the loft (luff and leech arcs, straight foot, and the half
+width between the two edges' arc mid-points) and running ORC's own spinnaker
+area formula on them, at the app's own downwind trim:
+
+| Measured off the drawn loft | 0.5.0 | after phase 02 | class (`T9` G.5.3) |
+|---|---|---|---|
+| Half width SHW, AWA 114° / 150° | 4.79 / 5.15 m | **5.39 / 5.77 m** | 5.560 m |
+| `(SLU+SLE)/2 · (SFL+4·SHW)/6` | 39.9 / 42.4 m² | **43.6 / 46.1 m²** | 45.64 m² |
+| Girth peak, as a height fraction | 0.19 / 0.21 | **0.28 / 0.32** | — |
+| Chord at ¾ height, as a fraction of the peak | 0.56 / 0.58 | **0.69 / 0.70** | — |
+| Half width on a tight reach (AWA 70°) | 2.86 m | **4.22 m** | — |
+| Half-height centroid, to leeward of the mast, AWA 150° | 0.87 m | **1.26 m** | main's is 1.04 m |
+| Foot-to-head twist at ¾ height, trimmed → eased | 24° → 2° | **2.3° → 8.0°** | 4° → 26° (`F1`) |
+
+So the sail was 7–14 % narrow at exactly the height a spinnaker carries its
+shoulders, and *measured* 7–13 % small overall. That is the whole of "reads
+like a jib" in one dimension, and it is a class dimension, not a taste.
+
+### Section by section, what the drawing takes from this document
+
+- **§3.2, luff direction.** Unchanged, and deliberately: `luffLateral`'s
+  published endpoints (64° leeward, 141° windward) and the derived 102.5°
+  crossover are exactly as landed in #76.
+- **§3.2, leech direction — newly applied.** Motta et al.: "the leech moves
+  aft and outboard, opening the sail up" (`F2`). The drawn bulge went
+  *forward*, which pushed the leech toward the luff and shortened every
+  section it touched. Reversing it to aft is worth 0.13 of the sail's height
+  in where the girth peaks, at no cost in any other dimension. This is the
+  one change in phase 02 that is a source correction rather than a fit.
+- **§6, the leech constraint.** Unchanged and still holding: the drawn leech
+  carries the published 8.800 m at every sheet setting, with the straight
+  head→clew chord shortened by the bulge's arc surplus.
+- **§6, clew rise.** The bulge's ease travel is capped by this, not by the
+  shoulders. 0.45 m of travel lifts the clew 1.46 m across the sheet band
+  against Deparday's measured 1.4 m; 1.1 m of travel drew visibly better
+  shoulders and lifted the clew 2.16 m, so it was rejected.
+- **§2, camber.** Untouched. `shape.asym` was re-based on Table 3.1 in #76 and
+  `src/core` is out of phase 02's scope; the drawn mid-height section measures
+  20–25 % of chord, which is the band, and a test now holds it there.
+- **§4, the fixed-volume invariant.** Not asserted, but measured and moving
+  the right way: volume between the sail and the head–tack–clew plane went
+  52.9 → 61.6 m³ against the ~65 m³ this document scales from `F1`.
+
+### Three places this document could not answer
+
+1. **No leech profile exists.** §6 pins the leech's *length* and says the
+   flying leech is "more curved" and "more open" than the design leech, but
+   nothing published gives a stand-off against height for any asymmetric. The
+   drawn amount (0.95 m trimmed, +0.45 m eased, peak at 65 % of the leech) is
+   therefore a fit to the class dimensions above, tagged `assumed`, and it is
+   the largest remaining invented number in the drawing.
+2. **No foot round exists either.** §6 is a leech constraint; nothing in this
+   corpus measures a foot. The class rules cap the *straight* foot at
+   5 700 mm and say nothing about the cloth in it. The drawn skirt (0.55 m,
+   ~10 % of the foot) is assumed, on the reasoning that a free edge with no
+   forestay under it should carry round of the same order as the 8.9 % measured
+   on the luff (§3.1). Only its sign is claimed.
+3. **The girth peak cannot go where a spinnaker's eye puts it.** The
+   phase brief asked for the peak at 60–70 % of the height. It is not
+   reachable: the foot is a published 5.700 m and the half width a published
+   5.560 m, so a maximum above mid-height needs a mean girth the 45.64 m²
+   rating cannot pay for — the sail would have to close from full width to a
+   point over the top three-tenths of its height. 0.30–0.32 is what the class
+   dimensions allow, up from 0.19–0.21, and what carries the picture is not
+   the peak's height but how much width survives above it (0.56 → 0.67 of the
+   peak at three-quarter height).
+
+### §2c, twist: direction fixed, range still short
+
+The first cut of this work drew twist **backwards** against the sheet — 24° at
+full trim falling to 2° fully eased, where §2c has 4° with the sheet in on a
+reach and 26° with it out on a run. Two changes, both here in the drawing,
+turned it round:
+
+- the leech's stand-off direction was a fixed vector 66° off the centreline.
+  Near the head the luff and the leech both converge on the masthead, so that
+  vector *was* the head's chord angle: it pinned the top of the sail whatever
+  the sheet did. It is now `chordDir(sheetRad + twist)`, with the twist ends
+  taken straight from §2c — which is the only way a published twist reaches a
+  drawing whose section angles are otherwise pinned by three published edges.
+- the sheet band narrowed from 25°–60° to 40°–55°. The head is fixed at the
+  masthead, so the only thing the sheet rotates is the foot; over a 35° band
+  the foot outran anything the leech could do. Measured on the drawn loft, 15°
+  is the widest band whose twist still rises monotonically with ease.
+
+The **direction is now right** — 2.3° trimmed, 3.6° at mid sheet, 8.0° eased,
+at three-quarter height — and the **range is still short** of §2c's 4°→26°.
+That limit is the clew circle of §6: the published leech and foot pin the clew,
+and it will not let the head open further without the drawn leech leaving its
+published 8.800 m. Two constructions were tried and rejected for exactly that
+reason — setting each section's angle from an explicit twist ramp (the drawn
+leech went to 10.7 m, +22 %), and tapering the chords to pull that leech back
+(it held the leech but took the half width to 3.8 m, undoing §2's shoulders).
+Closing the gap needs the head given a rotation of its own, which is a change
+to the mapping rather than to a constant. Recorded here, in `ASSUMPTIONS.md`,
+and as a test that holds the direction and a floor on the eased value.
+
+### §3.1 and §4, where the sail's body sits
+
+Not a finding of this document, but measured against it. `LUFF_FORWARD_FRACTION`
+splits the luff bow — whose magnitude is fixed by §3.1's cloth surplus — between
+forward and athwartships. At 0.6 it threw the mid-luff 2.1 m to windward at
+running angles, which is past the windward rail, and dragged the sail's body
+onto the centreline with it: at AWA 150° the half-height section's centroid sat
+0.87 m to leeward of the mast against the mainsail's 1.04 m, so from astern the
+kite was *behind* the main rather than beside it. §4's picture is the opposite —
+the luff and tack swing to windward while "the leech opens aft and outboard",
+the sail projecting to leeward of the main's shadow. At 1.1 the centroid is
+1.26 m, the luff still crosses the centreline (by 1.5 m rather than 2.1), and
+the tight-reach half width recovers from 2.86 m to 4.16 m.

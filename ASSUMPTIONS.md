@@ -158,13 +158,25 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   split. Illustrative hull stations, spar radii and scene colours in
   `src/ui/three/{hull.ts,rig3d.ts,SailView3D.svelte}` are drawing furniture, tagged
   `prov: assumed` at each literal, and the caption labels the hull illustrative.
-- **3D hero: gennaker luff bow direction** `LUFF_FORWARD_FRACTION` = 0.6
+- **3D hero: gennaker luff bow direction** `LUFF_FORWARD_FRACTION` = 1.1
   (`src/ui/three/kite.ts`). Assumed. How far the free luff bows forward, as a
-  fraction of how far it bows to leeward. Higher than the forestay's 0.35
-  above because a forestay is held at both ends and a luff flown off a sprit
-  is not; only the two directions are claimed, not the split. It was itself
-  called `SAG_FORWARD_FRACTION` until 2026-08-26 — two exported constants,
-  one name, two values, one row between them.
+  fraction of how far it bows athwartships. Far higher than the forestay's
+  0.35 above because a forestay is held at both ends and a luff flown off a
+  sprit is not; only the two directions are claimed, not the split. It was
+  itself called `SAG_FORWARD_FRACTION` until 2026-08-26 — two exported
+  constants, one name, two values, one row between them.
+  Raised from 0.6 on 2026-08-28: the split is what decides whether the sail's
+  *body* sits to leeward, because the bow's magnitude is fixed by the cloth
+  surplus (2.4–2.5 m). At 0.6 the mid-luff went 2.1 m to windward at running
+  angles — past the windward rail — and dragged the whole sail onto the
+  centreline. Measured on the drawn loft at AWA 150°, the half-height
+  section's centroid was 0.87 m to leeward of the mast against the mainsail's
+  1.04 m: the kite's body was *inboard of the main*, and from astern it sat
+  behind it with only its edges showing. At 1.1 that centroid is 1.26 m. The
+  luff still crosses to windward at deep angles — that direction is published
+  (`luffLateral`) and untouched — by 1.5 m instead of 2.1. The same change
+  takes the tight-reach half width from 2.86 m to 4.16 m against a published
+  5.560, which is most of the reaching narrowness recorded below.
 - **Gennaker flying shape** (`src/core/shape/flying.ts` `asymShape`, tier C).
   Camber, draft position and twist by height are **derived** from Deparday's
   full-scale J/80 photogrammetry at AWA 124°, a running angle (`F1` Table 3.1;
@@ -206,6 +218,10 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     published band but is not itself measured, and it is physically a
     consequence of camber rather than a constant beside it. Only "shorter,
     never longer" is claimed; the head chord is zero, the parabola's own answer.
+    Note what this block does *not* do: it feeds `sectionStack`, whose chord
+    field `kiteGeometry.sections` then discards, because each drawn section
+    spans from the bowed luff to the drawn leech. The girth parabola sets the
+    solver's rated area; the leech sets the silhouette (see Leech bulge).
   - **Tack**: on the bowsprit at `sprit`% of `bowspritOuterMm` (1.495 m,
     published, Class Rules C.9.4), `TACK_MIN_M` = 0.05 m above it strapped
     down, rising by `TACK_TRAVEL_M` = 0.3 m eased — **inside the J/70 band**.
@@ -230,57 +246,51 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     so it never binds. Doc 04 §2.3 proposes the circular-arc bound instead,
     which is derived rather than assumed; not done.
   - **Leech bulge** (`leechBulgeProfile`, `chordForArc`): the leech stands
-    out to leeward and forward of the straight head→clew line by
-    `LEECH_BULGE_MIN_M` = 0.4 m trimmed, plus `LEECH_BULGE_TRAVEL_M` = 0.7 m
-    at full ease, on `sin(π·t^1.5)` (peak ~63 % of the leech), 0.4 of it
-    forward. **Assumed** — read off the owner's J/70 photographs (2026-08-26)
-    and the twist-opens-with-ease direction in research doc 02 §5; no measured
-    leech profile exists. A straight leech into the masthead made every upper
-    section hook inboard, so the top read closed and the sheet could not open
-    it. The cloth length stays the published 8.8 m: the straight head→clew
-    chord is solved numerically from the bulged arc (`chordForArc`).
-  - **Luff bow direction** (`luffLateral`): the athwartships share of the bow
-    runs **+1 (leeward) at AWA 64°** to **−1 (windward, across the centreline)
-    at AWA 141°**. **Published for the two endpoints** — Deparday has "the
-    whole luff on the leeward side" at 64° and "the luff rotating to the
-    windward side" deeper (`F1`); Motta et al. have it moving "more to
-    windward, towards and across the centreline" (`F2`). The **crossover**
-    falls out as their midpoint, 102.5°, inside the 100–120° band doc 04 §2.1
-    proposes — but nothing brackets it tighter than "between 64° and 124°", so
-    the crossover, the linear ramp and the equal windward excursion are
-    **assumed**. This corrected an outright error: the luff bowed to leeward
-    unconditionally, the wrong side of the boat at the 142–174° TWA the J/70
-    runs at, while the app taught a cue about rotating the sail to weather that
-    the picture contradicted. The bow's *magnitude* is unchanged at every angle.
-  - **Clew** (`clewOnCircle`): **derived** from the published leech (8.800 m)
-    and foot (5.700 m). The clew is where a sphere of radius = leech about the
-    head meets one of radius = foot about the tack — a circle — and the sheet
-    picks a point on it (doc 02 §6, doc 04 §2.2). It replaces `tack +
-    chordDir(sheet) × KITE_CHORDS.foot`, under which the drawn leech carried
-    **25–40 % more cloth than the sail has** (11.0–12.4 m against 8.800 m).
-    Two consequences, both tested: the *cloth path* head-to-clew is the
-    published leech (the straight chord is shorter by the bulge's arc
-    surplus, 8.75 m trimmed to 8.44 m eased — see Leech bulge above), and
-    **easing the sheet lifts the clew** — ~0.4 m per 10°, ~1.4 m across the
-    app's 25°–60° band since the bulge shortens the chord (1.1 m before it),
-    against Deparday's measured 1.4 m of clew rise from AWA 64° to 141°. Two
-    independent routes to about the same number. Doc 02 §6's own circle gives
-    1.08 m over 25°–60°; its quoted 1.28 m is the 63° height in its table.
-  - **Sheeting angle**: `SHEET_TRIM_DEG` = 25° to `SHEET_EASE_DEG` = 60°.
-    **Assumed**, but now a choice of *arc* on a derived circle rather than an
-    invented clew distance; both sit inside the circle's achievable 18°–89°.
-    Claimed: eased is forward, outboard and up; trimmed aft, inboard and down.
-  - **Luff curl**: `CURL_EASE_THRESHOLD` = 0.55 of sheet travel. **Assumed and
-    it stays that way** — curl onset against sheet position is unmeasured
-    anywhere in the literature, so this is a geometric threshold, not an aero
-    one, and every surface showing it says so. Everything *except* the onset is
-    now measured (`F1` Ch. 4, doc 02 §5): the curl **begins at ¾ height**,
-    propagates **downwards** as a spanwise wave, and folds toward the
-    **windward** side, which is why `SailView3D.svelte`'s
-    `CURL_RIBBON_HEIGHTS` runs top-down 0.75 → 0.5 and the ribbons fold across
-    the boat rather than drooping. Not drawn yet, and worth teaching: flapping
-    was present in every stable optimum-trim run, so curl is what correct trim
-    looks like, not an error state.
+    out from the straight head→clew line by `LEECH_BULGE_MIN_M` = 0.7 m
+    trimmed, plus `LEECH_BULGE_TRAVEL_M` = 1.1 m at full ease, on
+    `sin(π·t^1.6)` (peak ~65 % of the leech), in the direction
+    `chordDir(sheetRad + twist)` — see **Leech twist** below. **Assumed in
+    amount, published in direction.** A straight leech into the masthead made every upper section
+    hook inboard, so the top read closed and the sheet could not open it. The
+    cloth length stays the published 8.8 m: the straight head→clew chord is
+    solved numerically from the bulged arc (`chordForArc`).
+    - *Direction.* Was a fixed vector 66° off the centreline. Near the head
+      the luff and the leech both converge on the masthead, so that vector
+      *was* the head's chord angle — it pinned the top of the sail whatever
+      the sheet did, and is half of why the drawn twist ran backwards. It is
+      now `chordDir(sheetRad + twist)`, which is how a published twist range
+      reaches a drawing whose section angles are otherwise emergent.
+    - *Amount and peak height.* A fit, not a measurement — no measured leech
+      profile exists for any asymmetric, and doc 02 §6 constrains the leech's
+      *length* and nothing else. These are the values at which the drawn sail
+      measures within ±8 % of the published 45.64 m² on ORC's own formula
+      across the whole sheet band at the angles the kite is used at, with a
+      half width of 5.14–6.01 m against the class's 5.560. The travel is
+      fitted to the clew as well as to the shoulders: the bulge shortens the
+      head→clew chord and so lifts the clew, and 1.1 m of travel lifts it
+      1.42 m against Deparday's measured 1.4 m (`F1`).
+    - *Why it matters* (plan `2026-08-28-downwind-fidelity` phase 02, from
+      the owner's 0.5.0 report "the spinnaker doesn't look the right shape"):
+      every section of this loft spans from the bowed luff to `leechAt`, so
+      the leech **is** the silhouette. At 0.4 m/+0.7 m the drawn half width
+      was 4.79–5.15 m against a published 5.560 (7–14 % narrow, at exactly
+      the height a spinnaker carries its shoulders), and the whole sail
+      measured 39.9–42.4 m² on ORC's formula against 45.64. It read as a big
+      headsail because at those dimensions it was one.
+  - **Foot skirt** (`FOOT_SKIRT_M` = 0.55 m over `FOOT_SKIRT_SPAN` = 0.3 of
+    the height, drawn by `loft.ts`'s `Section.dropM`): the middle of the foot
+    hangs below the straight tack→clew line, blended away by three-tenths
+    height with zero slope at both ends. **Assumed.** Nothing published gives
+    a J/70 foot round — the class rules cap the *straight* foot at 5 700 mm
+    and say nothing about the cloth in it, and the research corpus measures
+    luff and leech but never the foot. 0.55 m is ~10 % of the foot, the round
+    a photograph shows and the same order as the 8.9 % measured luff excess
+    (`F1`) on an edge with no forestay to hold it. Only the sign is claimed:
+    below the tack–clew line, never above, with both corners still pinned —
+    so no published dimension moves. A main's foot is on a boom and a jib's
+    on the deck; a gennaker's is a free edge with nothing under it, and drawn
+    as a straight line to the sprit it is the clearest single tell that the
+    picture is of a headsail.
   - **Open question, not papered over**: the app's tack and head give the J/70
     a **16.4 % luff excess** over the tack-to-head distance against the
     **8.9 % measured** on the J/80. At the J/80's ratio the tack-to-head
