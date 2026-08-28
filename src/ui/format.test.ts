@@ -121,6 +121,20 @@ describe('targetOf', () => {
     expect(targetOf(-5.0, -5.02, 2, 'less')).toEqual({ text: '-5.02', delta: '+0.02' });
     expect(targetOf(-5.0, -4.9, 2, 'less')?.delta).toBe('−0.10');
   });
+
+  /**
+   * The VMG cell's face is a magnitude (H-04), so the target under it is one
+   * too, or the same reading appears twice in two conventions. Both
+   * objectives, because upwind `abs` must be a no-op rather than a second
+   * code path.
+   */
+  it('prints the target as a magnitude when asked, and leaves the delta signed', () => {
+    // Downwind: the sign comes off the target, the delta keeps its meaning.
+    expect(targetOf(-4.95, -4.99, 2, 'less', true)).toEqual({ text: '4.99', delta: '+0.04' });
+    expect(targetOf(-4.99, -4.95, 2, 'less', true)).toEqual({ text: '4.95', delta: '−0.04' });
+    // Upwind the target is already positive, so `abs` changes nothing.
+    expect(targetOf(3.85, 3.88, 2, 'more', true)).toEqual(targetOf(3.85, 3.88, 2, 'more'));
+  });
 });
 
 describe('vmgDisplay', () => {
@@ -155,5 +169,7 @@ describe('vmgDisplay', () => {
     expect(vmgDisplay(-4.95, 'vmgDown').value).toBe('4.95');
     expect(targetOf(-4.95, -4.99, 2, 'less')?.delta).toBe('+0.04');
     expect(targetOf(-4.99, -4.95, 2, 'less')?.delta).toBe('−0.04');
+    // The whole cell, as the band renders it: `4.95 kt ↓` over `target 4.99`.
+    expect(targetOf(-4.95, -4.99, 2, 'less', true)?.text).toBe('4.99');
   });
 });

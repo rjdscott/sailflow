@@ -161,6 +161,20 @@ describe('verdict', () => {
     );
   });
 
+  /**
+   * The sentence says the gap in words — above or below — so it never needs a
+   * sign, and the solver's negative downwind VMG must not leak into it
+   * (audit ux-04 H-04, extended past the face). Both directions of gap and a
+   * target the boat is exactly on.
+   */
+  it('never prints a minus sign downwind, whichever side of the target the boat is', () => {
+    const dn = result({ vmgKt: { value: -3.0, tier: 'B', band: [-3.2, -2.8] } });
+    for (const vmgKt of [-3.2, -2.8, -3.0, -4.5]) {
+      const line = verdict({ result: dn, target: { vmgKt }, objective: 'vmgDown' });
+      expect(line, `target ${vmgKt} produced "${line}"`).not.toMatch(/[−-]\d/);
+    }
+  });
+
   it('names the kite sheet under the kite, where no measured cue can explain the gap', () => {
     const dn = result({ vmgKt: { value: -3.0, tier: 'B', band: [-3.2, -2.8] } });
     expect(verdict({ result: dn, target: { vmgKt: -3.2 }, objective: 'vmgDown' })).toBe(

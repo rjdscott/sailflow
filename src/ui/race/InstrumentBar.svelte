@@ -101,8 +101,9 @@
     decimals: number,
     better: 'more' | 'less' = 'more',
     label: string = deltaLabel,
+    abs = false,
   ) => {
-    const t = targetOf(value, to, decimals, better);
+    const t = targetOf(value, to, decimals, better, abs);
     return t && { ...t, label };
   };
 
@@ -243,7 +244,10 @@
             onexplain={explain}
           />
           <!-- `4.95 kt ↓` on a run, `3.85 kt ↑` on a beat: the magnitude with
-               the mark it is made good towards, never a minus sign (H-04). -->
+               the mark it is made good towards, never a minus sign (H-04).
+               The target under it is the same reading at the optimum, so it is
+               a magnitude too — the glyph on the unit says the direction once
+               for the whole cell. -->
           <InstrumentCell
             label="VMG"
             id="vmg"
@@ -251,7 +255,7 @@
             unit="kt {vmg.glyph}"
             value={vmg.value}
             tier={result.vmgKt.tier}
-            target={gapTo(result.vmgKt.value, target?.vmgKt, 2, vmgBetter, vmgDeltaLabel)}
+            target={gapTo(result.vmgKt.value, target?.vmgKt, 2, vmgBetter, vmgDeltaLabel, true)}
             trend={trend.vmg}
             onexplain={explain}
           />

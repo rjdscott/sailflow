@@ -1109,3 +1109,42 @@ test('the plan view draws the kite leech bulged, not straight', async ({ page })
     1,
   );
 });
+
+/**
+ * "Going downwind the VMG is negative numbers, which isn't right."
+ *
+ * 0.5.0 took the sign off the face (audit ux-04 H-04); the `target −4.99`
+ * line under it kept it, so the same reading appeared twice in two
+ * conventions. Every VMG a sailor reads is now a magnitude, with the
+ * direction stated once per surface — the `↓` on the cell's unit — and only
+ * the delta stays signed, because a delta is a gap and not a reading.
+ *
+ * A unit test cannot see this: the target line only exists once the optimum
+ * search has landed in a real browser.
+ */
+test('no VMG on the cockpit reads negative on a run', async ({ page }) => {
+  await raceTier(page);
+  await page.setViewportSize(VIEWPORTS[1]);
+  await page.goto('/#/race?set=asym&twa=150');
+  await solverSettled(page);
+
+  const vmg = page.locator('.bar .cell').filter({ hasText: 'VMG' }).first();
+  await expect(vmg.locator('.value')).toBeVisible();
+
+  // The face: magnitude, and the glyph that says which mark it is made good
+  // towards. `4.95 kt ↓`, never `−4.95`.
+  const face = ((await vmg.locator('.value').innerText()) ?? '').replace(/\s+/g, ' ');
+  expect(face, `VMG face read "${face}"`).toMatch(/^\d+\.\d{2} ?kt ↓$/);
+
+  // The target under it, in the same convention as the face above it.
+  const target = ((await vmg.locator('.target').innerText()) ?? '').replace(/\s+/g, ' ');
+  expect(target, `VMG target line read "${target}"`).toMatch(/target \d+\.\d{2}\b/);
+
+  // And nowhere in the band or the insight sentence is a signed number wearing
+  // a unit. Deltas stay signed by the app's one convention, and carry no unit;
+  // the A/B chip beside the sentence is a delta too, so it is not swept here.
+  for (const sel of ['.bar', '.insight .line']) {
+    const text = (await page.locator(sel).first().innerText()).replace(/\s+/g, ' ');
+    expect(text, `${sel} read "${text}"`).not.toMatch(/[−-]\d+\.\d+ ?kt/);
+  }
+});

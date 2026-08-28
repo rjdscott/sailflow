@@ -26,17 +26,24 @@ export function fmt(value: number, decimals: number, unit?: string): string {
  * towards the leeward mark and is negative, so more negative is a gain.
  * One convention everywhere — the delta is positive when the target is faster
  * than you, whatever sign the number itself carries (audit ux-02 M-09).
+ *
+ * `abs` prints the target as a magnitude, for a readout whose face is already
+ * a magnitude: a VMG cell reading `4.95 kt ↓` over `target −4.99` is one
+ * number in two conventions, and the minus is the same broken readout H-04
+ * took off the face. The delta is untouched — it is a gap, not a reading, and
+ * its sign is the app's one convention.
  */
 export function targetOf(
   value: number,
   to: number | undefined,
   decimals: number,
   better: 'more' | 'less' = 'more',
+  abs = false,
 ): { text: string; delta: string } | undefined {
   if (to === undefined) return undefined;
   const d = round(better === 'less' ? value - to : to - value, decimals);
   return {
-    text: fmt(to, decimals),
+    text: fmt(abs ? Math.abs(to) : to, decimals),
     delta: `${d > 0 ? '+' : d < 0 ? '−' : '±'}${Math.abs(d).toFixed(decimals)}`,
   };
 }
