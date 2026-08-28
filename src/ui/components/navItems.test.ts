@@ -3,13 +3,11 @@ import { NAV_ITEMS, navItems } from './navItems';
 
 describe('navItems', () => {
   it('gives every destination a real hash href', () => {
-    expect(navItems('race').map((i) => i.href)).toEqual([
-      '#/race',
-      '#/dock',
-      '#/log',
-      '#/drills',
-      '#/more',
-    ]);
+    expect(navItems('sim').map((i) => i.href)).toEqual(['#/sim', '#/log', '#/drills', '#/more']);
+  });
+
+  it('is four destinations, the Simulator first (ADR 0021)', () => {
+    expect(NAV_ITEMS.map((i) => i.label)).toEqual(['Simulator', 'Log', 'Drills', 'More']);
   });
 
   it('marks exactly the current route, so aria-current lands once', () => {

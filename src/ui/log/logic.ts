@@ -11,7 +11,7 @@ import type { ShareState } from '../share';
 import { boat } from '../dock/logic';
 import { fmt } from '../format';
 
-/** The boat's own control specs — same source the Race and Dock sliders read. */
+/** The boat's own control specs — same source the Simulator's sliders read. */
 export const SPECS = boat.controls as Record<string, ControlSpec>;
 
 function keysOfMode(mode: string): string[] {
@@ -124,15 +124,15 @@ function midKt(lo: LogNumber, hi: LogNumber): number | null {
  * one was recorded and the forecast's likely value otherwise — the same
  * precedence `windLine` uses in the list, so the chip and the link agree.
  *
- * The route follows what is in the entry: a trim opens on Race, a rig-and-
- * forecast-only entry opens on Dock, which is the screen that answers it.
+ * Both kinds open on the Simulator, which since ADR 0021 is the one screen
+ * that answers them: the trim, the rig and the forecast all land on it.
  */
 export function entryShare(entry: LogEntry): { route: Route; state: ShareState } {
   const twsKt = midKt(entry.actual.minKt, entry.actual.maxKt) ?? entry.forecast.likelyKt;
   const { minKt, likelyKt, maxKt } = entry.forecast;
   const complete = minKt !== null && likelyKt !== null && maxKt !== null && entry.crewKg !== null;
   return {
-    route: entry.race ? 'race' : 'dock',
+    route: 'sim',
     state: {
       condition: {
         ...(twsKt === null ? {} : { twsKt }),

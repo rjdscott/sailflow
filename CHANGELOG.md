@@ -13,6 +13,17 @@ undiagnosable.
 
 ## [Unreleased]
 
+### Changed
+
+- **`#/sim` is the app's primary route** (ADR 0021): Dock and Race become one
+  Simulator page, and the nav drops to four items — Simulator · Log · Drills ·
+  More. Links already in the wild keep working: `#/race?…` resolves to `#/sim?…`
+  with its query untouched, and `#/dock?…` to `#/sim/dock?…`, which still mounts
+  the Dock screen until the Rig panel absorbs it. The share schema is unchanged
+  — the route moved, not the query — so `s=1` links, dot-separated v0 links
+  included, decode to exactly the state they always did (ADR 0019). The
+  `Race opened` / `Dock opened` usage counters become one `Simulator opened`.
+
 ## [0.4.0] — 2026-08-26
 
 Phase two (`docs/plans/2026-08-26-phase-two/`), six phases, all merged.
