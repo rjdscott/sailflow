@@ -5,7 +5,6 @@
   import Segmented from '../components/Segmented.svelte';
   import { fmt } from '../format';
   import { conditions, SEA_STATES } from '../stores/conditions.svelte';
-  import { rigLock } from '../stores/rigLock.svelte';
   import { bandOf, POINTS_OF_SAIL } from './pointOfSail';
   import { race } from './store.svelte';
   import WindRose from './WindRose.svelte';
@@ -76,16 +75,6 @@
   function closeSea(e: FocusEvent): void {
     const next = e.relatedTarget as Node | null;
     if (!next || !(e.currentTarget as HTMLElement).contains(next)) seaOpen = false;
-  }
-
-  /** What the Dock actually bet on today, if it bet (audit ux-02 M-01/M-07). */
-  const committed = $derived(rigLock.lockedToday ? rigLock.locked?.forecast : undefined);
-
-  function takeForecast(): void {
-    if (!committed) return;
-    conditions.twsKt = Math.round(committed.likelyKt);
-    conditions.seaState = committed.seaState;
-    conditions.crewKg = committed.crewKg;
   }
 </script>
 
@@ -245,16 +234,6 @@
           {p.label}{#if race.pointOfSailBusy === p.id}<span class="busy">…</span>{/if}
         </button>
       {/each}
-      {#if committed}
-        <button
-          type="button"
-          class="chip hit-44"
-          onclick={takeForecast}
-          title="Sail the wind you committed the rig for"
-        >
-          Committed: {committed.minKt.toFixed(0)}–{committed.maxKt.toFixed(0)} kt
-        </button>
-      {/if}
     </div>
   {:else}
     <!-- A drill withholds the condition as well as the answer: it is the thing

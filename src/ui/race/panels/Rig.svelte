@@ -14,12 +14,18 @@
   import { conditions } from '../../stores/conditions.svelte';
   import { rigLock } from '../../stores/rigLock.svelte';
   import { dock } from '../../dock/store.svelte';
-  import { defaultGuideId, guideBand, guideLabel, signed, specs } from '../../dock/logic';
+  import {
+    defaultGuideId,
+    describeSetup,
+    guideBand,
+    guideLabel,
+    signed,
+    specs,
+    TIE_BAND_S_PER_MILE,
+  } from '../../dock/logic';
   import { guideSelection } from '../../disagree/store.svelte';
-  import CommitButton from '../../dock/CommitButton.svelte';
   import ForecastCard from '../../dock/ForecastCard.svelte';
   import RegretCard from '../../dock/RegretCard.svelte';
-  import SuggestButton from '../../dock/SuggestButton.svelte';
   import { logStoreUi } from '../../log/store.svelte';
   import { track } from '../../../lib/telemetry';
   import { gearChart, rowFor } from '../gearChart';
@@ -93,12 +99,19 @@
   const chart = $derived(gearChart(source));
   const here = $derived(rowFor(chart, conditions.twsKt));
 
+  /** Why a committed control cannot be moved, short enough for a tooltip. The
+      whole rule is on the commit line and in the `?` sheets. */
+  const LOCK_NOTE = 'Committed for today — Unlock in Setup (class rule C.9.5(a)).';
+
   let explaining: string | null = $state(null);
   let sheetOpen = $state(false);
   let chartOpen = $state(false);
   let windOpen = $state(false);
   let regretOpen = $state(false);
   let committedToast = $state(false);
+  let turnsOpen = $state(false);
+  /** Unlock is two taps: the first arms it, the second breaks the day's tune. */
+  let unlockArmed = $state(false);
   /** The print card is mounted on demand and prints itself when it lands. */
   let printMounted = $state(false);
 
@@ -116,7 +129,27 @@
     track('dock.commit');
     void logStoreUi.startDraft(dock.commit());
     committedToast = true;
+    unlockArmed = false;
   }
+
+  function unlock(): void {
+    if (!unlockArmed) {
+      unlockArmed = true;
+      return;
+    }
+    rigLock.unlock('unlocked at the dock before leaving');
+    unlockArmed = false;
+  }
+
+  /** The clock time the day's tune was committed at, for the committed line. */
+  const committedAt = $derived(
+    rigLock.locked
+      ? new Date(rigLock.locked.committedAt).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : '',
+  );
 
   /** The band's wind becomes the wind on screen (was `ConditionsStrip`'s
    *  committed chip): the one tap between "what I tuned for" and "sail it". */
@@ -169,39 +202,51 @@
   id="rig-title"
   cue="Set it for the day's breeze — uppers hold the headstay, lowers set the prebend. Committed once, sailed all day."
 >
+  <!-- State, not a reading, so it sits on the header line rather than in with
+       the numbers (audit ux-04 row 10 keeps its sentence). -->
+  {#snippet status()}
+    {#if locked}
+      <span class="chip"><LockIcon /> Committed</span>
+    {:else}
+      <span class="chip"><ConfidenceBadge tier="C" /> Not committed</span>
+    {/if}
+  {/snippet}
+
   {#snippet controls()}
     <div class="rig" id={panelControlsId('rig')}>
-      <!-- What the tune is bet on. The band, not the number: a rig is committed
-           once and sailed through the whole day's breeze. -->
-      <p class="forecast">
-        <span class="what">Forecast</span>
-        <span class="tabular-nums">{fmt(dock.wind.minKt, 0)} – {fmt(dock.wind.maxKt, 0)} kt</span>
-        <span class="likely tabular-nums">· likely {fmt(dock.wind.likelyKt, 0)}</span>
-        <button type="button" class="link" onclick={() => (windOpen = true)}>edit</button>
-        {#if offBand}
-          <button
-            type="button"
-            class="link"
-            onclick={sailLikely}
-            title="Put the likely wind on the instrument band"
-          >
-            Sail the likely wind
-          </button>
-        {/if}
-      </p>
+      <!-- What the tune is bet on and what betting once costs, on one line
+           where the panel is wide enough for it. The band, not the number: a
+           rig is committed once and sailed through the whole day's breeze. -->
+      <div class="summary" aria-busy={dock.busy}>
+        <p class="forecast">
+          <span class="what">Forecast</span>
+          <span class="tabular-nums">{fmt(dock.wind.minKt, 0)}–{fmt(dock.wind.maxKt, 0)} kt</span>
+          <span class="likely tabular-nums">· likely {fmt(dock.wind.likelyKt, 0)}</span>
+          <button type="button" class="link" onclick={() => (windOpen = true)}>edit</button>
+          {#if offBand}
+            <button
+              type="button"
+              class="link"
+              onclick={sailLikely}
+              title="Put the likely wind on the instrument band"
+            >
+              Sail the likely wind
+            </button>
+          {/if}
+        </p>
 
-      <!-- What committing to one setup costs across that band, which is the
-           number the whole Dock existed to produce. -->
-      <div class="regret-row" aria-busy={dock.busy}>
-        <InstrumentCell
-          label="EXPECTED REGRET"
-          id="expectedRegret"
-          size="sm"
-          unit="s/mi"
-          value={score ? fmt(score.expectedRegretSPerMile.value, 1) : dock.busy ? '…' : '—'}
-          tier={score ? (dock.provisional ? 'B' : score.expectedRegretSPerMile.tier) : undefined}
-        />
-        <button type="button" class="link" onclick={() => (regretOpen = true)}>by wind ▸</button>
+        <p class="regret-row">
+          <span class="what">regret</span>
+          <span class="reading tabular-nums">
+            {score ? fmt(score.expectedRegretSPerMile.value, 1) : dock.busy ? '…' : '—'}<span
+              class="unit">s/mi</span
+            >
+          </span>
+          {#if score}
+            <ConfidenceBadge tier={dock.provisional ? 'B' : score.expectedRegretSPerMile.tier} />
+          {/if}
+          <button type="button" class="link" onclick={() => (regretOpen = true)}>by wind ▸</button>
+        </p>
       </div>
 
       {#each DOCK_IDS as id (id)}
@@ -209,89 +254,148 @@
           {id}
           values={setupValues}
           {locked}
+          lockReason={LOCK_NOTE}
           tick={TICKS[id]}
           hint={HINTS[id]}
+          inlineExplain={false}
           onexplain={explain}
         />
       {/each}
+
+      <!-- The sliders ask for turns; the sheet says where a turn is made and
+           how one is counted (audit ux-01 M-20). A chunk, not entry weight. -->
+      <button type="button" class="turns hit-44" onclick={() => (turnsOpen = true)}>
+        How to apply a turn ›
+      </button>
 
       {#if dock.error}
         <p class="error" role="alert">{dock.error}</p>
       {/if}
 
-      <!-- Everything that rewrites or freezes the three above, behind the same
-           `Setup` disclosure the other panels use, and closed by default like
-           theirs: the day's tune is set once, the sliders are the live thing,
-           and open it holds the cockpit past ADR 0016's one short scroll
-           (race.spec measures that at 1920x1080; this is now the tallest
-           panel). `open` is deliberately not bound to the tier — a reactive
-           `open` on <details> is re-applied on the next render and snaps the
-           disclosure shut under the reader's hand. -->
+      <!-- The day's-tune actions, behind the same `Setup` disclosure the other
+           panels use and closed by default like theirs: they are done once, the
+           sliders are the live thing, and open it holds the cockpit past
+           ADR 0016's one short scroll (race.spec measures that at 1920x1080).
+           `open` is deliberately not bound to the tier — a reactive `open` on
+           <details> is re-applied on the next render and snaps the disclosure
+           shut under the reader's hand. -->
       <details>
         <summary>Setup</summary>
         <div class="setup">
-          <SuggestButton
-            suggestion={dock.suggestion}
-            busy={dock.searching}
-            {locked}
-            needsUnlock={dock.needsUnlock}
-            canUndo={dock.previous !== null}
-            onsuggest={() => void dock.suggest()}
-            onapply={(s) => dock.apply(s)}
-            onundo={() => dock.undo()}
-          />
-          <CommitButton oncommit={commit} />
-          <div class="row">
-            <!-- The output of a week of study is a sheet for the bulkhead
-                 (audit ux-02 M-25). -->
-            <button type="button" class="quiet" onclick={print}>Print tuning card</button>
-            {#if chart}
-              <button type="button" class="quiet" onclick={() => (chartOpen = true)}>
-                Gear chart ({chart.rows.length} bands)
+          <!-- One row of actions, wrapping, not a stack of cards: the panel is
+               an instrument (review of #109). Commit's slot carries the
+               committed line in its place once the day is committed. -->
+          <div class="actions">
+            <button
+              type="button"
+              class="act primary"
+              onclick={() => void dock.suggest()}
+              disabled={dock.searching || locked}
+              title={locked ? LOCK_NOTE : undefined}
+            >
+              {dock.searching ? 'Searching…' : 'Suggest a setup'}
+            </button>
+
+            {#if locked}
+              <span class="committed">
+                <LockIcon />
+                <span class="tabular-nums">Committed {committedAt}</span>
+                <span aria-hidden="true">·</span>
+                <button type="button" class="act" class:armed={unlockArmed} onclick={unlock}>
+                  {unlockArmed ? 'Tap again to unlock' : 'Unlock'}
+                </button>
+              </span>
+            {:else}
+              <button type="button" class="act accent" onclick={commit}>
+                <LockIcon /> Commit for today
               </button>
             {/if}
+
+            <!-- The output of a week of study is a sheet for the bulkhead
+                 (audit ux-02 M-25). -->
+            <button type="button" class="act" onclick={print}>Print</button>
+            {#if chart}
+              <button type="button" class="act" onclick={() => (chartOpen = true)}
+                >Gear chart</button
+              >
+            {/if}
+            {#if dock.previous !== null && !locked}
+              <button type="button" class="act" onclick={() => dock.undo()}>Back to my rig</button>
+            {/if}
           </div>
-          <!-- The sliders ask for turns; this says where a turn is made and how
-               one is counted (audit ux-01 M-20). A chunk, not entry weight. -->
-          {#await import('../../dock/ShroudGuide.svelte') then ShroudGuide}
-            <ShroudGuide.default />
-          {/await}
+
+          <p class="helper">
+            {#if locked}
+              Committed — class rule C.9.5(a) freezes the standing rigging once you leave the dock.
+              Unlock to explore.
+            {:else}
+              Not committed — free to explore. Suggest scores every setup on the grid against the
+              wind band; Commit greys the three and stamps the log.
+            {/if}
+          </p>
+
+          {#if dock.suggestion}
+            <ol class="results">
+              {#each dock.suggestion.top as sug, i (i)}
+                <!-- The tier badge sits beside the row, not inside it: nested in
+                     the button, a press meant to ask what "B" meant applied the
+                     setup and changed a number the sailor then turns on the rig
+                     (audit ux-03 H-06). -->
+                <li>
+                  <button
+                    type="button"
+                    class="pick"
+                    disabled={locked}
+                    onclick={() => dock.apply(sug.setup)}
+                  >
+                    <span class="setup-line tabular-nums">{describeSetup(sug.setup)}</span>
+                    <span class="tabular-nums"
+                      >{fmt(sug.expectedRegretSPerMile.value, 1, 's/mi')}</span
+                    >
+                  </button>
+                  <ConfidenceBadge tier={sug.expectedRegretSPerMile.tier} />
+                </li>
+              {/each}
+            </ol>
+            {#if dock.suggestion.tied.length > 1}
+              <p class="helper">
+                {dock.suggestion.tied.length} setups are within {TIE_BAND_S_PER_MILE} s/mi of the best.
+                The model can't separate them — pick the one you can set on the dock.
+              </p>
+            {/if}
+          {/if}
         </div>
       </details>
     </div>
   {/snippet}
 
+  <!-- The drawing and the two geometry readings it produces, one column: the
+       rake and prebend are what the elevation is a picture of. -->
   {#snippet visual()}
-    {#if result}<RigElevation rig={result.rig} />{/if}
-  {/snippet}
-
-  {#snippet instruments()}
-    <!-- The status, always in view; the time it was committed and the way out
-         are on the commit control itself, under `Setup`. -->
-    {#if locked}
-      <p class="state"><LockIcon /> Committed for the day</p>
-    {:else}
-      <p class="state"><ConfidenceBadge tier="C" /> Not committed today.</p>
-    {/if}
     {#if result}
-      <InstrumentCell
-        label="RAKE"
-        id="rake"
-        size="sm"
-        unit="mm"
-        value={fmt(result.rig.rakeMm, 0)}
-        tier="B"
-        onexplain={explain}
-      />
-      <InstrumentCell
-        label="PREBEND"
-        id="prebend"
-        size="sm"
-        unit="mm"
-        value={fmt(result.rig.prebendMm, 0)}
-        tier="B"
-        onexplain={explain}
-      />
+      <div class="picture">
+        <RigElevation rig={result.rig} />
+        <div class="geometry">
+          <InstrumentCell
+            label="RAKE"
+            id="rake"
+            size="sm"
+            unit="mm"
+            value={fmt(result.rig.rakeMm, 0)}
+            tier="B"
+            onexplain={explain}
+          />
+          <InstrumentCell
+            label="PREBEND"
+            id="prebend"
+            size="sm"
+            unit="mm"
+            value={fmt(result.rig.prebendMm, 0)}
+            tier="B"
+            onexplain={explain}
+          />
+        </div>
+      </div>
     {/if}
   {/snippet}
 </Panel>
@@ -302,6 +406,12 @@
 {#if sheetOpen}
   {#await import('./ExplainSheet.svelte') then S}
     <S.default bind:open={sheetOpen} id={explaining} />
+  {/await}
+{/if}
+
+{#if turnsOpen}
+  {#await import('../../dock/ShroudGuide.svelte') then S}
+    <S.default bind:open={turnsOpen} />
   {/await}
 {/if}
 
@@ -427,26 +537,46 @@
     border-top: 1px solid var(--line);
   }
 
+  /* Two readings, one line where the panel can hold them: at 390 px the regret
+     wraps under the forecast rather than either of them wrapping inside
+     itself. `column-gap` is wide enough to read as two groups. */
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px var(--space-4);
+    margin-bottom: var(--space-1);
+    padding-block-end: var(--space-1);
+    border-bottom: 1px solid var(--line);
+  }
+
   .forecast,
   .regret-row {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     flex-wrap: wrap;
     gap: var(--space-1) var(--space-2);
-    margin: 0 0 var(--space-2);
+    margin: 0;
     font-size: var(--text-sm);
     color: var(--ink);
   }
 
-  .regret-row {
-    margin-bottom: var(--space-3);
-  }
-
-  .what {
+  .what,
+  .likely {
     color: var(--ink-2);
   }
 
-  .likely {
+  /* The instrument-cell reading, inline: same tabular figures and the same
+     small unit, on one line because the label is the word beside it. */
+  .reading {
+    font-size: var(--text-md);
+    line-height: 1.2;
+    color: var(--instrument, var(--ink));
+  }
+
+  .unit {
+    margin-left: 2px;
+    font-size: var(--text-xs);
     color: var(--ink-2);
   }
 
@@ -475,17 +605,19 @@
   .setup {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-2);
     padding-block-end: var(--space-2);
   }
 
-  .row {
+  /* One row of actions that wraps to two, not a stack of cards. */
+  .actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-2);
   }
 
-  .quiet {
+  .act {
     min-height: var(--hit-min);
     padding: 0 var(--space-3);
     border: 1px solid var(--line-strong);
@@ -496,19 +628,136 @@
     cursor: pointer;
   }
 
+  .act:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .act.primary {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .act.accent {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 600;
+  }
+
+  /* Unlock is the C.9.5-violating direction, so the armed state reads as one. */
+  .act.armed {
+    border-color: var(--bad);
+    color: var(--bad);
+  }
+
+  .committed {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--ink);
+  }
+
+  .helper {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  .results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .results li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .results li + li {
+    border-top: 1px solid var(--line);
+  }
+
+  .pick {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--hit-min);
+    padding: var(--space-2) 0;
+    border: none;
+    background: none;
+    color: var(--ink);
+    font-size: var(--text-sm);
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .pick:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  /* 12 px keeps "uppers +2.0 · lowers +1.0 · forestay 15 mm" on one line
+     alongside the regret at 390 px. */
+  .setup-line {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--text-xs);
+  }
+
+  /* A text link under the sliders, not a button competing with them. */
+  .turns {
+    align-self: flex-start;
+    margin-block: var(--space-1);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    font-size: var(--text-xs);
+    cursor: pointer;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+
+  /* The drawing and the two numbers it is a picture of, one column. */
+  .picture {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .geometry {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  /* The phone stacks the panel, so the drawing takes height from the controls
+     that need it. 180 px still carries the mast, both sails and the rake. */
+  @media (max-width: 719px) {
+    .picture :global(svg) {
+      max-height: 180px;
+    }
+  }
+
   .error {
     margin: var(--space-2) 0 0;
     font-size: var(--text-sm);
     color: var(--bad);
-  }
-
-  .state {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    margin: 0 0 var(--space-2);
-    font-size: var(--text-xs);
-    color: var(--ink-2);
   }
 
   .chart-head {

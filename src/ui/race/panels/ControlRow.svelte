@@ -23,6 +23,7 @@
     tick: tickOverride,
     tickWord = 'base trim',
     hint: hintOverride,
+    inlineExplain = true,
     onexplain,
   }: {
     id: string;
@@ -42,6 +43,14 @@
     tickWord?: string;
     /** Overrides the optimum-bug hint; the caller owns the sentence. */
     hint?: string;
+    /**
+     * Whether the Learn tier prints this control's explainer under it. The Rig
+     * panel turns it off: it carries a whole former screen (ADR 0021), and its
+     * Learn teaching is the "How to apply a turn" sheet — a drawing and the
+     * procedure — plus the same `?` every tier has. Three inline explainers on
+     * top of that put the panel 1.7 phone viewports tall.
+     */
+    inlineExplain?: boolean;
     onexplain: (id: string) => void;
   } = $props();
 
@@ -91,7 +100,7 @@
    * Dynamically imported, so the schematics and the copy stay out of the
    * first load for the two tiers that never show them.
    */
-  const inline = $derived(!settings.advanced);
+  const inline = $derived(inlineExplain && !settings.advanced);
 </script>
 
 <!-- One root element per control, so the panel's own `* + *` hairline still

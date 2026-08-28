@@ -593,8 +593,18 @@ test('committing freezes the three shroud controls, and unlocking frees them', a
   for (let i = 0; i < 3; i++) await expect(ranges.nth(i)).toHaveAttribute('aria-disabled', 'true');
   const readouts = rig.locator('button.readout');
   for (let i = 0; i < 3; i++) await expect(readouts.nth(i)).toBeDisabled();
-  await expect(page.getByText(/Committed — class rule C\.9\.5\(a\)/)).toBeVisible();
-  await expect(page.locator('.p-rig').getByText('Committed for the day')).toBeVisible();
+  await expect(page.getByText(/class rule C\.9\.5\(a\) freezes the standing rigging/)).toBeVisible();
+  // State reads on the panel's header line, where it is in view with `Setup`
+  // shut: the chip, not a reading in with the numbers.
+  await expect(page.locator('.p-rig .head .chip')).toHaveText(/Committed/);
+  // A disabled control that says nothing is a mystery: the steppers carry why.
+  await expect(rig.locator('button.step').first()).toHaveAttribute(
+    'title',
+    /Committed for today — Unlock in Setup/,
+  );
+  // Suggest cannot apply to a frozen rig, so it is disabled rather than
+  // followed by a sentence saying it will not work.
+  await expect(page.getByRole('button', { name: 'Suggest a setup' })).toBeDisabled();
 
   // The rig is frozen for the day, so a reload finds it frozen (rigLock is
   // persisted) — the failure ADR 0021 named as its revisit trigger.
@@ -617,10 +627,10 @@ test('the Rig panel reads out expected regret and opens the by-wind table', asyn
   await settled(page);
 
   const cell = page.locator('.p-rig .regret-row');
-  await expect(cell.getByText('EXPECTED REGRET')).toBeVisible();
+  await expect(cell.getByText('regret')).toBeVisible();
   // Every number carries its tier (CLAUDE.md honesty rules). The score lands
   // after the first cockpit solve, so this waits for it rather than for a dash.
-  await expect(cell.locator('.value')).toContainText('s/mi', { timeout: 30_000 });
+  await expect(cell.locator('.reading')).toContainText('s/mi', { timeout: 30_000 });
   await expect(cell.locator('.badge')).toBeVisible();
 
   await cell.getByRole('button', { name: 'by wind' }).click();
@@ -674,11 +684,13 @@ for (const size of [
     await expect(panel.getByRole('heading', { name: 'Rig' })).toBeVisible();
     // The four things the merge put here, in order.
     await expect(panel.getByText('Forecast', { exact: true })).toBeVisible();
-    await expect(panel.getByText('EXPECTED REGRET', { exact: true })).toBeVisible();
+    await expect(panel.locator('.regret-row .reading')).toBeVisible();
     await expect(panel.locator('#rig-controls input[type="range"]')).toHaveCount(3);
     await openRigSetup(page);
-    await expect(panel.getByRole('button', { name: 'Suggest a setup' })).toBeVisible();
-    await expect(panel.getByRole('button', { name: 'Commit for today' })).toBeVisible();
+    // One row of actions, not a stack of cards: four buttons on one line where
+    // the panel is wide enough, wrapping where it is not.
+    for (const name of ['Suggest a setup', 'Commit for today', 'Print', 'Gear chart'])
+      await expect(panel.getByRole('button', { name, exact: true })).toBeVisible();
 
     // Nothing sticks out sideways: a cockpit column that cannot hold a slider
     // row pushes the whole grid past the window (ADR 0016).
@@ -686,6 +698,35 @@ for (const size of [
     expect(box.x + box.width).toBeLessThanOrEqual(size.width + 1);
     const spill = await panel.evaluate((el) => el.scrollWidth - el.clientWidth);
     expect(spill, 'the panel must not scroll sideways inside itself').toBeLessThanOrEqual(1);
+  });
+}
+
+/**
+ * The phone height budget for the densest panel in the app (plan phase 04,
+ * amended from 844 px — one viewport is not a budget a tier built on inline
+ * explainers can meet, and this panel carries a whole former screen). Learn is
+ * the taller tier because its controls print their explainer; race is the tier
+ * the one-screen promise is made in.
+ */
+for (const [tier, budget] of [
+  ['learn', 1100],
+  ['race', 900],
+] as const) {
+  test(`the Rig panel fits ${budget} px at 390 in the ${tier} tier`, async ({ page }) => {
+    await page.addInitScript((t) => {
+      try {
+        localStorage.setItem('sailflow.mode', t);
+        localStorage.setItem('sailflow.motion', 'off');
+      } catch {
+        // ignore: storage disabled, and the assertion below says what happened
+      }
+    }, tier);
+    await page.setViewportSize(PHONE);
+    await page.goto('/#/sim');
+    await settled(page);
+
+    const h = (await page.locator('.p-rig').boundingBox())!.height;
+    expect(Math.round(h), `the Rig panel at 390 in the ${tier} tier`).toBeLessThanOrEqual(budget);
   });
 }
 

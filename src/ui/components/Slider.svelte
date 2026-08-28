@@ -169,6 +169,7 @@
         onpointerup={cancelPress}
         onpointerleave={cancelPress}
         disabled={locked}
+        title={locked ? lockReason : undefined}
         aria-label="Edit {label} value"
       >
         {fmt(value, decimals, unit)}
@@ -180,11 +181,14 @@
     <!-- The exact value beside the coarse one (research §3 principle 5): a
          slider is for the sweep, these two are for the last step. Hidden in
          the learn tier by CSS, where the readout editor is enough. -->
+    <!-- A disabled control that says nothing is a mystery; the lock reason is
+         the tooltip as well as the (sr-only) note below (review of #109). -->
     <button
       type="button"
       class="step"
       onclick={() => nudge(-1)}
       disabled={locked || value <= min}
+      title={locked ? lockReason : undefined}
       aria-label="Decrease {label}"
     >
       −
@@ -237,6 +241,7 @@
       class="step"
       onclick={() => nudge(1)}
       disabled={locked || value >= max}
+      title={locked ? lockReason : undefined}
       aria-label="Increase {label}"
     >
       +
