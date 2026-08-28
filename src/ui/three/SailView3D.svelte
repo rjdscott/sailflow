@@ -41,9 +41,22 @@
   import { prefersReducedMotion } from 'svelte/motion';
   import type { DownControls, RaceControls, SolveResult } from '../../core/types';
   import { boomAngle, jibSheetAngle } from '../race/boat';
+  import { jibLuffState, leechStates, type Ribbon } from '../race/telltales';
   import type { Pinned } from '../race/store.svelte';
   import { settings } from '../stores/settings.svelte';
-  import { DEG2RAD, heelRad, lee, tackSide, type Side, type Vec3 } from './conventions';
+  import {
+    add,
+    DEG2RAD,
+    dot,
+    heelRad,
+    lee,
+    norm,
+    scaled,
+    sub,
+    tackSide,
+    type Side,
+    type Vec3,
+  } from './conventions';
   import { deckMesh, hullMesh, WATER_Y } from './hull';
   import { kiteGeometry } from './kite';
   import {
@@ -181,10 +194,49 @@
   let mastKey = '';
   let boomKey = '';
 
+  /**
+   * Ribbon geometry and the three poses, in metres and radians. One place:
+   * the shader below is built from these numbers and `buildTelltales`
+   * projects a rest-pose tip with the same ones, so the picture and the
+   * legibility gate cannot drift apart.
+   *
+   * prov: assumed throughout — drawn poses, sized to be read at a glance from
+   * the default leeward-quarter preset at 1440, not measured ribbon angles.
+   * 0.65 m and the 0.07 m half-width are the second sizing: at 0.39 m by
+   * 0.028 m they were hairlines at that zoom and stalled could not be told
+   * from lifting without a crop (PR #115 review).
+   */
+  const RIBBON = {
+    len: 0.65,
+    halfWidth: 0.07,
+    /** Windward ribbon at a lifting station: +45° off the chord. */
+    lift: 0.785,
+    /** Plus this much again over the last third, so the tip hooks up. */
+    hook: 0.5,
+    /** Leeward ribbon at a stalled station: −75°, hanging. */
+    stall: 1.309,
+  } as const;
+
   // Telltales: one merged geometry, animated in the vertex shader off `uTime`.
-  // Six ribbons is one draw call, and freezing is a uniform, not a rebuild.
+  // One draw call for the lot, and freezing is a uniform, not a rebuild.
+  //
+  // Each ribbon carries the aerodynamic state of its own station (`aState`,
+  // from `race/telltales.ts` — the same functions the plan view reads) and
+  // which face of the cloth it hangs on (`aSide`). The shader turns that into
+  // the pose a real ribbon takes, because that is what a sailor reads: pinch
+  // and the windward ribbon lifts, over-sheet and the leeward one droops and
+  // flops. The hero stays photographic — the ribbons are red cloth, not the
+  // plan view's green/amber/red vocabulary; angle, motion and a shadowed red
+  // are the cue.
+  //
+  // `depthTest` is off on purpose. A windward luff ribbon sits behind 0.94-
+  // opaque cloth, and a trainer that hides the pinching cue in the default
+  // leeward view is not showing the thing it exists to show — sailors read
+  // windward telltales through the sail, so the picture does too.
   const telltaleMat = new ShaderMaterial({
     side: DoubleSide,
+    depthTest: false,
+    depthWrite: false,
     uniforms: { uTime: { value: 0 } },
     vertexShader: `
       uniform float uTime;
@@ -193,29 +245,69 @@
       attribute vec3 aUp;
       attribute vec2 aUv;      // x: 0..1 along the ribbon, y: -0.5..0.5 across
       attribute float aPhase;
-      attribute float aLimp;   // 1 on a kite luff ribbon while the luff curls
+      attribute float aState;  // 0 streaming, 1 lifting, 2 stalled, 3 kite curl
+      attribute float aSide;   // +1 windward of the cloth, -1 leeward, 0 single
       varying float vSpan;
+      varying float vSide;
+      varying float vStall;
       void main() {
         vSpan = aUv.x;
-        // A curling luff is an unloaded one, and it folds to windward. The
-        // fold direction is geometry and arrives on aDir (buildTelltales);
-        // aLimp is left to say how hard the ribbon flutters. prov: assumed
+        vSide = aSide;
+        // Only the ribbon on the separated side moves: a windward one lifts
+        // when the entry is starved, a leeward one stalls when it is choked.
+        // A leech ribbon is single (aSide 0) and answers to both.
+        float lift  = step(0.5, aState) * (1.0 - step(1.5, aState)) * step(-0.5, aSide);
+        float stall = step(1.5, aState) * (1.0 - step(2.5, aState)) * (1.0 - step(0.5, aSide));
+        vStall = stall;
+        // A curling kite luff is an unloaded one, and it folds to windward.
+        // The fold direction is geometry and arrives on aDir (buildTelltales);
+        // the state is left to say how hard the ribbon flutters. prov: assumed
         // 5x the wave — a drawn cue for a threshold that is geometric
         // (ADR 0017), not measured flutter.
-        vec3 dir = normalize(aDir);
-        float wave = sin(uTime * 6.0 + aPhase + aUv.x * 5.0) * (0.05 + aLimp * 0.2) * aUv.x;
-        // prov: assumed 0.39 m ribbon, 1.5x the first cut: at 0.26 m they read
-        // as specks from the leeward-quarter preset, which is the flow cue the
-        // view exists to show.
-        vec3 p = aRoot + dir * (aUv.x * 0.39) + aUp * (aUv.y * 0.028 + wave);
+        float curl  = step(2.5, aState);
+        // The bend runs along the ribbon rather than being one rigid angle, so
+        // a lifting tip hooks up over the last third instead of pointing off
+        // like a stick. See RIBBON for the numbers.
+        float ang = lift * (${RIBBON.lift} + ${RIBBON.hook} * smoothstep(0.66, 1.0, aUv.x))
+                  - stall * ${RIBBON.stall};
+        // The rest pose lives in the sail's own frame: aDir is the local chord
+        // at that height, twist included, so the ribbon streams along the flow
+        // over that station rather than along the boat's centreline.
+        vec3 d0 = normalize(aDir);
+        vec3 u0 = normalize(aUp - d0 * dot(aUp, d0));
+        vec3 dir = d0 * cos(ang) + u0 * sin(ang);
+        vec3 up = u0 * cos(ang) - d0 * sin(ang);
+        // Amplitude and speed are the second half of the read: a stalled
+        // ribbon flops slowly and wide, and carries a second harmonic so it
+        // curls like hanging cloth rather than swinging like a rod; a lifting
+        // one flicks. prov: assumed.
+        float amp = (0.05 + lift * 0.05 + stall * 0.14 + curl * 0.2) * (1.0 + stall * 0.6);
+        float spd = 6.0 - lift * 2.0 - stall * 3.0;
+        float wave = sin(uTime * spd + aPhase + aUv.x * 5.0) * amp * aUv.x;
+        wave += stall * sin(uTime * spd * 2.0 + aPhase + aUv.x * 9.0) * amp * 0.6 * aUv.x;
+        vec3 p = aRoot + dir * (aUv.x * ${RIBBON.len}) + up * (aUv.y * ${RIBBON.halfWidth} + wave);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
       }`,
+    // A windward ribbon is being read through the cloth, so it is drawn
+    // fainter than the one on this side of the sail; a hanging one is drawn
+    // darker, because cloth that has stopped flying is cloth in its own
+    // shadow. prov: assumed 0.7 and 0.8.
     fragmentShader: `
       varying float vSpan;
-      void main() { gl_FragColor = vec4(0.98, 0.35, 0.35, 1.0 - vSpan * 0.35); }`,
+      varying float vSide;
+      varying float vStall;
+      void main() {
+        float a = (1.0 - vSpan * 0.35) * (vSide > 0.5 ? 0.7 : 1.0);
+        vec3 col = vec3(0.98, 0.35, 0.35) * (vStall > 0.5 ? 0.8 : 1.0);
+        gl_FragColor = vec4(col, a);
+      }`,
     transparent: true,
   });
+
   const telltales = new Mesh(new BufferGeometry(), telltaleMat);
+  // Last of the transparent pass, so the depth-test-free ribbons are not
+  // painted over by the grid on a low camera.
+  telltales.renderOrder = 1;
   boat.add(telltales);
 
   // Water and the grid stay in world space, so heel reads against them.
@@ -531,24 +623,80 @@
    */
   const CURL_FOLD = 0.85;
 
-  /** Telltale roots: jib luff pair (aft of the wire) and upper leech, main leech. */
+  /**
+   * One station's state, as the DEV handle publishes it. `paired` says the
+   * station carries a windward and a leeward ribbon rather than one.
+   */
+  interface TelltaleReading {
+    sail: 'jibLuff' | 'jibLeech' | 'mainLeech' | 'kiteLuff';
+    at: number;
+    state: Ribbon;
+    paired: boolean;
+    /**
+     * Rest-pose tip of the ribbon this state actually moves — the windward
+     * one when the station is lifting, the leeward one otherwise — in the
+     * telltale mesh's own frame. It is the point a sailor's eye lands on, so
+     * it is the point the legibility gate projects through the camera.
+     */
+    tip: Vec3;
+  }
+
+  /** Where a ribbon rooted at `root` along `along` ends, bent by `ang`. */
+  function ribbonTip(root: Vec3, along: Vec3, ang: number): Vec3 {
+    const d0 = norm(along);
+    const up: Vec3 = [0, 1, 0];
+    const u0 = norm(sub(up, scaled(d0, dot(up, d0))));
+    const dir = add(scaled(d0, Math.cos(ang)), scaled(u0, Math.sin(ang)));
+    return add(root, scaled(dir, RIBBON.len));
+  }
+
+  /** The shader's `aState`. The fourth is the kite's curl, not an AoA state. */
+  const STATE_CODE: Record<Ribbon, 0 | 1 | 2> = { streaming: 0, lifting: 1, stalled: 2 };
+  const CURL_CODE = 3;
+
+  /**
+   * Telltale roots: jib luff pairs (aft of the wire) and upper leech, main
+   * leech, kite luff curl.
+   *
+   * Every ribbon's state comes from `race/telltales.ts` at that ribbon's own
+   * height — the loft lofts row `i` at `i / (N - 1)` of the sail's height, so
+   * the row index is the station — which is the same call the plan view makes.
+   * The states are published on the DEV handle so a test can ask both pictures
+   * the same question (plan 2026-08-28 phase 03, risk 2).
+   */
   function buildTelltales(
     main: SailMesh | null,
     jib: SailMesh | null,
     kite: SailMesh | null,
     curl: boolean,
     side: Side,
+    trim: {
+      awaDeg: number;
+      boomDeg: number;
+      jibDeg: number;
+      mainTwistDeg: number;
+      jibTwistDeg: number;
+    },
   ): void {
     const root: number[] = [];
     const dir: number[] = [];
     const up: number[] = [];
     const uv: number[] = [];
     const phase: number[] = [];
-    const limp: number[] = [];
+    const state: number[] = [];
+    const face: number[] = [];
     const index: number[] = [];
+    const reading: TelltaleReading[] = [];
     const SEGS = 4;
     let n = 0;
-    const add = (anchor: Vec3, along: Vec3, across: Vec3, ph: number, lp: number): void => {
+    const add = (
+      anchor: Vec3,
+      along: Vec3,
+      across: Vec3,
+      ph: number,
+      code: number,
+      f: number,
+    ): void => {
       for (let s = 0; s <= SEGS; s++) {
         for (const side of [-0.5, 0.5]) {
           root.push(...anchor);
@@ -556,7 +704,8 @@
           up.push(...across);
           uv.push(s / SEGS, side);
           phase.push(ph);
-          limp.push(lp);
+          state.push(code);
+          face.push(f);
         }
       }
       for (let s = 0; s < SEGS; s++) {
@@ -567,28 +716,75 @@
     };
 
     let ph = 0;
+    /** `f` is the shader's `aSide`: +1 windward, -1 leeward, 0 a single ribbon. */
     const ribbon = (
       mesh: SailMesh,
       row: number,
       j: number,
       lift: number,
-      lp = 0,
+      code: number,
+      f: number,
       dir?: Vec3,
     ): void => {
       const a = ribbonAnchor(mesh, row, j, lift);
-      add(a.root, dir ?? a.along, [0, 1, 0], ph, lp);
+      add(a.root, dir ?? a.along, [0, 1, 0], ph, code, f);
       ph += 1.7; // prov: assumed phase offset, so the ribbons do not beat as one
+    };
+    /** Height fraction of a grid row: `buildSail` lofts row `i` at `i / (N - 1)`. */
+    const heightOf = (mesh: SailMesh, row: number): number => row / (mesh.N - 1);
+    /** One station: the ribbons that carry it, and the row for the DEV handle. */
+    const station = (
+      sail: TelltaleReading['sail'],
+      mesh: SailMesh,
+      row: number,
+      j: number,
+      st: Ribbon,
+      paired: boolean,
+    ): void => {
+      const at = heightOf(mesh, row);
+      const code = STATE_CODE[st];
+      // The ribbon the state moves: windward when lifting, leeward otherwise.
+      // A lifting station's cue is on the windward ribbon, so that is the one
+      // the tip is reported for.
+      const lifting = st === 'lifting';
+      const lift = paired ? (lifting ? -LUFF_TELLTALE_LIFT : LUFF_TELLTALE_LIFT) : 0;
+      const ang = lifting ? RIBBON.lift + RIBBON.hook : st === 'stalled' ? -RIBBON.stall : 0;
+      const a = ribbonAnchor(mesh, row, j, lift);
+      if (paired) {
+        // A real luff carries a pair. The leeward ribbon is the one that
+        // stalls; the windward one is the one that lifts when you pinch.
+        ribbon(mesh, row, j, LUFF_TELLTALE_LIFT, code, -1);
+        ribbon(mesh, row, j, -LUFF_TELLTALE_LIFT, code, 1);
+      } else {
+        ribbon(mesh, row, j, 0, code, 0);
+      }
+      reading.push({ sail, at, state: st, paired, tip: ribbonTip(a.root, a.along, ang) });
     };
     if (jib) {
       // Luff telltales sit a hand's width aft of the luff, not on the wire:
       // prov: assumed 15 % of chord (sailmaker practice; the forestay itself
       // carries none). Cosine-clustered columns, so find the nearest.
       const luffCol = nearestColumn(jib, LUFF_TELLTALE_CHORD);
-      for (const row of jib.stripeRows) ribbon(jib, row, luffCol, LUFF_TELLTALE_LIFT);
+      for (const row of jib.stripeRows) {
+        const st = jibLuffState(trim.awaDeg, trim.jibDeg, trim.jibTwistDeg, heightOf(jib, row));
+        station('jibLuff', jib, row, luffCol, st, true);
+      }
       // Upper leech ribbons: the cue North's jib guide reads (flow 90–100 %).
-      for (const row of jib.stripeRows.slice(1)) ribbon(jib, row, jib.M - 1, 0);
+      for (const row of jib.stripeRows.slice(1)) {
+        const [{ state: st }] = leechStates(trim.awaDeg, trim.jibDeg, trim.jibTwistDeg, [
+          heightOf(jib, row),
+        ]);
+        station('jibLeech', jib, row, jib.M - 1, st, false);
+      }
     }
-    if (main) for (const row of main.stripeRows) ribbon(main, row, main.M - 1, 0);
+    if (main) {
+      for (const row of main.stripeRows) {
+        const [{ state: st }] = leechStates(trim.awaDeg, trim.boomDeg, trim.mainTwistDeg, [
+          heightOf(main, row),
+        ]);
+        station('mainLeech', main, row, main.M - 1, st, false);
+      }
+    }
     if (kite) {
       // The curl cue: a column down the free luff from ¾ height. They stream
       // while the sheet is trimmed; past the (tier-C) sheet threshold they
@@ -597,21 +793,45 @@
       const w = -lee(side) * CURL_FOLD;
       for (const f of CURL_RIBBON_HEIGHTS) {
         const row = Math.round(f * (kite.N - 1));
+        const at = heightOf(kite, row);
         if (!curl) {
-          ribbon(kite, row, luffCol, LUFF_TELLTALE_LIFT);
+          const flying = ribbonAnchor(kite, row, luffCol, LUFF_TELLTALE_LIFT);
+          ribbon(kite, row, luffCol, LUFF_TELLTALE_LIFT, STATE_CODE.streaming, 0);
+          reading.push({
+            sail: 'kiteLuff',
+            at,
+            state: 'streaming',
+            paired: false,
+            tip: ribbonTip(flying.root, flying.along, 0),
+          });
           continue;
         }
         const { along } = ribbonAnchor(kite, row, luffCol, LUFF_TELLTALE_LIFT);
         const k = 1 - CURL_FOLD;
         const fold: Vec3 = [along[0] * k, along[1] * k - 0.15 * CURL_FOLD, w];
         const l = Math.hypot(...fold) || 1;
-        ribbon(kite, row, luffCol, LUFF_TELLTALE_LIFT, 1, [fold[0] / l, fold[1] / l, fold[2] / l]);
+        // The curl is a geometric threshold, not an angle of attack, so it
+        // keeps its own code: the fold direction is the claim, and the state
+        // only says how hard the unloaded ribbon flutters (ADR 0017).
+        ribbon(kite, row, luffCol, LUFF_TELLTALE_LIFT, CURL_CODE, 0, [
+          fold[0] / l,
+          fold[1] / l,
+          fold[2] / l,
+        ]);
+        reading.push({
+          sail: 'kiteLuff',
+          at,
+          state: 'stalled',
+          paired: false,
+          // The fold is the pose here, and it is already in the direction.
+          tip: ribbonTip(ribbonAnchor(kite, row, luffCol, LUFF_TELLTALE_LIFT).root, fold, 0),
+        });
       }
     }
 
     telltales.visible = n > 0;
     // Same reuse path as `setLines`: through a drag the ribbon count is fixed
-    // and only the roots and directions move, so the six attribute buffers are
+    // and only the roots and directions move, so the seven attribute buffers are
     // written in place rather than rebuilt (audit ux-03 M-24). The count only
     // changes when a sail is set or furled, or the grid resolution moves.
     const attrs: [string, number[], number][] = [
@@ -620,7 +840,8 @@
       ['aUp', up, 3],
       ['aUv', uv, 2],
       ['aPhase', phase, 1],
-      ['aLimp', limp, 1],
+      ['aState', state, 1],
+      ['aSide', face, 1],
     ];
     const old = telltales.geometry.getAttribute('aRoot');
     if (old && old.array.length === root.length) {
@@ -653,6 +874,9 @@
       jibSail: jib ? jibSail : null,
       kiteSail: kite ? kiteSail : null,
       telltales,
+      // Every ribbon's aerodynamic state, so a test can ask the 3D hero the
+      // same question it asks the plan view's CSS classes.
+      telltaleStates: reading,
       stripes,
       // Null unless a trim is pinned, for the same reason as the sails above:
       // "is the ghost drawn?" should be one read, not `.visible` archaeology.
@@ -666,8 +890,10 @@
 
   function rebuild(): void {
     const side = tackSide(twaDeg);
-    const boomRad = boomAngle(controls.mainsheet, controls.traveller) * DEG2RAD;
-    const jibRad = jibSheetAngle(controls.jibLead, controls.jibSheet) * DEG2RAD;
+    const boomDeg = boomAngle(controls.mainsheet, controls.traveller);
+    const boomRad = boomDeg * DEG2RAD;
+    const jibDeg = jibSheetAngle(controls.jibLead, controls.jibSheet);
+    const jibRad = jibDeg * DEG2RAD;
     const r: Rig3D = rig3d(result.rig, side, boomRad);
 
     const main = result.shape.main
@@ -776,7 +1002,13 @@
       boat.add(boom);
     }
 
-    buildTelltales(main, jib, kite, kg?.curl ?? false, side);
+    buildTelltales(main, jib, kite, kg?.curl ?? false, side, {
+      awaDeg: result.aero.awaDeg,
+      boomDeg,
+      jibDeg,
+      mainTwistDeg: result.shape.main?.threeQuarter.twistDeg ?? 0,
+      jibTwistDeg: result.shape.jib?.threeQuarter.twistDeg ?? 0,
+    });
     boat.rotation.x = heelRad(heelDeg, side);
     invalidate();
   }

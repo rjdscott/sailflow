@@ -384,6 +384,16 @@ export function nearestColumn(mesh: { M: number }, x: number): number {
  * normal (so a mid-chord ribbon is not buried in the surface), streaming aft
  * along the local chord read luff-ward from `j - 3`. A leech ribbon hangs off
  * the edge and takes `lift` 0.
+ *
+ * **A positive `lift` is always the leeward face, a negative one the windward
+ * face**, on either tack. The chord's horizontal normal has no such promise —
+ * it flips sense with the tack — so it is signed here against the grid normal,
+ * which `buildSail` already builds pointing to leeward (`gridNormals(...,
+ * lee(side))`). That is what lets a caller ask for the pair of ribbons a real
+ * luff carries and know which one of them is the windward one.
+ *
+ * `along` is the local chord at that row, twist included, which is the flow
+ * direction a ribbon at that height streams in — not the boat's centreline.
  */
 export function ribbonAnchor(
   mesh: SailMesh,
@@ -398,8 +408,10 @@ export function ribbonAnchor(
   const along: Vec3 = [d[0] / l, d[1] / l, d[2] / l];
   const ol = Math.hypot(along[2], along[0]) || 1;
   const out: Vec3 = [along[2] / ol, 0, -along[0] / ol];
+  const n = at(mesh.normals, mesh.M, row, j);
+  const s = out[0] * n[0] + out[2] * n[2] < 0 ? -lift : lift;
   return {
-    root: [pts[j][0] + out[0] * lift, pts[j][1], pts[j][2] + out[2] * lift],
+    root: [pts[j][0] + out[0] * s, pts[j][1], pts[j][2] + out[2] * s],
     along,
   };
 }

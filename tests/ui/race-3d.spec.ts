@@ -197,3 +197,120 @@ test('the first-frame gate falls back to 2D when the hero is too slow to mount',
   await expect(hero.locator('canvas')).toHaveCount(0);
   await expect(hero.locator('svg[role="img"]').first()).toBeVisible();
 });
+
+/**
+ * Plan risk 2: the hero and the plan view are two pictures of one trim and
+ * must not contradict each other. Both now read `race/telltales.ts` — the 3D
+ * hero per ribbon on its DEV handle, the plan view as the CSS class on each
+ * `.ribbon` — so one spec can put the same question to both.
+ *
+ * The stations differ by a hair: the plan view draws ¼ ½ ¾ and the head,
+ * the loft samples its own rows (row 17 of 24 is 0.739 of the height), so the
+ * 3D assertion is on the nearest station rather than on an equal `at`.
+ */
+async function jibLuffStates(page: Page): Promise<{ at: number; state: string }[]> {
+  return page.evaluate(() => {
+    const s = (window as unknown as { __sail?: { telltaleStates?: unknown } }).__sail;
+    const all = (s?.telltaleStates ?? []) as { sail: string; at: number; state: string }[];
+    return all.filter((t) => t.sail === 'jibLuff').map((t) => ({ at: t.at, state: t.state }));
+  });
+}
+
+/** The published station nearest ¾ height, which is the one the plan view draws. */
+const upperOf = (s: { at: number; state: string }[]): { at: number; state: string } | null =>
+  s.length === 0 ? null : s.reduce((a, b) => (Math.abs(b.at - 0.75) < Math.abs(a.at - 0.75) ? b : a));
+
+test('over-sheeting the jib stalls its ¾ ribbon in both pictures', async ({ page }) => {
+  await openHero(page, 'view=leeward&freeze=1');
+  const hero = page.locator(HERO);
+  await expect(hero.locator('canvas')).toBeVisible();
+
+  const sheet = page
+    .locator('#headsail-controls')
+    .getByRole('slider', { name: 'Jib sheet', exact: true });
+
+  // Sheet fully home: the sheeting angle collapses toward the centreline, the
+  // same apparent wind meets the luff at a much larger angle, and the entry
+  // chokes. Every jib luff station reads stalled, the ¾ one included.
+  await sheet.fill('100');
+  await expect.poll(async () => (await jibLuffStates(page)).map((t) => t.state)).toEqual([
+    'stalled',
+    'stalled',
+    'stalled',
+  ]);
+  const upper = upperOf(await jibLuffStates(page));
+  expect(upper?.at).toBeGreaterThan(0.6);
+  expect(upper?.state).toBe('stalled');
+
+  // Same trim, other picture: the toggle swaps the hero without a reload.
+  await hero.getByRole('radio', { name: 'Plan' }).click();
+  await expect(hero.locator('canvas')).toHaveCount(0);
+  const plan = hero.locator('[data-sail="jibLuff"][data-at="0.75"] .ribbon');
+  await expect(plan).toHaveClass(/stalled/);
+
+  // And the agreement is not vacuous: eased right off, the same station leaves
+  // the stalled band in both pictures.
+  await sheet.fill('20');
+  await expect(plan).not.toHaveClass(/stalled/);
+  await hero.getByRole('radio', { name: '3D' }).click();
+  await expect(hero.locator('canvas')).toBeVisible();
+  await expect.poll(async () => upperOf(await jibLuffStates(page))?.state ?? null).not.toBe(
+    'stalled',
+  );
+});
+
+/**
+ * Legibility, not correctness: the states can be right and still be invisible.
+ * The first cut drew 0.39 m hairlines and stalled could not be told from
+ * lifting at the default zoom without a crop (PR #115 review). This measures
+ * the thing the eye actually does — how far the ¾ jib luff ribbon's tip moves
+ * on screen between eased and over-sheeted — through the live camera, the way
+ * the masthead framing gate in `race.spec.ts` does.
+ */
+const TIP_PX = 18;
+
+async function upperTipPx(page: Page): Promise<{ x: number; y: number; state: string } | null> {
+  return page.evaluate(() => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const sail = (window as any).__sail;
+    const all = (sail?.telltaleStates ?? []).filter((t: any) => t.sail === 'jibLuff');
+    if (!all.length || !sail.camera) return null;
+    const t = all.reduce((a: any, b: any) =>
+      Math.abs(b.at - 0.75) < Math.abs(a.at - 0.75) ? b : a,
+    );
+    // A `Vector3` without importing three into the spec: clone one the scene
+    // already holds, then reuse it as scratch.
+    const v = sail.camera.position.clone();
+    v.set(t.tip[0], t.tip[1], t.tip[2]);
+    const ndc = sail.telltales.localToWorld(v).project(sail.camera);
+    const r = document.querySelector('.hero-boat canvas')!.getBoundingClientRect();
+    return { x: ((ndc.x + 1) / 2) * r.width, y: ((1 - ndc.y) / 2) * r.height, state: t.state };
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+  });
+}
+
+test('the ¾ jib ribbon moves far enough on screen to read at the default zoom', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openHero(page, 'view=leeward&freeze=1');
+  await expect(page.locator(`${HERO} canvas`)).toBeVisible();
+
+  const sheet = page
+    .locator('#headsail-controls')
+    .getByRole('slider', { name: 'Jib sheet', exact: true });
+
+  await sheet.fill('20');
+  await expect.poll(async () => (await upperTipPx(page))?.state).toBe('lifting');
+  const eased = await upperTipPx(page);
+
+  await sheet.fill('100');
+  await expect.poll(async () => (await upperTipPx(page))?.state).toBe('stalled');
+  const sheeted = await upperTipPx(page);
+
+  const moved = Math.hypot(sheeted!.x - eased!.x, sheeted!.y - eased!.y);
+  expect(
+    moved,
+    `the ribbon tip only moved ${moved.toFixed(1)} px between the two trims`,
+  ).toBeGreaterThanOrEqual(TIP_PX);
+});
