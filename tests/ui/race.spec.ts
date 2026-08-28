@@ -67,7 +67,7 @@ for (const viewport of DESKTOP) {
 
     await expect(page.getByRole('heading', { name: 'Mainsail' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Headsail' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Helm & conditions' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Helm', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Rig', exact: true })).toBeVisible();
     await settled(page);
 
@@ -185,10 +185,19 @@ test('at 1920x1080 the cockpit is one short scroll and the hero is worth looking
 
 /**
  * (d) The 14" laptop, the other first-class size: the instrument band, the hero
- * and both sail panels' first controls are in the first viewport, and the rest
- * is one scroll away.
+ * and both sail panel headings are in the first viewport, and the first
+ * control of each is a nudge below the fold.
+ *
+ * The band pays for the conditions now (ADR 0021): what used to be a 90 px
+ * strip of readings is a 168 px band of readings *and* the five inputs that
+ * drive them, and ADR 0016's 480 px hero floor is what it is. Measured 922 px
+ * for the first Mainsail slider against 845 before, on a 864 px screen — so
+ * the promise this size can keep is the whole band, the whole hero and both
+ * panels *started*, with the first slider one wheel-notch down. ADR 0021 took
+ * that trade knowingly ("the cockpit is denser"); the bound is pinned here so
+ * the next thing to grow has to argue with a failing test.
  */
-test('at 1536x864 the band, the hero and the first sail controls are in the first viewport', async ({
+test('at 1536x864 the band, the hero and both sail panels are in the first viewport', async ({
   page,
 }) => {
   await raceTier(page);
@@ -198,6 +207,8 @@ test('at 1536x864 the band, the hero and the first sail controls are in the firs
 
   await expect(page.locator('.cockpit > .bar')).toBeInViewport();
   await expect(page.locator('.hero-boat')).toBeInViewport();
+  await expect(page.getByRole('heading', { name: 'Mainsail' })).toBeInViewport();
+  await expect(page.getByRole('heading', { name: 'Headsail' })).toBeInViewport();
 
   for (const panel of ['.p-main', '.p-jib']) {
     const box = await page.locator(`${panel} input[type="range"]`).first().boundingBox();
@@ -205,8 +216,8 @@ test('at 1536x864 the band, the hero and the first sail controls are in the firs
     expect(box!.y, `${panel}'s first control starts on the first screen`).toBeGreaterThanOrEqual(0);
     expect(
       box!.y + box!.height,
-      `${panel}'s first control fits the first screen`,
-    ).toBeLessThanOrEqual(864);
+      `${panel}'s first control is at most one nudge below the fold`,
+    ).toBeLessThanOrEqual(864 + 100);
   }
 });
 
@@ -218,7 +229,7 @@ test('the cockpit panels are labelled sections a screen reader can jump between'
 
   await expect(page.getByRole('region', { name: 'Mainsail' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Headsail' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Helm & conditions' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Helm', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Rig', exact: true })).toBeVisible();
 });
 
@@ -304,7 +315,7 @@ test('the puff replay restores the wind it borrowed when it is stopped', async (
   await page.setViewportSize(VIEWPORTS[1]);
   await page.goto('/#/race');
 
-  const wind = page.locator('.tws');
+  const wind = page.locator('.cond.tws .value');
   const before = await wind.textContent();
 
   await page.getByRole('button', { name: 'Replay a gust ▶' }).click();
@@ -329,21 +340,17 @@ test('the phone stacks the cockpit with no horizontal scroll and a sticky panel 
   const strip = page.getByRole('navigation', { name: 'Cockpit panels' });
   await expect(strip).toBeVisible();
 
-  // Hero first (plan README, audit ux-03 H-11): on the first screen before any
-  // scroll, and above the instrument band rather than 1045 px under it.
+  // The band first, the hero under it (ADR 0021). The conditions are the right
+  // half of the band now, and they are the first thing you touch: the hero was
+  // 483 px of an 844 px screen and put the wind 1052 px down the page.
   const hero = page.locator('.hero-boat');
+  const bar = page.locator('.cockpit > .bar');
+  const barTop = await bar.evaluate((el) => el.getBoundingClientRect().top);
   const heroTop = await hero.evaluate((el) => el.getBoundingClientRect().top);
-  expect(heroTop).toBeGreaterThanOrEqual(0);
-  expect(heroTop).toBeLessThan(PHONE.height);
-  await expect(hero).toBeInViewport();
-
-  // …and the tab strip comes right after it, still above the band.
   const stripTop = await strip.evaluate((el) => el.getBoundingClientRect().top);
-  const barTop = await page
-    .locator('.cockpit > .bar')
-    .evaluate((el) => el.getBoundingClientRect().top);
+  expect(barTop).toBeGreaterThanOrEqual(0);
+  expect(heroTop).toBeGreaterThan(barTop);
   expect(stripTop).toBeGreaterThan(heroTop);
-  expect(barTop).toBeGreaterThan(stripTop);
 
   const overflow = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
@@ -382,7 +389,9 @@ test('the phone instrument band keeps four readings and hides the rest behind Mo
   await expect(readings.getByText('%POLAR')).toBeVisible();
   await expect(readings.getByText('VMG')).toBeVisible();
   await expect(readings.getByText('HEEL')).toBeVisible();
-  await expect(readings.getByText('TWA')).toBeHidden();
+  // HELM is the boat half's phone extra now; TWA left this half for the
+  // conditions, which are never behind a disclosure (ADR 0021).
+  await expect(readings.getByText('HELM')).toBeHidden();
 
   // M-19: "More" is also the fifth bottom-nav destination, on screen at the
   // same time, and a bare pill said nothing about what was behind it.
@@ -391,7 +400,7 @@ test('the phone instrument band keeps four readings and hides the rest behind Mo
   await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
 
   await disclosure.click();
-  await expect(readings.getByText('TWA')).toBeVisible();
+  await expect(readings.getByText('HELM')).toBeVisible();
   await expect(disclosure).toHaveText(/Fewer readings/);
   await expect(disclosure).toHaveAttribute('aria-expanded', 'true');
   // Neither label may collide with the nav tab that shares the screen.
@@ -617,9 +626,12 @@ test('a keyboard reaches a trim control before the whole-trim actions', async ({
   await heroDrawn(page);
 
   // The audit measured the first trim control at stop 41, behind Apply optimum,
-  // Base trim, Log this trim and the hero's camera chips. It is stop 31 now, so
-  // 40 is a walk that must reach it — and must not pass an action on the way.
-  const STOPS = 40;
+  // Base trim, Log this trim and the hero's camera chips. The conditions are
+  // eleven controls on the band now rather than a rail of chips and an `Edit`
+  // (ADR 0021), and they come before the sails on purpose: you set the wind,
+  // then trim for it. What must still hold is that no *whole-trim action* is
+  // met before the first slider.
+  const STOPS = 60;
   let firstTrim = -1;
   const actionsBefore: number[] = [];
   for (let i = 0; i < STOPS && firstTrim < 0; i++) {

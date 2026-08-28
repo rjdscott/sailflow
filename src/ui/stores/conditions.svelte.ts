@@ -37,6 +37,7 @@ export const BASE_RACE_DOWN: Partial<RaceControls> & { mainsheet: number } = {
 
 export interface Preset {
   id: string;
+  /** As it reads in the actions bar's `Start from` menu (audit ux-04 M-03). */
   label: string;
   condition: Condition;
   race: RaceControls;
@@ -68,7 +69,7 @@ function crewOf(kg: number): number {
 export const PRESETS: Preset[] = [
   {
     id: 'light',
-    label: 'Light',
+    label: 'Light day',
     condition: { twsKt: 6, twaDeg: 45, seaState: 0, crewKg: crewOf(300), sailset: 'jib' },
     race: trim({
       backstay: 10,
@@ -86,13 +87,13 @@ export const PRESETS: Preset[] = [
   },
   {
     id: 'medium',
-    label: 'Medium',
+    label: 'Medium day',
     condition: { twsKt: 12, twaDeg: 42, seaState: 1, crewKg: crewOf(300), sailset: 'jib' },
     race: { ...BASE_RACE },
   },
   {
     id: 'heavy',
-    label: 'Heavy',
+    label: 'Heavy day',
     condition: { twsKt: 18, twaDeg: 40, seaState: 2, crewKg: crewOf(320), sailset: 'jib' },
     race: trim({
       backstay: 70,

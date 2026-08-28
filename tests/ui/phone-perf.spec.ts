@@ -162,7 +162,13 @@ test('a slider drag reuses the hero geometry instead of rebuilding it', async ({
     page.evaluate(() => ({ ...(window as never as { __buf: { create: number; del: number } }).__buf }));
   const before = await read();
 
-  const slider = page.locator('input[type="range"]').first();
+  // The jib sheet, named rather than "the first range input on the page": the
+  // claim is about the drags that move *no spar*, and the first input in the
+  // DOM is the mainsheet now that the conditions sheet — whose hidden wind
+  // slider used to hold that position — is gone (ADR 0021). A mainsheet drag
+  // swings the boom, and a `TubeGeometry` has no reuse path, so it legitimately
+  // builds one.
+  const slider = page.locator('#headsail-controls input[type="range"]').first();
   const start = await slider.inputValue();
   for (let i = 0; i < 20; i++) {
     await slider.evaluate((el: HTMLInputElement) => {
@@ -183,7 +189,7 @@ test('a slider drag reuses the hero geometry instead of rebuilding it', async ({
   expect(after.del - before.del).toBe(0);
 });
 
-test('the phone first screen is the hero and the panel strip, not the chrome', async ({ page }) => {
+test('the phone first screen is the band and the picture, not the chrome', async ({ page }) => {
   await raceTier(page);
   await page.setViewportSize(PHONE);
   await page.goto('/#/race');
@@ -199,19 +205,23 @@ test('the phone first screen is the hero and the panel strip, not the chrome', a
       viewport: window.innerHeight,
       scrollY: window.scrollY,
       head: rect('.head'),
+      bar: rect('.cockpit > .bar'),
       hero: rect('.hero-boat'),
       tabs: rect('.tabs'),
     };
   });
 
   expect(m.scrollY).toBe(0);
-  // The chrome above the picture: title, point-of-sail chips, wind stepper and
-  // Edit. It was 302 px of an 844 px screen before the collapse (ux-03 M-20).
-  expect(m.head!.bottom).toBeLessThan(220);
-  // The whole picture is on the first screen, above the panel strip — which
-  // is sticky, so it is at the fold by construction and the assertion worth
-  // making about it is that the hero clears it rather than scrolls under it.
+  // The chrome above the first number: the title and one line of lede. The
+  // conditions rail that used to sit here is the band's right half now
+  // (ADR 0021), so this is smaller than the 220 px ux-03 M-20 left it at.
+  expect(m.head!.bottom).toBeLessThan(120);
+  // The band — both halves, so the wind and the boat's answer to it — is the
+  // whole of the first screen, which is what ADR 0021 moved it up for.
+  expect(m.bar!.top).toBeLessThan(m.head!.bottom + 24);
+  expect(m.bar!.bottom).toBeLessThan(m.viewport);
+  // The picture is under it, and clears the sticky strip rather than scrolling
+  // under it.
+  expect(m.hero!.top).toBeGreaterThan(m.bar!.bottom);
   expect(m.hero!.bottom).toBeLessThan(m.tabs!.top);
-  // And the strip itself is clear of the 56 px shell tab bar below it.
-  expect(m.tabs!.bottom).toBeLessThan(m.viewport - 56);
 });

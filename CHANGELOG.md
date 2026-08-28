@@ -15,6 +15,18 @@ undiagnosable.
 
 ### Changed
 
+- **The conditions are the right half of the instrument band** (ADR 0021,
+  audit ux-04 H-01): wind speed, wind angle, sea state, crew weight and sail
+  set are drawn with the same instrument cells as the boat's own numbers, and
+  every one of them is the control that sets it — steppers either side of the
+  value, a wind rose you drag or arrow-key, a popover for the sea, and the
+  sail set on the value itself. The 28 px conditions rail, its four read-only
+  chips and the `Edit` sheet behind them are gone, the point-of-sail chips sit
+  under the angle they set and deselect when it leaves their band, and the
+  Light/Medium/Heavy/Downwind presets — which rewrite the trim as well as the
+  wind — moved to the actions bar as `Start from`, each saying so. On a phone
+  the whole band is above the fold. A drill shows its own condition, locked.
+
 - **`#/sim` is the app's primary route** (ADR 0021): Dock and Race become one
   Simulator page, and the nav drops to four items — Simulator · Log · Drills ·
   More. Links already in the wild keep working: `#/race?…` resolves to `#/sim?…`

@@ -46,25 +46,25 @@ title, density and lede only. Audit ux-04 H-01, M-01, M-02, M-08, M-09, L-03.
 
 ## Tasks
 
-- [ ] `src/ui/race/ConditionsBand.svelte` — the right half, props
+- [x] `src/ui/race/ConditionsBand.svelte` — the right half, props
   `{ editable = true }`, reads/writes `conditions` directly (it already does
   in `ConditionsStrip`).
-- [ ] `src/ui/race/WindRose.svelte` — boat glyph + TWA/AWA arrows, drag +
+- [x] `src/ui/race/WindRose.svelte` — boat glyph + TWA/AWA arrows, drag +
   keyboard, `role="slider"` with `aria-valuenow`, tests on the angle math
   (`windRose.test.ts`: pointer → degrees, clamp, snap).
-- [ ] `InstrumentBar.svelte` — wraps left + `ConditionsBand`; `data-tier`
+- [x] `InstrumentBar.svelte` — wraps left + `ConditionsBand`; `data-tier`
   behaviour unchanged for the left half; container query for the split.
-- [ ] `ActionsBar.svelte` — `Start from ▾` presets menu with the "wind +
+- [x] `ActionsBar.svelte` — `Start from ▾` presets menu with the "wind +
   trim" wording and the existing `Back to my trim` undo.
-- [ ] `panels/Helm.svelte` — crew removed, title "Helm".
-- [ ] `Race.svelte` — `ConditionsStrip` removed from `.head`; delete
+- [x] `panels/Helm.svelte` — crew removed, title "Helm".
+- [x] `Race.svelte` — `ConditionsStrip` removed from `.head`; delete
   `ConditionsStrip.svelte`; delete the `.head [aria-label='Conditions']`
   phone rule.
-- [ ] `explain.ts` — five new explainer entries, prose only (no numbers → no
+- [x] `explain.ts` — five new explainer entries, prose only (no numbers → no
   `prov:`).
-- [ ] `pointOfSail.ts` — `bandOf(twaDeg)` returns the chip whose band holds
+- [x] `pointOfSail.ts` — `bandOf(twaDeg)` returns the chip whose band holds
   the angle or `null`; test.
-- [ ] Playwright snapshots re-baselined at 390 / 768 / 1440; new assertion:
+- [x] Playwright snapshots re-baselined at 390 / 768 / 1440; new assertion:
   at 390 the band's bottom edge < 844 px on cold load with the tour skipped.
 
 ## Verification
@@ -87,4 +87,100 @@ fold; every right-half cell has a 44 px hit.
 - Updated snapshots under `tests/ui/`
 
 ## Progress log
+
+### 2026-08-28 — built, `make check` and `pnpm test:ui` green
+
+Branch `feat/conditions-band`, four commits. `ConditionsStrip.svelte` is
+deleted and nothing references it.
+
+**What shipped.** `ConditionsBand.svelte` is the right half: TWS, TWA, sea,
+crew and sail set, each drawn with `InstrumentCell` and each editable in
+place — steppers for wind (±1 kt) and crew (±5 kg), `WindRose.svelte` for the
+angle, a segmented popover for the sea, Jib/Gennaker for the sail. The
+point-of-sail chips sit under the cells and deselect through `bandOf()`.
+`InstrumentCell` gained one prop, `onactivate`, which turns the *value* into
+the control without touching the type ramp; the sea cell is the only user of
+it so far. `InstrumentBar` takes `condition` and `conditionsEditable` in place
+of `twaDeg`/`twsKt`, and its three primary numbers tween (260 ms, `Tween`,
+`prefersReducedMotion` collapses it to an instant set).
+
+**Decisions worth knowing.**
+
+- *The band moved above the hero on a phone.* The gate is "the whole band is
+  above the fold at 390×844". With the hero first it could not be: measured
+  head 196 + hero 483 + strip 60 put the band's bottom at 1052 px. Band first
+  puts it at 752. That is ADR 0021's stated phone order (conditions → numbers
+  → boat), arriving a phase early; phase 02 owns the rest of the phone order
+  and the tour, and should treat this as done.
+- *`bandOf` has an end, deliberately.* Midpoint bands tile 30–180°, so the
+  honest `null` is the ends: inside `LUFFING_DEG` (30°, `prov: assumed`) you
+  are head to wind, not close-hauled, and nothing is pressed.
+- *Crew's range moved into an `aria-label`.* A ± stepper has nowhere to put
+  bounds that the slider it replaced announced for free, so `.stepper` is a
+  `role="group"` named "Crew weight, 255 to 340 kilograms". `boat.spec.ts`
+  reads the class limits off it.
+- *`focusPanel` gained a fallback.* `h` looked for `input[type=range]` inside
+  the Helm panel, which has none since crew left; it now falls back to the
+  panel's first control rather than focusing nothing.
+
+**The one promise this phase weakened.** `race.spec.ts`'s 1536×864 case
+asserted both sail panels' *first sliders* were above the fold. The band is
+184 px where the readings alone were ~90, and ADR 0016 floors the hero at
+480 px, so the first Mainsail slider measured 939 px against 845 before. The
+test now pins the band, the hero and both panel *headings* in the first
+viewport with the first slider at most 100 px below the fold. ADR 0021 took
+this trade knowingly ("the cockpit is denser"); phase 05 is where to buy the
+height back if the owner wants it.
+
+**Also re-baselined** (all in `tests/ui/`): the phone stack is band → hero →
+strip; the band's phone extra is HELM, not TWA; the v0 share link reads its
+wind off the band; and the buffer-churn drag names the jib sheet, because
+`input[type=range]:first` used to resolve to the closed conditions sheet's
+hidden wind slider and now resolves to the mainsheet, whose boom legitimately
+rebuilds a `TubeGeometry`.
+
+**Gates.** `make check`: docs-check, lint, `svelte-check` 0 errors 0 warnings,
+1285 vitest tests green. `pnpm test:ui`: 77 passed. Nothing red for reasons
+outside this change.
+
+### 2026-08-28 — review pass on PR #108
+
+Rebased onto `origin/main` after phase 03 (`0885843`) merged: no conflicts,
+both status rows intact, and the cockpit's `<h1>` now reads **Simulator**,
+which phase 03 left for whoever next touched `Race.svelte`. Specs moved from
+`#/race` to `#/sim`.
+
+- *Rose legibility.* 72 px in the cockpit, 64 px below; the hull is `--hull`
+  fill with a 2-unit `--ink` outline so it reads as a boat; the TWA arrow is
+  solid `--ink` and the AWA arrow a 3-unit `--accent` hairline; the grip is
+  r=5 on the rim where the wind blows in from, never over the hull; and a
+  bow-up tick at 0° says which way the boat points.
+- *One control per value.* The SAIL cell was a 28 px `Jib` **and** a
+  Jib/Gennaker segmented saying the same thing. The value is the toggle now,
+  as the sea cell's is; `InstrumentCell` gained `activateHint` so the button
+  announces "SAIL: Jib, switch to gennaker" rather than just its own state.
+- *Phone band height.* The steppers moved inline — `− 10 kt +` on one line —
+  and the chip row is a snapping scroller with a masked trailing edge. The
+  conditions half went 430 → **272 px** and the whole band 650 → **532 px**
+  (targets 260 / 460). The last 12 px of the conditions half is the SAIL cell,
+  which will not fit beside SEA and CREW at 390 px without dropping the type
+  ramp below the boat half's, and the band's remaining 70 px is the boat
+  half's More-readings pill and heel gauge, which this phase did not touch.
+  Both numbers are pinned in `conditions.spec.ts` at 300 / 560.
+- *Drag flood.* Not a flood: `race.request()` and `optimum.request()` both
+  clear and reset a timer per call (`DEBOUNCE_MS` 20, `OPTIMUM_DEBOUNCE_MS`
+  300, `PROBE_DEBOUNCE_MS` 80), so a pointermove per frame writes a rune and
+  buys exactly one solve 20 ms after the drag stops. No throttle added.
+- *One real bug the review shook out.* The number tween read only
+  `prefersReducedMotion`, so the app's own Motion `off` setting — which kills
+  CSS animation through `data-motion` — did not reach it, and a settled band
+  could still be mid-travel. It reads `settings.motion` now.
+  `Race.svelte`'s apply-optimum tween has the same gap and is left alone:
+  phase 05, or whoever next owns that file.
+
+The 1536×864 first-slider measurement improves with the inline steppers:
+922 px, from 939.
+
+**Gates after the review pass.** `make check`: 1293 vitest tests green,
+`svelte-check` 0 errors 0 warnings. `pnpm test:ui`: 78 passed.
 

@@ -23,13 +23,18 @@ async function fresh(browser: import('@playwright/test').Browser) {
   return { context, page };
 }
 
-/** Crew-weight slider bounds, which are class limits and differ between the two. */
+/**
+ * Crew-weight bounds, which are class limits and differ between the two. Crew
+ * weight is a stepper on the instrument band now rather than a slider (ADR
+ * 0021), so the limits are read off the name its `role="group"` carries —
+ * which is also the only place a screen reader can hear them.
+ */
 async function crewRange(page: Page): Promise<{ min: string | null; max: string | null }> {
-  // Two panels carry the same crew slider (the Helm panel and the conditions
-  // sheet), so take the one actually on screen rather than the first in the DOM.
-  const crew = page.getByRole('slider', { name: 'Crew weight' }).filter({ visible: true }).first();
+  const crew = page.getByRole('group', { name: /^Crew weight,/ });
   await expect(crew).toBeVisible();
-  return { min: await crew.getAttribute('min'), max: await crew.getAttribute('max') };
+  const label = (await crew.getAttribute('aria-label')) ?? '';
+  const [min, max] = label.match(/\d+/g) ?? [];
+  return { min: min ?? null, max: max ?? null };
 }
 
 test('the picker offers the second class, and switching reloads into its own numbers', async ({

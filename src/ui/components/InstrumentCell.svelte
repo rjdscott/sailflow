@@ -21,6 +21,9 @@
     trend,
     size = 'md',
     onexplain,
+    onactivate,
+    expanded,
+    activateHint,
   }: {
     label: string;
     /** Key into the caller's explain copy; stable across label renames. */
@@ -34,6 +37,23 @@
     trend?: number[];
     size?: 'lg' | 'md' | 'sm';
     onexplain?: (id: string) => void;
+    /**
+     * Makes the *value* the control (audit ux-04 H-01 rule 2): on the
+     * conditions half of the band, tapping the number is how you change it,
+     * rather than an `Edit` button beside it. The type ramp is untouched — a
+     * transparent button wearing the same `.value` styles — so a cell you can
+     * press still weighs exactly what the cell beside it weighs.
+     */
+    onactivate?: () => void;
+    /** For an `onactivate` that opens a popover: its state, for the button. */
+    expanded?: boolean;
+    /**
+     * What pressing the value does, for a cell where that is not obvious from
+     * the value itself: `SAIL: Jib, switch to gennaker`. A toggle whose whole
+     * label is its current state tells a screen reader nothing about what it
+     * would do.
+     */
+    activateHint?: string;
   } = $props();
 </script>
 
@@ -54,9 +74,28 @@
   <!-- Re-keying on the text restarts the fade, so a number that did not move
        does not animate. -->
   {#key value}
-    <span class="value fade" class:hero-number={size === 'lg'}>
-      {value}{#if unit}<span class="hero-unit">{unit}</span>{/if}
-    </span>
+    {#if onactivate}
+      <button
+        type="button"
+        class="value fade trigger"
+        class:hero-number={size === 'lg'}
+        aria-label="{label}: {value}{unit ? ` ${unit}` : ''}{activateHint
+          ? `, ${activateHint}`
+          : ''}"
+        aria-haspopup={expanded === undefined ? undefined : 'true'}
+        aria-expanded={expanded}
+        onclick={onactivate}
+      >
+        {value}{#if unit}<span class="hero-unit">{unit}</span>{/if}<span
+          aria-hidden="true"
+          class="chev">▾</span
+        >
+      </button>
+    {:else}
+      <span class="value fade" class:hero-number={size === 'lg'}>
+        {value}{#if unit}<span class="hero-unit">{unit}</span>{/if}
+      </span>
+    {/if}
   {/key}
 
   {#if target}
@@ -134,6 +173,38 @@
   /* The hero-number class brings its own colour; the cockpit ink wins. */
   .value.hero-number {
     color: var(--instrument, var(--ink));
+  }
+
+  /* A pressable value keeps the readout's type and adds one chevron: the
+     affordance is the chevron and the focus ring, not a box around the number. */
+  button.value {
+    min-height: var(--hit-min);
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  button.value:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: var(--radius);
+  }
+
+  .chev {
+    margin-left: var(--space-1);
+    font-size: var(--text-sm);
+    color: var(--accent);
+  }
+
+  /* Mouse-sized in the cockpit, where the value sits in a 37 px instrument row
+     and a 44 px button would push the band onto a second line. */
+  @media (min-width: 1280px) {
+    button.value {
+      min-height: 0;
+    }
   }
 
   .target {

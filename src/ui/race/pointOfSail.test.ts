@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nearestPointOfSail, POINTS_OF_SAIL } from './pointOfSail';
+import { bandOf, LUFFING_DEG, nearestPointOfSail, POINTS_OF_SAIL } from './pointOfSail';
 
 describe('POINTS_OF_SAIL', () => {
   it('flies the kite on the two downwind angles only', () => {
@@ -39,5 +39,35 @@ describe('nearestPointOfSail', () => {
   it('ignores the sign of a port-tack angle', () => {
     expect(nearestPointOfSail(-42)).toBe('close-hauled');
     expect(nearestPointOfSail(-135)).toBe('broad-reach');
+  });
+});
+
+describe('bandOf', () => {
+  it('agrees with the nearest chip everywhere a chip applies', () => {
+    for (let twa = LUFFING_DEG; twa <= 180; twa++) {
+      expect(bandOf(twa), `${twa}°`).toBe(nearestPointOfSail(twa));
+    }
+  });
+
+  it('deselects the row inside the luffing angle and past dead downwind', () => {
+    expect(bandOf(LUFFING_DEG - 1)).toBeNull();
+    expect(bandOf(20)).toBeNull();
+    expect(bandOf(181)).toBeNull();
+    expect(bandOf(LUFFING_DEG)).toBe('close-hauled');
+    expect(bandOf(180)).toBe('run');
+  });
+
+  it('hands the angle over as it crosses a band edge', () => {
+    expect(bandOf(50)).toBe('close-hauled');
+    expect(bandOf(51)).toBe('close-reach');
+    expect(bandOf(112)).toBe('beam-reach');
+    expect(bandOf(113)).toBe('broad-reach');
+    expect(bandOf(150)).toBe('broad-reach');
+    expect(bandOf(151)).toBe('run');
+  });
+
+  it('ignores the sign of a port-tack angle', () => {
+    expect(bandOf(-135)).toBe('broad-reach');
+    expect(bandOf(-20)).toBeNull();
   });
 });

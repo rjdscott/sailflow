@@ -98,7 +98,8 @@ test('a v0 link — no version, dot-separated trim — still opens', async ({ br
     await settled(page);
     await expect(page.getByRole('slider', { name: 'Backstay' })).toHaveValue('70');
     await expect(page.getByRole('slider', { name: 'Mainsheet' })).toHaveValue('85');
-    await expect(page.getByLabel('Edit True wind speed value')).toHaveText('16 kt');
+    // The wind lives on the band's conditions half now, not in a sheet's slider.
+    await expect(page.locator('.cond.tws .value')).toHaveText(/^16/);
   } finally {
     await context.close();
   }

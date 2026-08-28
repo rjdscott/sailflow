@@ -1,6 +1,6 @@
 # Simulator: Dock and Race become one page, and the wind is the first thing you touch
 
-- **Status:** 🔵 Not started
+- **Status:** 🟡 In progress
 
 Implements [ADR 0021](../../adr/0021-dock-and-race-merge-into-one-simulator-page.md)
 and remediates audit [ux-04](../../audits/2026-08-28-ux-04/) (H-01..H-04,
@@ -33,7 +33,7 @@ before the PR opens. Review on Fable before merge.
 
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
-| 01 | [Conditions band](phase-01-conditions-band.md) | 🔵 Not started | none |
+| 01 | [Conditions band](phase-01-conditions-band.md) | 🟢 Completed | 2026-08-28 |
 | 02 | [Phone order, tour, VMG sign](phase-02-phone-tour-vmg.md) | 🔵 Not started | none |
 | 03 | [Route `sim` and the four-item nav](phase-03-sim-route.md) | 🟢 Done | 2026-08-28 |
 | 04 | [Rig panel absorbs the Dock](phase-04-rig-absorbs-dock.md) | 🔵 Not started | none |

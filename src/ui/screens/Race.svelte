@@ -6,7 +6,6 @@
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
   import TopBar from '../components/TopBar.svelte';
   import ActionsBar from '../race/ActionsBar.svelte';
-  import ConditionsStrip from '../race/ConditionsStrip.svelte';
   import Gennaker from '../race/panels/Gennaker.svelte';
   import Headsail from '../race/panels/Headsail.svelte';
   import Helm from '../race/panels/Helm.svelte';
@@ -220,10 +219,16 @@
    */
   function focusPanel(panel: PanelId): void {
     panelSection(panel)?.scrollIntoView({ block: 'nearest' });
-    document
-      .getElementById(panelControlsId(panel))
-      ?.querySelector<HTMLInputElement>('input[type="range"]')
-      ?.focus();
+    const controls = document.getElementById(panelControlsId(panel));
+    // A slider first — that is what every sail panel leads with — and
+    // otherwise whatever the panel's first control is. Helm has no slider left
+    // to land on since crew weight moved to the band (ADR 0021), and a jump
+    // key that silently focuses nothing is worse than one that lands one
+    // control early.
+    const target =
+      controls?.querySelector<HTMLElement>('input[type="range"]') ??
+      controls?.querySelector<HTMLElement>('button, input, select, [tabindex="0"]');
+    target?.focus();
   }
 
   /** The whole shortcut table is in `ui/keys.ts`; this is just the wiring. */
@@ -275,22 +280,20 @@
      and sessions (principle 19). -->
 <div class="cockpit">
   <div class="head">
-    <TopBar title="Race" mode />
+    <TopBar title="Simulator" mode />
     <p class="lede">Trim for the wind in front of you, and see what the move is worth.</p>
-    <ConditionsStrip />
   </div>
 
   <div class="bar">
     {#if race.result}
       <InstrumentBar
         result={race.result}
-        twaDeg={conditions.twaDeg}
+        condition={conditions.value}
         objective={objectiveId}
         busy={race.busy}
         target={barTarget}
         deltaLabel={barDeltaLabel}
         history={race.history}
-        twsKt={conditions.twsKt}
         coach={race.coach?.text}
       />
     {/if}
@@ -439,8 +442,9 @@
 <style>
   /* ---------------------------------------------------------------- phone */
   /* Below 720 the cockpit is one column, ordered by the `order` block further
-     down rather than by DOM order: conditions, hero, the tab strip, the
-     instrument bar, the coach and its actions, the four panels. */
+     down rather than by DOM order: the header, the instrument band — whose
+     right half is the conditions (ADR 0021) — the hero, the tab strip, the
+     coach and its actions, then the four panels. */
   .cockpit {
     display: flex;
     flex-direction: column;
@@ -557,17 +561,14 @@
     }
 
     /* The phone spent ~600 px of an 844 px screen on chrome before the first
-       number (audit ux-03 M-20). Three things go, none of them information:
-       the 28 px page title drops to 20 px — the tab bar already names the
-       route, in the accent colour, permanently on screen; the lede drops to
-       one ellipsised line instead of two wrapped ones; and the four read-only
-       condition chips (TWA, sea state, crew, sail plan) go, because every
-       one of them is a *display* of a value the Edit sheet right beside them
-       already sets, and TWA is also on the point-of-sail chips above.
-       What stays inline is what you touch: the point-of-sail row, the ±1 kt
-       wind stepper, Edit, and the committed-forecast chip when there is one.
-       ADR 0016's one-screen promise is a desktop promise and is untouched:
-       every rule here is inside the phone query. */
+       number (audit ux-03 M-20). The 28 px page title drops to 20 px — the tab
+       bar already names the route, in the accent colour, permanently on
+       screen — and the lede drops to one ellipsised line instead of two
+       wrapped ones. The four read-only condition chips this block used to hide
+       are gone with the rail itself: every condition is a control on the right
+       half of the band now (ADR 0021), which is why the band moved above the
+       hero below. ADR 0016's one-screen promise is a desktop promise and is
+       untouched: every rule here is inside the phone query. */
     .head :global(h1) {
       font-size: var(--text-lg);
     }
@@ -585,18 +586,21 @@
       text-overflow: ellipsis;
     }
 
-    .head :global([aria-label='Conditions'] span.chip:not(.stepper)) {
-      display: none;
-    }
-
-    .hero-boat {
+    /* The band carries the conditions now, and the conditions are the first
+       thing you touch (ADR 0021, audit ux-04 H-01): at 390 px it is the band,
+       not the hero, that has to be above the fold — the hero was 483 px of a
+       844 px screen and put the wind 1052 px down. Hero second, and the tab
+       strip still sits directly above the stack it skips through. */
+    .bar {
       order: 1;
     }
 
-    /* Right under the hero, so the one navigation control on the screen no
-       longer sits above the thing it skips past. Still sticky. */
-    .cockpit :global(.tabs) {
+    .hero-boat {
       order: 2;
+    }
+
+    .cockpit :global(.tabs) {
+      order: 3;
     }
 
     /* The insight card below repeats this sentence verbatim, and carries the
@@ -604,10 +608,6 @@
        to spare the band gives its copy up (audit ux-03 M-17). */
     .bar :global(.verdict) {
       display: none;
-    }
-
-    .bar {
-      order: 3;
     }
 
     .insight {
@@ -798,8 +798,10 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    /* Title, lede and the conditions rail on one line; the chips wrap only
-       when they run out of room, and the hero row pays for it, not the page. */
+    /* Title, density and lede on one line. The conditions left this row for
+       the band (ADR 0021), which is what M-09 was about: one 28 px line used
+       to carry the title, the density segmented, the lede, five point-of-sail
+       chips, a stepper, four inert chips and an Edit button. */
     .head {
       flex-direction: row;
       align-items: center;
