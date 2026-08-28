@@ -258,3 +258,59 @@ test('over-sheeting the jib stalls its ¾ ribbon in both pictures', async ({ pag
     'stalled',
   );
 });
+
+/**
+ * Legibility, not correctness: the states can be right and still be invisible.
+ * The first cut drew 0.39 m hairlines and stalled could not be told from
+ * lifting at the default zoom without a crop (PR #115 review). This measures
+ * the thing the eye actually does — how far the ¾ jib luff ribbon's tip moves
+ * on screen between eased and over-sheeted — through the live camera, the way
+ * the masthead framing gate in `race.spec.ts` does.
+ */
+const TIP_PX = 18;
+
+async function upperTipPx(page: Page): Promise<{ x: number; y: number; state: string } | null> {
+  return page.evaluate(() => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const sail = (window as any).__sail;
+    const all = (sail?.telltaleStates ?? []).filter((t: any) => t.sail === 'jibLuff');
+    if (!all.length || !sail.camera) return null;
+    const t = all.reduce((a: any, b: any) =>
+      Math.abs(b.at - 0.75) < Math.abs(a.at - 0.75) ? b : a,
+    );
+    // A `Vector3` without importing three into the spec: clone one the scene
+    // already holds, then reuse it as scratch.
+    const v = sail.camera.position.clone();
+    v.set(t.tip[0], t.tip[1], t.tip[2]);
+    const ndc = sail.telltales.localToWorld(v).project(sail.camera);
+    const r = document.querySelector('.hero-boat canvas')!.getBoundingClientRect();
+    return { x: ((ndc.x + 1) / 2) * r.width, y: ((1 - ndc.y) / 2) * r.height, state: t.state };
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+  });
+}
+
+test('the ¾ jib ribbon moves far enough on screen to read at the default zoom', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openHero(page, 'view=leeward&freeze=1');
+  await expect(page.locator(`${HERO} canvas`)).toBeVisible();
+
+  const sheet = page
+    .locator('#headsail-controls')
+    .getByRole('slider', { name: 'Jib sheet', exact: true });
+
+  await sheet.fill('20');
+  await expect.poll(async () => (await upperTipPx(page))?.state).toBe('lifting');
+  const eased = await upperTipPx(page);
+
+  await sheet.fill('100');
+  await expect.poll(async () => (await upperTipPx(page))?.state).toBe('stalled');
+  const sheeted = await upperTipPx(page);
+
+  const moved = Math.hypot(sheeted!.x - eased!.x, sheeted!.y - eased!.y);
+  expect(
+    moved,
+    `the ribbon tip only moved ${moved.toFixed(1)} px between the two trims`,
+  ).toBeGreaterThanOrEqual(TIP_PX);
+});

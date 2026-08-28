@@ -141,3 +141,52 @@ plan-view twin: `telltales-streaming.png` (Apply optimum — jib luff streams at
 leeward ribbons hooked down), `telltales-lifting.png` (jib sheet 20 %, every
 luff station lifting). The plan view's colours agree with the hero's poses in
 all three.
+
+### 2026-08-28 — review round: legible at the default zoom
+
+PR #115 review: the mechanism was right and the picture was not. At the
+default Leeward preset the ribbons were hairlines, and telling stalled from
+lifting needed a zoom crop. Sizes and poses pushed, in one round.
+
+- **Size.** Ribbon 0.39 m → **0.65 m**, half-width 0.028 m → **0.07 m** (×2.5),
+  jib luff, both leeches and the kite luff alike. Same quad strip, same one
+  draw call, no new geometry pass.
+- **Poses.** Lifting +35° → **+45°**, and the bend now runs *along* the ribbon
+  (`smoothstep(0.66, 1.0, aUv.x)` adds another 0.5 rad over the last third), so
+  a lifting tip hooks up instead of pointing off like a stick. Stalled −60° →
+  **−75°**, wave amplitude ×1.6 with a **second harmonic** at 0.6 of it, so a
+  hanging ribbon curls like cloth rather than swinging like a rod. Streaming is
+  unchanged: flat, small travelling wave.
+- **Colour.** Still red, still no green/amber — that is the plan view's
+  language and the hero stays photographic. Windward alpha 0.55 → **0.7** (it
+  is being read through the cloth, and now you can), and a stalled ribbon's red
+  is multiplied by **0.8**, because cloth that has stopped flying is cloth in
+  its own shadow.
+- **One source for the numbers.** The five constants live in a `RIBBON` object
+  and the GLSL is interpolated from it, so the shader, the published rest-pose
+  tip and the legibility gate cannot drift apart.
+
+**Legibility gate.** `race-3d.spec.ts` now projects the ¾ jib luff ribbon's
+rest-pose tip through the live camera (the idiom `race.spec.ts` uses for the
+masthead) at 1440, default Leeward, motion off, and asserts it moves at least
+18 px between `jib sheet 20 %` and `jib sheet 100 %`. Measured: **40.7 px**
+(eased 615.8, 119.8 → sheeted 617.9, 160.4). `buildTelltales` publishes that
+tip per station on the DEV handle — the tip of the ribbon the state actually
+moves, which is the windward one when lifting and the leeward one otherwise.
+
+**Gates after the round.** `make check` `Tests 1322 passed (1322)`;
+`pnpm test -- src/ui/race src/ui/three` `Tests 341 passed (341)`;
+`pnpm test:ui` `101 passed (16.7s)` — the two committed 3D baselines still
+match inside their tolerance with the bigger ribbons;
+`node scripts/bundle_check.mjs` first load 112 728 B against 113 178 B, **+190 B
+for the phase** and +48 B for this round, 450 B of headroom left. The poses and
+sizes are all in the lazy hero chunk; the first-load cost is the shared state
+module the plan view imports.
+
+**Screenshots re-shot** at 1440, default Leeward preset, motion off, no crop.
+Named blind: streaming is unmistakable (flat ribbons lying aft across both
+sails), stalled likewise (every jib luff station hooked down with a limp curl,
+in a darker red). Lifting is nameable but the weakest of the three from this
+camera — an eased jib is close to edge-on from the leeward quarter, so its
+windward ribbons cock up in foreshortening and are read through the cloth. The
+"Up the luff" preset is where that one really lands.

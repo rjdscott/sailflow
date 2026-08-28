@@ -44,7 +44,19 @@
   import { jibLuffState, leechStates, type Ribbon } from '../race/telltales';
   import type { Pinned } from '../race/store.svelte';
   import { settings } from '../stores/settings.svelte';
-  import { DEG2RAD, heelRad, lee, tackSide, type Side, type Vec3 } from './conventions';
+  import {
+    add,
+    DEG2RAD,
+    dot,
+    heelRad,
+    lee,
+    norm,
+    scaled,
+    sub,
+    tackSide,
+    type Side,
+    type Vec3,
+  } from './conventions';
   import { deckMesh, hullMesh, WATER_Y } from './hull';
   import { kiteGeometry } from './kite';
   import {
@@ -182,6 +194,29 @@
   let mastKey = '';
   let boomKey = '';
 
+  /**
+   * Ribbon geometry and the three poses, in metres and radians. One place:
+   * the shader below is built from these numbers and `buildTelltales`
+   * projects a rest-pose tip with the same ones, so the picture and the
+   * legibility gate cannot drift apart.
+   *
+   * prov: assumed throughout — drawn poses, sized to be read at a glance from
+   * the default leeward-quarter preset at 1440, not measured ribbon angles.
+   * 0.65 m and the 0.07 m half-width are the second sizing: at 0.39 m by
+   * 0.028 m they were hairlines at that zoom and stalled could not be told
+   * from lifting without a crop (PR #115 review).
+   */
+  const RIBBON = {
+    len: 0.65,
+    halfWidth: 0.07,
+    /** Windward ribbon at a lifting station: +45° off the chord. */
+    lift: 0.785,
+    /** Plus this much again over the last third, so the tip hooks up. */
+    hook: 0.5,
+    /** Leeward ribbon at a stalled station: −75°, hanging. */
+    stall: 1.309,
+  } as const;
+
   // Telltales: one merged geometry, animated in the vertex shader off `uTime`.
   // One draw call for the lot, and freezing is a uniform, not a rebuild.
   //
@@ -190,7 +225,9 @@
   // which face of the cloth it hangs on (`aSide`). The shader turns that into
   // the pose a real ribbon takes, because that is what a sailor reads: pinch
   // and the windward ribbon lifts, over-sheet and the leeward one droops and
-  // flops. Colour is not the cue here; angle and motion are.
+  // flops. The hero stays photographic — the ribbons are red cloth, not the
+  // plan view's green/amber/red vocabulary; angle, motion and a shadowed red
+  // are the cue.
   //
   // `depthTest` is off on purpose. A windward luff ribbon sits behind 0.94-
   // opaque cloth, and a trainer that hides the pinching cue in the default
@@ -212,6 +249,7 @@
       attribute float aSide;   // +1 windward of the cloth, -1 leeward, 0 single
       varying float vSpan;
       varying float vSide;
+      varying float vStall;
       void main() {
         vSpan = aUv.x;
         vSide = aSide;
@@ -220,16 +258,18 @@
         // A leech ribbon is single (aSide 0) and answers to both.
         float lift  = step(0.5, aState) * (1.0 - step(1.5, aState)) * step(-0.5, aSide);
         float stall = step(1.5, aState) * (1.0 - step(2.5, aState)) * (1.0 - step(0.5, aSide));
+        vStall = stall;
         // A curling kite luff is an unloaded one, and it folds to windward.
         // The fold direction is geometry and arrives on aDir (buildTelltales);
         // the state is left to say how hard the ribbon flutters. prov: assumed
         // 5x the wave — a drawn cue for a threshold that is geometric
         // (ADR 0017), not measured flutter.
         float curl  = step(2.5, aState);
-        // prov: assumed 35° of lift and 60° of droop off the local chord —
-        // drawn poses for the three states, sized to read at a glance from the
-        // leeward quarter, not measured ribbon angles.
-        float ang = lift * 0.61 - stall * 1.05;
+        // The bend runs along the ribbon rather than being one rigid angle, so
+        // a lifting tip hooks up over the last third instead of pointing off
+        // like a stick. See RIBBON for the numbers.
+        float ang = lift * (${RIBBON.lift} + ${RIBBON.hook} * smoothstep(0.66, 1.0, aUv.x))
+                  - stall * ${RIBBON.stall};
         // The rest pose lives in the sail's own frame: aDir is the local chord
         // at that height, twist included, so the ribbon streams along the flow
         // over that station rather than along the boat's centreline.
@@ -238,27 +278,32 @@
         vec3 dir = d0 * cos(ang) + u0 * sin(ang);
         vec3 up = u0 * cos(ang) - d0 * sin(ang);
         // Amplitude and speed are the second half of the read: a stalled
-        // ribbon flops slowly and wide, a lifting one flicks. prov: assumed.
-        float amp = 0.05 + lift * 0.05 + stall * 0.14 + curl * 0.2;
+        // ribbon flops slowly and wide, and carries a second harmonic so it
+        // curls like hanging cloth rather than swinging like a rod; a lifting
+        // one flicks. prov: assumed.
+        float amp = (0.05 + lift * 0.05 + stall * 0.14 + curl * 0.2) * (1.0 + stall * 0.6);
         float spd = 6.0 - lift * 2.0 - stall * 3.0;
         float wave = sin(uTime * spd + aPhase + aUv.x * 5.0) * amp * aUv.x;
-        // prov: assumed 0.39 m ribbon, 1.5x the first cut: at 0.26 m they read
-        // as specks from the leeward-quarter preset, which is the flow cue the
-        // view exists to show.
-        vec3 p = aRoot + dir * (aUv.x * 0.39) + up * (aUv.y * 0.028 + wave);
+        wave += stall * sin(uTime * spd * 2.0 + aPhase + aUv.x * 9.0) * amp * 0.6 * aUv.x;
+        vec3 p = aRoot + dir * (aUv.x * ${RIBBON.len}) + up * (aUv.y * ${RIBBON.halfWidth} + wave);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
       }`,
     // A windward ribbon is being read through the cloth, so it is drawn
-    // fainter than the one on this side of the sail. prov: assumed 0.55.
+    // fainter than the one on this side of the sail; a hanging one is drawn
+    // darker, because cloth that has stopped flying is cloth in its own
+    // shadow. prov: assumed 0.7 and 0.8.
     fragmentShader: `
       varying float vSpan;
       varying float vSide;
+      varying float vStall;
       void main() {
-        float a = (1.0 - vSpan * 0.35) * (vSide > 0.5 ? 0.55 : 1.0);
-        gl_FragColor = vec4(0.98, 0.35, 0.35, a);
+        float a = (1.0 - vSpan * 0.35) * (vSide > 0.5 ? 0.7 : 1.0);
+        vec3 col = vec3(0.98, 0.35, 0.35) * (vStall > 0.5 ? 0.8 : 1.0);
+        gl_FragColor = vec4(col, a);
       }`,
     transparent: true,
   });
+
   const telltales = new Mesh(new BufferGeometry(), telltaleMat);
   // Last of the transparent pass, so the depth-test-free ribbons are not
   // painted over by the grid on a low camera.
@@ -587,6 +632,22 @@
     at: number;
     state: Ribbon;
     paired: boolean;
+    /**
+     * Rest-pose tip of the ribbon this state actually moves — the windward
+     * one when the station is lifting, the leeward one otherwise — in the
+     * telltale mesh's own frame. It is the point a sailor's eye lands on, so
+     * it is the point the legibility gate projects through the camera.
+     */
+    tip: Vec3;
+  }
+
+  /** Where a ribbon rooted at `root` along `along` ends, bent by `ang`. */
+  function ribbonTip(root: Vec3, along: Vec3, ang: number): Vec3 {
+    const d0 = norm(along);
+    const up: Vec3 = [0, 1, 0];
+    const u0 = norm(sub(up, scaled(d0, dot(up, d0))));
+    const dir = add(scaled(d0, Math.cos(ang)), scaled(u0, Math.sin(ang)));
+    return add(root, scaled(dir, RIBBON.len));
   }
 
   /** The shader's `aState`. The fourth is the kite's curl, not an AoA state. */
@@ -682,6 +743,13 @@
     ): void => {
       const at = heightOf(mesh, row);
       const code = STATE_CODE[st];
+      // The ribbon the state moves: windward when lifting, leeward otherwise.
+      // A lifting station's cue is on the windward ribbon, so that is the one
+      // the tip is reported for.
+      const lifting = st === 'lifting';
+      const lift = paired ? (lifting ? -LUFF_TELLTALE_LIFT : LUFF_TELLTALE_LIFT) : 0;
+      const ang = lifting ? RIBBON.lift + RIBBON.hook : st === 'stalled' ? -RIBBON.stall : 0;
+      const a = ribbonAnchor(mesh, row, j, lift);
       if (paired) {
         // A real luff carries a pair. The leeward ribbon is the one that
         // stalls; the windward one is the one that lifts when you pinch.
@@ -690,7 +758,7 @@
       } else {
         ribbon(mesh, row, j, 0, code, 0);
       }
-      reading.push({ sail, at, state: st, paired });
+      reading.push({ sail, at, state: st, paired, tip: ribbonTip(a.root, a.along, ang) });
     };
     if (jib) {
       // Luff telltales sit a hand's width aft of the luff, not on the wire:
@@ -727,8 +795,15 @@
         const row = Math.round(f * (kite.N - 1));
         const at = heightOf(kite, row);
         if (!curl) {
+          const flying = ribbonAnchor(kite, row, luffCol, LUFF_TELLTALE_LIFT);
           ribbon(kite, row, luffCol, LUFF_TELLTALE_LIFT, STATE_CODE.streaming, 0);
-          reading.push({ sail: 'kiteLuff', at, state: 'streaming', paired: false });
+          reading.push({
+            sail: 'kiteLuff',
+            at,
+            state: 'streaming',
+            paired: false,
+            tip: ribbonTip(flying.root, flying.along, 0),
+          });
           continue;
         }
         const { along } = ribbonAnchor(kite, row, luffCol, LUFF_TELLTALE_LIFT);
@@ -743,7 +818,14 @@
           fold[1] / l,
           fold[2] / l,
         ]);
-        reading.push({ sail: 'kiteLuff', at, state: 'stalled', paired: false });
+        reading.push({
+          sail: 'kiteLuff',
+          at,
+          state: 'stalled',
+          paired: false,
+          // The fold is the pose here, and it is already in the direction.
+          tip: ribbonTip(ribbonAnchor(kite, row, luffCol, LUFF_TELLTALE_LIFT).root, fold, 0),
+        });
       }
     }
 
