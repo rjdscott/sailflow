@@ -37,3 +37,24 @@ export function nearestPointOfSail(twaDeg: number): string {
     Math.abs(a - p.twaDeg) < Math.abs(a - best.twaDeg) ? p : best,
   ).id;
 }
+
+/**
+ * Inside this angle nothing is a point of sail: the sails are luffing and the
+ * boat is head to wind, not close-hauled. prov: assumed — a J/70 beats at
+ * ~40° TWA and the VMG solve never answers below 35, so 30 is comfortably
+ * inside "you are not sailing this angle".
+ */
+export const LUFFING_DEG = 30;
+
+/**
+ * The chip a TWA is *in*, or `null` when the angle is outside every band —
+ * which is what deselects the row rather than leaving a chip lit under an
+ * angle it does not describe (audit ux-04 M-02). Same midpoint bands as
+ * `nearestPointOfSail`; the ends are the honest part, because head to wind and
+ * past dead downwind are not points of sail.
+ */
+export function bandOf(twaDeg: number): string | null {
+  const a = Math.abs(twaDeg);
+  if (a < LUFFING_DEG || a > 180) return null;
+  return nearestPointOfSail(a);
+}
