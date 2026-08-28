@@ -372,6 +372,117 @@ test('the phone stacks the cockpit with no horizontal scroll and a sticky panel 
   await expect(page.getByRole('heading', { name: 'Rig', exact: true })).toBeInViewport();
 });
 
+/**
+ * H-03, measured rather than asserted by ordering. The finding was that a
+ * first-time phone user sees a boat drawing and no number: the band sat at
+ * ≈ 1400 px of an 844 px viewport. The promise this pins is the whole of the
+ * fix — the band *ends* inside the first screen, and the boat has started
+ * before it, which is what the `min(56vw, 300px)` hero cap buys.
+ *
+ * DOM order inside the band is boat-then-conditions and `order` flips it, so
+ * the halves are measured by their boxes, not by their position in the tree:
+ * the conditions are the first thing under the header, exactly as ADR 0021
+ * says a phone should read.
+ */
+test('the phone cold load fits the conditions, the numbers and the top of the boat in one screen', async ({
+  page,
+}) => {
+  await raceTier(page);
+  await page.setViewportSize(PHONE);
+  await page.goto('/#/sim');
+  await settled(page);
+
+  const box = async (sel: string): Promise<DOMRect> =>
+    await page.locator(sel).first().evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+
+  const head = await box('.cockpit .head');
+  const conditions = await box('.bar [data-tour="conditions"]');
+  const boat = await box('.bar .boat');
+  const bar = await box('.cockpit > .bar');
+  const hero = await box('.hero-boat');
+  const strip = await box('.cockpit .tabs');
+  const panel = await box('.p-main');
+
+  // Header → conditions half → boat half → hero → panel tabs → panels.
+  expect(conditions.top).toBeGreaterThan(head.top);
+  expect(boat.top).toBeGreaterThan(conditions.top);
+  expect(hero.top).toBeGreaterThan(bar.top);
+  expect(strip.top).toBeGreaterThan(hero.top);
+  expect(panel.top).toBeGreaterThan(strip.top);
+
+  // The whole band, and the top of the boat, inside the first 844 px.
+  expect(bar.bottom, 'the instrument band ends above the fold').toBeLessThan(PHONE.height);
+  expect(hero.top, 'the boat has started above the fold').toBeLessThan(PHONE.height);
+
+  // The cap itself, on the drawn picture rather than on the slot — the slot
+  // also carries the view's caption. 56vw of 390 px is 218 px, not 66vw's 257.
+  const picture = await box('.hero-boat canvas, .hero-boat svg[role="img"]');
+  expect(picture.height).toBeLessThanOrEqual(Math.round(PHONE.width * 0.56) + 1);
+});
+
+/** L-02: the one sentence that says what the screen is for, whole at 390 px. */
+test('the phone lede is not truncated', async ({ page }) => {
+  await page.setViewportSize(PHONE);
+  await page.goto('/#/sim');
+
+  // The head's lede, not the Rig panel's: both wear the class.
+  const lede = page.locator('.cockpit > .head .lede');
+  await expect(lede).toHaveText('Trim for the wind in front of you.');
+  const clipped = await lede.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+  expect(clipped, 'the lede ellipsises at 390 px').toBe(false);
+});
+
+/**
+ * L-01. Opening `/` rewrote the URL to the previous session — right for the
+ * owner, a mystery for a new visitor on a shared device who lands on a run
+ * under a kite with no cue. The predicate is unit-tested in `scenario.test.ts`;
+ * what only a browser can show is that the toast is wired to the real restore
+ * and that Reset actually puts the app back.
+ */
+test('a restored session announces itself, and Reset undoes it', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'sailflow.session.v1',
+      JSON.stringify({
+        condition: { twsKt: 20, twaDeg: 150, seaState: 3, crewKg: 320, sailset: 'asym' },
+      }),
+    );
+  });
+  await page.setViewportSize(PHONE);
+  await page.goto('/#/sim');
+
+  const toast = page.getByRole('status').filter({ hasText: 'Restored your last session' });
+  await expect(toast).toBeVisible();
+
+  // It restored, and it said so: 20 kt is not the 10 kt the app opens on.
+  const tws = page.locator('[data-tour="conditions"] .cell', { hasText: 'TWS' }).locator('.value');
+  await expect(tws).toHaveText('20kt');
+
+  await toast.getByRole('button', { name: 'Reset' }).click();
+  await expect(tws).toHaveText('10kt');
+  await expect(toast).toBeHidden();
+});
+
+/** And a first visit, with nothing stored, is not told anything was restored. */
+test('a first visit is not told a session was restored', async ({ page }) => {
+  await page.setViewportSize(PHONE);
+  await page.goto('/#/sim');
+  await settled(page);
+  await expect(page.getByText('Restored your last session')).toHaveCount(0);
+});
+
+/** M-07: the tab bar is five tabs, and no longer a wordmark row above them. */
+test('the phone tab bar spends no height on a wordmark', async ({ page }) => {
+  await page.setViewportSize(PHONE);
+  await page.goto('/#/sim');
+
+  await expect(page.locator('.tabbar-slot p')).toHaveCount(0);
+  const h = await page
+    .locator('.tabbar-slot')
+    .evaluate((el) => el.getBoundingClientRect().height);
+  expect(h, 'the tab bar is the 56 px nav and its safe-area inset, nothing more').toBeLessThan(72);
+});
+
 /** The band is four readings wide on a phone until you ask for the rest. */
 test('the phone instrument band keeps four readings and hides the rest behind More', async ({
   page,

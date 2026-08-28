@@ -1,10 +1,18 @@
 /**
- * The first-run tour's three cards (phase-two 04).
+ * The first-run tour's three cards.
  *
  * Content only, so it is testable without mounting anything, and so the copy
- * sits in one file rather than inside markup. Three steps by design: the
- * two screens, the two things the app calls a "tier", and the one button that
- * rewrites the trim. Everything else is learned from the `?` on the control.
+ * sits in one file rather than inside markup. Three steps by design, and since
+ * ADR 0021 merged Dock into the Simulator they are the three things a stranger
+ * has to be told about one screen: where the wind is set, where the rig is and
+ * why it locks, and the one button that rewrites the trim. Everything else is
+ * learned from the `?` on the control.
+ *
+ * Card 1 is the wind because the audit's user report was that nobody could
+ * find it (ux-04 H-02): three cards went by without the word appearing, and
+ * card 1 was drawn *over* the rail it should have been pointing at. Each card
+ * now names the element it is about, and `Tour.svelte` cuts a hole in its own
+ * dimming over it.
  *
  * Prose only — no modelled numbers, so nothing here needs a `prov:` tag. The
  * one external reference is the J/70 class rule, which is a rule, not a
@@ -17,24 +25,36 @@ export interface TourStep {
   body: string;
   /** One line under the body, in quieter ink: where to go next. */
   hint: string;
+  /**
+   * CSS selector for the thing this card is about, spotlit behind the sheet.
+   * A card with no anchor, or an anchor nothing on screen matches, simply
+   * dims the page as before — so a selector may name an element a later phase
+   * adds without this file having to know whether it is there yet.
+   */
+  anchor?: string;
 }
 
 export const TOUR_STEPS: TourStep[] = [
   {
-    title: 'Dock, then Race',
+    title: 'Set the wind',
+    anchor: '[data-tour="conditions"]',
     body:
-      'Dock is the half hour before you leave: a forecast in, shroud turns and forestay out, ' +
-      'committed for the day. Race is the half hour after: sheets, leads, traveller and backstay, ' +
-      'and what each move is worth.',
-    hint: 'The rig is on Dock because class rule C.9.5(a) freezes the standing rigging once you leave.',
+      'The right half of the instrument band is the world you are sailing in: wind speed, wind ' +
+      'angle, sea state, crew weight and which headsail is up. Every value over there is the ' +
+      'control that sets it — drag the rose to swing the breeze aft, tap the words to change the ' +
+      'sea or the sail.',
+    hint: 'Everything on the left answers to it.',
   },
   {
-    title: 'Two things called a tier',
+    title: 'The rig, and the day',
+    anchor: '[data-tour="rig"]',
     body:
-      'Learn, Race and Analyse are display density — how much of the cockpit is on screen. ' +
-      'The small A, B or C beside a number is something else: confidence in that number. ' +
-      'A is a published figure, B a direction and a band, C a direction only.',
-    hint: 'Density lives on the Race header and in More → Settings; tap any A/B/C badge for what it means.',
+      'The shroud turns and the forestay live in the Rig panel on this screen, so you can move ' +
+      'one and watch the sail shape and the speed answer; Commit for today greys them, because ' +
+      'class rule C.9.5(a) freezes the standing rigging once you leave the dock. Learn, Race and ' +
+      'Analyse are display density; the small A, B or C beside a number is confidence in that ' +
+      'number.',
+    hint: 'A is a published figure, B a direction and a band, C a direction only.',
   },
   {
     title: 'Apply optimum',

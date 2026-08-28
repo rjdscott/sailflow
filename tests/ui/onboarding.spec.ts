@@ -18,7 +18,9 @@ fresh('the tour opens on a first visit as a named modal dialog', async ({ page }
   await page.setViewportSize(DESKTOP);
   await page.goto('/#/race');
 
-  const dialog = page.getByRole('dialog', { name: 'Dock, then Race' });
+  // Card 1 is the wind now (audit ux-04 H-02): a tour that went by three
+  // cards without the word was the finding.
+  const dialog = page.getByRole('dialog', { name: 'Set the wind' });
   await expect(dialog).toBeVisible();
   // Modal, so the cockpit behind it is inert rather than merely covered.
   // A native `<dialog>` carries no `aria-modal` attribute — modality is the
@@ -82,11 +84,52 @@ fresh('the tour does not delay the first solve', async ({ page }) => {
 
   // The instrument band's own status line only exists once a solve has landed.
   await expect(page.locator('.bar p[role="status"]')).toHaveText(
-    /knots boat speed, .* percent of polar, VMG .* knots\./,
+    /knots boat speed, .* percent of polar, VMG .* knots to (windward|leeward)\./,
   );
 });
 
-/** Nothing in the tour animates, so reduced motion changes nothing about it. */
+/**
+ * H-02's other half. The finding was not only that card 1 said nothing about
+ * the wind — it was that the card was drawn *over* the rail it should have
+ * been pointing at. Card 1 now cuts a hole around the conditions half, and the
+ * hole has to actually be over it.
+ */
+fresh('card one cuts a hole around the conditions half of the band', async ({ page }) => {
+  await page.setViewportSize(PHONE);
+  await page.goto('/#/sim');
+
+  const dialog = page.getByRole('dialog', { name: 'Set the wind' });
+  await expect(dialog).toBeVisible();
+
+  const spot = dialog.locator('.spot');
+  await expect(spot).toBeVisible();
+
+  const boxes = await page.evaluate(() => {
+    const r = (sel: string): DOMRect | null =>
+      document.querySelector(sel)?.getBoundingClientRect() ?? null;
+    return { spot: r('dialog .spot')?.toJSON(), band: r('[data-tour="conditions"]')?.toJSON() };
+  });
+  // Same box, to the pixel: the cut-out is the anchor's own rect.
+  expect(Math.abs(boxes.spot.top - boxes.band.top)).toBeLessThan(2);
+  expect(Math.abs(boxes.spot.height - boxes.band.height)).toBeLessThan(2);
+
+  // And with a hole open, the sheet's backdrop is out of the way, so what is
+  // inside the ring is the page at full brightness rather than dimmed twice.
+  const backdrop = await page.evaluate(
+    () => getComputedStyle(document.querySelector('dialog.sheet')!, '::backdrop').backgroundColor,
+  );
+  expect(backdrop).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+
+  // Card 3 names no anchor, so nothing is cut out and the page is plainly dim.
+  // The heading changes with the step, so the locator loses its name here.
+  const card = page.getByRole('dialog');
+  await card.getByRole('button', { name: 'Next' }).click();
+  await card.getByRole('button', { name: 'Next' }).click();
+  await expect(card.getByText('Step 3 of 3')).toBeVisible();
+  await expect(card.locator('.spot')).toHaveCount(0);
+});
+
+/** The tour's one animation is the spotlight, and reduced motion switches it off. */
 fresh('the tour works under prefers-reduced-motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize(PHONE);
@@ -94,12 +137,19 @@ fresh('the tour works under prefers-reduced-motion', async ({ page }) => {
 
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  // The tour animates nothing of its own, so there is nothing for the global
+  // The card itself animates nothing, so there is nothing for the global
   // reduced-motion override in tokens.css to switch off. (It is the override
   // that zeroes `transition-duration` on every element, so only
   // `animation-name` says anything about *this* component.)
   const anim = await dialog.evaluate((d) => getComputedStyle(d).animationName);
   expect(anim, 'the tour has nothing that needs reduced-motion handling').toBe('none');
+
+  // The spotlight is the one moving part, and it does not travel here.
+  // tokens.css's global override zeroes it to 0.001 ms rather than to none.
+  const moves = await dialog
+    .locator('.spot')
+    .evaluate((el) => parseFloat(getComputedStyle(el).transitionDuration));
+  expect(moves, 'the spotlight still travels under reduced motion').toBeLessThan(0.01);
 
   await dialog.getByRole('button', { name: 'Next' }).click();
   await expect(dialog.getByText('Step 2 of 3')).toBeVisible();
@@ -111,7 +161,7 @@ test('More can replay the tour', async ({ page }) => {
   await page.goto('/#/more');
 
   await page.getByRole('button', { name: 'Show again' }).click();
-  await expect(page.getByRole('dialog', { name: 'Dock, then Race' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Set the wind' })).toBeVisible();
 });
 
 // --- the explainers -------------------------------------------------------

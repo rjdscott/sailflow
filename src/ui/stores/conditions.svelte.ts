@@ -128,6 +128,23 @@ export const PRESETS: Preset[] = [
   },
 ];
 
+/**
+ * The condition the app opens on, before any link or stored session. It is
+ * named rather than left inline in the store because two other things need
+ * the same values: the cold-load restore cue, which is "the session differs
+ * from this", and its Reset, which is "put this back" (audit ux-04 L-01).
+ * Deliberately not the Medium preset — that is a *starting point you chose*,
+ * and a session that equals it is not the same thing as a session nobody has
+ * touched.
+ */
+export const DEFAULT_CONDITION: Condition = {
+  twsKt: 10,
+  twaDeg: 42,
+  seaState: 1,
+  crewKg: crewOf(300),
+  sailset: 'jib',
+};
+
 export const SEA_STATES: { value: SeaState; label: string }[] = [
   { value: 0, label: 'Flat' },
   { value: 1, label: 'Ripple' },
@@ -137,11 +154,11 @@ export const SEA_STATES: { value: SeaState; label: string }[] = [
 ];
 
 class Conditions {
-  twsKt = $state(10);
-  twaDeg = $state(42);
-  seaState: SeaState = $state(1);
-  crewKg = $state(crewOf(300));
-  sailset: SailSet = $state('jib');
+  twsKt = $state(DEFAULT_CONDITION.twsKt);
+  twaDeg = $state(DEFAULT_CONDITION.twaDeg);
+  seaState: SeaState = $state(DEFAULT_CONDITION.seaState);
+  crewKg = $state(DEFAULT_CONDITION.crewKg);
+  sailset: SailSet = $state(DEFAULT_CONDITION.sailset);
 
   /** Reading this tracks every field, so an effect on it re-runs on any change. */
   get value(): Condition {

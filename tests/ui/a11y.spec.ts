@@ -49,7 +49,11 @@ test('the coach verdict and the instrument summary are status live regions', asy
 
   // The debounced summary of the three numbers the screen is for.
   const summary = page.locator('.bar p[role="status"]');
-  await expect(summary).toHaveText(/knots boat speed, .* percent of polar, VMG .* knots\./);
+  // The VMG face dropped its minus sign (audit ux-04 H-04), so the spoken
+  // summary carries the direction in words rather than in a sign.
+  await expect(summary).toHaveText(
+    /knots boat speed, .* percent of polar, VMG .* knots to (windward|leeward)\./,
+  );
 });
 
 const PHONE = { width: 390, height: 844 };

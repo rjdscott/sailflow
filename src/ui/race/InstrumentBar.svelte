@@ -10,6 +10,13 @@
 
   /** The same sentence about a pinned trim (audit ux-01 M-19). */
   export const PINNED_DELTA_LABEL = 'to pinned trim (+ = the pinned trim is faster)';
+
+  /**
+   * VMG on a run. The face has dropped the minus sign (H-04), so the delta is
+   * the one place left that has to say which way "more" points — towards the
+   * leeward mark, not up the beat.
+   */
+  export const VMG_DOWN_DELTA_LABEL = 'to optimum (+ = optimum makes more VMG to leeward)';
 </script>
 
 <script lang="ts">
@@ -17,7 +24,7 @@
   import { cubicOut } from 'svelte/easing';
   import { prefersReducedMotion, Tween } from 'svelte/motion';
   import type { Condition, SolveResult } from '../../core/types';
-  import { fmt, targetOf } from '../format';
+  import { fmt, targetOf, vmgDisplay } from '../format';
   import ConditionsBand from './ConditionsBand.svelte';
   import InstrumentCell from '../components/InstrumentCell.svelte';
   import BulletGauge from '../components/BulletGauge.svelte';
@@ -78,14 +85,25 @@
   } = $props();
 
   const vmgBetter = $derived(objective === 'vmgDown' ? ('less' as const) : ('more' as const));
+  /**
+   * Downwind the VMG cell explains its own sign convention; a pinned trim
+   * still wins, because there the delta is not measured against the optimum
+   * at all and the pinned sentence is the true one.
+   */
+  const vmgDeltaLabel = $derived(
+    objective === 'vmgDown' && deltaLabel === DEFAULT_DELTA_LABEL
+      ? VMG_DOWN_DELTA_LABEL
+      : deltaLabel,
+  );
   const gapTo = (
     value: number,
     to: number | undefined,
     decimals: number,
     better: 'more' | 'less' = 'more',
+    label: string = deltaLabel,
   ) => {
     const t = targetOf(value, to, decimals, better);
-    return t && { ...t, label: deltaLabel };
+    return t && { ...t, label };
   };
 
   /**
@@ -133,6 +151,8 @@
   $effect(() => {
     void shown.set(numbers());
   });
+
+  const vmg = $derived(vmgDisplay(shown.current.vmg, objective));
 
   let explaining: string | null = $state(null);
   let sheetOpen = $state(false);
@@ -183,7 +203,8 @@
     const text =
       `${fmt(result.bsKt.value, 1)} knots boat speed, ` +
       `${fmt(result.instruments.pctPolar.value, 0)} percent of polar, ` +
-      `VMG ${fmt(result.vmgKt.value, 2)} knots.`;
+      `VMG ${fmt(Math.abs(result.vmgKt.value), 2)} knots ` +
+      `${objective === 'vmgDown' ? 'to leeward' : 'to windward'}.`;
     const timer = setTimeout(() => (announce = text), ANNOUNCE_MS);
     return () => clearTimeout(timer);
   });
@@ -223,14 +244,16 @@
             tier={result.instruments.pctPolar.tier}
             onexplain={explain}
           />
+          <!-- `4.95 kt ↓` on a run, `3.85 kt ↑` on a beat: the magnitude with
+               the mark it is made good towards, never a minus sign (H-04). -->
           <InstrumentCell
             label="VMG"
             id="vmg"
             size="lg"
-            unit="kt"
-            value={fmt(shown.current.vmg, 2)}
+            unit="kt {vmg.glyph}"
+            value={vmg.value}
             tier={result.vmgKt.tier}
-            target={gapTo(result.vmgKt.value, target?.vmgKt, 2, vmgBetter)}
+            target={gapTo(result.vmgKt.value, target?.vmgKt, 2, vmgBetter, vmgDeltaLabel)}
             trend={trend.vmg}
             onexplain={explain}
           />

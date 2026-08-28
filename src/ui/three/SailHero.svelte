@@ -319,6 +319,18 @@
     min-height: var(--hero-h);
   }
 
+  /* Phone: the band is above the hero now (ADR 0021), and the promise is that
+     the band *and* the top of the boat share the first 844 px. 66vw put the
+     hero's picture at 257 px on a 390 px screen and the boat's masthead below
+     the fold; 56vw is 218 px, which is the picture the first viewport can
+     afford (audit ux-04 H-03). The 300 px ceiling only binds on a 536 px+
+     phone, where 844 px of height is no longer the constraint. */
+  @media (max-width: 719px) {
+    .slot {
+      --hero-h: min(56vw, 300px);
+    }
+  }
+
   @media (min-width: 1024px) {
     .slot {
       --hero-h: 360px;
