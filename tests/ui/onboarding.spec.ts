@@ -223,20 +223,27 @@ test('an empty Log states its emptiness once', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'New entry' })).toBeVisible();
 });
 
-// --- the Dock -------------------------------------------------------------
+// --- the rig ---------------------------------------------------------------
 
-/** ux-01 M-20: the Dock asked for turns and never said what a turn was. */
-test('Dock illustrates a shroud turn and explains how to apply one', async ({ page }) => {
+/**
+ * ux-01 M-20: the app asked for turns and never said what a turn was. The
+ * drawing moved with the rest of the Dock into the Rig panel's `Setup`
+ * disclosure (ADR 0021), which is open from the race tier up.
+ */
+test('the Rig panel illustrates a shroud turn and explains how to apply one', async ({ page }) => {
   await page.setViewportSize(DESKTOP);
-  await page.goto('/#/dock');
+  await page.goto('/#/sim');
 
-  const figure = page.locator('.shroud svg');
+  // A link under the sliders, because a schematic nobody asked for yet has no
+  // room on the cockpit's densest panel (ADR 0021).
+  await page.getByRole('button', { name: 'How to apply a turn' }).click();
+  const dialog = page.getByRole('dialog', { name: 'How to apply turns' });
+  await expect(dialog).toBeVisible();
+
+  const figure = dialog.locator('.shroud svg');
   await expect(figure).toBeVisible();
   await expect(figure).toHaveAttribute('aria-label', /turnbuckle/);
 
-  await page.getByRole('button', { name: 'How to apply turns' }).click();
-  const dialog = page.getByRole('dialog', { name: 'How to apply turns' });
-  await expect(dialog).toBeVisible();
   // A procedure, in order, not a paragraph.
   expect(await dialog.getByRole('listitem').count()).toBeGreaterThanOrEqual(4);
 });
@@ -248,9 +255,17 @@ test('Dock illustrates a shroud turn and explains how to apply one', async ({ pa
  */
 test('the tuning card prints the gear chart and nothing else does', async ({ page }) => {
   await page.setViewportSize(DESKTOP);
-  await page.goto('/#/dock');
+  // The card is mounted by `Print`, and mounting it is what asks the browser
+  // to print — which headless Chromium would sit in, so the dialog is stubbed.
+  await page.addInitScript(() => {
+    window.print = () => undefined;
+  });
+  await page.goto('/#/sim');
 
   const printed = page.locator('.print-card .gear-print');
+  await expect(printed).toHaveCount(0);
+  await page.locator('.p-rig summary').click();
+  await page.getByRole('button', { name: 'Print', exact: true }).click();
   await expect(printed).toBeHidden();
 
   await page.emulateMedia({ media: 'print' });

@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DockControls, DockScore } from '../../core/types';
+import type { DockControls, DockScore, Forecast } from '../../core/types';
 import type { Request, ResultOf } from '../../worker/protocol';
 import type { Client } from './client';
-import { COMMIT_ARM_MS, DockStore, SCORE_DEBOUNCE_MS } from './store.svelte';
+import { DockStore, SCORE_DEBOUNCE_MS } from './store.svelte';
 import { candidateSetups, quickCandidates } from './logic';
+import { conditions } from '../stores/conditions.svelte';
 import { rigLock } from '../stores/rigLock.svelte';
 
 function makeScore(setup: DockControls, expected: number): DockScore {
@@ -23,6 +24,7 @@ function fakeClient() {
   const calls: {
     setups: DockControls[];
     candidates: DockControls[];
+    forecast: Forecast;
     onProgress?: (done: number, total: number) => void;
   }[] = [];
   const pending: ((scores: DockScore[]) => void)[] = [];
@@ -31,8 +33,17 @@ function fakeClient() {
       req: Omit<R, 'id' | 'protocolVersion'>,
       opts?: { onProgress?: (done: number, total: number) => void },
     ): Promise<ResultOf<R>> {
-      const r = req as unknown as { setups: DockControls[]; candidates: DockControls[] };
-      calls.push({ setups: r.setups, candidates: r.candidates, onProgress: opts?.onProgress });
+      const r = req as unknown as {
+        setups: DockControls[];
+        candidates: DockControls[];
+        forecast: Forecast;
+      };
+      calls.push({
+        setups: r.setups,
+        candidates: r.candidates,
+        forecast: r.forecast,
+        onProgress: opts?.onProgress,
+      });
       return new Promise((resolve) => {
         pending.push(resolve as (s: DockScore[]) => void);
       }) as Promise<ResultOf<R>>;
@@ -234,46 +245,77 @@ describe('DockStore.suggest', () => {
   });
 });
 
-describe('DockStore commit arming', () => {
-  it('arms on the first tap and disarms itself after the window', () => {
+/**
+ * ADR 0021: sea state and crew moved to the instrument band, so the rig is
+ * scored against whatever the band says rather than against a second copy that
+ * could disagree with it.
+ */
+describe('DockStore.forecast', () => {
+  it('reads sea state and crew from the conditions on the band', () => {
     const dock = new DockStore(fakeClient().client);
-    expect(dock.armed).toBe(false);
+    conditions.seaState = 3;
+    conditions.crewKg = 285;
+    expect(dock.forecast).toEqual({ minKt: 8, likelyKt: 12, maxKt: 16, seaState: 3, crewKg: 285 });
 
-    dock.arm();
-    expect(dock.armed).toBe(true);
-    vi.advanceTimersByTime(COMMIT_ARM_MS - 1);
-    expect(dock.armed).toBe(true);
-    vi.advanceTimersByTime(1);
-    expect(dock.armed).toBe(false);
+    // And the band moving is what the solver is asked about next.
+    conditions.seaState = 1;
+    expect(dock.forecast.seaState).toBe(1);
   });
 
-  it('a second arm restarts the window rather than shortening it', () => {
-    const dock = new DockStore(fakeClient().client);
-    dock.arm();
-    vi.advanceTimersByTime(COMMIT_ARM_MS - 1);
-    dock.arm();
-    vi.advanceTimersByTime(COMMIT_ARM_MS - 1);
-    expect(dock.armed).toBe(true);
+  it('sends the band values to the solver, not a stale mirror of them', () => {
+    const { client, calls } = fakeClient();
+    const dock = new DockStore(client);
+    conditions.seaState = 4;
+    conditions.crewKg = 310;
+    dock.wind.likelyKt = 14;
+    dock.rescore();
+    vi.advanceTimersByTime(SCORE_DEBOUNCE_MS);
+    expect(calls[0].forecast).toEqual({
+      minKt: 8,
+      likelyKt: 14,
+      maxKt: 16,
+      seaState: 4,
+      crewKg: 310,
+    });
+    expect(() => structuredClone(calls[0].forecast)).not.toThrow();
   });
 
-  it('committing disarms, so the expiry cannot fire on a fresh arming', () => {
+  it('applies only the wind band out of a link or a stored session', () => {
     const dock = new DockStore(fakeClient().client);
-    dock.arm();
+    conditions.seaState = 0;
+    conditions.crewKg = 300;
+    dock.applyForecast({ minKt: 4, likelyKt: 9, maxKt: 14, seaState: 4, crewKg: 260 });
+    expect(dock.wind).toEqual({ minKt: 4, likelyKt: 9, maxKt: 14 });
+    // The link's sea state and crew are the caller's to apply to `conditions`;
+    // the rig store never writes them (App.svelte does).
+    expect(conditions.seaState).toBe(0);
+    expect(conditions.crewKg).toBe(300);
+  });
+});
+
+describe('DockStore.undo', () => {
+  it('puts back the setup the last suggestion replaced, once', () => {
+    const dock = new DockStore(fakeClient().client);
+    dock.setup.upperTurns = 1.5;
+    const mine = { ...dock.setup };
+
+    dock.apply({ upperTurns: 4, lowerTurns: 2, forestayMm: 16 });
+    expect(dock.previous).toEqual(mine);
+
+    dock.undo();
+    expect(dock.setup).toEqual(mine);
+    // One step deep: a second undo has nothing to go back to.
+    expect(dock.previous).toBeNull();
+    dock.undo();
+    expect(dock.setup).toEqual(mine);
+  });
+
+  it('refuses while the rig is committed, like apply does (M-07)', () => {
+    const dock = new DockStore(fakeClient().client);
+    dock.apply({ upperTurns: 4, lowerTurns: 2, forestayMm: 16 });
     dock.commit();
-    expect(dock.armed).toBe(false);
-
-    dock.arm();
-    vi.advanceTimersByTime(COMMIT_ARM_MS - 1);
-    expect(dock.armed).toBe(true);
-  });
-
-  it('disarm cancels an arming outright', () => {
-    const dock = new DockStore(fakeClient().client);
-    dock.arm();
-    dock.disarm();
-    expect(dock.armed).toBe(false);
-    vi.advanceTimersByTime(COMMIT_ARM_MS);
-    expect(dock.armed).toBe(false);
+    dock.undo();
+    expect(dock.setup.upperTurns).toBe(4);
   });
 });
 

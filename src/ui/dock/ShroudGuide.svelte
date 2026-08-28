@@ -4,16 +4,20 @@
   /**
    * "Turns" with a picture of what a turn is (audit ux-01 M-20).
    *
-   * The Dock asks for uppers and lowers in turns from base and, until now,
-   * never showed where a turn is made or how one is counted — which is the
-   * one thing a sailor who has not tuned a rig before does not know.
+   * The Rig panel asks for uppers and lowers in turns from base and, until
+   * now, never showed where a turn is made or how one is counted — which is
+   * the one thing a sailor who has not tuned a rig before does not know.
    *
    * Own-drawn schematic, tokens only, not to scale, and no numbers: every
-   * number that belongs here is the *guide's*, and the guide's own table is
-   * three cards down. What this adds is the procedure, which is the same for
-   * every guide and every wind band.
+   * number that belongs here is the *guide's*, and the guide's own table is a
+   * button away. What this adds is the procedure, which is the same for every
+   * guide and every wind band.
+   *
+   * Drawing and procedure are one sheet, opened from a link under the sliders:
+   * on the cockpit's Rig panel there is no room for a schematic nobody has
+   * asked for yet (ADR 0021, plan phase 04).
    */
-  let open = $state(false);
+  let { open = $bindable(false) }: { open?: boolean } = $props();
 
   const ariaLabel =
     'Schematic of one side of the rig: the upper shroud from the mast tip over the spreader tip to the chainplate, ' +
@@ -31,64 +35,62 @@
   ];
 </script>
 
-<figure class="shroud">
-  <svg viewBox="0 0 200 120" role="img" aria-label={ariaLabel}>
-    <!-- Mast, spreader, and the two wires the Dock asks about. -->
-    <line class="mast" x1="52" y1="6" x2="52" y2="104" />
-    <line class="spar" x1="52" y1="44" x2="92" y2="50" />
-    <path class="wire upper" d="M52 10 L92 50 L74 104" />
-    <path class="wire lower" d="M52 46 L74 104" />
-    <circle class="node" cx="52" cy="10" r="2.5" />
-    <circle class="node" cx="92" cy="50" r="2.5" />
-
-    <!-- Deck and chainplate: where both wires land, and where the barrels are. -->
-    <line class="deck" x1="30" y1="104" x2="104" y2="104" />
-
-    <text class="mark" x="96" y="30">Upper</text>
-    <text class="mark" x="30" y="80">Lower</text>
-
-    <!-- The turnbuckle, drawn large to one side: this is the thing being
-         counted, and at rig scale it is three pixels tall. -->
-    <line class="lead" x1="78" y1="96" x2="132" y2="62" />
-    <line class="wire" x1="152" y1="18" x2="152" y2="40" />
-    <rect class="barrel" x="142" y="40" width="20" height="34" rx="3" />
-    <line class="barrel-line" x1="146" y1="50" x2="158" y2="50" />
-    <line class="barrel-line" x1="146" y1="57" x2="158" y2="57" />
-    <line class="barrel-line" x1="146" y1="64" x2="158" y2="64" />
-    <line class="wire" x1="152" y1="74" x2="152" y2="96" />
-    <path class="turn" d="M168 46 a 14 14 0 1 1 -13 -8" marker-end="url(#shroud-arrow)" />
-    <text class="mark turn-label" x="176" y="86">1 turn</text>
-
-    <defs>
-      <marker
-        id="shroud-arrow"
-        viewBox="0 0 8 8"
-        refX="7"
-        refY="4"
-        markerWidth="4"
-        markerHeight="4"
-        orient="auto"
-      >
-        <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--accent)" />
-      </marker>
-    </defs>
-  </svg>
-  <figcaption>
-    Not to scale. A turn is one full rotation of the barrel, both sides the same.
-  </figcaption>
-</figure>
-
-<button type="button" class="quiet" onclick={() => (open = true)}>How to apply turns</button>
-
 <Sheet bind:open title="How to apply turns">
+  <figure class="shroud">
+    <svg viewBox="0 0 200 120" role="img" aria-label={ariaLabel}>
+      <!-- Mast, spreader, and the two wires the Dock asks about. -->
+      <line class="mast" x1="52" y1="6" x2="52" y2="104" />
+      <line class="spar" x1="52" y1="44" x2="92" y2="50" />
+      <path class="wire upper" d="M52 10 L92 50 L74 104" />
+      <path class="wire lower" d="M52 46 L74 104" />
+      <circle class="node" cx="52" cy="10" r="2.5" />
+      <circle class="node" cx="92" cy="50" r="2.5" />
+
+      <!-- Deck and chainplate: where both wires land, and where the barrels are. -->
+      <line class="deck" x1="30" y1="104" x2="104" y2="104" />
+
+      <text class="mark" x="96" y="30">Upper</text>
+      <text class="mark" x="30" y="80">Lower</text>
+
+      <!-- The turnbuckle, drawn large to one side: this is the thing being
+           counted, and at rig scale it is three pixels tall. -->
+      <line class="lead" x1="78" y1="96" x2="132" y2="62" />
+      <line class="wire" x1="152" y1="18" x2="152" y2="40" />
+      <rect class="barrel" x="142" y="40" width="20" height="34" rx="3" />
+      <line class="barrel-line" x1="146" y1="50" x2="158" y2="50" />
+      <line class="barrel-line" x1="146" y1="57" x2="158" y2="57" />
+      <line class="barrel-line" x1="146" y1="64" x2="158" y2="64" />
+      <line class="wire" x1="152" y1="74" x2="152" y2="96" />
+      <path class="turn" d="M168 46 a 14 14 0 1 1 -13 -8" marker-end="url(#shroud-arrow)" />
+      <text class="mark turn-label" x="176" y="86">1 turn</text>
+
+      <defs>
+        <marker
+          id="shroud-arrow"
+          viewBox="0 0 8 8"
+          refX="7"
+          refY="4"
+          markerWidth="4"
+          markerHeight="4"
+          orient="auto"
+        >
+          <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--accent)" />
+        </marker>
+      </defs>
+    </svg>
+    <figcaption>
+      Not to scale. A turn is one full rotation of the barrel, both sides the same.
+    </figcaption>
+  </figure>
+
   <ol class="steps">
     {#each STEPS as s (s)}
       <li>{s}</li>
     {/each}
   </ol>
   <p class="foot">
-    The numbers to dial in are the tuning guide's, not this app's — Race → Rig has the guide's own
-    table with today's band lit up, and the Print tuning card button below puts it on paper.
+    The numbers to dial in are the tuning guide's, not this app's — the Rig panel's Gear chart has
+    the guide's own table with today's band lit up, and Print tuning card puts it on paper.
   </p>
 </Sheet>
 
@@ -173,17 +175,6 @@
     margin-top: var(--space-2);
     font-size: var(--text-xs);
     color: var(--ink-2);
-  }
-
-  .quiet {
-    min-height: var(--hit-min);
-    padding: 0 var(--space-3);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius);
-    background: transparent;
-    color: var(--ink-2);
-    font-size: var(--text-sm);
-    cursor: pointer;
   }
 
   .steps {

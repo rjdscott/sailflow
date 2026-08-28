@@ -34,6 +34,7 @@
   import { BASE_RACE, conditions } from '../stores/conditions.svelte';
   import { settings } from '../stores/settings.svelte';
   import { rigLock } from '../stores/rigLock.svelte';
+  import { dock } from '../dock/store.svelte';
   import Panel from '../disagree/Panel.svelte';
   import { ModelOptimumStore } from '../disagree/store.svelte';
   import { getClient } from '../race/client';
@@ -51,7 +52,7 @@
   });
 
   $effect(() => {
-    race.syncDock(rigLock.lockedToday ? rigLock.locked!.setup : null);
+    race.syncDock(rigLock.lockedToday ? rigLock.locked!.setup : dock.setup);
   });
 
   $effect(() => {

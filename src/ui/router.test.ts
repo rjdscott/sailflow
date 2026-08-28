@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildHash, DEFAULT_ROUTE, parseHash } from './router.svelte';
+import { buildHash, DEFAULT_ROUTE, hashSlug, parseHash } from './router.svelte';
 
 describe('parseHash', () => {
   it('defaults to the simulator with no hash', () => {
@@ -47,14 +47,30 @@ describe('parseHash', () => {
     warn.mockRestore();
   });
 
-  it('resolves the old dock link to the simulator sub-path, query untouched', () => {
+  // Phase 04 folded the Dock into the Rig panel, so `#/dock` is the Simulator
+  // outright — no sub-path — and the forecast the link carries is what the Rig
+  // panel opens on.
+  it('resolves the old dock link to the simulator, forecast intact', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     expect(parseHash('#/dock?s=1&f=8_12_16_1_300')).toEqual({
       screen: 'sim',
-      params: { sub: 'dock', s: '1', f: '8_12_16_1_300' },
+      params: { s: '1', f: '8_12_16_1_300' },
     });
-    // And the sub-path spells itself the same way when written out in full.
-    expect(parseHash('#/sim/dock').params).toEqual({ sub: 'dock' });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+    // The dead sub-path is not a screen of its own any more, and does not
+    // become a stray param either.
+    expect(parseHash('#/sim/dock').params).toEqual({});
     expect(parseHash('#/sim').params).toEqual({});
+  });
+
+  // Which slug the link used is how the Rig panel knows to scroll itself into
+  // view for a Dock link (`Router.landedFrom`).
+  it('reports the slug a link was written with', () => {
+    expect(hashSlug('#/dock?f=8_12_16_1_300')).toBe('dock');
+    expect(hashSlug('#/sim?tws=10')).toBe('sim');
+    expect(hashSlug('#/')).toBe('');
+    expect(hashSlug('')).toBe('');
   });
 
   it('reads template and seed out of a drill path', () => {
@@ -72,12 +88,6 @@ describe('parseHash', () => {
 describe('buildHash', () => {
   it('round-trips a scenario', () => {
     const params = { tws: '18', twa: '42', sea: '2', crew: '320', set: 'asym', r: '30.70.-20' };
-    expect(parseHash(buildHash('sim', params)).params).toEqual(params);
-  });
-
-  it('writes the sub-path out of the query and round-trips it', () => {
-    const params = { sub: 'dock', tws: '18' };
-    expect(buildHash('sim', params)).toBe('#/sim/dock?tws=18');
     expect(parseHash(buildHash('sim', params)).params).toEqual(params);
   });
 

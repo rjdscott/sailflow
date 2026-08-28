@@ -11,6 +11,7 @@
     id,
     cue,
     lit = -1,
+    status,
     controls,
     visual,
     instruments,
@@ -26,6 +27,8 @@
      * replay is running (research 02 §3, the cross-panel puff overlay).
      */
     lit?: number;
+    /** Panel state, not a reading: one chip at the end of the header line. */
+    status?: Snippet;
     controls: Snippet;
     visual: Snippet;
     instruments?: Snippet;
@@ -35,6 +38,7 @@
 <section class="panel" aria-labelledby={id} data-lit={lit >= 0 ? lit : undefined}>
   <div class="head">
     <h2 {id} class="section-title">{title}</h2>
+    {#if status}<div class="status">{@render status()}</div>{/if}
     {#if cue}<p class="cue">{cue}</p>{/if}
   </div>
 
@@ -95,6 +99,18 @@
     align-items: baseline;
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-3);
+  }
+
+  /* End of the title's line, so it costs no height of its own; the cue takes
+     the whole of the next line. */
+  .status {
+    order: 1;
+    margin-inline-start: auto;
+  }
+
+  .cue {
+    order: 2;
+    flex-basis: 100%;
   }
 
   .cue {
@@ -164,6 +180,14 @@
     .grid {
       grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
       grid-template-areas: 'controls visual';
+    }
+
+    /* No instrument rail (the Rig panel): its controls are three sliders that
+       need room for a name, a value and a track, and its picture reads fine at
+       260 px. prov: assumed 300 px floor — `ControlRow`'s one-line form starts
+       at a 420 px control container, and 300 px is the two-line form's floor. */
+    .grid:not(.with-instruments) {
+      grid-template-columns: minmax(300px, 1fr) minmax(0, 260px);
     }
 
     .grid.with-instruments {

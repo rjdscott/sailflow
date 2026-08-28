@@ -36,7 +36,7 @@ before the PR opens. Review on Fable before merge.
 | 01 | [Conditions band](phase-01-conditions-band.md) | 🟢 Completed | 2026-08-28 |
 | 02 | [Phone order, tour, VMG sign](phase-02-phone-tour-vmg.md) | 🔵 Not started | none |
 | 03 | [Route `sim` and the four-item nav](phase-03-sim-route.md) | 🟢 Done | 2026-08-28 |
-| 04 | [Rig panel absorbs the Dock](phase-04-rig-absorbs-dock.md) | 🔵 Not started | none |
+| 04 | [Rig panel absorbs the Dock](phase-04-rig-absorbs-dock.md) | 🟢 Done | 2026-08-28 |
 | 05 | [Polish, snapshots, audit tick-off, 0.5.0](phase-05-polish-release.md) | 🔵 Not started | none |
 
 ## Critical files

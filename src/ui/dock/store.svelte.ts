@@ -1,27 +1,33 @@
 /**
- * Dock-mode state: the forecast, the setup under consideration, its score,
- * and the suggest/commit actions. All solver traffic goes through
- * `./client` (ADR 0003).
+ * The rig's own state, read by the Simulator's Rig panel (ADR 0021): the wind
+ * band, the setup under consideration, its expected regret, and the suggest /
+ * commit actions. Sea state and crew are read from `conditions`, not kept
+ * here. All solver traffic goes through `./client` (ADR 0003).
  */
 import type { DockControls, DockScore, Forecast } from '../../core/types';
 import type { DockScoreRequest } from '../../worker/protocol';
 import { getClient, type Client } from './client';
 import { candidateSetups, pickBest, quickCandidates, type Suggestion } from './logic';
+import { conditions } from '../stores/conditions.svelte';
 import { rigLock, type RigLock } from '../stores/rigLock.svelte';
 
 /** Long enough that dragging a slider is one solve, short enough to feel live. */
 export const SCORE_DEBOUNCE_MS = 300;
 
-/**
- * How long an armed commit stays armed on the phone bar. Long enough to read
- * the setup in the label, short enough that a pocket tap minutes later cannot
- * land on a live confirm (audit ux-01 M-03).
- */
-export const COMMIT_ARM_MS = 4000;
+/** The wind band the rig is committed against. Sea state and crew are not
+ *  here: they are the world's, not the forecast's, and they live in
+ *  `conditions` — one home per input (ADR 0021). */
+export interface WindBand {
+  minKt: number;
+  likelyKt: number;
+  maxKt: number;
+}
 
 export class DockStore {
-  forecast: Forecast = $state({ minKt: 8, likelyKt: 12, maxKt: 16, seaState: 1, crewKg: 300 });
+  wind: WindBand = $state({ minKt: 8, likelyKt: 12, maxKt: 16 });
   setup: DockControls = $state({ upperTurns: 0, lowerTurns: 0, forestayMm: 0 });
+  /** The setup a suggestion replaced, for the one-tap way back. */
+  previous: DockControls | null = $state.raw(null);
   scores: DockScore[] | null = $state.raw(null);
   suggestion: Suggestion | null = $state.raw(null);
   /** Scoring the current setup. */
@@ -35,8 +41,6 @@ export class DockStore {
       while a rescore runs (audit ux-01 H-03). */
   searching: boolean = $state(false);
   error: string | null = $state.raw(null);
-  /** The phone commit bar is armed and the next tap commits. */
-  armed: boolean = $state(false);
   /** `apply()` refused because the rig is locked; the Suggest card says so. */
   needsUnlock: boolean = $state(false);
 
@@ -45,7 +49,6 @@ export class DockStore {
   private seq = 0;
   private searchSeq = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
-  private armTimer: ReturnType<typeof setTimeout> | undefined;
   private listeners: ((lock: RigLock) => void)[] = [];
 
   constructor(client: Client = getClient()) {
@@ -54,6 +57,28 @@ export class DockStore {
 
   get score(): DockScore | null {
     return this.scores?.[0] ?? null;
+  }
+
+  /**
+   * What the solver is asked to score: the wind band on the Rig panel plus the
+   * sea state and crew weight on the instrument band. Read every time rather
+   * than mirrored, so there is exactly one editable copy of each number and
+   * changing it on the band re-scores the rig.
+   */
+  get forecast(): Forecast {
+    return {
+      ...this.wind,
+      seaState: conditions.seaState,
+      crewKg: conditions.crewKg,
+    };
+  }
+
+  /** Take the wind band out of a link or a stored session; the rest of a
+   *  `Forecast` belongs to `conditions` and the caller applies it there. */
+  applyForecast(f: Partial<Forecast>): void {
+    if (f.minKt !== undefined) this.wind.minKt = f.minKt;
+    if (f.likelyKt !== undefined) this.wind.likelyKt = f.likelyKt;
+    if (f.maxKt !== undefined) this.wind.maxKt = f.maxKt;
   }
 
   get committed(): RigLock | null {
@@ -145,25 +170,25 @@ export class DockStore {
       return;
     }
     this.needsUnlock = false;
+    this.previous = $state.snapshot(this.setup);
     this.setup = { ...setup };
     this.rescore();
   }
 
-  /** First tap arms, a second within `COMMIT_ARM_MS` commits. */
-  arm(): void {
-    clearTimeout(this.armTimer);
-    this.armed = true;
-    this.armTimer = setTimeout(() => (this.armed = false), COMMIT_ARM_MS);
-  }
-
-  disarm(): void {
-    clearTimeout(this.armTimer);
-    this.armed = false;
+  /**
+   * Back to the setup the last suggestion replaced — the cockpit's own undo
+   * affordance, on the one control group it did not cover. One step deep on
+   * purpose: it exists to make trying a suggestion free, not to be a history.
+   */
+  undo(): void {
+    if (!this.previous || rigLock.lockedToday) return;
+    this.setup = { ...this.previous };
+    this.previous = null;
+    this.rescore();
   }
 
   /** Lock the rig for the day and tell anyone who asked (e.g. the log draft). */
   commit(): RigLock {
-    this.disarm();
     const lock = rigLock.commit($state.snapshot(this.setup), $state.snapshot(this.forecast));
     for (const fn of this.listeners) fn(lock);
     return lock;

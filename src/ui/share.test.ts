@@ -212,7 +212,7 @@ describe('links written before the Simulator merge', () => {
   /** The whole link, the way it sits in a group chat, back to a state. */
   function open(hash: string) {
     const { screen, params } = parseHash(hash);
-    return { screen, sub: params.sub, ...decodeShare(params) };
+    return { screen, ...decodeShare(params) };
   }
 
   const query = (state: Parameters<typeof encodeShare>[0]): string =>
@@ -221,15 +221,15 @@ describe('links written before the Simulator merge', () => {
   it('opens a v1 `#/race?…` link on the simulator with the same trim', () => {
     const opened = open(`#/race?${query({ condition: CONDITION, race: trim })}`);
     expect(opened.screen).toBe('sim');
-    expect(opened.sub).toBeUndefined();
     expect(opened.condition).toEqual(CONDITION);
     expect(opened.race).toEqual(trim);
   });
 
-  it('opens a v1 `#/dock?…` link on the dock sub-path, forecast intact', () => {
+  // Phase 04: the Dock is the Simulator's Rig panel, so the link lands on the
+  // one screen carrying both halves of what it said.
+  it('opens a v1 `#/dock?…` link on the simulator, forecast and rig intact', () => {
     const opened = open(`#/dock?${query({ forecast: FORECAST, dock: setup })}`);
     expect(opened.screen).toBe('sim');
-    expect(opened.sub).toBe('dock');
     expect(opened.forecast).toEqual(FORECAST);
     expect(opened.dock).toEqual(setup);
   });

@@ -559,60 +559,176 @@ test('the cockpit shows the model-vs-guides summary inline and the table in a sh
 });
 
 /**
- * The day's tune, committed. Seeded rather than driven through the Dock: this
- * test is about what the Rig panel does with a lock, not how one is made.
+ * Suggest / Commit / Print are once-a-day actions, so they sit behind the Rig
+ * panel's `Setup` disclosure, closed at the learn and race tiers exactly like
+ * every other panel's. Open it before reaching for one.
  */
-async function committedRig(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    try {
-      localStorage.setItem(
-        'sailflow.rigLock.v1',
-        JSON.stringify({
-          setup: { upperTurns: 0, lowerTurns: 0, forestayMm: 0 },
-          committedAt: new Date().toISOString(),
-          forecast: { minKt: 8, likelyKt: 10, maxKt: 12, seaState: 'moderate', crewKg: 300 },
-        }),
-      );
-    } catch {
-      // ignore: storage disabled — the panel stays uncommitted and this fails loudly
-    }
+async function openRigSetup(page: Page): Promise<void> {
+  await page.locator('.p-rig summary').click();
+}
+
+/**
+ * ADR 0021: the Dock is this panel now, so the day's tune is made and frozen
+ * where the sails are trimmed. The lesson class rule C.9.5(a) used to be
+ * taught by a screen boundary is carried by these three states.
+ */
+test('committing freezes the three shroud controls, and unlocking frees them', async ({ page }) => {
+  await raceTier(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/sim');
+  await settled(page);
+
+  const rig = page.locator('#rig-controls');
+  const ranges = rig.locator('input[type="range"]');
+  await expect(ranges).toHaveCount(3);
+  for (let i = 0; i < 3; i++) await expect(ranges.nth(i)).not.toHaveAttribute('aria-disabled');
+  await openRigSetup(page);
+  await expect(page.getByText('Not committed — free to explore')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Commit for today' }).click();
+
+  // `aria-disabled`, not `disabled`, on the track: a committed rig stays
+  // readable and focusable (Slider.svelte). The steppers and the numeric
+  // readout beside it are properly disabled, so nothing can move it.
+  for (let i = 0; i < 3; i++) await expect(ranges.nth(i)).toHaveAttribute('aria-disabled', 'true');
+  const readouts = rig.locator('button.readout');
+  for (let i = 0; i < 3; i++) await expect(readouts.nth(i)).toBeDisabled();
+  await expect(page.getByText(/class rule C\.9\.5\(a\) freezes the standing rigging/)).toBeVisible();
+  // State reads on the panel's header line, where it is in view with `Setup`
+  // shut: the chip, not a reading in with the numbers.
+  await expect(page.locator('.p-rig .head .chip')).toHaveText(/Committed/);
+  // A disabled control that says nothing is a mystery: the steppers carry why.
+  await expect(rig.locator('button.step').first()).toHaveAttribute(
+    'title',
+    /Committed for today — Unlock in Setup/,
+  );
+  // Suggest cannot apply to a frozen rig, so it is disabled rather than
+  // followed by a sentence saying it will not work.
+  await expect(page.getByRole('button', { name: 'Suggest a setup' })).toBeDisabled();
+
+  // The rig is frozen for the day, so a reload finds it frozen (rigLock is
+  // persisted) — the failure ADR 0021 named as its revisit trigger.
+  await page.reload();
+  await settled(page);
+  for (let i = 0; i < 3; i++) await expect(ranges.nth(i)).toHaveAttribute('aria-disabled', 'true');
+
+  // Two taps out, deliberately: unlock is the C.9.5-violating direction.
+  await openRigSetup(page);
+  await page.getByRole('button', { name: 'Unlock' }).click();
+  await page.getByRole('button', { name: 'Tap again to unlock' }).click();
+  for (let i = 0; i < 3; i++) await expect(ranges.nth(i)).not.toHaveAttribute('aria-disabled');
+});
+
+/** The expected-regret readout is a cell with the table behind it (ADR 0021). */
+test('the Rig panel reads out expected regret and opens the by-wind table', async ({ page }) => {
+  await raceTier(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/sim');
+  await settled(page);
+
+  const cell = page.locator('.p-rig .regret-row');
+  await expect(cell.getByText('regret')).toBeVisible();
+  // Every number carries its tier (CLAUDE.md honesty rules). The score lands
+  // after the first cockpit solve, so this waits for it rather than for a dash.
+  await expect(cell.locator('.reading')).toContainText('s/mi', { timeout: 30_000 });
+  await expect(cell.locator('.badge')).toBeVisible();
+
+  await cell.getByRole('button', { name: 'by wind' }).click();
+  const sheet = page.locator('dialog[open]');
+  await expect(sheet.getByText('Regret by wind speed')).toBeVisible();
+  expect(await sheet.locator('.per-tws tbody tr').count()).toBeGreaterThan(2);
+});
+
+/**
+ * ux-03 H-04 kept: the gear chart is the guide's own table with the current
+ * wind's row lit. It was a three-row window inside the panel; since ADR 0021
+ * the panel's body is the three shroud controls, so the whole chart is in the
+ * sheet the panel opens.
+ */
+test('the Rig panel opens the whole gear chart with the wind row lit', async ({ page }) => {
+  await raceTier(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/sim');
+  await settled(page);
+
+  await openRigSetup(page);
+  await page
+    .locator('.p-rig')
+    .getByRole('button', { name: /Gear chart/ })
+    .click();
+  const sheet = page.locator('dialog[open]');
+  const rows = sheet.locator('.gear tbody tr');
+  expect(await rows.count()).toBeGreaterThan(3);
+  await expect(sheet.locator('.gear tr.here')).toHaveCount(1);
+  await expect(sheet.getByText('prov:')).toBeVisible();
+});
+
+/**
+ * The Rig panel at the two widths the phase is measured at. Boxes, not pixels:
+ * the repo keeps image baselines for the 3D hero alone, because they have to
+ * be regenerated inside the pinned Playwright image, and a layout assertion
+ * catches what a screenshot would here — a control column that overflows its
+ * cell, or content that never landed.
+ */
+for (const size of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`the Rig panel lays out at ${size.width}x${size.height}`, async ({ page }) => {
+    await raceTier(page);
+    await page.setViewportSize(size);
+    await page.goto('/#/sim');
+    await settled(page);
+
+    const panel = page.locator('.p-rig');
+    await expect(panel.getByRole('heading', { name: 'Rig' })).toBeVisible();
+    // The four things the merge put here, in order.
+    await expect(panel.getByText('Forecast', { exact: true })).toBeVisible();
+    await expect(panel.locator('.regret-row .reading')).toBeVisible();
+    await expect(panel.locator('#rig-controls input[type="range"]')).toHaveCount(3);
+    await openRigSetup(page);
+    // One row of actions, not a stack of cards: four buttons on one line where
+    // the panel is wide enough, wrapping where it is not.
+    for (const name of ['Suggest a setup', 'Commit for today', 'Print', 'Gear chart'])
+      await expect(panel.getByRole('button', { name, exact: true })).toBeVisible();
+
+    // Nothing sticks out sideways: a cockpit column that cannot hold a slider
+    // row pushes the whole grid past the window (ADR 0016).
+    const box = (await panel.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(size.width + 1);
+    const spill = await panel.evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(spill, 'the panel must not scroll sideways inside itself').toBeLessThanOrEqual(1);
   });
 }
 
 /**
- * ux-03 H-04. Committed, the Rig panel is the gear chart with your row lit —
- * and it rendered the header row and none of the seven data rows, 546 px of
- * them hidden in an overlay scroller with no scrollbar. Show the lit band and
- * its neighbours; the whole chart is one click away.
+ * The phone height budget for the densest panel in the app (plan phase 04,
+ * amended from 844 px — one viewport is not a budget a tier built on inline
+ * explainers can meet, and this panel carries a whole former screen). Learn is
+ * the taller tier because its controls print their explainer; race is the tier
+ * the one-screen promise is made in.
  */
-test('the committed Rig panel shows the lit gear-chart row, not a header over nothing', async ({
-  page,
-}) => {
-  await raceTier(page);
-  await committedRig(page);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/#/race');
-  await settled(page);
+for (const [tier, budget] of [
+  ['learn', 1100],
+  ['race', 900],
+] as const) {
+  test(`the Rig panel fits ${budget} px at 390 in the ${tier} tier`, async ({ page }) => {
+    await page.addInitScript((t) => {
+      try {
+        localStorage.setItem('sailflow.mode', t);
+        localStorage.setItem('sailflow.motion', 'off');
+      } catch {
+        // ignore: storage disabled, and the assertion below says what happened
+      }
+    }, tier);
+    await page.setViewportSize(PHONE);
+    await page.goto('/#/sim');
+    await settled(page);
 
-  // The sheet's copy of the chart also lives inside `.p-rig`; this is the one
-  // in the panel body.
-  const panel = page.locator('.p-rig');
-  const lit = panel.locator('.gear.windowed tr.here');
-  await expect(lit).toBeVisible();
-
-  // The panel no longer scrolls inside itself (ADR 0016), so "in view" is just
-  // a real box on the page — the clause that checked it against the panel's own
-  // scroll box went with the scroller.
-  const box = await lit.boundingBox();
-  expect(box?.height ?? 0, 'the lit row must be a real box').toBeGreaterThan(0);
-
-  const rows = await panel.locator('.gear.windowed tbody tr:visible').count();
-  expect(rows).toBeGreaterThanOrEqual(2);
-
-  await panel.getByRole('button', { name: /Full chart/ }).click();
-  const sheet = page.locator('dialog[open]');
-  expect(await sheet.locator('.gear tbody tr:visible').count()).toBeGreaterThan(rows);
-});
+    const h = (await page.locator('.p-rig').boundingBox())!.height;
+    expect(Math.round(h), `the Rig panel at 390 in the ${tier} tier`).toBeLessThanOrEqual(budget);
+  });
+}
 
 /**
  * ux-03 H-07, WCAG 2.4.3. The actions card was emitted before the hero and all

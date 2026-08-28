@@ -30,11 +30,24 @@ undiagnosable.
 - **`#/sim` is the app's primary route** (ADR 0021): Dock and Race become one
   Simulator page, and the nav drops to four items — Simulator · Log · Drills ·
   More. Links already in the wild keep working: `#/race?…` resolves to `#/sim?…`
-  with its query untouched, and `#/dock?…` to `#/sim/dock?…`, which still mounts
-  the Dock screen until the Rig panel absorbs it. The share schema is unchanged
+  with its query untouched, and `#/dock?…` to `#/sim?…` on the Rig panel. The share schema is unchanged
   — the route moved, not the query — so `s=1` links, dot-separated v0 links
   included, decode to exactly the state they always did (ADR 0019). The
   `Race opened` / `Dock opened` usage counters become one `Simulator opened`.
+
+- **The Rig panel absorbs the Dock** (ADR 0021, audit ux-04 rows 10 and 16):
+  the Dock screen is gone and everything it did is the fourth sail system on
+  the Simulator — the wind band the tune is bet on (`8–16 kt · likely 12`, with
+  `Sail the likely wind` to sail it), the expected regret of committing once
+  with the by-wind table behind it, the three shroud and forestay controls with
+  the tuning guide's published turns marked on the track, and a `Setup` row
+  holding `Suggest a setup`, `Commit for today`, `Print` and the gear chart.
+  Turning a shroud now moves the headstay sag, the jib entry and the boat speed
+  on the same screen. Sea state and crew are read from the instrument band
+  instead of being kept a second time, so the band and the rig cannot disagree.
+  Committed, the three controls grey with the rule as their tooltip and the
+  panel says when it was committed and how to unlock. An old `#/dock?f=…` link
+  lands on `#/sim?f=…` with the forecast applied and the page on the Rig panel.
 
 ## [0.4.0] — 2026-08-26
 

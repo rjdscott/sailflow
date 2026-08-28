@@ -123,12 +123,16 @@ test('the point-of-sail and conditions chip rows are named groups', async ({ pag
   await expect(points.getByRole('button', { name: 'Close-hauled' })).toBeVisible();
 });
 
-/** M-18: Dock's regret card said its own title twice, in two type styles. */
-test('the Dock regret card names itself once and keeps its landmark name', async ({ page }) => {
+/**
+ * M-18: the regret card said its own title twice, in two type styles. It is
+ * the Rig panel's `by wind` sheet since ADR 0021, and the rule still holds.
+ */
+test('the regret card names itself once and keeps its landmark name', async ({ page }) => {
   await page.setViewportSize(PHONE);
-  await page.goto('/#/dock');
+  await page.goto('/#/sim');
 
-  const card = page.locator('.regret');
+  await page.getByRole('button', { name: 'by wind' }).click();
+  const card = page.locator('dialog[open] .regret');
   await expect(card).toBeVisible();
   const said = ((await card.textContent()) ?? '').match(/expected regret/gi) ?? [];
   expect(said.length, 'the card title and the cell label are the same words').toBe(1);
@@ -140,7 +144,7 @@ test('the Dock regret card names itself once and keeps its landmark name', async
 /**
  * M-15: `height: 56px` under the global `border-box` let the safe-area inset
  * eat the tab bar's content box instead of extending it, so on a notched phone
- * all five labels sat in the gesture-reserved strip and Dock's commit bar
+ * all five labels sat in the gesture-reserved strip and the Dock's commit bar
  * floated 34 px clear of the nav.
  */
 test('the tab bar grows by the safe-area inset instead of being eaten by it', async ({
@@ -148,7 +152,7 @@ test('the tab bar grows by the safe-area inset instead of being eaten by it', as
   context,
 }) => {
   await page.setViewportSize(PHONE);
-  await page.goto('/#/dock');
+  await page.goto('/#/sim');
 
   const nav = page.getByRole('navigation', { name: 'Primary' });
   await expect(nav).toBeVisible();
