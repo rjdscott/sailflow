@@ -13,6 +13,46 @@ undiagnosable.
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-08-28
+
+The downwind picture told the truth less well than the upwind one: VMG wore a
+minus sign, the gennaker drew as a flat sheet, and the 3D telltales waved on a
+timer. All three now come from the same state the plan view already used
+(plan `2026-08-28-downwind-fidelity`).
+
+### Fixed
+
+- **VMG shows magnitude and direction on every surface** (#114, audit ux-04
+  H-04): the face already read `4.95 kt ↓`; the target sub-line still said
+  `−4.99`. It reads `target 4.99 +0.03` now, the delta keeps its one
+  convention (+ = optimum is faster), and the verdict, drills and log are
+  swept and tested. The solver and the share link stay signed.
+- **The sea-state popover light-dismisses** on Escape and on a tap outside,
+  and hands focus back to the value (#112).
+- **The astern camera preset sits on the centreline**, so under the kite the
+  main no longer hides it; the plan view widens its viewBox under the
+  gennaker so the outline stays in frame at 150° on both tacks (#117).
+
+### Changed
+
+- **The gennaker flies like a J/70 asymmetric** (#116, ADR 0017, research
+  `2026-08-25-spinnaker` doc 02): the leech bulge moves aft, not forward, as
+  the measured flying shapes say; the shoulders carry width to just under the
+  head; the foot is skirted; the luff bow moves the sail forward rather than
+  across the centreline, so from astern the body is outboard of the main.
+  The drawn sail's ORC-measured area is now 46.1 m² against the published
+  45.64 (was 42.4), gated at ±10 %. Leech twist opens with sheet ease, as
+  measured, but only 2°→8° against the measured 4°→26°: the clew circle caps
+  it, and closing that is a mapping change logged for an ADR.
+- **3D telltales stream, lift and stall from the aero state** (#115): a new
+  `race/telltales.ts` computes each ribbon's state from local angle of attack
+  and both the plan view and the 3D hero read it, so the two pictures agree
+  on the same screen. Ribbons are 0.65 m, windward and leeward hang as a pair
+  on the jib luff, a stalled ribbon hangs at −75° with a limp curl, a lifting
+  one hooks up at +45°, and with Motion off they hold the pose. Eased vs
+  sheeted moves the ¾ ribbon 40 px on screen at the default zoom; the gate
+  is 18.
+
 ## [0.5.0] — 2026-08-28
 
 One Simulator page: the conditions the model solves for are the editable right
