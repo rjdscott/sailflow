@@ -275,10 +275,10 @@ describe('kiteGeometry', () => {
               // arc surplus; the cloth length itself is the drawn-leech test.
               expect(len(g.head, g.clew) / g.leechChord).toBeCloseTo(1, 2);
               expect(g.leechChord).toBeLessThan(leech);
-              // Down to 0.91 of the cloth length at full ease: the shoulder
-              // the sail needs is 1.05-1.60 m of bulge, and an edge that
-              // bowed carries its length in a visibly shorter chord.
-              expect(g.leechChord / leech).toBeGreaterThan(0.9);
+              // Down to 0.89 of the cloth length at full ease: the shoulder
+              // the sail needs is 0.7-1.8 m of bulge, and an edge bowed that
+              // far carries its length in a visibly shorter chord.
+              expect(g.leechChord / leech).toBeGreaterThan(0.88);
               expect(len(g.tack, g.clew) / foot).toBeCloseTo(1, 2);
             }
           }
@@ -467,7 +467,9 @@ describe('the lofted kite', () => {
           arc += len(prev, p);
           prev = p;
         }
-        expect(arc / leech).toBeGreaterThan(0.97);
+        // 4 %, not 3 %: the leech now stands off far enough that a 24-row
+        // grid chords a visibly curved edge and under-measures it slightly.
+        expect(arc / leech).toBeGreaterThan(0.955);
         expect(arc / leech).toBeLessThan(1.03);
       }
     }
@@ -653,51 +655,69 @@ describe('the lofted kite', () => {
     }
   });
 
-  it('twists open up the leech — but *closes* it on sheet ease, which is backwards', () => {
-    // A characterisation test, and a finding this phase did not fix. Twist is
-    // emergent here: `sections` reads each chord angle off the luff→leech
-    // vector, so the drawn twist is whatever the geometry leaves.
+  it('opens the leech with sheet ease, up the sail and against the sheet', () => {
+    // `F1` (doc 02 §2c): foot-to-top twist is ~4° with the sheet in on a tight
+    // reach and 26° with it out on a run. Until 2026-08-28 the drawing did the
+    // exact inverse — 25° trimmed falling to 4° eased — because the head is
+    // pinned at the masthead and a 25°→60° sheet band swung the foot faster
+    // than anything could swing the top. Two changes fixed the direction: the
+    // leech's stand-off now points along `sheetRad + TWIST_*_DEG` instead of a
+    // fixed 66°, and the band narrowed to 40°→55°, which is the widest band
+    // whose twist still rises monotonically with ease.
     //
-    // Up the sail it is right: the leech falls away to leeward monotonically
-    // from the foot, ~24° at the top at full trim. Against the *sheet* it is
-    // inverted — 24° trimmed, 14° at mid sheet, 2° fully eased — where
-    // Deparday measured 4° with the sheet in on a reach and 26° with it out on
-    // a run (`F1`, doc 02 §2c).
-    //
-    // The cause is structural, not a constant: the sheet band swings the foot
-    // 35° (`SHEET_TRIM_DEG` 25 → `SHEET_EASE_DEG` 60) while the head is pinned
-    // at the masthead, so the upper leech can only follow by the stand-off the
-    // bulge gives it — measured at 11-14° over the same band, whatever the
-    // bulge is set to (checked at 0.4 m/+1.4 m as well as at the shipped
-    // values). Inverting it needs either the sheet band narrowed to ~14° or
-    // the head given a rotation of its own, and both are the sheet's
-    // geometry rather than the sail's shape — phase 02's remit.
+    // The *range* is another matter and is recorded rather than claimed: the
+    // drawing reaches 2°→8° at three-quarter height where `F1` measures 4°→26°.
+    // The clew is pinned to its circle by the published leech and foot, and
+    // that circle will not let the head open further without the drawn leech
+    // leaving its published 8.800 m. Closing that gap needs the head given a
+    // rotation of its own — a mapping change, not a constant.
     for (const side of [1, -1] as Side[]) {
-      const twistOf = (kiteSheet: number): number => {
-        const g = kiteGeometry(down({ kiteSheet }), rig3d(RIG, side, 0.3), side, AWA_RUN);
-        const s = g.sections(SHAPE);
-        // Read at ~⅞ height, not at the head: the head chord is zero, so its
-        // chord angle is undefined and `sections` falls back to the sheeting
-        // angle there. Everything below it is a real measured angle.
-        return s[Math.round(0.875 * (s.length - 1))].twistRad - s[0].twistRad;
+      const twistAt = (kiteSheet: number, h: number): number => {
+        const s = kiteGeometry(
+          flying({ kiteSheet }),
+          rig3d(RIG, side, 0.3),
+          side,
+          AWA_RUN,
+        ).sections(SHAPE);
+        // Read below the head: the head chord is zero, so its chord angle is
+        // undefined and `sections` falls back to the sheeting angle there.
+        return (s[Math.round(h * (s.length - 1))].twistRad - s[0].twistRad) * (180 / Math.PI);
       };
-      // Monotone up the sail wherever there is twist to speak of: the leech
-      // opens with height, which is the half of this that is right. Quarter to
-      // quarter, not knot to knot — the 33-knot ladder wanders by a tenth of a
-      // degree between neighbours, which is sampling, not shape.
-      for (const kiteSheet of [50, 100]) {
-        const s = kiteGeometry(down({ kiteSheet }), rig3d(RIG, side, 0.3), side, AWA_RUN).sections(
-          SHAPE,
-        );
-        const at = (h: number): number => s[Math.round(h * (s.length - 1))].twistRad;
-        for (const h of [0.5, 0.75, 0.875]) expect(at(h)).toBeGreaterThan(at(h - 0.25));
+      // Against the sheet: eased opens, at three-quarter height, monotonically.
+      const trimmed = twistAt(100, 0.75);
+      const mid = twistAt(50, 0.75);
+      const eased = twistAt(0, 0.75);
+      expect(mid).toBeGreaterThan(trimmed);
+      expect(eased).toBeGreaterThan(mid);
+      // Trimmed sits inside `F1`'s reaching value ± 6°; eased is short of its
+      // running one and the comment above says why, so hold it as a floor
+      // rather than a band and let it fail if it ever regresses.
+      expect(Math.abs(trimmed - 4)).toBeLessThan(6);
+      expect(eased).toBeGreaterThan(6);
+      // Up the sail: the leech falls away with height, never hooks back.
+      for (const kiteSheet of [0, 50, 100]) {
+        for (const h of [0.5, 0.75, 0.875]) {
+          expect(twistAt(kiteSheet, h)).toBeGreaterThan(twistAt(kiteSheet, h - 0.25));
+        }
       }
-      // And the inversion, held as a number so a fix cannot land silently.
-      expect(twistOf(100)).toBeGreaterThan(twistOf(50));
-      expect(twistOf(50)).toBeGreaterThan(twistOf(0));
-      // Fully eased the sail is within 3° of square top to bottom, which is
-      // the other end of the same problem.
-      expect(twistOf(0)).toBeLessThan(3 * (Math.PI / 180));
+    }
+  });
+
+  it('flies its body to leeward of the mainsail, not on the centreline behind it', () => {
+    // From astern on a run the kite should be the widest thing on screen
+    // beside the main, not hidden by it. The measurement is the half-height
+    // section's centroid, athwartships from the mast: it was 0.87 m to leeward
+    // against the main's 1.04 — the kite's body was *inboard of the main* —
+    // because the luff bow's forward/athwartships split threw the mid-luff
+    // 2.1 m to windward at running angles and dragged the sail across the
+    // centreline with it (`LUFF_FORWARD_FRACTION`).
+    for (const side of [1, -1] as Side[]) {
+      const { g, mesh } = fly(side, {}, AWA_RUN);
+      const row = gridRow(mesh, Math.round(0.5 * (mesh.N - 1)));
+      const centroid = row.reduce((sum, p) => sum + p[2], 0) / row.length;
+      expect(lee(side) * centroid).toBeGreaterThan(1.2);
+      // And the tack is still on the sprit, on the centreline, at every angle.
+      expect(g.tack[2]).toBe(0);
     }
   });
 

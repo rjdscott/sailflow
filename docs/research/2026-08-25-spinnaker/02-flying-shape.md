@@ -480,11 +480,13 @@ area formula on them, at the app's own downwind trim:
 
 | Measured off the drawn loft | 0.5.0 | after phase 02 | class (`T9` G.5.3) |
 |---|---|---|---|
-| Half width SHW, AWA 114° / 150° | 4.79 / 5.15 m | **5.48 / 5.78 m** | 5.560 m |
-| `(SLU+SLE)/2 · (SFL+4·SHW)/6` | 39.9 / 42.4 m² | **44.2 / 46.3 m²** | 45.64 m² |
-| Girth peak, as a height fraction | 0.19 / 0.21 | **0.30 / 0.32** | — |
-| Chord at ¾ height, as a fraction of the peak | 0.56 / 0.58 | **0.67 / 0.68** | — |
-| Half width on a tight reach (AWA 70°) | 2.86 m | **3.64 m** | — |
+| Half width SHW, AWA 114° / 150° | 4.79 / 5.15 m | **5.39 / 5.77 m** | 5.560 m |
+| `(SLU+SLE)/2 · (SFL+4·SHW)/6` | 39.9 / 42.4 m² | **43.6 / 46.1 m²** | 45.64 m² |
+| Girth peak, as a height fraction | 0.19 / 0.21 | **0.28 / 0.32** | — |
+| Chord at ¾ height, as a fraction of the peak | 0.56 / 0.58 | **0.69 / 0.70** | — |
+| Half width on a tight reach (AWA 70°) | 2.86 m | **4.22 m** | — |
+| Half-height centroid, to leeward of the mast, AWA 150° | 0.87 m | **1.26 m** | main's is 1.04 m |
+| Foot-to-head twist at ¾ height, trimmed → eased | 24° → 2° | **2.3° → 8.0°** | 4° → 26° (`F1`) |
 
 So the sail was 7–14 % narrow at exactly the height a spinnaker carries its
 shoulders, and *measured* 7–13 % small overall. That is the whole of "reads
@@ -539,16 +541,46 @@ like a jib" in one dimension, and it is a class dimension, not a taste.
    the peak's height but how much width survives above it (0.56 → 0.67 of the
    peak at three-quarter height).
 
-### One finding this document contradicts, left standing and now tested
+### §2c, twist: direction fixed, range still short
 
-**Drawn twist runs the wrong way against the sheet.** §2c measures foot-to-top
-twist at 4° on a tight reach and 26° at running angles — sheet in, little
-twist; sheet out, a lot. The drawing does the opposite: 24° at full trim, 14°
-at mid sheet, 2° fully eased. The cause is structural rather than a constant —
-the sheet band swings the foot 35° (25° → 60°) while the head is pinned at the
-masthead, so the upper leech can only follow by the stand-off the bulge gives
-it, measured at 11–14° whatever the bulge is set to. Inverting it needs the
-sheet band narrowed to ~14° or the head given a rotation of its own, and both
-are the sheet's geometry rather than the sail's shape. Held as a
-characterisation test in `kite.test.ts` and a row in `ASSUMPTIONS.md`, so a
-fix cannot land silently and the disagreement is not buried.
+The first cut of this work drew twist **backwards** against the sheet — 24° at
+full trim falling to 2° fully eased, where §2c has 4° with the sheet in on a
+reach and 26° with it out on a run. Two changes, both here in the drawing,
+turned it round:
+
+- the leech's stand-off direction was a fixed vector 66° off the centreline.
+  Near the head the luff and the leech both converge on the masthead, so that
+  vector *was* the head's chord angle: it pinned the top of the sail whatever
+  the sheet did. It is now `chordDir(sheetRad + twist)`, with the twist ends
+  taken straight from §2c — which is the only way a published twist reaches a
+  drawing whose section angles are otherwise pinned by three published edges.
+- the sheet band narrowed from 25°–60° to 40°–55°. The head is fixed at the
+  masthead, so the only thing the sheet rotates is the foot; over a 35° band
+  the foot outran anything the leech could do. Measured on the drawn loft, 15°
+  is the widest band whose twist still rises monotonically with ease.
+
+The **direction is now right** — 2.3° trimmed, 3.6° at mid sheet, 8.0° eased,
+at three-quarter height — and the **range is still short** of §2c's 4°→26°.
+That limit is the clew circle of §6: the published leech and foot pin the clew,
+and it will not let the head open further without the drawn leech leaving its
+published 8.800 m. Two constructions were tried and rejected for exactly that
+reason — setting each section's angle from an explicit twist ramp (the drawn
+leech went to 10.7 m, +22 %), and tapering the chords to pull that leech back
+(it held the leech but took the half width to 3.8 m, undoing §2's shoulders).
+Closing the gap needs the head given a rotation of its own, which is a change
+to the mapping rather than to a constant. Recorded here, in `ASSUMPTIONS.md`,
+and as a test that holds the direction and a floor on the eased value.
+
+### §3.1 and §4, where the sail's body sits
+
+Not a finding of this document, but measured against it. `LUFF_FORWARD_FRACTION`
+splits the luff bow — whose magnitude is fixed by §3.1's cloth surplus — between
+forward and athwartships. At 0.6 it threw the mid-luff 2.1 m to windward at
+running angles, which is past the windward rail, and dragged the sail's body
+onto the centreline with it: at AWA 150° the half-height section's centroid sat
+0.87 m to leeward of the mast against the mainsail's 1.04 m, so from astern the
+kite was *behind* the main rather than beside it. §4's picture is the opposite —
+the luff and tack swing to windward while "the leech opens aft and outboard",
+the sail projecting to leeward of the main's shadow. At 1.1 the centroid is
+1.26 m, the luff still crosses the centreline (by 1.5 m rather than 2.1), and
+the tight-reach half width recovers from 2.86 m to 4.16 m.

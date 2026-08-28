@@ -212,3 +212,94 @@ Run + Leeward, Run + Astern, Broad reach + Top-down, and the Plan view.
 `make check`, `pnpm test -- src/ui/three`, `pnpm test:ui` and
 `node scripts/bundle_check.mjs` all green; last lines quoted in the PR body.
 
+### 2026-08-28 — review round: two of the findings were defects
+
+PR #116 review: the twist inversion and the kite hiding behind the main are
+things a sailor sees, not characterisations to hold. Both fixed.
+
+**Twist.** Four constructions were measured before one held every published
+dimension:
+
+| Construction | Twist at ¾ height, trim → ease | What broke |
+|---|---|---|
+| As shipped in round 1 | 24° → 2° | nothing; but backwards |
+| Bulge direction = `chordDir(sheetRad + twist)` | 15° → 10° | nothing; still backwards |
+| Section angle set from an explicit twist ramp | 3° → 22° ✓ | **drawn leech 10.7 m** against a published 8.800 (+22 %) — the #76 defect back |
+| …plus a chord taper to pull that leech back | 3° → 22° ✓ | half width to 3.79 m (−32 %) — §2's shoulders undone |
+| **Shipped**: bulge direction + sheet band 40°–55° | **2.3° → 8.0°** ✓ | nothing |
+
+The third row is the reviewer's suggested mapping and it is why it was not
+taken: in a loft whose sections are horizontal and whose three edges are
+published, setting a section's *angle* independently moves its outboard end
+off the leech, and the drawn leech is then the locus of those ends. Its length
+is emergent, and it emerges long — exactly what #76 fixed.
+
+What did work is two changes that leave the section angles emergent:
+
+- **`bulgeDir` = `chordDir(sheetRad + twist)`**, with `TWIST_TRIM_DEG` = 4° and
+  `TWIST_EASE_DEG` = 26° `prov: published` from `F1` Fig 3.3 (doc 02 §2c). Near
+  the head the luff and the leech both converge on the masthead, so the bulge's
+  direction *is* the head's chord angle. It was a fixed 66° off the centreline,
+  which pinned the top of the sail whatever the sheet did.
+- **Sheet band 25°–60° → 40°–55°.** The head is fixed at the masthead, so the
+  only thing the sheet rotates is the foot; over a 35° band the foot outran
+  anything the leech could do. 15° is the widest band, measured, whose twist
+  still rises monotonically with ease — at 26° the mid-sheet state dips below
+  the trimmed one. Cost: the sheet swings the sail 15° rather than 35°. The
+  clew's rise across the band is unchanged at 1.42 m (`F1` measures 1.4 m)
+  because the bulge's travel grew from +0.45 m to +1.1 m to compensate.
+
+Direction is now right and **the range is still short** — 2.3° → 8.0° against
+`F1`'s 4° → 26°. The cap is the clew circle: the published leech and foot pin
+the clew, and it will not let the head open further without the drawn leech
+leaving its published 8.800 m. Closing that gap needs the head given a rotation
+of its own, which is a mapping change and an ADR. Logged as a follow-up in the
+plan README; the test holds the direction, the monotonicity, the trimmed value
+inside `F1` ± 6° and a floor on the eased one.
+
+**The kite behind the main.** Measured, not a camera artefact. At AWA 150° the
+half-height section's centroid sat **0.87 m** to leeward of the mast against
+the mainsail's **1.04 m** — the kite's body was *inboard of the main*, so from
+astern only its edges showed. The pocket was already leeward of the chord line
+(`camberDir` is the leeward normal); what was wrong was the chord line itself.
+`LUFF_FORWARD_FRACTION` splits the luff bow — magnitude fixed by the cloth
+surplus at 2.4–2.5 m — between forward and athwartships, and at 0.6 it threw
+the mid-luff **2.1 m to windward** at running angles, past the windward rail,
+dragging the sail onto the centreline. Raised to 1.1: the centroid is now
+**1.26 m** to leeward, outboard of the main's 1.04. The luff still crosses to
+windward — `luffLateral`'s published direction is untouched — by 1.5 m instead
+of 2.1. It also takes the tight-reach half width from 2.86 m to **4.22 m**,
+which is most of the reaching narrowness finding above.
+
+**Plan-view clipping** logged as a follow-up in the plan README rather than
+fixed: `PLAN_LAYOUT` is cropped to the boat and belongs to neither phase.
+
+Re-measured at the app's own downwind trim, AWA 114° / 150°:
+
+| Measured off the loft | `main` | round 1 | **round 2** | target |
+|---|---|---|---|---|
+| Half width | 4.79 / 5.15 m | 5.48 / 5.78 | **5.39 / 5.77 m** | 5.560 published |
+| ORC area of the drawn sail | 39.9 / 42.4 m² | 44.2 / 46.3 | **43.6 / 46.1 m²** | 45.64, ±10 % |
+| Drawn leech | 8.76 / 8.77 m | 8.71 / 8.71 | **8.69 / 8.69 m** | 8.800 published |
+| Girth peak height | 0.19 / 0.21 | 0.30 / 0.32 | **0.28 / 0.32** | — |
+| Chord at ¾ height ÷ peak | 0.56 / 0.58 | 0.67 / 0.68 | **0.69 / 0.70** | — |
+| Twist at ¾ height, trim → ease | 24 → 2° | 24 → 2° | **2.3 → 8.0°** | 4 → 26° (`F1`) |
+| ½-height centroid to leeward, AWA 150° | 0.87 m | 0.87 m | **1.26 m** | ≥ 1.2; main's is 1.04 |
+| Clew rise across the sheet band | 1.44 m | 1.46 m | **1.42 m** | 1.4 measured (`F1`) |
+| Half width on a tight reach (AWA 70°) | 2.86 m | 3.64 m | **4.22 m** | still short |
+
+### 2026-08-28 — visual review, round 2
+
+Eight shots re-taken, same four views, same scratchpad names.
+
+- **Astern** is the shot the round answers. Before, the kite sat directly ahead
+  of the main with only a rim of orange either side. After, its body is clear
+  to leeward of the main and it is the widest thing in the frame, with the
+  shoulder above the main's head and the skirted foot below its boom.
+- **Leeward**: rounder still than round 1 — the luff has moved forward rather
+  than across, so the sail's belly reads as depth instead of as a sheet seen
+  edge-on.
+- **Top-down**: the pocket is now plainly to leeward of the tack–clew line and
+  the sail no longer overlaps the main's outline.
+- **Plan**: unchanged in kind; still clipped by `PLAN_LAYOUT`, now logged.
+
