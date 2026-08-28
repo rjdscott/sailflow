@@ -14,6 +14,9 @@ import { lee, SPRIT_TIP_X, STEM_X, type Side, type Vec3 } from './conventions';
 import {
   BARE_SPAR,
   FLYING_CHORD_FRACTION,
+  FOOT_SKIRT_M,
+  FOOT_SKIRT_SPAN,
+  footSkirtM,
   kiteGeometry,
   kiteGirthM,
   KITE_CHORDS,
@@ -25,7 +28,7 @@ import {
   SHEET_TRIM_DEG,
   TACK_MIN_M,
 } from './kite';
-import { buildSail, gridRow } from './loft';
+import { buildSail, gridColumn, gridRow, type SailMesh } from './loft';
 import { rig3d } from './rig3d';
 import type { RigState } from '../../core/types';
 
@@ -39,6 +42,25 @@ const down = (over: Partial<DownControls> = {}): DownControls => ({ ...MID, ...o
  */
 const AWA_REACH = 70;
 const AWA_RUN = 150;
+/**
+ * The apparent wind angles the gennaker is actually used at: the J/70's own
+ * downwind optimum is 142-174° TWA (`T8`), which is AWA ~100-150. The
+ * flying-shape assertions below are made here rather than across the whole
+ * 0-180° range, because the drawn sail's projected width is a strong function
+ * of apparent wind angle — measurably so (`F1`, `F2`) — and a band that
+ * covered a tight reach as well would have to be too loose to catch anything.
+ */
+const DOWNWIND_AWA = [110, AWA_RUN];
+
+/**
+ * The trim the app actually opens downwind on (`boat.baseRaceDown`): sprit
+ * out, halyard home, tack line mid, sheet mid. `MID` above sets `sprit: 0`,
+ * which is the bowsprit *retracted* — a state the class rules only allow with
+ * the gennaker furled (C.9.4) — so it is the right default for the
+ * direction-of-control tests and the wrong one for measuring a flying shape.
+ */
+const FLYING: DownControls = { kiteHalyard: 100, tackLine: 50, kiteSheet: 50, sprit: 100 };
+const flying = (over: Partial<DownControls> = {}): DownControls => ({ ...FLYING, ...over });
 
 /** The solver's asym constants (`core/shape/flying.ts:asymShape`). */
 const SHAPE: SailShape = {
@@ -58,6 +80,70 @@ const RIG: RigState = {
 };
 
 const len = (a: Vec3, b: Vec3): number => Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+
+/** Polyline length. */
+const arcOf = (pts: Vec3[]): number => pts.slice(1).reduce((s, p, i) => s + len(p, pts[i]), 0);
+
+/** The point half way along a polyline by arc length — a measurer's mid-point. */
+function midArcOf(pts: Vec3[]): Vec3 {
+  const half = arcOf(pts) / 2;
+  let s = 0;
+  for (let i = 1; i < pts.length; i++) {
+    s += len(pts[i], pts[i - 1]);
+    if (s >= half) return pts[i];
+  }
+  return pts[pts.length - 1];
+}
+
+/** Cloth area: the mesh's own surface, triangle by triangle. */
+function clothAreaOf(mesh: SailMesh): number {
+  const at = (i: number, j: number): Vec3 => {
+    const k = (i * mesh.M + j) * 3;
+    return [mesh.positions[k], mesh.positions[k + 1], mesh.positions[k + 2]];
+  };
+  const tri = (a: Vec3, b: Vec3, c: Vec3): number => {
+    const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    return (
+      0.5 *
+      Math.hypot(u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+    );
+  };
+  let area = 0;
+  for (let i = 0; i < mesh.N - 1; i++) {
+    for (let j = 0; j < mesh.M - 1; j++) {
+      area += tri(at(i, j), at(i, j + 1), at(i + 1, j));
+      area += tri(at(i, j + 1), at(i + 1, j + 1), at(i + 1, j));
+    }
+  }
+  return area;
+}
+
+/**
+ * The drawn sail's own sail-plan measurement, taken off the loft exactly as a
+ * measurer takes it off a sail: luff and leech arcs, the straight foot, and
+ * the half width between the two edges' arc mid-points. Then ORC's spinnaker
+ * area formula, `(SLU + SLE)/2 · (SFL + 4·SHW)/6`, which is the formula the
+ * published 45.64 m² is itself the output of — so this is the only like-for-
+ * like comparison with it. Cloth area is *not*: a cambered section carries
+ * more cloth than the straight girth it spans, so a correctly-drawn sail's
+ * mesh always exceeds its rated area (`clothAreaOf`, asserted separately).
+ *
+ * The leech is taken from the clew up: rows below the clew's height end under
+ * it, and that wedge is foot, not leech.
+ */
+function measureOf(
+  g: ReturnType<typeof kiteGeometry>,
+  mesh: SailMesh,
+): { slu: number; sle: number; sfl: number; shw: number; areaM2: number } {
+  const luff = gridColumn(mesh, 0);
+  const leech: Vec3[] = [g.clew, ...gridColumn(mesh, mesh.M - 1).filter((p) => p[1] >= g.clew[1])];
+  const slu = arcOf(luff);
+  const sle = arcOf(leech);
+  const sfl = len(g.tack, g.clew);
+  const shw = len(midArcOf(luff), midArcOf(leech));
+  return { slu, sle, sfl, shw, areaM2: ((slu + sle) / 2) * ((sfl + 4 * shw) / 6) };
+}
 
 /** Arc length of the spine, sampled fine enough that the parabola is resolved. */
 function luffLength(spine: (h: number) => Vec3, n = 400): number {
@@ -189,7 +275,10 @@ describe('kiteGeometry', () => {
               // arc surplus; the cloth length itself is the drawn-leech test.
               expect(len(g.head, g.clew) / g.leechChord).toBeCloseTo(1, 2);
               expect(g.leechChord).toBeLessThan(leech);
-              expect(g.leechChord / leech).toBeGreaterThan(0.95);
+              // Down to 0.91 of the cloth length at full ease: the shoulder
+              // the sail needs is 1.05-1.60 m of bulge, and an edge that
+              // bowed carries its length in a visibly shorter chord.
+              expect(g.leechChord / leech).toBeGreaterThan(0.9);
               expect(len(g.tack, g.clew) / foot).toBeCloseTo(1, 2);
             }
           }
@@ -315,6 +404,11 @@ describe('the lofted kite', () => {
     const g = kiteGeometry(down(over), rig3d(RIG, side, 0.3), side, awaDeg);
     return { g, mesh: buildSail(g.sections(SHAPE), g.spine, g.sheetRad, side) };
   };
+  /** The same, on the trim the app actually flies the kite at. */
+  const fly = (side: Side, over: Partial<DownControls> = {}, awaDeg = AWA_RUN) => {
+    const g = kiteGeometry(flying(over), rig3d(RIG, side, 0.3), side, awaDeg);
+    return { g, mesh: buildSail(g.sections(SHAPE), g.spine, g.sheetRad, side) };
+  };
 
   it('bows the leech out to leeward, most in the upper half, and more as the sheet eases', () => {
     for (const side of [1, -1] as Side[]) {
@@ -341,7 +435,12 @@ describe('the lofted kite', () => {
       const trimmed = offAt({ kiteSheet: 100 });
       const eased = offAt({ kiteSheet: 0 });
       expect(trimmed.upper).toBeGreaterThan(trimmed.lower);
-      expect(eased.upper).toBeGreaterThan(trimmed.upper + 0.5);
+      // A bulge's travel worth (`LEECH_BULGE_TRAVEL_M` = 0.45 m), less the
+      // grid's own sampling. It was +0.7 m of travel before the shoulder work;
+      // the travel came down because the bulge shortens the head→clew chord
+      // and so lifts the clew, and 0.7 m of it lifted the clew half a metre
+      // past Deparday's measured 1.4 m.
+      expect(eased.upper).toBeGreaterThan(trimmed.upper + 0.25);
     }
   });
 
@@ -394,10 +493,211 @@ describe('the lofted kite', () => {
       // no longer sits at that height, because the circle lifts it as the
       // sheet eases and drops it a little below when the sheet is trimmed.
       expect(foot[mesh.M - 1][1]).toBeCloseTo(g.tack[1], 6);
-      expect(len(foot[mesh.M - 1], g.clew)).toBeLessThan(0.6);
+      // Within a metre of the clew: the leech now stands well off the straight
+      // head→clew line, so the foot row's outboard end is a bulge's worth up
+      // that line rather than on the corner itself.
+      expect(len(foot[mesh.M - 1], g.clew)).toBeLessThan(1);
       // The head closes to a point: the ORC parabola's head girth is zero.
       const head = gridRow(mesh, mesh.N - 1);
       expect(len(head[0], head[mesh.M - 1])).toBeCloseTo(0, 6);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // Flying shape: the sail measures as a J/70 asymmetric, and reads as one
+  // (plan `2026-08-28-downwind-fidelity` phase 02).
+  // -------------------------------------------------------------------------
+
+  it('measures the class half width, so the sail is not a headsail with a curve in it', () => {
+    // The 0.5.0 report — "the spinnaker doesn't look the right shape" — has a
+    // number behind it. The half width between the luff's and the leech's arc
+    // mid-points is a published class dimension (5 560 mm, G.5.3), and the
+    // straight-leech drawing left it at 4.85 m: 13 % narrow at exactly the
+    // height a spinnaker carries its shoulders. That is the whole of "reads
+    // like a jib" in one measurement.
+    const half = boat.sails.asym.halfMm / 1000;
+    for (const side of [1, -1] as Side[]) {
+      for (const awaDeg of DOWNWIND_AWA) {
+        // At the trim the app opens on, within a tenth of the class dimension.
+        const mid = fly(side, {}, awaDeg);
+        expect(measureOf(mid.g, mid.mesh).shw / half).toBeGreaterThan(0.9);
+        expect(measureOf(mid.g, mid.mesh).shw / half).toBeLessThan(1.1);
+        // Across the whole sheet band, wider: the sail rotates open on ease
+        // and shuts down on trim, and the drawn half width follows it from
+        // -10 % to +18 %. That the *band* moves is right; that it moves this
+        // far is the drawing's, and it is inside its own ±20 %.
+        for (const kiteSheet of [0, 50, 100]) {
+          const { g, mesh } = fly(side, { kiteSheet }, awaDeg);
+          const r = measureOf(g, mesh).shw / half;
+          expect(r).toBeGreaterThan(0.85);
+          expect(r).toBeLessThan(1.2);
+        }
+      }
+      // On a tight reach the luff bows to *leeward*, onto the same side as the
+      // leech, and the drawn sail narrows: 3.7-4.0 m of half width at AWA 70.
+      // That is the luff-direction model (`luffLateral`, published endpoints)
+      // meeting a leech bulge that does not yet know about the apparent wind
+      // angle, and it is the shape work this phase did not do — recorded, not
+      // papered over. It was 2.6-3.5 m before, so the direction is right.
+      const r = fly(side, {}, AWA_REACH);
+      const reach = measureOf(r.g, r.mesh);
+      expect(reach.shw / half).toBeGreaterThan(0.6);
+      expect(reach.shw / half).toBeLessThan(0.9);
+    }
+  });
+
+  it('measures within 10 % of the published area, on the formula that produced it', () => {
+    // ORC's spinnaker area is `(SLU + SLE)/2 · (SFL + 4·SHW)/6` over four
+    // measured dimensions, and 45.64 m² is that formula's output for this
+    // sail. Taking the same four off the drawn loft and running the same
+    // formula is the only comparison that means anything — and the drawing
+    // used to fail it at 40.3 m² (-11.6 %), because SHW was 13 % small.
+    const rated = boat.sails.asym.ratedAreaM2;
+    for (const side of [1, -1] as Side[]) {
+      for (const kiteSheet of [0, 50, 100]) {
+        for (const awaDeg of DOWNWIND_AWA) {
+          const { g, mesh } = fly(side, { kiteSheet }, awaDeg);
+          const m = measureOf(g, mesh);
+          expect(Math.abs(m.areaM2 / rated - 1)).toBeLessThan(0.1);
+          // Cloth exceeds the flat measurement, always: a section that carries
+          // 24 % camber spans its girth with ~15 % more cloth than the girth.
+          // The ceiling keeps that surplus a camber surplus rather than a bag.
+          const cloth = clothAreaOf(mesh) / rated;
+          expect(cloth).toBeGreaterThan(1);
+          expect(cloth).toBeLessThan(1.35);
+        }
+      }
+    }
+  });
+
+  it('peaks its girth above the foot and keeps the shoulder wide under the head', () => {
+    // Where the sail is widest, and how much of that width survives up at
+    // three-quarter height — which is what a shoulder *is*. Drawn straight,
+    // the leech left 55 % of the peak at ¾ height and the sail tapered from a
+    // fifth of the way up in one unbroken line: a triangle. The bar the plan
+    // sets for the peak — 60-70 % of the height — is not reachable at the
+    // published dimensions, and the arithmetic is in the phase's progress log:
+    // the foot is a published 5.700 m, so a peak above it that high needs a
+    // mean girth the 45.64 m² rating cannot pay for. What is reachable, and
+    // what carries the picture, is the shoulder.
+    for (const side of [1, -1] as Side[]) {
+      const { mesh } = fly(side);
+      const chords = Array.from({ length: mesh.N }, (_, i) => {
+        const row = gridRow(mesh, i);
+        return len(row[0], row[mesh.M - 1]);
+      });
+      const peak = Math.max(...chords);
+      const peakH = chords.indexOf(peak) / (mesh.N - 1);
+      expect(peakH).toBeGreaterThan(0.25);
+      expect(peakH).toBeLessThan(0.6);
+      // Still three-quarters of its widest at three-quarter height, and a
+      // third of it at nine-tenths — a round shoulder, not a taper to a point.
+      const at = (h: number): number => chords[Math.round(h * (mesh.N - 1))];
+      expect(at(0.75) / peak).toBeGreaterThan(0.62);
+      expect(at(0.9) / peak).toBeGreaterThan(0.25);
+      // And it does close at the head: the girth parabola ends at a point.
+      expect(chords[mesh.N - 1]).toBeCloseTo(0, 6);
+    }
+  });
+
+  it('flies the mid sections in the measured camber band, 20-25 % of chord', () => {
+    // Not this file's number — it is `shape.asym`, re-based on Deparday's
+    // full-scale J/80 in #76 — but it is this file's job not to lose it
+    // between the solver and the cloth. Measured off the drawn surface: the
+    // section's maximum stand-off from its own luff→leech chord line.
+    for (const side of [1, -1] as Side[]) {
+      const { mesh } = fly(side);
+      const row = gridRow(mesh, Math.round(0.5 * (mesh.N - 1)));
+      const chord = len(row[0], row[mesh.M - 1]);
+      const c: Vec3 = [
+        row[mesh.M - 1][0] - row[0][0],
+        row[mesh.M - 1][1] - row[0][1],
+        row[mesh.M - 1][2] - row[0][2],
+      ];
+      let depth = 0;
+      for (const p of row) {
+        const w = [p[0] - row[0][0], p[1] - row[0][1], p[2] - row[0][2]];
+        const t = (w[0] * c[0] + w[1] * c[1] + w[2] * c[2]) / (chord * chord);
+        depth = Math.max(depth, Math.hypot(...([0, 1, 2].map((k) => w[k] - t * c[k]) as Vec3)));
+      }
+      expect(depth / chord).toBeGreaterThan(0.2);
+      expect(depth / chord).toBeLessThan(0.25);
+    }
+  });
+
+  it('skirts the foot below the tack-clew line, and only near the foot', () => {
+    // A gennaker's foot is a free edge between two corners with nothing under
+    // it, so it hangs. Drawn as a straight line to the sprit it is the single
+    // clearest tell that the picture is of a headsail. The sign is the claim:
+    // below the line, never above, and both corners stay pinned.
+    expect(footSkirtM(0)).toBeCloseTo(FOOT_SKIRT_M, 9);
+    expect(footSkirtM(FOOT_SKIRT_SPAN)).toBe(0);
+    expect(footSkirtM(1)).toBe(0);
+    for (let h = 0; h <= FOOT_SKIRT_SPAN; h += 0.02)
+      expect(footSkirtM(h)).toBeGreaterThanOrEqual(0);
+
+    for (const side of [1, -1] as Side[]) {
+      const { g, mesh } = fly(side);
+      const foot = gridRow(mesh, 0);
+      const low = Math.min(...foot.map((p) => p[1]));
+      // The sag is real and it is the constant's worth, to a sampling error.
+      expect(g.tack[1] - low).toBeGreaterThan(0.9 * FOOT_SKIRT_M);
+      expect(g.tack[1] - low).toBeLessThanOrEqual(FOOT_SKIRT_M + 1e-6);
+      // Both ends still pinned: the tack, and the leech line at the tack's
+      // height. A skirt that moved a corner would move a published dimension.
+      expect(foot[0][1]).toBeCloseTo(g.tack[1], 6);
+      expect(foot[mesh.M - 1][1]).toBeCloseTo(g.tack[1], 6);
+      // Nothing above the skirt's span hangs: the luff column climbs cleanly.
+      const luff = gridColumn(mesh, 0);
+      for (let i = 1; i < mesh.N; i++) expect(luff[i][1]).toBeGreaterThan(luff[i - 1][1]);
+    }
+  });
+
+  it('twists open up the leech — but *closes* it on sheet ease, which is backwards', () => {
+    // A characterisation test, and a finding this phase did not fix. Twist is
+    // emergent here: `sections` reads each chord angle off the luff→leech
+    // vector, so the drawn twist is whatever the geometry leaves.
+    //
+    // Up the sail it is right: the leech falls away to leeward monotonically
+    // from the foot, ~24° at the top at full trim. Against the *sheet* it is
+    // inverted — 24° trimmed, 14° at mid sheet, 2° fully eased — where
+    // Deparday measured 4° with the sheet in on a reach and 26° with it out on
+    // a run (`F1`, doc 02 §2c).
+    //
+    // The cause is structural, not a constant: the sheet band swings the foot
+    // 35° (`SHEET_TRIM_DEG` 25 → `SHEET_EASE_DEG` 60) while the head is pinned
+    // at the masthead, so the upper leech can only follow by the stand-off the
+    // bulge gives it — measured at 11-14° over the same band, whatever the
+    // bulge is set to (checked at 0.4 m/+1.4 m as well as at the shipped
+    // values). Inverting it needs either the sheet band narrowed to ~14° or
+    // the head given a rotation of its own, and both are the sheet's
+    // geometry rather than the sail's shape — phase 02's remit.
+    for (const side of [1, -1] as Side[]) {
+      const twistOf = (kiteSheet: number): number => {
+        const g = kiteGeometry(down({ kiteSheet }), rig3d(RIG, side, 0.3), side, AWA_RUN);
+        const s = g.sections(SHAPE);
+        // Read at ~⅞ height, not at the head: the head chord is zero, so its
+        // chord angle is undefined and `sections` falls back to the sheeting
+        // angle there. Everything below it is a real measured angle.
+        return s[Math.round(0.875 * (s.length - 1))].twistRad - s[0].twistRad;
+      };
+      // Monotone up the sail wherever there is twist to speak of: the leech
+      // opens with height, which is the half of this that is right. Quarter to
+      // quarter, not knot to knot — the 33-knot ladder wanders by a tenth of a
+      // degree between neighbours, which is sampling, not shape.
+      for (const kiteSheet of [50, 100]) {
+        const s = kiteGeometry(down({ kiteSheet }), rig3d(RIG, side, 0.3), side, AWA_RUN).sections(
+          SHAPE,
+        );
+        const at = (h: number): number => s[Math.round(h * (s.length - 1))].twistRad;
+        for (const h of [0.5, 0.75, 0.875]) expect(at(h)).toBeGreaterThan(at(h - 0.25));
+      }
+      // And the inversion, held as a number so a fix cannot land silently.
+      expect(twistOf(100)).toBeGreaterThan(twistOf(50));
+      expect(twistOf(50)).toBeGreaterThan(twistOf(0));
+      // Fully eased the sail is within 3° of square top to bottom, which is
+      // the other end of the same problem.
+      expect(twistOf(0)).toBeLessThan(3 * (Math.PI / 180));
     }
   });
 

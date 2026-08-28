@@ -456,3 +456,99 @@ centreline, camber and draft, plus the sail's angle to vertical at the stripe
 luff. Its stated resolution is better than **5 mm at full scale**, and it
 assumes a flat head with a small chord — which is what `KITE_CHORDS.head = 0`
 already does.
+
+---
+
+## Addendum — 2026-08-28: what the drawn kite now takes from this document
+
+Added by plan
+[`2026-08-28-downwind-fidelity`](../../plans/2026-08-28-downwind-fidelity/phase-02-kite-shape.md)
+phase 02, after the owner's 0.5.0 report: "the spinnaker doesn't look the
+right shape". This section records what the drawing takes from the sections
+above and, more usefully, **where this document could not answer and the code
+had to fit instead**. It adds no new source and revises no finding; §§1–9
+above stand as written on 2026-08-25.
+
+### The measurement that turned the visual complaint into a number
+
+Every drawn section spans from the bowed luff to the drawn leech
+(`kiteGeometry.sections`), so in that loft **the leech is the silhouette** —
+the girth at a height is whatever the leech leaves it. Taking a measurer's
+four dimensions off the loft (luff and leech arcs, straight foot, and the half
+width between the two edges' arc mid-points) and running ORC's own spinnaker
+area formula on them, at the app's own downwind trim:
+
+| Measured off the drawn loft | 0.5.0 | after phase 02 | class (`T9` G.5.3) |
+|---|---|---|---|
+| Half width SHW, AWA 114° / 150° | 4.79 / 5.15 m | **5.48 / 5.78 m** | 5.560 m |
+| `(SLU+SLE)/2 · (SFL+4·SHW)/6` | 39.9 / 42.4 m² | **44.2 / 46.3 m²** | 45.64 m² |
+| Girth peak, as a height fraction | 0.19 / 0.21 | **0.30 / 0.32** | — |
+| Chord at ¾ height, as a fraction of the peak | 0.56 / 0.58 | **0.67 / 0.68** | — |
+| Half width on a tight reach (AWA 70°) | 2.86 m | **3.64 m** | — |
+
+So the sail was 7–14 % narrow at exactly the height a spinnaker carries its
+shoulders, and *measured* 7–13 % small overall. That is the whole of "reads
+like a jib" in one dimension, and it is a class dimension, not a taste.
+
+### Section by section, what the drawing takes from this document
+
+- **§3.2, luff direction.** Unchanged, and deliberately: `luffLateral`'s
+  published endpoints (64° leeward, 141° windward) and the derived 102.5°
+  crossover are exactly as landed in #76.
+- **§3.2, leech direction — newly applied.** Motta et al.: "the leech moves
+  aft and outboard, opening the sail up" (`F2`). The drawn bulge went
+  *forward*, which pushed the leech toward the luff and shortened every
+  section it touched. Reversing it to aft is worth 0.13 of the sail's height
+  in where the girth peaks, at no cost in any other dimension. This is the
+  one change in phase 02 that is a source correction rather than a fit.
+- **§6, the leech constraint.** Unchanged and still holding: the drawn leech
+  carries the published 8.800 m at every sheet setting, with the straight
+  head→clew chord shortened by the bulge's arc surplus.
+- **§6, clew rise.** The bulge's ease travel is capped by this, not by the
+  shoulders. 0.45 m of travel lifts the clew 1.46 m across the sheet band
+  against Deparday's measured 1.4 m; 1.1 m of travel drew visibly better
+  shoulders and lifted the clew 2.16 m, so it was rejected.
+- **§2, camber.** Untouched. `shape.asym` was re-based on Table 3.1 in #76 and
+  `src/core` is out of phase 02's scope; the drawn mid-height section measures
+  20–25 % of chord, which is the band, and a test now holds it there.
+- **§4, the fixed-volume invariant.** Not asserted, but measured and moving
+  the right way: volume between the sail and the head–tack–clew plane went
+  52.9 → 61.6 m³ against the ~65 m³ this document scales from `F1`.
+
+### Three places this document could not answer
+
+1. **No leech profile exists.** §6 pins the leech's *length* and says the
+   flying leech is "more curved" and "more open" than the design leech, but
+   nothing published gives a stand-off against height for any asymmetric. The
+   drawn amount (0.95 m trimmed, +0.45 m eased, peak at 65 % of the leech) is
+   therefore a fit to the class dimensions above, tagged `assumed`, and it is
+   the largest remaining invented number in the drawing.
+2. **No foot round exists either.** §6 is a leech constraint; nothing in this
+   corpus measures a foot. The class rules cap the *straight* foot at
+   5 700 mm and say nothing about the cloth in it. The drawn skirt (0.55 m,
+   ~10 % of the foot) is assumed, on the reasoning that a free edge with no
+   forestay under it should carry round of the same order as the 8.9 % measured
+   on the luff (§3.1). Only its sign is claimed.
+3. **The girth peak cannot go where a spinnaker's eye puts it.** The
+   phase brief asked for the peak at 60–70 % of the height. It is not
+   reachable: the foot is a published 5.700 m and the half width a published
+   5.560 m, so a maximum above mid-height needs a mean girth the 45.64 m²
+   rating cannot pay for — the sail would have to close from full width to a
+   point over the top three-tenths of its height. 0.30–0.32 is what the class
+   dimensions allow, up from 0.19–0.21, and what carries the picture is not
+   the peak's height but how much width survives above it (0.56 → 0.67 of the
+   peak at three-quarter height).
+
+### One finding this document contradicts, left standing and now tested
+
+**Drawn twist runs the wrong way against the sheet.** §2c measures foot-to-top
+twist at 4° on a tight reach and 26° at running angles — sheet in, little
+twist; sheet out, a lot. The drawing does the opposite: 24° at full trim, 14°
+at mid sheet, 2° fully eased. The cause is structural rather than a constant —
+the sheet band swings the foot 35° (25° → 60°) while the head is pinned at the
+masthead, so the upper leech can only follow by the stand-off the bulge gives
+it, measured at 11–14° whatever the bulge is set to. Inverting it needs the
+sheet band narrowed to ~14° or the head given a rotation of its own, and both
+are the sheet's geometry rather than the sail's shape. Held as a
+characterisation test in `kite.test.ts` and a row in `ASSUMPTIONS.md`, so a
+fix cannot land silently and the disagreement is not buried.

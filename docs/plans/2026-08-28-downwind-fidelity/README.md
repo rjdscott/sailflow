@@ -31,7 +31,7 @@ reviewed on Fable.
 | NN | Phase | Status | Last update |
 |----|-------|--------|-------------|
 | 01 | [VMG magnitude everywhere](phase-01-vmg-sign.md) | 🟢 Done | 2026-08-28 |
-| 02 | [Kite flying shape](phase-02-kite-shape.md) | 🔵 Not started | none |
+| 02 | [Kite flying shape](phase-02-kite-shape.md) | 🟢 Done | 2026-08-28 |
 | 03 | [3D telltales from aero state](phase-03-telltales-3d.md) | 🟢 Done | 2026-08-28 |
 
 ## File ownership (parallel build)

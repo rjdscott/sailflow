@@ -175,6 +175,19 @@ export interface Section {
   entryRad: number;
   /** Radians open from the sheeting angle, positive = leech falls to leeward. */
   twistRad: number;
+  /**
+   * How far the middle of this section hangs *below* its own horizontal plane,
+   * metres — the skirt. Both ends stay pinned (the luff on the spine, the
+   * leech on the leech line) and the sag is a half-sine between them, so an
+   * edge length and a corner position are unaffected by it.
+   *
+   * Sections are horizontal by construction (`conventions.ts`), which is right
+   * for a sail whose foot is on a boom or a deck sweep, and wrong for a
+   * gennaker: its foot is a free edge between two corners and it hangs. Only
+   * the kite sets it; `sectionStack` leaves it undefined and the main and the
+   * jib are drawn exactly as before.
+   */
+  dropM?: number;
 }
 
 /** Chords at the five stack heights, metres. */
@@ -323,6 +336,14 @@ export function buildSail(
     hs,
     sections.map((s) => s.twistRad),
   );
+  // Only the kite skirts, so the main and the jib do not pay for the pchip or
+  // the per-vertex sine.
+  const dropAt = sections.some((s) => s.dropM)
+    ? pchip(
+        hs,
+        sections.map((s) => s.dropM ?? 0),
+      )
+    : null;
 
   // Cosine clustering toward the luff, where the entry angle lives and where
   // uniform sampling shows facets.
@@ -339,12 +360,13 @@ export function buildSail(
     const md = camberDirOf(theta, side);
     const luff = spine(h);
     const prof = solveSectionBezier(camberAt(h), draftPosAt(h), entryAt(h));
+    const drop = dropAt ? dropAt(h) : 0;
     for (let j = 0; j < M; j++) {
       const x = xs[j];
       const p = add(add(luff, scaled(cd, x * chord)), scaled(md, profileY(prof, x) * chord));
       const k = (i * M + j) * 3;
       positions[k] = p[0];
-      positions[k + 1] = p[1];
+      positions[k + 1] = p[1] - drop * Math.sin(Math.PI * x);
       positions[k + 2] = p[2];
     }
   }
