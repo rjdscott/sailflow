@@ -63,7 +63,7 @@
   title="Helm"
   id="helm-title"
   lit={puffPlayer.litIndex('helm')}
-  cue="Hold heel steady — helm load only tells the truth when heel is not moving."
+  cue="Where the helm sits and what the boat is telling the tiller — helm load only reads true while heel is steady."
 >
   {#snippet controls()}
     <div class="rows" id={panelControlsId('helm')}>

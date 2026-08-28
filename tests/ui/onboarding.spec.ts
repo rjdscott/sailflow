@@ -129,6 +129,51 @@ fresh('card one cuts a hole around the conditions half of the band', async ({ pa
   await expect(card.locator('.spot')).toHaveCount(0);
 });
 
+/**
+ * Card 2's anchor is `[data-tour="rig"]`, which phase 02 wrote against a panel
+ * phase 04 had not built yet: until this one the selector matched nothing and
+ * the card simply dimmed the page (the designed fallback, and a card about the
+ * Rig panel that never points at it). Both first-class widths, because the Rig
+ * panel is the bottom-right cell of the cockpit grid at 1440 and the fourth
+ * card in the stack at 390 — the two places a hole is easiest to lose.
+ */
+for (const viewport of [PHONE, DESKTOP]) {
+  fresh(`card two cuts a hole around the Rig panel at ${viewport.width}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/#/sim');
+
+    const card = page.getByRole('dialog');
+    await expect(card).toBeVisible();
+    await card.getByRole('button', { name: 'Next' }).click();
+    await expect(card.getByText('Step 2 of 3')).toBeVisible();
+
+    const spot = card.locator('.spot');
+    await expect(spot).toBeVisible();
+
+    // The anchor is polled, and the card scrolls it into view first, so the
+    // box is only final once the two agree. Poll the pair rather than the one.
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const r = (sel: string): DOMRect | null =>
+            document.querySelector(sel)?.getBoundingClientRect() ?? null;
+          const spot = r('dialog .spot');
+          const rig = r('[data-tour="rig"]');
+          if (!spot || !rig) return 1e6; // missing is a failure, not a small delta
+          return Math.max(Math.abs(spot.top - rig.top), Math.abs(spot.height - rig.height));
+        }),
+      )
+      .toBeLessThan(2);
+
+    // A hole worth cutting: the panel is on screen, not scrolled past.
+    const onScreen = await page.evaluate(() => {
+      const r = document.querySelector('[data-tour="rig"]')!.getBoundingClientRect();
+      return r.top < window.innerHeight && r.bottom > 0 && r.height > 100;
+    });
+    expect(onScreen, 'the spotlit Rig panel is in the viewport').toBe(true);
+  });
+}
+
 /** The tour's one animation is the spotlight, and reduced motion switches it off. */
 fresh('the tour works under prefers-reduced-motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });

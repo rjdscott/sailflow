@@ -6,17 +6,19 @@ works offline on a phone after the first visit.
 
 ## ▶ Try it: **[rjdscott.github.io/sailflow](https://rjdscott.github.io/sailflow/)**
 
-[![Sailflow Race mode on a desktop: instrument bar, mainsail and headsail panels with section stacks, and the 3D sail view](docs/img/race-desktop.png)](https://rjdscott.github.io/sailflow/)
+[![The Sailflow Simulator on a desktop: the instrument band with the conditions as its right half, the mainsail, headsail, helm and rig panels, and the 3D sail view](docs/img/sim-desktop.png)](https://rjdscott.github.io/sailflow/)
 
-*Race mode at 12 kt, close-hauled. Every number wears its confidence tier
-(A/B/C); the coach line says what to move and what it is worth; the 3D view
-is the flying shape the model solved.*
+*The Simulator at 10 kt, close-hauled. The right half of the instrument band
+is the world — wind speed, the rose you drag for angle, sea state, crew, sail
+set — and every value in it is the control that sets it; the left half is what
+the boat does about it. The Rig panel carries the forecast the tune is bet on
+and the three shroud turns. Every number wears its confidence tier (A/B/C).*
 
 Sailflow answers two questions a one-design crew asks every race day:
 
-- **Dock mode** — *what shroud, rake and forestay setting do I commit to for
+- **The rig** — *what shroud, rake and forestay setting do I commit to for
   today's forecast, and what does it cost me at each end of the range?*
-- **Race mode** — *with the rig I have, where do the sheets, traveller,
+- **The sails** — *with the rig I have, where do the sheets, traveller,
   backstay, vang, outhaul, cunningham, leads and kite controls go for the wind
   in front of me, and what does each move do to the sail?*
 
@@ -32,7 +34,11 @@ the North and Quantum tuning guides, logs what you tried, and drills you on
 the decisions with fault-injection exercises. Trim states are shareable as
 links; a pinned trim shows as a ghost outline with deltas.
 
-<p align="center"><img src="docs/img/race-phone.png" width="280" alt="Sailflow Race mode on a phone, panels stacked with the hero first"></p>
+<p align="center"><img src="docs/img/sim-phone.png" width="280" alt="The Sailflow Simulator on a phone: the conditions above the boat's numbers, then the 3D boat, then the panel tabs"></p>
+
+<p align="center"><em>390 px wide, the top 1180 px of the page: the conditions
+are the first thing you touch, the boat's numbers are under them, then the
+picture. The whole instrument band is inside an 844 px phone screen.</em></p>
 
 ## Why it is different
 
@@ -57,17 +63,20 @@ Most trim advice is a table in a PDF. Sailflow is a model you can argue with:
   no framework in `src/core`. A golden corpus of solved cases per boat catches any
   drift.
 
-## Current state (v0.4.0, 2026-08-26)
+## Current state (v0.5.0, 2026-08-28)
 
-Complete and live: Race cockpit with 3D hero (three.js, lazy-loaded, first-
-frame budget), gennaker mode, Dock mode with expected-regret scoring over a
-forecast distribution, disagreement panel driven by whatever guides are in
-`data/tuning/`, tuning log with export/import, drills v2, PWA offline,
-dark/light themes, desktop-first layout down to phone. Phase two added:
-shareable trim links and pin-and-compare (ADR 0019), a first-run tour and a
-schematic explainer for every control, a downwind model that soaks
-(ADR 0018), a boat picker with the Melges 24 as a second class (ADR 0020),
-and a phone that loads the 3D chunk only when asked.
+Complete and live: one **Simulator** page with the 3D hero (three.js,
+lazy-loaded, first-frame budget) — the conditions are the editable right half
+of the instrument band, the Rig panel carries the forecast, the expected regret
+of committing once, the three shroud turns and the commit lock, and the
+mainsail, headsail/gennaker and helm panels sit around the boat (ADR 0021).
+Plus: disagreement panel driven by whatever guides are in `data/tuning/`,
+tuning log with export/import, drills v2, PWA offline, dark/light themes,
+desktop-first layout down to phone. Phase two added shareable trim links and
+pin-and-compare (ADR 0019), a first-run tour and a schematic explainer for
+every control, a downwind model that soaks (ADR 0018), a boat picker with the
+Melges 24 as a second class (ADR 0020), and a phone that loads the 3D chunk
+only when asked.
 
 **Known limitation, stated plainly.** The polar hold-out gate
 ([ADR 0012](docs/adr/0012-hold-out-split-by-wind-speed-not-by-angle.md): every
@@ -156,7 +165,7 @@ so a solve is reproducible and never blocks the frame.
 
 Stack: Svelte 5 runes, Vite, TypeScript strict, Vitest, Playwright,
 three.js (one lazy chunk, gated by a measured first-frame budget), vite-plugin-pwa,
-GitHub Pages. two boat classes, 20 ADRs.
+GitHub Pages. Two boat classes, 21 ADRs.
 
 ## Documentation
 
@@ -165,11 +174,11 @@ The repo is run on a documentation pipeline that is machine-checked
 
 | Where | What |
 |-------|------|
-| [`docs/adr/`](docs/adr/README.md) | 18 decisions, Nygard format, immutable once accepted |
+| [`docs/adr/`](docs/adr/README.md) | 21 decisions, Nygard format, immutable once accepted |
 | [`docs/plans/`](docs/plans/README.md) | Phase plans with status tables; resumable by a stranger |
-| [`docs/audits/`](docs/audits/README.md) | Point-in-time sweeps (UX ×3, docs consistency, first impressions) with evidence and punchlists |
+| [`docs/audits/`](docs/audits/README.md) | Point-in-time sweeps (UX ×4, docs consistency, first impressions) with evidence and punchlists |
 | [`docs/research/`](docs/research/README.md) | Cockpit UX, spinnaker aerodynamics and trim, simulator landscape |
-| [`docs/runbooks/`](docs/runbooks/README.md) | Seven operational how-tos: deploy, release and cache-bust, recalibrate, add a boat, add a drill, export the log, start a new project from the template |
+| [`docs/runbooks/`](docs/runbooks/README.md) | Nine operational how-tos: deploy, release and cache-bust, recalibrate, add a boat, add a drill, add a tuning guide, export the log, reshoot the screenshots, start a new project from the template |
 | [`docs/initial-prompt.md`](docs/initial-prompt.md) | The original build brief and acceptance criteria |
 | [`CHANGELOG.md`](CHANGELOG.md) | Per-release, from squash-merge titles |
 
@@ -187,9 +196,10 @@ published while it still reads FAIL.
 
 ## What's next
 
-Phase two is closed
-([`docs/plans/2026-08-26-phase-two/`](docs/plans/2026-08-26-phase-two/)).
-What it leaves open, each with the reason written where it lives: the
+Phase two and the Simulator merge are closed
+([`docs/plans/2026-08-26-phase-two/`](docs/plans/2026-08-26-phase-two/),
+[`docs/plans/2026-08-28-simulator/`](docs/plans/2026-08-28-simulator/)).
+What they leave open, each with the reason written where it lives: the
 downwind optimum angle (3° hot; needs a second mechanism, ADR 0018), a
 helm/rudder-angle readout (needs a yaw balance in the core), a third J/70
 tuning guide and any Melges 24 guide (none publicly fetchable), and the

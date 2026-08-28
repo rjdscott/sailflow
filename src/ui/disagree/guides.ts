@@ -1,5 +1,5 @@
 /**
- * Which guide columns the disagreement panel and the Dock recommendation show.
+ * Which guide columns the disagreement panel and the Rig panel's suggestion show.
  *
  * Pure: `guidesFor()` does the file enumeration (`src/lib/reference.ts`), this
  * turns a list of entries into columns for one wind speed. Three states are

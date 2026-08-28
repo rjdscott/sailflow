@@ -1,6 +1,6 @@
 <script lang="ts">
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion, Tween } from 'svelte/motion';
+  import { Tween } from 'svelte/motion';
   import type { RaceControls } from '../../core/types';
   import { TRIM_CONTROLS } from '../../worker/protocol';
   import ConfidenceBadge from '../components/ConfidenceBadge.svelte';
@@ -27,6 +27,7 @@
     raceObjective,
   } from '../race/store.svelte';
   import { snap } from '../format';
+  import { reduceMotion } from '../motion';
   import { nearestPointOfSail, POINTS_OF_SAIL } from '../race/pointOfSail';
   import { optimum } from '../race/optimum.svelte';
   import { play as playPuff } from '../race/PuffReplay.svelte';
@@ -74,9 +75,13 @@
   // off it. Tweening the numbers rather than the sliders means the boat, the
   // sail sections and the readouts all travel together, and the last frame
   // lands exactly on the solver's on-grid answer.
+  // The app's own Motion setting, not just the OS one: `off` in More kills CSS
+  // animation through `data-motion`, which a JS tween never sees, so eleven
+  // sliders still travelled for a reader who had asked for none. The band's
+  // number tween already read the setting; this one did not (phase 01 log).
   const APPLY_MS = 400;
   const progress = new Tween(1, {
-    duration: () => (prefersReducedMotion.current ? 1 : APPLY_MS),
+    duration: () => (reduceMotion() ? 1 : APPLY_MS),
     easing: cubicOut,
   });
   let from: RaceControls | null = null;
@@ -351,7 +356,12 @@
     {/if}
   </div>
   <div class="p-helm"><Helm result={race.result} /></div>
-  <div class="p-rig"><Rig result={race.result} /></div>
+  <!-- `data-tour` is tour card 2's spotlight anchor ("The rig, and the day").
+       On the grid cell rather than inside `Rig.svelte`: the cell is the panel's
+       box at every breakpoint, and the anchor is a property of where the panel
+       sits on this screen, not of the panel component (phase 02 left it for
+       whoever built the merged panel). -->
+  <div class="p-rig" data-tour="rig"><Rig result={race.result} /></div>
 
   <!-- The coach line and everything that rewrites the whole trim, in one
        card. Every button in it previews the sliders it would move (phase 05).
@@ -928,12 +938,22 @@
     }
 
     /* Panels are as tall as what is in them. Nothing clips, nothing scrolls
-       inside itself; the page carries the remainder (ADR 0016). */
+       inside itself; the page carries the remainder (ADR 0016).
+
+       `align-self: start`, because a grid row is as tall as the taller of its
+       two panels and a stretched card spends the difference on nothing: at
+       1440 the Headsail card ran 200 px past its last control to match
+       Mainsail's, and Helm — three fields and two gauges since crew moved to
+       the band (ADR 0021) — was a 510 px card holding 124 px of content. The
+       row keeps its height; the card no longer pretends to fill it. The hero
+       is the one cell that must stretch: it spans both panel rows and has no
+       intrinsic height of its own. */
     .p-main,
     .p-jib,
     .p-helm,
     .p-rig {
       display: flex;
+      align-self: start;
     }
 
     .p-main :global(.panel),
@@ -942,6 +962,14 @@
     .p-rig :global(.panel) {
       flex: 1;
       overflow: visible;
+      /* The cockpit's own card padding: 16 px on four cards is 32 px of the
+         document's height at 1920 (two panel rows), and ADR 0016 says the room
+         goes into the components. The phone keeps `Panel`'s 16 px. */
+      padding: var(--space-3);
+    }
+
+    .hero-boat {
+      align-self: stretch;
     }
 
     /* The caption repeats the chip titles; in the cockpit the hero's height

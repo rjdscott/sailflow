@@ -88,7 +88,7 @@ export class LogUiStore {
   }
 
   /**
-   * A Dock commit files a real, persisted entry — status `'draft'` — so the
+   * Committing the rig files a real, persisted entry — status `'draft'` — so the
    * promise on the commit button ("starts a log entry") survives a reload
    * (audit ux-02 M-04). One entry per committed day: a second commit updates
    * it rather than filing a duplicate, keeping whatever has been typed since.

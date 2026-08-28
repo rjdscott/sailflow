@@ -175,8 +175,8 @@
   /* Wide control column: name and value on the left, the track on the right,
      one row rather than two stacked halves (research §3 principle 25 — one
      spacing module, integer px). It reaches into `Slider`'s own markup on
-     purpose: the compaction is this panel's, not the component's, and Dock
-     and Log keep the tall rows.
+     purpose: the compaction is this panel's, not the component's, and the Log
+     form keeps the tall rows.
 
      This used to key off a 1280 px *viewport* and ellipsise the name to fit —
      "Upper s…", "Jib lead ca…", the Learn tier hiding the names of the things

@@ -657,6 +657,10 @@
       // Null unless a trim is pinned, for the same reason as the sails above:
       // "is the ghost drawn?" should be one read, not `.visible` archaeology.
       pinEdges: pinEdges.visible ? pinEdges : null,
+      // The live camera, so "does the picture frame the boat?" can be asked by
+      // projecting a mesh through it rather than by reading pixels out of a
+      // WebGL canvas (audit ux-04 M-04's regression test).
+      camera,
     };
   }
 
@@ -866,6 +870,13 @@
       renderer?.dispose();
       renderer = null;
       delete (window as unknown as { __sail?: unknown }).__sail;
+      // …and the "this view has drawn" flag with it. It was left `true` after
+      // an unmount, so a spec that navigated away and back was told the *next*
+      // view was ready before it had made its context — which is why the
+      // WebGL-context test passed alone and failed under a full parallel run
+      // (phase 04 progress log). `frames` is per-mount, so the flag comes back
+      // on the next view's second frame exactly as it did on the first's.
+      delete (window as unknown as { __sailViewReady?: boolean }).__sailViewReady;
     };
   });
 

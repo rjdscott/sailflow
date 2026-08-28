@@ -1,5 +1,4 @@
-import type { Page } from '@playwright/test';
-import { asReturningVisitor, expect, test } from './fixtures';
+import { asReturningVisitor, expect, instruments, settled, test } from './fixtures';
 
 /**
  * The share link, end to end (ADR 0019). Vitest proves the codec round-trips;
@@ -23,43 +22,6 @@ async function fresh(browser: import('@playwright/test').Browser, clipboard = fa
   await asReturningVisitor(context);
   const page = await context.newPage();
   return { context, page };
-}
-
-/** The whole instrument band's text: BSP, % polar, VMG, TWA and the deltas. */
-async function instruments(page: Page): Promise<string> {
-  return (await page.locator('.bar .cells').first().innerText()).replace(/\s+/g, ' ').trim();
-}
-
-/**
- * Wait until the screen has stopped changing on its own: the solver has
- * answered and the optimum search has landed, which is what puts the "target"
- * line under the cells. Same gate `race.spec.ts` measures layout after.
- */
-async function settled(page: Page): Promise<void> {
-  await expect(page.locator('.bar .cells').first()).toBeVisible();
-  // The optimum search re-runs after every input; CI's SwiftShader runner
-  // takes well over the 5 s default to land it.
-  await expect(page.getByRole('button', { name: /Apply optimum/ })).toBeEnabled({
-    timeout: 30_000,
-  });
-  // And the band's numbers have finished travelling. The three primary
-  // readings tween over 260 ms (phase 01), so a read taken the instant the
-  // optimum lands catches them mid-flight: the sender's `before` was 6.0 kt
-  // where the receiver's cold load, whose tween starts at the settled value,
-  // read 6.1. Two identical reads a frame budget apart is the honest gate for
-  // "the screen has stopped changing on its own", which is what this waits for.
-  let last = '';
-  await expect
-    .poll(
-      async () => {
-        const now = await instruments(page);
-        const same = now === last && now !== '';
-        last = now;
-        return same;
-      },
-      { intervals: [300, 300, 300, 300, 300] },
-    )
-    .toBe(true);
 }
 
 test('a link generated in one session reproduces the instruments in a fresh one', async ({

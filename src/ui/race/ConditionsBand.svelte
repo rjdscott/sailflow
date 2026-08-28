@@ -6,6 +6,7 @@
   import { fmt } from '../format';
   import { conditions, SEA_STATES } from '../stores/conditions.svelte';
   import { bandOf, POINTS_OF_SAIL } from './pointOfSail';
+  import { puffPlayer } from './puffPlayer.svelte';
   import { race } from './store.svelte';
   import WindRose from './WindRose.svelte';
 
@@ -128,7 +129,10 @@
      be able to point at the half it means (audit ux-04 H-02). -->
 <div class="conditions" data-tour="conditions" role="group" aria-label="Conditions">
   <div class="cond-cells">
-    <div class="cond tws">
+    <!-- A replay is the wind being written from outside: the cell it is writing
+         says so while it runs, or the number changes on its own and nothing on
+         the band accounts for it (audit ux-04 M-06). -->
+    <div class="cond tws" class:replaying={puffPlayer.playing}>
       {#if editable}
         {@render stepper(
           'Wind speed',
@@ -290,6 +294,23 @@
     flex-direction: row;
     align-items: center;
     gap: var(--space-2);
+  }
+
+  /* The ring is static and the pulse is the animation, the same split as
+     `Panel`'s lit outline: `data-motion: off` kills animations globally
+     (tokens.css), and a reader who asked for no motion still has to be able to
+     see which cell is being written. */
+  .cond.replaying {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: var(--radius);
+    animation: tws-pulse 1200ms ease-in-out infinite;
+  }
+
+  @keyframes tws-pulse {
+    50% {
+      outline-color: transparent;
+    }
   }
 
   /* One-tap wind speed and crew weight, the buttons flanking the value. 44 px
