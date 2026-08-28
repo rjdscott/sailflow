@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, settled, test } from './fixtures';
 
 /**
  * The phone-performance gates from phase-two phase 06 — the four ux-03 P2
@@ -80,6 +80,12 @@ test('five Race visits leave no WebGL context behind', async ({ page }) => {
   await countContexts(page);
   await page.goto('/#/race');
   await heroReady(page);
+  // Idle before the count: a solve still in flight keeps rebuilding the scene
+  // while the loop below is navigating, which is one of the ways this test
+  // failed only under a full parallel run (phase 04 progress log). The other
+  // was `__sailViewReady` surviving an unmount, so `heroReady` returned before
+  // the *next* view had a context — `SailView3D` clears it now.
+  await settled(page);
 
   const first = await readGl(page);
   // One renderer plus the one-shot `hasWebGL()` probe — the probe is memoised

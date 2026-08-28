@@ -311,7 +311,7 @@ button.chip {
 
 /* ------------------------------------------------------------------- print */
 
-/* Printing is for the Dock's tuning card (audit ux-02 M-25): the shell, the
+/* Printing is for the Rig panel's tuning card (audit ux-02 M-25): the shell, the
    controls and the sticky bars are screen furniture, and the card renders
    itself. Anything a screen adds for print opts in with .print-card. */
 @media print {

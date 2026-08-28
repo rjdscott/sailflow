@@ -80,7 +80,7 @@ export const SEA_LABELS: Record<SeaState, string> = {
 /**
  * One-line conditions summary for a log entry: "8–12 kt · chop · 300 kg".
  * Uses the wind actually recorded when there is one, else the forecast band:
- * an entry started from Dock mode has a forecast and no actuals yet.
+ * an entry started by committing the rig has a forecast and no actuals yet.
  */
 export function windLine(entry: LogEntry): string {
   const { actual, forecast } = entry;

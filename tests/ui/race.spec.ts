@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, settled as solverSettled, test } from './fixtures';
 
 /**
  * Layout smoke for the cockpit. From ADR 0016 the cockpit sizes to its content
@@ -43,13 +43,17 @@ async function heroDrawn(page: Page): Promise<void> {
 
 /**
  * Every band the grid sizes off has stopped growing: the hero has drawn, and
- * the optimum has landed, which is what puts the "to optimum" line under three
- * instrument cells and settles the bar's height. Measure after this, or you
- * measure a layout that is one solve out of date.
+ * the solver's own settled state has landed — the optimum search, which is
+ * what puts the "to optimum" line under three instrument cells, *and* the
+ * band's number tween, which is 260 ms of changing height after it. Measure
+ * after this, or you measure a layout that is one solve out of date; without
+ * the tween wait this spec failed only under a full parallel run on a fast
+ * machine (phase 04 progress log). The wait itself is `fixtures.settled`, so
+ * there is one definition of "the screen has stopped moving" in the suite.
  */
 async function settled(page: Page): Promise<void> {
   await heroDrawn(page);
-  await expect(page.getByRole('button', { name: /Apply optimum/ })).toBeEnabled();
+  await solverSettled(page);
 }
 
 /**
@@ -174,9 +178,20 @@ test('at 1920x1080 the cockpit is one short scroll and the hero is worth looking
   );
 
   const doc = await page.evaluate(() => document.documentElement.scrollHeight);
-  // 1522 measured: instrument bar, actions strip and a 768 × 1112 hero
-  // with two-column panels beside it. Apply optimum is above the fold; the
-  // Helm/Rig row and the disagreement strip are the short scroll.
+  // 1522 measured when the bound was set: instrument bar, actions strip and a
+  // 768 × 1112 hero with two-column panels beside it. Apply optimum is above
+  // the fold; the Helm/Rig row and the disagreement strip are the short scroll.
+  //
+  // The conditions band (phase 01) put it over: 1646 px on `main` at 783d5f7,
+  // 1626 after phase 04. **1593 now**, and the 33 px came off three pieces of
+  // furniture rather than off the budget (phase 05): the three replay chips
+  // were still 44 px in the cockpit because a media query above them lost the
+  // cascade to a later rule, so the actions row was 44 where every control in
+  // it is 32 (−10); each panel card's padding is the cockpit's 12 px rather
+  // than the phone's 16, twice over for two panel rows (−16); and the panels
+  // stopped stretching to their grid row, which is what the Helm and Headsail
+  // cards were spending 200–400 px of empty card on (−7 of document, and the
+  // point of it is the cards, not the number).
   expect(
     doc,
     'the cockpit must stay within one short scroll of a 1080 px window',
@@ -218,6 +233,167 @@ test('at 1536x864 the band, the hero and both sail panels are in the first viewp
       box!.y + box!.height,
       `${panel}'s first control is at most one nudge below the fold`,
     ).toBeLessThanOrEqual(864 + 100);
+  }
+});
+
+/**
+ * A grid row is as tall as the taller of its two panels, and until phase 05
+ * both cards stretched to fill it: at 1440 the Headsail card ran ~200 px past
+ * its last control to match Mainsail's, and Helm — three fields and two gauges
+ * since crew weight moved to the band — was a 510 px card around 124 px of
+ * content. The row keeps its height (the taller panel needs it); a card that
+ * is mostly empty is the thing being tested against.
+ */
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 1920, height: 1080 },
+]) {
+  test(`no cockpit panel is a mostly-empty card at ${viewport.width}`, async ({ page }) => {
+    await raceTier(page);
+    await page.setViewportSize(viewport);
+    await page.goto('/#/race');
+    await settled(page);
+
+    const slack = await page.evaluate(() =>
+      ['.p-main', '.p-jib', '.p-helm', '.p-rig'].map((sel) => {
+        const cell = document.querySelector<HTMLElement>(sel)!;
+        const panel = cell.querySelector<HTMLElement>('.panel')!;
+        const grid = panel.querySelector<HTMLElement>('.grid')!;
+        const head = panel.querySelector<HTMLElement>('.head')!;
+        const style = getComputedStyle(panel);
+        const content =
+          head.getBoundingClientRect().height +
+          grid.getBoundingClientRect().height +
+          parseFloat(style.paddingTop) +
+          parseFloat(style.paddingBottom) +
+          parseFloat(style.rowGap || '0');
+        return { sel, slack: Math.round(panel.getBoundingClientRect().height - content) };
+      }),
+    );
+    // 4 px of rounding and borders, not 200 of nothing.
+    for (const p of slack) expect(p.slack, `${p.sel} is as tall as what is in it`).toBeLessThan(8);
+  });
+}
+
+/**
+ * M-04. The hero refits its camera when its slot resizes (`SailView3D`'s
+ * `ResizeObserver` → the `presets.ts` fit), and the Learn tier is where that
+ * matters: pressing Learn grows the instrument band and the inline explainers,
+ * the hero cell shrinks under them, and a camera that kept its old distance
+ * drew the boat in the bottom third of an otherwise empty picture (audit ux-04
+ * M-04, screenshot ss_7302y1via).
+ *
+ * "Frames the whole boat" is measured on the head of the mainsail projected
+ * through the live camera: inside the top quarter of the canvas, and on the
+ * canvas at all.
+ */
+test('the Learn tier frames the whole boat at 1440', async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('sailflow.mode', 'learn');
+      localStorage.setItem('sailflow.motion', 'off');
+      localStorage.setItem('sailflow.hero.v1', '3d');
+    } catch {
+      // ignore: storage disabled, the defaults still render a hero
+    }
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/sim');
+  await page.waitForFunction(
+    () => (window as unknown as { __sailViewReady?: boolean }).__sailViewReady === true,
+    undefined,
+    { timeout: 60_000 },
+  );
+
+  const head = await page.evaluate(() => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const sail = (window as any).__sail;
+    if (!sail?.mainSail || !sail.camera) return null;
+    const mesh = sail.mainSail;
+    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+    const box = mesh.geometry.boundingBox;
+    // A `Vector3` without importing three into the spec: clone one the scene
+    // already holds, then reuse it as scratch. The head of the mainsail is the
+    // top corner of its own bounding box.
+    const v = sail.camera.position.clone();
+    v.set(box.max.x, box.max.y, box.max.z);
+    const ndc = mesh.localToWorld(v).project(sail.camera);
+    const canvas = document.querySelector('.hero-boat canvas')!.getBoundingClientRect();
+    return { yFrac: (1 - ndc.y) / 2, xFrac: (ndc.x + 1) / 2, canvasH: canvas.height };
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+  });
+
+  expect(head, 'the 3D hero drew and exposed its camera').not.toBeNull();
+  expect(head!.canvasH, 'the hero is a picture, not a strip').toBeGreaterThan(200);
+  expect(head!.yFrac, 'the masthead is inside the top quarter of the hero').toBeLessThan(0.25);
+  expect(head!.yFrac, 'and on the canvas, not above it').toBeGreaterThan(0);
+  expect(head!.xFrac).toBeGreaterThan(0);
+  expect(head!.xFrac).toBeLessThan(1);
+});
+
+/**
+ * Nothing in the instrument band runs under the cell beside it. The Learn tier
+ * prints each reading's delta in words, which is 422 px of content in the
+ * band's 359 px left half at 1440: flex shrank the cells past their own labels
+ * and `%POLAR ?` overlapped the VMG value, with `.bar`'s `overflow: hidden`
+ * cutting off whatever was left (measured phase 05). Both tiers, because the
+ * fix — wrap instead of squeeze — must not put the race tier on two lines.
+ */
+for (const tier of ['learn', 'race'] as const) {
+  test(`no instrument cell overflows its box in the ${tier} tier at 1440`, async ({ page }) => {
+    await page.addInitScript((t) => {
+      try {
+        localStorage.setItem('sailflow.mode', t);
+        localStorage.setItem('sailflow.motion', 'off');
+      } catch {
+        // ignore: storage disabled, the default tier is race
+      }
+    }, tier);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/#/sim');
+    await settled(page);
+
+    const over = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('.bar .cell')]
+        .filter((el) => el.scrollWidth > el.clientWidth + 1)
+        .map((el) => `${el.textContent?.trim().slice(0, 16)}: ${el.scrollWidth}>${el.clientWidth}`),
+    );
+    expect(over, 'every band cell fits the width it was given').toEqual([]);
+  });
+}
+
+/**
+ * The apply-optimum animation reads the app's own Motion setting, not only the
+ * OS one: `off` in More kills CSS animation through `data-motion`, which a JS
+ * tween never sees, so eleven sliders still travelled for a reader who had
+ * asked for none (phase 01 found it in the band's tween and left this one).
+ * Two frames after the press, every control the apply listed is *at* its
+ * target — a 400 ms cubic ease is ~20 % of the way there by then.
+ */
+test('with motion off, Apply optimum lands the sliders at once', async ({ page }) => {
+  await raceTier(page); // sets sailflow.motion = 'off'
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/race');
+  await settled(page);
+
+  const moved = await page.evaluate(async () => {
+    const apply = [...document.querySelectorAll('button')].find((b) =>
+      b.textContent?.trim().startsWith('Apply optimum'),
+    )!;
+    apply.click();
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    // "Mainsheet 60 → 75", one row per control the apply moved.
+    return [...document.querySelectorAll('.insight .moved li')].map((li) => {
+      const label = li.querySelector('.moved-label')!.textContent!.trim();
+      const to = li.textContent!.split('→')[1].trim().split(' ')[0];
+      const slider = document.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`);
+      return { label, to, at: slider?.value ?? null };
+    });
+  });
+
+  expect(moved.length, 'the optimum moved something to measure').toBeGreaterThan(0);
+  for (const m of moved) {
+    expect(Number(m.at), `${m.label} is already at its target`).toBeCloseTo(Number(m.to), 5);
   }
 });
 
@@ -318,11 +494,23 @@ test('the puff replay restores the wind it borrowed when it is stopped', async (
   const wind = page.locator('.cond.tws .value');
   const before = await wind.textContent();
 
-  await page.getByRole('button', { name: 'Replay a gust ▶' }).click();
+  // M-06: the three replays are one group labelled SIMULATE, each with a ▶.
+  const simulate = page.getByRole('group', { name: 'Simulate' });
+  await expect(simulate).toContainText('SIMULATE');
+  await expect(simulate.getByRole('button')).toHaveText([
+    /▶\s*Lull/,
+    /▶\s*Shift/,
+    /▶\s*Replay a gust/,
+  ]);
+
+  await simulate.getByRole('button', { name: /Replay a gust/ }).click();
   await expect(wind).not.toHaveText(before ?? '');
+  // …and the cell being written from outside says so while it runs.
+  await expect(page.locator('.cond.tws')).toHaveClass(/replaying/);
 
   await page.getByRole('button', { name: 'Stop replay' }).click();
   await expect(wind).toHaveText(before ?? '');
+  await expect(page.locator('.cond.tws')).not.toHaveClass(/replaying/);
 });
 
 /**

@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { asReturningVisitor, expect, test } from './fixtures';
+import { asReturningVisitor, expect, settled, test } from './fixtures';
 
 /**
  * The second class, end to end (ADR 0020).
@@ -30,6 +30,11 @@ async function fresh(browser: import('@playwright/test').Browser) {
  * which is also the only place a screen reader can hear them.
  */
 async function crewRange(page: Page): Promise<{ min: string | null; max: string | null }> {
+  // The band mounts on the first solve, and under a full parallel run on this
+  // machine that took longer than the 5 s default this used to wait (phase 04
+  // progress log). `settled` is the suite's one definition of "the Simulator
+  // has stopped changing on its own", and it waits 30 s for the solver.
+  await settled(page);
   const crew = page.getByRole('group', { name: /^Crew weight,/ });
   await expect(crew).toBeVisible();
   const label = (await crew.getAttribute('aria-label')) ?? '';
@@ -77,7 +82,7 @@ test('a share link naming the second class opens on it in a cold context', async
     await expect(sender.page.getByRole('radio', { name: 'Melges 24' })).toBeChecked();
 
     await sender.page.goto('/#/race');
-    await expect(sender.page.locator('.bar .cells').first()).toBeVisible();
+    await settled(sender.page);
 
     // The router writes the trim into the URL as it changes; the link is
     // whatever is in the address bar (ADR 0019, phase 02).
@@ -87,7 +92,6 @@ test('a share link naming the second class opens on it in a cold context', async
 
     // A cold browser: no localStorage, so the class can only come off the link.
     await receiver.page.goto(link);
-    await expect(receiver.page.locator('.bar .cells').first()).toBeVisible();
     const crew = await crewRange(receiver.page);
     expect(crew).toEqual({ min: '262', max: '350' });
 

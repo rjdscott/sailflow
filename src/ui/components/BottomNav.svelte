@@ -31,10 +31,11 @@
     display: flex;
     /* `border-box` is global, so a bare `height: 56px` let the safe-area inset
        eat the content box instead of extending the bar: on a notched phone all
-       five labels ended up inside the gesture-reserved strip and Dock's commit
-       bar floated 34 px clear of the nav (audit ux-03 M-15). Growing the box
-       leaves `Dock.svelte` and `Toast.svelte`, which already offset by
-       `calc(56px + env(...))`, correct as written. */
+       five labels ended up inside the gesture-reserved strip and the Dock's
+       commit bar floated 34 px clear of the nav (audit ux-03 M-15; that bar
+       died with the screen in ADR 0021). Growing the box leaves
+       `Toast.svelte`, which already offsets by `calc(56px + env(...))`,
+       correct as written. */
     height: calc(56px + env(safe-area-inset-bottom));
     background: var(--surface);
     padding-bottom: env(safe-area-inset-bottom);

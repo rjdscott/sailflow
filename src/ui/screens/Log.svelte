@@ -70,7 +70,7 @@
 
   function loadForm(entry: LogEntry): void {
     // $state.snapshot deep-clones out of the proxy, structuredClone makes it
-    // ours: the form must never alias a stored entry, the Dock draft, or the
+    // ours: the form must never alias a stored entry, a rig-commit draft, or the
     // committed rig (audit ux-02 H-06).
     form = structuredClone($state.snapshot(entry)) as LogEntry;
     includeRace = !!form.race;
@@ -121,7 +121,7 @@
       ...$state.snapshot(form),
       v: 2,
       id: editingId ?? nextId(),
-      // Going through the form is what finishes a Dock draft (ux-02 M-04).
+      // Going through the form is what finishes a rig-commit draft (ux-02 M-04).
       status: 'complete',
       createdAt: editingId ? form.createdAt : new Date().toISOString(),
       race: includeRace ? { ...$state.snapshot(raceForm) } : undefined,
@@ -212,7 +212,9 @@
       <NumberField label="Crew weight" bind:value={form.crewKg} unit="kg" step={1} min={0} />
     </div>
 
-    <h3 class="section-title">Dock setup</h3>
+    <!-- The three the Rig panel commits: shrouds and forestay. "Dock setup"
+         named a screen that no longer exists (ADR 0021). -->
+    <h3 class="section-title">Rig setup</h3>
     <div class="row">
       {#each DOCK_KEYS as key (key)}
         {@const spec = SPECS[key]}
@@ -332,6 +334,15 @@
       <section class="card empty">
         <h2 class="section-title">No entries yet</h2>
         <p>Record the wind, the rig you sailed and what was fast, while you still remember it.</p>
+        <!-- What a saved entry gives back (audit ux-04 M-05). The audit
+             proposed "…the setup you logged is the first suggestion", which is
+             not true of this app: `Suggest a setup` scores a candidate grid by
+             expected regret over the forecast (`dock/logic.ts`) and never reads
+             the log. What an entry really gives back is its link. -->
+        <p>
+          Every entry keeps a link back to the Simulator on the wind, the rig and the trim you
+          sailed, so a day you liked is one tap from being on screen again.
+        </p>
         <button type="button" class="new" onclick={openNew}>Start today's entry</button>
         <p class="sub">Or restore a log you exported before, under Backup.</p>
       </section>

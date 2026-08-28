@@ -13,6 +13,15 @@ undiagnosable.
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-08-28
+
+One Simulator page: the conditions the model solves for are the editable right
+half of the instrument band, and the Rig panel carries the forecast, the
+expected regret of committing once, the three shroud turns and the lock — so a
+shroud turn and what it does to the jib are visible on the same screen. Dock
+and Race are gone as screens; every link written against them still opens
+(ADR 0021, audit ux-04).
+
 ### Changed
 
 - **The conditions are the right half of the instrument band** (ADR 0021,
@@ -48,6 +57,30 @@ undiagnosable.
   Committed, the three controls grey with the rule as their tooltip and the
   panel says when it was committed and how to unlock. An old `#/dock?f=…` link
   lands on `#/sim?f=…` with the forecast applied and the page on the Rig panel.
+
+- **The phone leads with the wind, and the tour points at things** (ADR 0021,
+  audit ux-04 H-02, H-03, H-04, M-07, L-01, L-02): at 390 px the order is
+  header → conditions → the boat's numbers → the picture → the panels, with the
+  hero capped at 56 vw so the whole instrument band is inside one 844 px
+  screen. The three tour cards are written for one screen — _Set the wind_,
+  _The rig, and the day_, _Apply optimum_ — and each cuts a hole in its own
+  dimming around the thing it is about. Downwind VMG reads `4.95 kt ↓` instead
+  of a minus sign, in the cells and in the spoken summary both, and its delta
+  label says which way "more" points. A cold load carrying yesterday's session
+  says so, with a Reset. The phone tab bar spends no height on a wordmark.
+
+- **Polish, and the room it took** (audit ux-04 M-04, M-05, M-06): `Lull`,
+  `Shift` and `Replay a gust` are one group labelled SIMULATE, each with a ▶,
+  and the TWS cell wears an accent ring while a replay writes the wind — a
+  static ring when Motion is off, a pulse otherwise. The Log's empty card says
+  what a saved entry gives back. The Helm panel keeps its own lede at Learn
+  density. Every cockpit panel is now as tall as what is in it rather than as
+  tall as the panel beside it, which is 200–400 px of empty card gone at 1440;
+  at Learn density each band reading's delta wraps inside its own cell instead
+  of running under the reading beside it. `Apply optimum` reads the app's own
+  Motion setting, so `off` lands the sliders instead of travelling them. The
+  cockpit at 1920×1080 is back inside its one-short-scroll budget: 1593 px
+  against 1600 (it was 1626).
 
 ## [0.4.0] — 2026-08-26
 

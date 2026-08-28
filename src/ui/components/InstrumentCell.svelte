@@ -122,6 +122,15 @@
     min-width: 0;
   }
 
+  /* `.section-title` is a nowrap flex row by default, and in the band the cells
+     share the width they are given: `%POLAR ?` plus its tier badge is 97 px in
+     a 45 px cell, and the overflow ran under the cell beside it. Wrapping the
+     badge under the label costs a line only where the label does not fit. */
+  .cell .section-title {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
   .explain {
     padding: 0;
     border: none;
@@ -241,6 +250,12 @@
     margin: 0;
     overflow: visible;
     clip-path: none;
+    /* …and it has to wrap. `nowrap` belongs to the sr-only clip above; left in
+       place when the words become visible it made "Δ to optimum (+ = optimum
+       is faster)" a 207 px unbreakable line inside a 138 px cell, so at Learn
+       density the BSP, %polar and VMG cells overflowed into each other and the
+       band clipped what was left (measured at 1440, phase 05). */
+    white-space: normal;
   }
 
   .trend {

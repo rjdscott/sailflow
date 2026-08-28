@@ -22,7 +22,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { cubicOut } from 'svelte/easing';
-  import { prefersReducedMotion, Tween } from 'svelte/motion';
+  import { Tween } from 'svelte/motion';
   import type { Condition, SolveResult } from '../../core/types';
   import { fmt, targetOf, vmgDisplay } from '../format';
   import ConditionsBand from './ConditionsBand.svelte';
@@ -31,7 +31,7 @@
   import Sheet from '../components/Sheet.svelte';
   import { READOUT_EXPLAIN } from '../explain';
   import { heelBands, HEEL_SCALE_MAX, HELM_TARGET } from '../instruments/gauges';
-  import { settings } from '../stores/settings.svelte';
+  import { reduceMotion } from '../motion';
   import type { History } from '../instruments/history';
   import type { Objective } from './store.svelte';
   import { verdict } from './verdict';
@@ -130,8 +130,6 @@
    * slider drag's next solve is not queueing behind it.
    */
   const TWEEN_MS = 260;
-  const reduceMotion = (): boolean =>
-    settings.motion === 'off' || (settings.motion !== 'on' && prefersReducedMotion.current);
   const numbers = (): { bs: number; pct: number; vmg: number } => ({
     bs: result.bsKt.value,
     pct: result.instruments.pctPolar.value,
@@ -473,6 +471,13 @@
        which is the instrument band as a tower, 360 px of a 720 px screen. */
     .cells {
       display: flex;
+      /* Wrap rather than squeeze. At the Learn tier each cell also prints the
+         delta in words, which is 422 px of content in a 359 px half at 1440:
+         flex shrank the three cells past their own labels and `%POLAR ?` ran
+         under the VMG beside it. A second line costs height on the one tier
+         that has it to spend; nothing wraps at the race tier, where the words
+         are for the screen reader only. */
+      flex-wrap: wrap;
       flex: 1;
       align-items: center;
       gap: var(--space-4);

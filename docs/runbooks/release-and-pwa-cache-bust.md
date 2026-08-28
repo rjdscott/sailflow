@@ -77,7 +77,14 @@ within one Workbox update check (on load, and periodically thereafter).
 
 ## Last verified
 
-- **Last verified:** 2026-08-26 against e9a0f7d (registration and toast in `App.svelte` re-read; earlier pass against a55d993 below).
+- **Last verified:** 2026-08-28 cutting 0.5.0 on `feat/simulator-polish-0-5-0`.
+- Steps 1 and 2 were run for real: `pnpm version --no-git-tag-version minor` →
+  0.5.0 in `package.json` and on More, and `GITHUB_PAGES=1 pnpm build` → a
+  fresh `assets/index-*.js` in the precache manifest with
+  `self.skipWaiting(),s.clientsClaim()` in `dist/sw.js`. Step 3's deploy and
+  step 4's manual bust were not exercised: the tag and the merge are the
+  owner's.
+- Earlier: 2026-08-26 against e9a0f7d (registration and toast in `App.svelte` re-read; earlier pass against a55d993 below).
 - Earlier: `self.skipWaiting()` /
   `clientsClaim()` and the precache manifest were confirmed by grepping a
   local `GITHUB_PAGES=1 pnpm build` output. The live "stuck on an old
