@@ -13,8 +13,12 @@
 </script>
 
 <script lang="ts">
-  import type { SolveResult } from '../../core/types';
+  import { untrack } from 'svelte';
+  import { cubicOut } from 'svelte/easing';
+  import { prefersReducedMotion, Tween } from 'svelte/motion';
+  import type { Condition, SolveResult } from '../../core/types';
   import { fmt, targetOf } from '../format';
+  import ConditionsBand from './ConditionsBand.svelte';
   import InstrumentCell from '../components/InstrumentCell.svelte';
   import BulletGauge from '../components/BulletGauge.svelte';
   import Sheet from '../components/Sheet.svelte';
@@ -36,18 +40,21 @@
    */
   let {
     result,
-    twaDeg,
+    condition,
+    conditionsEditable = true,
     objective,
     busy = false,
     target,
     history,
-    twsKt,
     coach,
     targetWithheld = false,
     deltaLabel = DEFAULT_DELTA_LABEL,
   }: {
     result: SolveResult;
-    twaDeg: number;
+    /** What the world is doing: the right half draws it, and edits it in place. */
+    condition: Condition;
+    /** A drill sets its own condition, so there it is shown and not offered. */
+    conditionsEditable?: boolean;
     /** What "faster" means here; downwind VMG is negative towards the mark. */
     objective: Objective;
     busy?: boolean;
@@ -55,7 +62,6 @@
     target?: { bsKt?: number; vmgKt?: number; heelDeg?: number };
     /** Recent converged solves at this condition, for the trend lines. */
     history: History;
-    twsKt: number;
     /** The coach line's probe sentence, the verdict's fallback cue. */
     coach?: string;
     /** No target because a drill is holding the answer back, not because the
@@ -91,8 +97,34 @@
     return { bs: history.series('bs'), vmg: history.series('vmg') };
   });
 
-  const heel = $derived(heelBands(twsKt));
+  const heel = $derived(heelBands(condition.twsKt));
   const line = $derived(verdict({ result, target, objective, coach, targetWithheld }));
+
+  /**
+   * The three primary numbers travel to their new value rather than jumping to
+   * it: changing the wind on the right half and watching the left half move
+   * *is* the lesson the screen teaches (audit ux-04 H-01 rule 4), and a number
+   * that teleports reads as a re-render rather than as an effect. One tween of
+   * the three, the same `Tween` the apply animation uses, and it collapses to
+   * an instant set when the reader has asked for less motion.
+   * prov: assumed 260 ms — long enough to be a movement, short enough that a
+   * slider drag's next solve is not queueing behind it.
+   */
+  const TWEEN_MS = 260;
+  const numbers = (): { bs: number; pct: number; vmg: number } => ({
+    bs: result.bsKt.value,
+    pct: result.instruments.pctPolar.value,
+    vmg: result.vmgKt.value,
+  });
+  const shown = new Tween(
+    // The first solve is where the tween starts, not something it travels to:
+    // a band that spun up from zero on load would read as a gauge test.
+    untrack(numbers),
+    { duration: () => (prefersReducedMotion.current ? 1 : TWEEN_MS), easing: cubicOut },
+  );
+  $effect(() => {
+    void shown.set(numbers());
+  });
 
   let explaining: string | null = $state(null);
   let sheetOpen = $state(false);
@@ -101,11 +133,15 @@
     bsp: 'BSP',
     pctPolar: '% polar',
     vmg: 'VMG',
-    height: 'TWA',
     heel: 'Heel',
     helm: 'Helm load',
     leechStall: 'Main leech stall',
     jibStripe: 'Jib leech stripe',
+    tws: 'True wind speed',
+    twa: 'True wind angle',
+    sea: 'Sea state',
+    crew: 'Crew weight',
+    sailset: 'Sail set',
   };
 
   function explain(id: string): void {
@@ -154,111 +190,119 @@
   <section class="card bar" class:more class:stale={!result.converged}>
     {#if busy}<span class="progress" aria-hidden="true"></span>{/if}
 
-    <div class="cells">
-      <InstrumentCell
-        label="BSP"
-        id="bsp"
-        size="lg"
-        unit="kt"
-        value={fmt(result.bsKt.value, 1)}
-        tier={result.bsKt.tier}
-        target={gapTo(result.bsKt.value, target?.bsKt, 1)}
-        trend={trend.bs}
-        onexplain={explain}
-      />
-      <InstrumentCell
-        label="%POLAR"
-        id="pctPolar"
-        size="lg"
-        unit="%"
-        value={fmt(result.instruments.pctPolar.value, 0)}
-        tier={result.instruments.pctPolar.tier}
-        onexplain={explain}
-      />
-      <InstrumentCell
-        label="VMG"
-        id="vmg"
-        size="lg"
-        unit="kt"
-        value={fmt(result.vmgKt.value, 2)}
-        tier={result.vmgKt.tier}
-        target={gapTo(result.vmgKt.value, target?.vmgKt, 2, vmgBetter)}
-        trend={trend.vmg}
-        onexplain={explain}
-      />
-      <div class="race-only phone-extra">
-        <InstrumentCell
-          label="TWA"
-          id="height"
-          size="md"
-          unit="°"
-          value={fmt(twaDeg, 0)}
-          onexplain={explain}
-        />
-      </div>
+    <div class="halves">
+      <!-- Left: what the boat is doing. Right: what the world is doing, and
+           every value over there is the control that sets it (ADR 0021). -->
+      <div class="boat" role="group" aria-label="Boat">
+        <div class="cells">
+          <InstrumentCell
+            label="BSP"
+            id="bsp"
+            size="lg"
+            unit="kt"
+            value={fmt(shown.current.bs, 1)}
+            tier={result.bsKt.tier}
+            target={gapTo(result.bsKt.value, target?.bsKt, 1)}
+            trend={trend.bs}
+            onexplain={explain}
+          />
+          <InstrumentCell
+            label="%POLAR"
+            id="pctPolar"
+            size="lg"
+            unit="%"
+            value={fmt(shown.current.pct, 0)}
+            tier={result.instruments.pctPolar.tier}
+            onexplain={explain}
+          />
+          <InstrumentCell
+            label="VMG"
+            id="vmg"
+            size="lg"
+            unit="kt"
+            value={fmt(shown.current.vmg, 2)}
+            tier={result.vmgKt.tier}
+            target={gapTo(result.vmgKt.value, target?.vmgKt, 2, vmgBetter)}
+            trend={trend.vmg}
+            onexplain={explain}
+          />
 
-      <!-- "More readings", not "More": the bottom nav's fifth destination is
+          <!-- "More readings", not "More": the bottom nav's fifth destination is
            also called "More" and is on screen at the same time on a phone, and
            a bare pill said nothing about what is behind it (audit ux-03 M-19). -->
-      <button type="button" class="more-btn" aria-expanded={more} onclick={() => (more = !more)}>
-        {more ? 'Fewer readings' : 'More readings'}<span aria-hidden="true" class="chev"
-          >{more ? '▴' : '▾'}</span
-        >
-      </button>
-    </div>
+          <button
+            type="button"
+            class="more-btn"
+            aria-expanded={more}
+            onclick={() => (more = !more)}
+          >
+            {more ? 'Fewer readings' : 'More readings'}<span aria-hidden="true" class="chev"
+              >{more ? '▴' : '▾'}</span
+            >
+          </button>
+        </div>
 
-    <!-- Side by side on purpose: the Speed Guide's point is that helm feel only
+        <!-- Side by side on purpose: the Speed Guide's point is that helm feel only
          tells the truth while heel is steady, so a helm bar without a heel gauge
          beside it is a cue that lies (research §2.3). -->
-    <div class="gauges">
-      <BulletGauge
-        label="HEEL"
-        id="heel"
-        unit="°"
-        value={Math.abs(result.heelDeg.value)}
-        min={0}
-        max={HEEL_SCALE_MAX}
-        target={heel.target}
-        ranges={[heel.lo, heel.hi]}
-        tier={result.heelDeg.tier}
-        onexplain={explain}
-      />
-      <div class="race-only phone-extra">
-        <BulletGauge
-          label="HELM"
-          id="helm"
-          value={result.instruments.helmLoad.value}
-          min={-1.5}
-          max={1.5}
-          target={HELM_TARGET}
-          decimals={2}
-          symbol
-          tier={result.instruments.helmLoad.tier}
-          onexplain={explain}
-        />
-      </div>
-    </div>
+        <div class="gauges">
+          <BulletGauge
+            label="HEEL"
+            id="heel"
+            unit="°"
+            value={Math.abs(result.heelDeg.value)}
+            min={0}
+            max={HEEL_SCALE_MAX}
+            target={heel.target}
+            ranges={[heel.lo, heel.hi]}
+            tier={result.heelDeg.tier}
+            onexplain={explain}
+          />
+          <div class="race-only phone-extra">
+            <BulletGauge
+              label="HELM"
+              id="helm"
+              value={result.instruments.helmLoad.value}
+              min={-1.5}
+              max={1.5}
+              target={HELM_TARGET}
+              decimals={2}
+              symbol
+              tier={result.instruments.helmLoad.tier}
+              onexplain={explain}
+            />
+          </div>
+        </div>
 
-    <div class="cells analyse-only phone-extra">
-      <InstrumentCell
-        label="LEECH STALL"
-        id="leechStall"
-        size="sm"
-        unit="%"
-        value={fmt(result.instruments.leechStallFrac.value * 100, 0)}
-        tier={result.instruments.leechStallFrac.tier}
+        <div class="cells analyse-only phone-extra">
+          <InstrumentCell
+            label="LEECH STALL"
+            id="leechStall"
+            size="sm"
+            unit="%"
+            value={fmt(result.instruments.leechStallFrac.value * 100, 0)}
+            tier={result.instruments.leechStallFrac.tier}
+            onexplain={explain}
+          />
+          {#if result.instruments.jibLeechStripe}
+            <InstrumentCell
+              label="JIB STRIPE"
+              id="jibStripe"
+              size="sm"
+              value={fmt(result.instruments.jibLeechStripe.value, 1)}
+              tier={result.instruments.jibLeechStripe.tier}
+              onexplain={explain}
+            />
+          {/if}
+        </div>
+      </div>
+
+      <ConditionsBand
+        {condition}
+        awaDeg={result.aero.awaDeg}
+        editable={conditionsEditable}
         onexplain={explain}
       />
-      {#if result.instruments.jibLeechStripe}
-        <InstrumentCell
-          label="JIB STRIPE"
-          id="jibStripe"
-          size="sm"
-          value={fmt(result.instruments.jibLeechStripe.value, 1)}
-          tier={result.instruments.jibLeechStripe.tier}
-          onexplain={explain}
-        />
-      {/if}
     </div>
 
     <p class="verdict">{line}</p>
@@ -285,6 +329,31 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+  }
+
+  /* The two halves of the band (ADR 0021). Stacked, the world comes first: it
+     is what you set before you read what the boat did with it, and on a phone
+     the top of the band is the only part above the fold. `order` rather than
+     DOM order, so the keyboard still meets the boat's numbers where a reader
+     of the desktop layout meets them — left, then right. */
+  .halves {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .boat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .halves > :global(.conditions) {
+    order: -1;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--line);
   }
 
   .cells {
@@ -341,10 +410,31 @@
      to itself, which the Drills column never has (audit ux-03 H-02). */
   @container (min-width: 1000px) {
     .bar {
+      padding: var(--space-3) var(--space-4);
+    }
+
+    /* The 50/50 split: boat left, world right, one 1 px divider between them
+       and the verdict along the bottom of both (ADR 0021's layout contract). */
+    .halves {
       flex-direction: row;
       align-items: center;
       gap: var(--space-4);
-      padding: var(--space-3) var(--space-4);
+    }
+
+    .boat {
+      flex: 1 1 50%;
+      flex-direction: row;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .halves > :global(.conditions) {
+      order: 0;
+      flex: 1 1 50%;
+      padding-bottom: 0;
+      padding-left: var(--space-4);
+      border-bottom: none;
+      border-left: 1px solid var(--line);
     }
 
     /* Flex, not the auto-fit grid: an auto-fit track list inside a flex item
@@ -352,14 +442,15 @@
        which is the instrument band as a tower, 360 px of a 720 px screen. */
     .cells {
       display: flex;
-      flex: none;
+      flex: 1;
       align-items: center;
       gap: var(--space-4);
+      min-width: 0;
     }
 
     .gauges {
       display: flex;
-      flex: 0 1 340px;
+      flex: 0 1 260px;
       gap: var(--space-4);
       padding-top: 0;
       padding-left: var(--space-4);
@@ -373,7 +464,6 @@
     }
 
     .verdict {
-      flex: 1 1 20ch;
       min-width: 0;
       font-size: var(--text-sm);
     }
@@ -382,15 +472,16 @@
   /* With a full monitor behind it the band has ~1800 px and the three primary
      readings are still set at the size they take on a 390 px phone. The
      numbers are what you read at a glance from a metre away, so they take the
-     room (ADR 0016). prov: assumed 1400 px / 52 px — one step past
-     `--text-2xl`, which is where the row still fits its gauges and verdict. */
+     room (ADR 0016). prov: assumed 1400 px / 44 px — the numbers grow until
+     the boat half, which is now half the band rather than all of it (ADR
+     0021), stops fitting its three readings and two gauges on one line. */
   @container (min-width: 1400px) {
     .cells :global(.hero-number) {
-      font-size: clamp(var(--text-2xl), 3.4cqw, 52px);
+      font-size: clamp(var(--text-xl), 2.4cqw, 44px);
     }
 
     .gauges {
-      flex: 0 1 420px;
+      flex: 0 1 300px;
     }
 
     .verdict {
