@@ -72,10 +72,32 @@
   }
 
   let seaOpen = $state(false);
+  let seaWrapper: HTMLDivElement | undefined = $state();
 
   function closeSea(e: FocusEvent): void {
     const next = e.relatedTarget as Node | null;
     if (!next || !(e.currentTarget as HTMLElement).contains(next)) seaOpen = false;
+  }
+
+  /* Escape and a tap outside both dismiss (audit ux-04). `onfocusout` and the
+     Escape handler used to live on `.pop` itself, which never has focus —
+     `InstrumentCell`'s trigger button does — so Escape never fired and a
+     click on, say, a point-of-sail chip left the popover open. `onfocusout`
+     now lives on the wrapper, which contains trigger and popover alike;
+     Escape and outside-pointerdown are window-level (below), since a plain
+     `<div>` can't carry a keydown handler without an ARIA role of its own. */
+  function closeSeaOnEscape(e: KeyboardEvent): void {
+    if (e.key !== 'Escape') return;
+    seaOpen = false;
+    seaWrapper?.querySelector<HTMLButtonElement>('button[aria-expanded]')?.focus();
+  }
+
+  function onWindowPointerDown(e: PointerEvent): void {
+    if (seaOpen && seaWrapper && !seaWrapper.contains(e.target as Node)) seaOpen = false;
+  }
+
+  function onWindowKeydown(e: KeyboardEvent): void {
+    if (seaOpen) closeSeaOnEscape(e);
   }
 </script>
 
@@ -122,6 +144,8 @@
   <InstrumentCell label="CREW" id="crew" unit="kg" value={fmt(condition.crewKg, 0)} {onexplain} />
 {/snippet}
 
+<svelte:window onpointerdown={onWindowPointerDown} onkeydown={onWindowKeydown} />
+
 <!-- `role="group"`, or the browser drops the `aria-label` on the implicit
      generic role and the cells are announced with no grouping (audit ux-03 M-14). -->
 <!-- `data-tour` is the first-run tour's spotlight anchor: card 1 is about the
@@ -162,7 +186,7 @@
       <InstrumentCell label="TWA" id="twa" unit="°" value={fmt(condition.twaDeg, 0)} {onexplain} />
     </div>
 
-    <div class="cond sea">
+    <div class="cond sea" bind:this={seaWrapper} onfocusout={closeSea}>
       <InstrumentCell
         label="SEA"
         id="sea"
@@ -172,16 +196,7 @@
         expanded={editable ? seaOpen : undefined}
       />
       {#if editable && seaOpen}
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <div
-          class="pop"
-          role="group"
-          aria-label="Sea state"
-          onfocusout={closeSea}
-          onkeydown={(e) => {
-            if (e.key === 'Escape') seaOpen = false;
-          }}
-        >
+        <div class="pop" role="group" aria-label="Sea state">
           <Segmented
             ariaLabel="Sea state"
             options={SEA_STATES.map((s) => ({ value: String(s.value), label: s.label }))}
@@ -340,7 +355,8 @@
   }
 
   /* Five sea states are too wide for a cell, so they open over the band rather
-     than reflowing it. Light-dismissed by Escape and by focus leaving. */
+     than reflowing it. Light-dismissed by Escape, by focus leaving the
+     wrapper, and by a pointerdown outside it. */
   .pop {
     position: absolute;
     top: 100%;
