@@ -60,13 +60,26 @@ functions, `src/ui/race/PlanView.svelte` 195–235.
 
 ## Follow-ups
 
-- **The plan view clips the gennaker.** At 150° TWA on starboard the kite runs
-  off the left of `PLAN_LAYOUT`'s viewBox, before and after phase 02, so the
-  2D picture shows the boat and a sliver of sail. `PLAN_LAYOUT` is cropped to
-  the boat and the kite tacks 1.5 m ahead of the stem and swings well outboard,
-  so the frame has to grow or the kite has to be scaled into it. Not phase 02's
-  (it owns `kite.ts` and the outline that reads it, not the layout), and not
-  phase 03's either. Raised 2026-08-28 from phase 02's visual review.
+- [x] **The plan view clips the gennaker.** At 150° TWA on starboard the kite
+  runs off the left of `PLAN_LAYOUT`'s viewBox, before and after phase 02, so
+  the 2D picture shows the boat and a sliver of sail. `PLAN_LAYOUT` is cropped
+  to the boat and the kite tacks 1.5 m ahead of the stem and swings well
+  outboard, so the frame has to grow or the kite has to be scaled into it. Not
+  phase 02's (it owns `kite.ts` and the outline that reads it, not the
+  layout), and not phase 03's either. Raised 2026-08-28 from phase 02's visual
+  review. **Resolved 2026-08-28**: `PLAN_LAYOUT.asymHalfW` widens the viewBox
+  around `origin.x` whenever `sailset === 'asym'`, sized off `kiteGeometry`'s
+  own worst lateral reach at the class's downwind default trim, both tacks;
+  jib settings keep the original `0 0 w h` box untouched
+  (`boat.test.ts` "under the gennaker").
+- [x] **The astern 3D preset hid the kite behind the main.** It mirrored its
+  lateral offset onto the leeward side, same side the boomed-out main and the
+  kite both belly to on a run, so the main's full face sat between the camera
+  and the kite. Raised 2026-08-28 alongside the plan-view clip.
+  **Resolved 2026-08-28**: `presets.ts` `astern` moved to the centreline
+  (needs no tack mirroring, and reads the main's leech twist just as well
+  close-hauled); PR #101's whole-boat-in-frame fit is unaffected, since it
+  refits to the box on every preset switch regardless of camera direction.
 - **The drawn twist's *range* is short**: 2°→8° at three-quarter height against
   `F1`'s 4°→26°. Direction was fixed in phase 02; the range is capped by the
   clew circle, and closing it needs the head given a rotation of its own —

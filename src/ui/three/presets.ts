@@ -27,7 +27,8 @@ export const PRESET_LABEL: Record<PresetId, string> = {
 /** What each view is for, one line, for the chip's title attribute. */
 export const PRESET_HINT: Record<PresetId, string> = {
   helm: 'From the helm, looking up the main: the trimmer’s own view of leech and draft.',
-  astern: 'Down the leech: reads twist.',
+  astern:
+    'Down the leech, on the centreline: reads twist, and the kite alongside the main on a run.',
   leeward: 'The leeward quarter: reads camber and draft position.',
   luff: 'From the tack looking up: reads entry angle and twist together.',
   top: 'From above: reads sheeting angles and the stacked sections.',
@@ -38,7 +39,13 @@ export const PRESETS: Record<PresetId, Pose> = {
   // Seated to windward in the cockpit, eye a metre above deck, looking up the
   // main's leech towards the top batten.
   helm: { position: [-3.4, 1.0, -0.9], target: [-1.3, 5.5, 0.3] },
-  astern: { position: [-12.5, 4.4, 1.4], target: [-1.2, 4.2, 0] },
+  // Dead astern on the centreline, a little above boom height. A lateral
+  // offset (either side) puts the near sail's full face at the camera and
+  // the boom — main downwind is out past the corner of the boat — hides
+  // whatever is behind it; under the gennaker that was the kite. Centreline
+  // needs no tack mirroring and reads the main's leech twist just as well
+  // close-hauled.
+  astern: { position: [-12.5, 6.2, 0], target: [-1.2, 4.4, 0] },
   // Aimed 0.8 m lower than the first cut, which framed the sails and left the
   // hull on the bottom edge: the leeward quarter is the view that says "this
   // is a boat, heeled this far", and it cannot say it without the sheerline.
