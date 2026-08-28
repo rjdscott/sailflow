@@ -59,4 +59,5 @@ line. Don't hand-edit.
 | [0018](0018-offwind-parachute-drag-knob-not-a-mode-switch.md) | The offwind sail gets a fitted bluff-body drag knob above the wing-to-parachute changeover, not a soak/plane mode switch | Accepted |
 | [0019](0019-share-links-are-a-versioned-query-with-a-migration-table.md) | Share links are a versioned, compact query with a migration table | Accepted |
 | [0020](0020-melges-24-is-the-second-class-blocked-on-the-ui-boat-switch.md) | Melges 24 is the second class, and it lands after the UI takes the active boat | Accepted |
+| [0021](0021-dock-and-race-merge-into-one-simulator-page.md) | Dock and Race merge into one Simulator page, with the conditions as an editable half of the instrument band | Accepted |
 <!-- index:end -->
