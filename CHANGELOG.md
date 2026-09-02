@@ -13,6 +13,16 @@ undiagnosable.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hoisting the kite from the conditions band eases the mainsheet like the
+  point-of-sail chips do** (audit kite-3d-01 C-01): the SAIL cell flipped the
+  sail plan and nothing else, so the 3D hero and the plan view drew a gennaker
+  over a beat's ~20° boom. All three entry points — the SAIL cell, the chips
+  and the share link — now route through one `RaceStore.setSailSet`, undoable.
+  The asym→jib leg still moves nothing: the kite down with the boom out is a
+  real trim.
+
 ## [0.5.1] — 2026-08-28
 
 The downwind picture told the truth less well than the upwind one: VMG wore a

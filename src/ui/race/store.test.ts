@@ -486,6 +486,55 @@ describe('RaceStore.setPointOfSail', () => {
   });
 });
 
+describe('RaceStore.setSailSet', () => {
+  const client: Client = { request: () => new Promise(() => {}) as never };
+
+  beforeEach(() => conditions.apply(CONDITION));
+
+  /**
+   * The SAIL cell used to assign `conditions.sailset` on its own, so hoisting
+   * from the instrument band drew the kite over a beat's boom (audit
+   * kite-3d-01 C-01). Every entry point routes through here now.
+   */
+  it('eases the main to the shroud on jib → asym, and stays undoable', () => {
+    const store = new RaceStore(client);
+    store.controls.race.mainsheet = BASE_RACE.mainsheet;
+    store.controls.race.vang = 75;
+
+    store.setSailSet('asym');
+
+    expect(conditions.sailset).toBe('asym');
+    expect(store.controls.race.mainsheet).toBe(BASE_RACE_DOWN.mainsheet);
+    expect(store.controls.race.vang).toBe(75); // the rest of the trim is the sailor's
+
+    store.undo();
+    expect(store.controls.race.mainsheet).toBe(BASE_RACE.mainsheet);
+  });
+
+  /** Kite down at 150° with the boom out is a real trim: nothing is restored. */
+  it('leaves the trim alone on asym → jib', () => {
+    conditions.sailset = 'asym';
+    const store = new RaceStore(client);
+    store.controls.race.mainsheet = 15;
+
+    store.setSailSet('jib');
+
+    expect(conditions.sailset).toBe('jib');
+    expect(store.controls.race.mainsheet).toBe(15);
+    expect(store.previousRace).toBeNull();
+  });
+
+  it('does not re-apply when the kite is already up', () => {
+    const store = new RaceStore(client);
+    store.setSailSet('asym');
+    store.controls.race.mainsheet = 40;
+
+    store.setSailSet('asym');
+
+    expect(store.controls.race.mainsheet).toBe(40);
+  });
+});
+
 describe('RaceStore.syncDock', () => {
   it('copies the committed rig into the same dock object the sliders bind to', () => {
     const store = new RaceStore({ request: vi.fn() } as unknown as Client);

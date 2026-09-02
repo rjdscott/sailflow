@@ -60,8 +60,10 @@
 
   const otherSailLabel = $derived(condition.sailset === 'asym' ? 'jib' : 'gennaker');
 
+  /* Through the store, never straight at `conditions.sailset`: hoisting from
+     here has to ease the main exactly as the chips do (audit kite-3d-01 C-01). */
   function toggleSail(): void {
-    conditions.sailset = condition.sailset === 'asym' ? 'jib' : 'asym';
+    race.setSailSet(condition.sailset === 'asym' ? 'jib' : 'asym');
   }
 
   function stepCrew(delta: number): void {

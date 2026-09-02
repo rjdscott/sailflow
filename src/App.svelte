@@ -77,8 +77,8 @@
     }
     // A link that names the kite but carries no `r=` has specified the sail
     // plan and not the trim, so it lands on the trim for that sail plan rather
-    // than on a beat's mainsheet with a spinnaker up (`race.hoistKite`).
-    if (condition.sailset === 'asym' && conditions.sailset !== 'asym' && !trim) race.hoistKite();
+    // than on a beat's mainsheet with a spinnaker up (`race.setSailSet`).
+    if (!trim && condition.sailset) race.setSailSet(condition.sailset);
     Object.assign(conditions, condition);
     if (trim) Object.assign(race.controls.race, trim);
     if (down && race.controls.down) Object.assign(race.controls.down, down);

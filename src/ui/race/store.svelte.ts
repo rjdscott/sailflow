@@ -14,6 +14,7 @@ import type {
   DockControls,
   DownControls,
   RaceControls,
+  SailSet,
   SolveResult,
 } from '../../core/types';
 import type { OptimalRequest, TrimmedRequest } from '../../worker/protocol';
@@ -509,11 +510,31 @@ export class RaceStore {
    * the crossing: the rest of the trim is the sailor's. Tier C cue from the
    * sailmaker guides, not a solved value — `optimalTrim` declines to solve the
    * mainsheet under the kite and says so.
+   *
+   * Its one entry point is `setSailSet`, which owns the crossing. Call that,
+   * not this: a caller that flips `conditions.sailset` itself gets the kite
+   * with the beat's boom, which is the bug this method exists to prevent
+   * (audit kite-3d-01 C-01).
    */
   hoistKite(): void {
     this.remember();
     // Mutate in place: the panel's sliders bind to this object.
     Object.assign(this.controls.race, BASE_RACE_DOWN);
+  }
+
+  /**
+   * Change the sail plan. The **only** way to do it: the SAIL cell, the
+   * point-of-sail chips and the share link all come through here, so the
+   * crossing is applied once and cannot be skipped by one of them.
+   *
+   * Nothing happens on asym→jib: a J/70 at 150° with the kite down and the
+   * boom out at 67° is a real trim, and strapping the main back to the beat's
+   * sheet would be a worse lie than the one being fixed (audit kite-3d-01
+   * C-01).
+   */
+  setSailSet(next: SailSet): void {
+    if (next === 'asym' && conditions.sailset !== 'asym') this.hoistKite();
+    conditions.sailset = next;
   }
 
   /**
@@ -526,8 +547,7 @@ export class RaceStore {
     const p = POINTS_OF_SAIL.find((x) => x.id === id);
     if (!p) return;
     const seq = ++this.#posSeq;
-    if (p.sailset === 'asym' && conditions.sailset !== 'asym') this.hoistKite();
-    conditions.sailset = p.sailset;
+    this.setSailSet(p.sailset);
     conditions.twaDeg = p.twaDeg;
     this.pointOfSail = { id, twaDeg: p.twaDeg };
     // A new point of sail is a new VMG angle, so the mode offsets start again
