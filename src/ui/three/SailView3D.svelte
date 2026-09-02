@@ -69,7 +69,8 @@
     type SailMesh,
   } from './loft';
   import { JIB_CHORDS, MAIN_CHORDS, rig3d, type Rig3D } from './rig3d';
-  import { PRESETS, type PresetId } from './presets';
+  import { fitEye, presetPose } from './camera';
+  import { type PresetId } from './presets';
 
   let {
     result,
@@ -425,13 +426,11 @@
    * preset or the slot changes, rather than an assumed radius. The old fixed
    * 5.5 / 6.5 m sphere was centred on the preset's aim point, which sat on
    * the sail plan — so the hull fell off the bottom of a portrait slot and the
-   * stern off the side of a landscape one. prov: assumed FIT_MARGIN 1.06 —
-   * a little air so the masthead and transom never touch the edge.
+   * stern off the side of a landscape one. The framing maths itself lives in
+   * `camera.ts`, which is testable without a WebGL context.
    */
-  const FIT_MARGIN = 1.06;
   const fitBox = new Box3();
   const meshBox = new Box3();
-  const fitCentre = new Vector3();
   const FALLBACK_BOX = new Box3(new Vector3(-4.5, -1, -2.5), new Vector3(3.5, 8.6, 2.5)); // prov: assumed, a J/70 with sails up, used only before the first geometry lands
 
   function fitBoat(): Box3 {
@@ -448,66 +447,13 @@
     return fitBox;
   }
 
-  const fitRight = new Vector3();
-  const fitUp = new Vector3();
-  const fitFwd = new Vector3();
-  const fitCorner = new Vector3();
-
-  /**
-   * Distance back from the box centre, along `dir`, that keeps all eight
-   * corners inside the view on *both* axes — the vertical FOV and the
-   * horizontal one the slot's aspect implies. Closed form: each corner needs
-   * `|x| ≤ tan(h/2)·depth` and `|y| ≤ tan(v/2)·depth`, and depth is the
-   * distance plus the corner's offset along the view axis. A portrait column
-   * is limited by its width, a landscape band by its height; fitting only
-   * the vertical FOV was what cropped the boat in the tall desktop hero.
-   */
-  function fitDistance(box: Box3, dir: Vector3): number {
-    const tv = Math.tan((camera.fov / 2) * DEG2RAD) / FIT_MARGIN;
-    const th = tv * camera.aspect;
-    box.getCenter(fitCentre);
-    fitFwd.copy(dir).negate().normalize(); // camera looks from centre+dir·d towards centre
-    fitRight.crossVectors(fitFwd, camera.up).normalize();
-    if (fitRight.lengthSq() < 1e-6) fitRight.set(1, 0, 0);
-    fitUp.crossVectors(fitRight, fitFwd);
-    let need = 0;
-    for (let i = 0; i < 8; i++) {
-      fitCorner.set(
-        i & 1 ? box.max.x : box.min.x,
-        i & 2 ? box.max.y : box.min.y,
-        i & 4 ? box.max.z : box.min.z,
-      );
-      fitCorner.sub(fitCentre);
-      const along = fitCorner.dot(fitFwd); // positive = further from the camera than the centre
-      need = Math.max(
-        need,
-        Math.abs(fitCorner.dot(fitRight)) / th - along,
-        Math.abs(fitCorner.dot(fitUp)) / tv - along,
-      );
-    }
-    return need;
-  }
-
-  function presetPose(id: PresetId, side: Side): [Vector3, Vector3] {
-    const p = PRESETS[id];
-    const z = lee(side);
-    const pos = new Vector3(p.position[0], p.position[1], p.position[2] * z);
-    const target = new Vector3(p.target[0], p.target[1], p.target[2] * z);
-    // Helm is an eye in the cockpit, not a view of the boat: it stays put.
-    // The others keep their sighting direction but look at, and back off
-    // from, the centre of what is drawn.
-    if (id !== 'helm') {
-      const dir = pos.clone().sub(target).normalize();
-      const box = fitBoat();
-      box.getCenter(target);
-      pos.copy(target).addScaledVector(dir, fitDistance(box, dir));
-    }
-    return [pos, target];
+  function pose(id: PresetId, side: Side): [Vector3, Vector3] {
+    return presetPose(id, side, fitBoat(), camera.fov, camera.aspect);
   }
 
   function goTo(id: PresetId, instant: boolean): void {
     if (!orbit) return;
-    const to = presetPose(id, tackSide(twaDeg));
+    const to = pose(id, tackSide(twaDeg));
     if (instant) {
       camera.position.copy(to[0]);
       orbit.target.copy(to[1]);
@@ -1052,10 +998,13 @@
       camera.updateProjectionMatrix();
       // A resized slot keeps the direction you were looking from and refits
       // the distance, so a layout change never crops the masthead; a zoom
-      // you had dialled in is the one thing it costs.
-      if (orbit && preset !== 'helm') {
+      // you had dialled in is the one thing it costs. Through `fitEye`, so a
+      // layout change cannot re-submerge the camera either — `helm` used to be
+      // exempt from this refit and lost the hull at every aspect ratio
+      // (audit kite-3d-01 H-06, H-10).
+      if (orbit) {
         const dir = camera.position.clone().sub(orbit.target).normalize();
-        camera.position.copy(orbit.target).addScaledVector(dir, fitDistance(fitBoat(), dir));
+        camera.position.copy(fitEye(fitBoat(), orbit.target, dir, camera.fov, camera.aspect));
       }
       invalidate();
     });
