@@ -12,8 +12,10 @@
     "minDraft": 0.0762754886314774,
     "maxDraft": 0.08898839227222333,
     "minTwist": 9.425838335894982,
-    "maxTwist": 10.34399248772663
+    "maxTwist": 10.34399248772663,
+    "verdict": "clear of every clamp"
   },
+  "guide": "north-j70",
   "stages": [
     {
       "stage": 1,
@@ -624,7 +626,7 @@
     {
       "stage": 4,
       "name": "rig-shape",
-      "target": "North base turns at TWS 9/14 (8-10 and 12-16 bands)",
+      "target": "north-j70 base turns at TWS 9/14",
       "weights": {
         "twa": 0,
         "heel": 0
