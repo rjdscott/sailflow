@@ -15,6 +15,10 @@ undiagnosable.
 
 ### Fixed
 
+- fix(plan): the mast sits at the class J, the kite and the transom stay in
+  frame, the caption returns on desktop (audit kite-3d-01 H-01, H-02, H-05,
+  H-11)
+
 - **"Up the luff" stays above the water and "Helm" frames the whole boat**
   (audit kite-3d-01 H-10, H-06). The preset fit backs the eye off along
   the authored sight line, so `luff`'s downward aim put the camera about 10 m

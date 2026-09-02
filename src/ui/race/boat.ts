@@ -34,11 +34,25 @@ const LOA = boat.hull.loaM;
 const HALF_BEAM = boat.hull.beamM / 2;
 
 /**
- * Mast station, fraction of LOA aft of the stem. prov: assumed — the boat
- * JSON carries no deck plan, and this is the station that puts the spar
- * between the cabin trunk and the cockpit where the class photos show it.
+ * Mast station, fraction of LOA aft of the stem. prov: derived from the boat
+ * file's own published J (`rig.jM` 2.34 m, the stem-to-mast base of the
+ * foretriangle) over `hull.loaM` 6.91 m: 0.339. It used to be an assumed 0.45,
+ * which drew the spar 0.77 m aft of the boat's and disagreed with the 3D
+ * hero, whose `three/conventions.ts` `STEM_X` is `jM` (audit kite-3d-01 H-11).
+ * Correct for any class whose boat file carries a J.
  */
-export const MAST_STATION = 0.45;
+export const MAST_STATION = boat.rig.jM / boat.hull.loaM;
+
+/**
+ * Shrouds sweep aft, so the chainplates are not on the mast station: they sit
+ * `chainplateYM · tan(sweepDeg)` aft of it. prov: derived from `rig.sweepDeg`
+ * 20° and `rig.chainplateYM` 1.0 m. At the mast station itself a 1.0 m
+ * chainplate lands about 3 cm outside the drawn sheerline; swept, it is on
+ * deck, which is also where the boat carries it.
+ */
+const CHAINPLATE_STATION =
+  (boat.rig.jM + boat.rig.chainplateYM * Math.tan((boat.rig.sweepDeg * Math.PI) / 180)) /
+  boat.hull.loaM;
 
 /** Metres, straight off the boat JSON, so the drawing is in class proportion. */
 export const DIMS = {
@@ -71,14 +85,41 @@ const HULL_HALF: Seg[] = [
   { c1: { x: 0.34, y: 0.07 }, c2: { x: 0.78, y: 0.22 }, to: { x: 0.95, y: 0.42 } },
   { c1: { x: 1.03, y: 0.56 }, c2: { x: 1.0, y: 0.8 }, to: { x: 0.82, y: 1.0 } },
 ];
+/**
+ * The trunk and the well were hand-tuned to the old assumed 0.45 mast station
+ * (audit kite-3d-01 H-11), so the end of each that *touches the spar* moves
+ * forward with it and the end that does not stays where it is: the trunk's
+ * forward end is a foredeck length, the well's aft end is the transom, and
+ * neither ever depended on where the mast was. `station` rescales an outline
+ * about the end that stays. prov: assumed, as the outlines themselves are.
+ *
+ * Trunk 0.16-0.44 → 0.16-0.329·LOA, well 0.48-0.935 → 0.369-0.935.
+ */
+const DECK_SHIFT = 0.45 - MAST_STATION;
+const CABIN_SPAN = { anchor: 0.16, from: 0.44, to: 0.44 - DECK_SHIFT };
+const COCKPIT_SPAN = { anchor: 0.935, from: 0.48, to: 0.48 - DECK_SHIFT };
+
+type Span = { anchor: number; from: number; to: number };
+const station = (y: number, s: Span): number =>
+  s.anchor + ((y - s.anchor) * (s.to - s.anchor)) / (s.from - s.anchor);
+const restation =
+  (s: Span) =>
+  (g: Seg): Seg => ({
+    c1: { x: g.c1.x, y: station(g.c1.y, s) },
+    c2: { x: g.c2.x, y: station(g.c2.y, s) },
+    to: { x: g.to.x, y: station(g.to.y, s) },
+  });
+
+const CABIN_START = { x: 0, y: CABIN_SPAN.anchor };
 const CABIN_HALF: Seg[] = [
   { c1: { x: 0.28, y: 0.158 }, c2: { x: 0.45, y: 0.22 }, to: { x: 0.46, y: 0.32 } },
   { c1: { x: 0.475, y: 0.39 }, c2: { x: 0.44, y: 0.44 }, to: { x: 0.32, y: 0.44 } },
-];
+].map(restation(CABIN_SPAN));
+const COCKPIT_START = { x: 0, y: station(0.48, COCKPIT_SPAN) };
 const COCKPIT_HALF: Seg[] = [
   { c1: { x: 0.32, y: 0.483 }, c2: { x: 0.56, y: 0.52 }, to: { x: 0.58, y: 0.63 } },
   { c1: { x: 0.6, y: 0.76 }, c2: { x: 0.59, y: 0.88 }, to: { x: 0.54, y: 0.935 } },
-];
+].map(restation(COCKPIT_SPAN));
 
 /**
  * Closed, mirror-symmetric outline: down the starboard half, straight across
@@ -110,7 +151,7 @@ export interface Deck {
   centreline: string;
   /** Bowsprit, as a tapered spar rather than a bare line. */
   sprit: string;
-  /** Shroud chainplates, port and starboard, at the mast station. */
+  /** Shroud chainplates, port and starboard, at their swept-aft station. */
   chainplates: Pt[];
   mast: Pt;
   /** Bowsprit root at the stem: where the jib tacks. */
@@ -128,13 +169,13 @@ export function deck(scale: number): Deck {
   const spritTip = { x: 0, y: -DIMS.spritM * scale };
   return {
     hull: hullPath(scale),
-    cabin: symOutline({ x: 0, y: 0.16 }, CABIN_HALF, sx, sy),
-    cockpit: symOutline({ x: 0, y: 0.48 }, COCKPIT_HALF, sx, sy),
+    cabin: symOutline(CABIN_START, CABIN_HALF, sx, sy),
+    cockpit: symOutline(COCKPIT_START, COCKPIT_HALF, sx, sy),
     centreline: `M 0 0 L 0 ${sy.toFixed(2)}`,
     sprit: `M -1.7 0 L -0.75 ${spritTip.y.toFixed(2)} L 0.75 ${spritTip.y.toFixed(2)} L 1.7 0 Z`,
     chainplates: [
-      { x: -boat.rig.chainplateYM * scale, y: MAST_STATION * sy },
-      { x: boat.rig.chainplateYM * scale, y: MAST_STATION * sy },
+      { x: -boat.rig.chainplateYM * scale, y: CHAINPLATE_STATION * sy },
+      { x: boat.rig.chainplateYM * scale, y: CHAINPLATE_STATION * sy },
     ],
     mast: { x: 0, y: MAST_STATION * sy },
     tack: { x: 0, y: 0 },
@@ -375,14 +416,24 @@ export const PLAN_LAYOUT = {
   heelTag: { dx: -40, y: 186 },
   /**
    * Under the gennaker, `PlanView` swaps the jib-settings `0 0 w h` viewBox
-   * for `origin.x - asymHalfW, 0, 2*asymHalfW, h`: same origin, same scale,
-   * just a wider window, so nothing but the crop moves. `asymHalfW` covers
-   * the kite's own worst lateral reach at the class's baseRaceDown trim
-   * (kiteHalyard 100, tackLine 50, kiteSheet 50, sprit 100), AWA 150°, either
-   * tack: 86.65 viewBox units from `origin.x` (`kite.ts` `kiteGeometry`,
-   * sampled at the luff and leech), plus headroom. Not a sweep of every kite
-   * control the way `PLAN_LAYOUT`'s own fit test sweeps heel — the trim that
-   * actually ships as the downwind default.
+   * for `origin.x - asymHalfW, asymTop, 2*asymHalfW, h - asymTop`: same
+   * origin, same scale, just a bigger window, so nothing but the crop moves.
+   *
+   * Both bounds are sized from one sweep, not from the shipping default: the
+   * drawn luff-and-leech polygon (33 samples an edge, `PlanView`'s own
+   * `toPlan`) over kiteSheet × tackLine × kiteHalyard × sprit at 0/50/100,
+   * the four solved apparent wind angles the app reaches under the kite
+   * (69, 93, 118, 159°), both tacks, with the boat group's heel rotation
+   * applied over 0-40°. prov: derived — worst reach 99.33 units either side
+   * of `origin.x` (kiteSheet 0, tackLine 0, kiteHalyard 0, sprit 50, AWA 69°)
+   * and worst bow 19.68 units above the top of the hull's own box (kiteSheet
+   * 0, tackLine 0, kiteHalyard 0, sprit 100, AWA 93°), each plus about 4.5
+   * units of headroom. The old 90 was measured at one trim and one angle and
+   * clipped six states; there was no vertical bound at all, so the luff's
+   * forward bow — the thing that makes a gennaker not a headsail — was
+   * guillotined at every kite state (audit kite-3d-01 H-02).
    */
-  asymHalfW: 90,
+  asymHalfW: 104,
+  /** Top of the gennaker window, viewBox units; negative is above the hull box. */
+  asymTop: -24,
 } as const;
