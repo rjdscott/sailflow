@@ -15,42 +15,56 @@ The rig-bend-to-sail-shape layer (`src/core/shape`, applied to the ORC baseline
 through `src/core/aero/shape`) is invented for this app: sign-correct by construction and tested for it,
 magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
-## Where the model is honestly weak (2026-08-26 fit, ADR 0018)
+## Where the model is honestly weak (2026-09-02 fit, ADR 0022)
 
-- **Upwind speed plateau — a model limit, not a fit residual.** The ORC polar
-  holds 5.89–5.95 kt from 12 to 20 kt; linear residuary bins 0.1 Fn apart
-  cannot build that wall, so the model is ~5 % slow at 6 kt and 5.8–6.8 % fast
-  from 14 kt up. Held-out TWS 14 upwind misses the 3 % gate by 2.8 points —
-  and the *fitted* 16 and 20 kt rows miss by 2.9 and 3.8, which is what makes
-  it a limit rather than a generalisation failure. Nothing available closes it:
-  `hydro.heelDragK` is the one lever that grows with heel and the fit left it
-  at 0.919 inside a bound of 4.0, and forcing `hydro.hikeRampDeg` from 8° to
-  26° moves TWS 14 only to 4.9 % while costing the fitted 10 and 12 kt rows.
-  Candidate fix: a finer Fn table or a wave-making hump term (Epic 2).
+- **The upwind speed plateau is closed, and how it closed is worth reading.**
+  It was ~6 % fast from 14 to 20 kt for two rounds and was written up here as a
+  model limit that "nothing available closes". That was wrong in a specific,
+  instructive way (ADR 0022). The missing drag *was* heel drag, and the reason
+  the fit would not use it was not that the mechanism was absent but that
+  `heelResistance` was anchored on viscous resistance, burying a factor
+  Cf(1+k) ≈ 0.0029 inside `hydro.heelDragK` — so a knob reading 0.919 against
+  a bound of 4.0 looked like a lever the fit had declined, when it was really
+  a lever that topped out at about half the needed penalty. Compounding it,
+  the stage-1 heel weight of 0.02 was measured at 62 % of the loss rather than
+  the "weakest term" its own docstring claimed, and heel drag makes the heel
+  column worse, so the fit was paid to keep it at zero. The lesson: a knob
+  sitting well inside its bound is only evidence of "no headroom" if you have
+  checked what else in the loss is holding it there. Every printed jib row is
+  now within 3.4 % on boat speed, held-out and fitted alike.
 - **The offwind sail's deep-angle drag is fitted, not measured.**
   `aero.asymCdMul` multiplies ORC Table 5.7's CD0 above AWA 115°, ramped to
   full at 150° (ADR 0018). It exists because the only earlier offwind knob
   multiplied CLmax, which ORC puts at 0.100 by AWA 150 — no authority over a
   soak at all, so the fit had nothing to turn and the model made 264 N of
-  drive at TWS 14 / TWA 172° where 351 N is needed. The fitted **2.456** puts
-  the rated-area CD at AWA 130–150 at 1.17–0.86 against a published
-  wind-tunnel band of 0.83–1.39 once the historical 0.72 asymmetric efficiency
-  factor is undone — inside the band, but the band is wide and the
-  reference-area reconciliation is an inference. It is standing in for a
-  mechanism the model does not contain: ORC gives the spinnaker `bk = 1` at
-  every angle, so the main's shadow on the kite is absent and the sprit and
-  the tack line act on nothing.
-- **Asymmetric optimum angle, still tight by 3.0°.** The polar's downwind
-  optimum runs 141.9° → 174.0° over TWS 6–16; the model's now runs 145.4° →
-  169.4° and is compressed into a 165–170° band from 12 kt up. The held-out
-  TWS 14 row misses the 2° tolerance by 1.0 point. Swept over the whole range
-  of `aero.asymCdMul` the best achievable there is 2.2°, so this needs a
-  second mechanism, not a better number. (Before ADR 0018 the model stayed
-  near 147° at every wind speed and missed by 25.5°.)
+  drive at TWS 14 / TWA 172° where 351 N is needed. The fitted **2.377** puts
+  the rated-area CD at AWA 130–150 inside the published wind-tunnel band of
+  0.83–1.39, once the historical 0.72 asymmetric efficiency factor is undone —
+  inside the band, but the band is wide and the reference-area reconciliation
+  is an inference. It is standing in for a mechanism the model does not
+  contain: ORC gives the spinnaker `bk = 1` at every angle, so the main's
+  shadow on the kite is absent and the sprit and the tack line act on nothing.
+- **The worst residual anywhere is now a hump switch, not a speed error.** The
+  fitted TWS 12 asymmetric row reads 8.6 % fast at 151.3° against a printed
+  162.5°: the model's downwind VMG is bimodal (below) and 12 kt is where the
+  reaching and soak humps cross, so the optimiser takes the reaching one. It is
+  the one row in the whole polar outside 3.4 %.
+- **One gate row still fails, and only on angle.** Held-out TWS 14 downwind:
+  boat speed 2.1 % (inside the 3 % tolerance) at a VMG angle 3.3° high against
+  a 2° tolerance. That angle is a plateau, not a peak in the wrong place — the
+  model's downwind VMG at TWS 14 is flat to **0.11 % over 168–172°**, so the
+  3.3° is worth almost nothing and no number can move it reliably. Sailed at
+  the polar's own 172° the model does 6.32 kt against 6.26, i.e. **1.0 % fast**:
+  the boat is right, the argmax on a flat curve is not. The polar's optimum
+  runs 141.9° → 174.0° over TWS 6–16; the model's is compressed into 168–169°
+  from 14 kt up. This needs a second mechanism, not a better number. (Before
+  ADR 0018 the model stayed near 147° at every wind speed and missed by 25.5°.)
 - **Downwind VMG is bimodal.** A reaching hump near 145°, a soak hump near
   168°, a trough between, and the two cross between TWS 10 and 12. `optimal()`
-  scans a 6° grid before it golden-section refines, so the reported optimum is
-  the global one rather than whichever hump the bracket happened to contain;
+  scans a 6° grid before it golden-section refines, which usually picks the
+  global hump rather than whichever one the bracket happened to contain — but
+  not at the crossing itself: the fitted TWS 12 row lands on the reaching hump
+  and reads 8.6 % fast;
   calibration stage 2 scans a 5 × 8 grid before its simplex for the same
   reason. Near the crossing the dock-setup ranking is genuinely jumpy — about
   0.19 s/mile, a tenth of the tie band the UI already refuses to resolve
@@ -61,16 +75,56 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   heel.
 - **Dock-setup sensitivity.** In VPP mode `optimal()` overrides the
   shape-derived `flat`, so a dock setup enters only as a small coefficient
-  perturbation and the setup ranking is nearly wind-independent. Stage 4 could
-  not separate the North 8–10 and 12–16 kt bands; all six rig/shape knobs sit
-  on their bounds. Dock-mode regrets are therefore small, and the score is
+  perturbation and the setup ranking is nearly wind-independent. Stage 3
+  (the rig/shape stage; it was stage 4 until ADR 0022 deleted the righting
+  pass) could not separate the North 8–10 and 12–16 kt bands; five of the six
+  rig/shape knobs sit on their bounds. Dock-mode regrets are therefore small, and the score is
   **tier B, by design** (decided 2026-08-26, audit docs-consistency-01 M-06):
   the regret sums an upwind leg the model fits and a downwind leg it does
   not, so it is capped at B in `dock.ts` however good the upwind half is.
   Above 20 kt it is tier C, as `tierFor` already says.
-- `hydro.heelDragK` fitted at ~2× the value `hydro/resistance.ts` assumes;
-  `aero.hbiM` pinned at its 1.4 m upper bound (the fit wanted more heeling
-  arm). Both are the fit compensating for missing physics, not measurements.
+- **`hydro.heelDragK` is a drag coefficient now, and reads as one.** Since
+  ADR 0022 the heel increment is
+  `heelDragK · 6.0 · φ_rad^1.7 · ½ρV²S`, where the bracketed law is Keuning &
+  Sonnenberg 1998 and is normalised at 20° of heel by construction. So the
+  fitted **0.00281** means "the hull picks up a drag coefficient of 0.0028 at
+  20° of heel", against a flat-plate friction coefficient of about the same
+  size — i.e. heeling to 20° roughly doubles the hull's skin-friction-scale
+  drag. That is a claim a reader can weigh. The *Froude* dependence is still
+  assumed: the published ΔRrh(20°) is a DSYHS polynomial needing the
+  canoe-body draft Tc and LCB, neither measured here, and its published scale
+  factor is contradicted across transcriptions by a factor of 1000
+  (PROVENANCE.md). The calibration bound of 0.02 is set so that a fit reaching
+  it is visibly reporting a missing mechanism rather than a heel penalty.
+- **`hydro.crewArmMul` is no longer fitted at all** (ADR 0022). It holds its
+  code default of 1, which is what the multiplier is defined to mean: the
+  hardest crew CG the class hiking rule allows, which is the condition the
+  polar is replayed under. Its only evidence was the polar's heel column, and
+  once heel cost real drag a knob fitted on that ungated tier-B column was
+  setting gated boat speed. Fitted freely it ran to a bound both ways — 0.20
+  and 0.60, values that put a hiking crew inboard of a sitting one.
+- **Reef is searched and never engages, which is itself the finding.**
+  `optimal()` now runs ORC's second de-powering stage (§5.1.3: reef only once
+  flat has floored), golden-sectioned over reef ∈ [0.5, 1] — 0.5 being ORC's
+  RED = 1 point, headsail fully reduced with the main still whole, because a
+  one-design sportboat main has no reef points. Across all 182 rows of the
+  J/70 polar it is never taken: the beat reaches the ORC flat floor only on the
+  ungated dead-run rows, and there reefing loses. `shape.reefAtMaxDepower`
+  (0.95, assumed) still supplies reef in *race* mode at the everything-on
+  control stops; the VPP path overrides it. No rig control maps to reef and
+  none was invented (ADR 0022).
+- `aero.hbiM` is still pinned at its 1.4 m upper bound: the fit wants more
+  aero heeling arm than the honest envelope allows. That is the fit
+  compensating for missing physics, not a measurement, and it is the same
+  direction as the heel deficit below.
+- **Heel is now an output nothing fits.** The model reads 10.5° where the 2011
+  polar prints 20.8° at TWS 14, and 6–14° low across TWS 10–20. That is
+  reported as a disagreement rather than absorbed into a knob. Two published
+  sources — ORC's pre-2013 effective-draft chart and the DSYHS effective-draft
+  polynomial — agree that `hydro/keel.ts`'s plain `cos(heel)` on the keel span
+  is too weak, nearer cos^1.2 to cos^2.9 and steepening with beam/draft ratio.
+  Adopting that is the next candidate mechanism; it was left out of ADR 0022
+  so that one heel mechanism at a time stays attributable.
 - **Target draft depth versus wind speed.** `shape/toOrc.ts` scores a section's
   CLmax and CD0 penalty against the depth the breeze wants, not against the
   base setup: `shape.draftTargetPerKt` 0.025 of the base draft per knot away
@@ -579,25 +633,24 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
 | Knob | Value | Stage | Fit loss |
 |---|---|---|---|
-| `hydro.formFactor` | 0.0717205 | 1 hydro-jib | 0.1432 |
-| `hydro.rrMul.fn20` | 0.3 | 1 hydro-jib | 0.1432 |
-| `hydro.rrMul.fn30` | 0.763502 | 1 hydro-jib | 0.1432 |
-| `hydro.rrMul.fn40` | 0.947371 | 1 hydro-jib | 0.1432 |
-| `hydro.rrMul.fn50` | 1.58541 | 1 hydro-jib | 0.1432 |
-| `hydro.rrMul.fn60` | 1.55437 | 1 hydro-jib | 0.1432 |
-| `hydro.planingRelief` | 0.136135 | 1 hydro-jib | 0.1432 |
-| `hydro.keelLiftSlope` | 0.581155 | 1 hydro-jib | 0.1432 |
-| `hydro.heelDragK` | 0.919079 | 1 hydro-jib | 0.1432 |
-| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.1432 |
-| `aero.asymClMul` | 1 | 2 asym | 0.2085 |
-| `aero.asymCdMul` | 2.45556 | 2 asym | 0.2085 |
-| `hydro.crewArmMul` | 0.767644 | 3 righting | 0.01471 |
-| `rig.EI` | 685000 | 4 rig-shape | 9.057 |
-| `rig.turnsToN` | 600 | 4 rig-shape | 9.057 |
-| `rig.sagK` | 27.6399 | 4 rig-shape | 9.057 |
-| `shape.bendToDraft` | 0.36 | 4 rig-shape | 9.057 |
-| `shape.sagToDraft` | 0.0003 | 4 rig-shape | 9.057 |
-| `shape.sheetToTwist` | 0.15 | 4 rig-shape | 9.057 |
+| `hydro.formFactor` | 0.0551343 | 1 hydro-jib | 0.03206 |
+| `hydro.rrMul.fn20` | 0.339165 | 1 hydro-jib | 0.03206 |
+| `hydro.rrMul.fn30` | 0.577778 | 1 hydro-jib | 0.03206 |
+| `hydro.rrMul.fn40` | 0.90711 | 1 hydro-jib | 0.03206 |
+| `hydro.rrMul.fn50` | 1.47954 | 1 hydro-jib | 0.03206 |
+| `hydro.rrMul.fn60` | 1.57943 | 1 hydro-jib | 0.03206 |
+| `hydro.planingRelief` | 0.0710006 | 1 hydro-jib | 0.03206 |
+| `hydro.keelLiftSlope` | 0.868973 | 1 hydro-jib | 0.03206 |
+| `hydro.heelDragK` | 0.00280636 | 1 hydro-jib | 0.03206 |
+| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.03206 |
+| `aero.asymClMul` | 1 | 2 asym | 0.07119 |
+| `aero.asymCdMul` | 2.37713 | 2 asym | 0.07119 |
+| `rig.EI` | 685000 | 3 rig-shape | 9.595 |
+| `rig.turnsToN` | 600 | 3 rig-shape | 9.595 |
+| `rig.sagK` | 25.7145 | 3 rig-shape | 9.595 |
+| `shape.bendToDraft` | 0.36 | 3 rig-shape | 9.595 |
+| `shape.sagToDraft` | 0.0003 | 3 rig-shape | 9.595 |
+| `shape.sheetToTwist` | 0.15 | 3 rig-shape | 9.595 |
 
 Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out split), 0007 (tolerances)). Per-point residuals: `calibration/residuals.json`.
 
@@ -605,18 +658,18 @@ Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out spl
 
 | Knob | Value | Stage | Fit loss |
 |---|---|---|---|
-| `hydro.formFactor` | 0.080497 | 1 hydro-jib | 0.1653 |
-| `hydro.rrMul.fn20` | 0.330461 | 1 hydro-jib | 0.1653 |
-| `hydro.rrMul.fn30` | 0.778486 | 1 hydro-jib | 0.1653 |
-| `hydro.rrMul.fn40` | 1.07312 | 1 hydro-jib | 0.1653 |
-| `hydro.rrMul.fn50` | 1.11637 | 1 hydro-jib | 0.1653 |
-| `hydro.rrMul.fn60` | 1.79776 | 1 hydro-jib | 0.1653 |
-| `hydro.planingRelief` | 0.0617523 | 1 hydro-jib | 0.1653 |
-| `hydro.keelLiftSlope` | 1.09745 | 1 hydro-jib | 0.1653 |
-| `hydro.heelDragK` | 0.65508 | 1 hydro-jib | 0.1653 |
-| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.1653 |
-| `aero.asymClMul` | 1.05577 | 2 asym | 0.05930 |
-| `aero.asymCdMul` | 2.6582 | 2 asym | 0.05930 |
+| `hydro.formFactor` | 0.0668674 | 1 hydro-jib | 0.1618 |
+| `hydro.rrMul.fn20` | 0.570873 | 1 hydro-jib | 0.1618 |
+| `hydro.rrMul.fn30` | 0.703886 | 1 hydro-jib | 0.1618 |
+| `hydro.rrMul.fn40` | 0.891931 | 1 hydro-jib | 0.1618 |
+| `hydro.rrMul.fn50` | 1.11332 | 1 hydro-jib | 0.1618 |
+| `hydro.rrMul.fn60` | 1.74111 | 1 hydro-jib | 0.1618 |
+| `hydro.planingRelief` | 0.098259 | 1 hydro-jib | 0.1618 |
+| `hydro.keelLiftSlope` | 1.95961 | 1 hydro-jib | 0.1618 |
+| `hydro.heelDragK` | 0.000603292 | 1 hydro-jib | 0.1618 |
+| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.1618 |
+| `aero.asymClMul` | 1.1 | 2 asym | 0.09846 |
+| `aero.asymCdMul` | 2.55284 | 2 asym | 0.09846 |
 
 Fit set: TWS 4/6/10/12/16/20/24 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out split), 0007 (tolerances)). Per-point residuals: `calibration/residuals-m24.json`.
 

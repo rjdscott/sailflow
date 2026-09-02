@@ -29,6 +29,8 @@ export function trimmed(
   geom: Record<SailId, AeroGeometry> = geometryFor(boat),
   /** Override the shape-derived flat (used by VPP mode); undefined = from shape. */
   flatOverride?: number,
+  /** Override the shape-derived reef (VPP mode's second depowering stage). */
+  reefOverride?: number,
 ): SolveResult {
   const rig = rigState(boat, controls.dock, controls.race.backstay);
   const shape: Partial<Record<SailId, SailShape>> = {};
@@ -36,7 +38,7 @@ export function trimmed(
   const orc = shapeToOrc(boat, shape, controls.race, condition.sailset, condition.twsKt);
   const tune = {
     flat: flatOverride ?? orc.flat,
-    reef: orc.reef,
+    reef: reefOverride ?? orc.reef,
     twistEffDeg: orc.twistEffDeg,
   };
   // VPP mode (flatOverride given) assumes ideal sheeting, as ORC does. Race

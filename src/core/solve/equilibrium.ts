@@ -44,6 +44,24 @@ export interface Equilibrium {
 const V_MIN_KT = 0.2; // prov: assumed, floor so the residual stays finite at rest
 const HEEL_MAX_DEG = 45; // prov: assumed, beyond this the hull model is meaningless
 const LEEWAY_MAX_DEG = 15; // prov: assumed
+/**
+ * Leeway is allowed slightly negative, and that is not a physical claim — it is
+ * what keeps Newton differentiable through zero.
+ *
+ * A deep run needs almost no leeway: at TWA 168-180 the aero side force is
+ * near zero, so the root sits within a fraction of a degree of the clamp, and
+ * on a dead run it sits exactly on it. Clamped at 0 the residual is flat in
+ * leeway on one whole side of the root, the Jacobian column goes singular, and
+ * Newton stalls with `converged: false` while `optimal()` hands the stalled
+ * state back as an answer. That produced a band of unconverged, 5 %-too-fast
+ * rows around TWA 168-170 at TWS 16 and on every 180 deg row.
+ *
+ * The side-force model is linear and odd in leeway, so a small negative value
+ * is perfectly well defined; -2 deg is far outside anything a real solve
+ * settles at, and a converged answer at negative leeway would be a bug the
+ * invariants would catch. prov: assumed (numerical guard, not physics).
+ */
+const LEEWAY_MIN_DEG = -2;
 
 /**
  * Crew hike in proportion to need: at 0° heel they sit inboard, at
@@ -105,7 +123,7 @@ export function solveEquilibrium(
   const evalState = (x: readonly number[]) => {
     const bs = Math.max(V_MIN_KT, x[0]);
     const heel = clamp(x[1], 0, HEEL_MAX_DEG);
-    const leeway = clamp(x[2], 0, LEEWAY_MAX_DEG);
+    const leeway = clamp(x[2], LEEWAY_MIN_DEG, LEEWAY_MAX_DEG);
     const aero = aeroForces(
       boat,
       {

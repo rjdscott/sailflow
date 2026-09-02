@@ -60,4 +60,5 @@ line. Don't hand-edit.
 | [0019](0019-share-links-are-a-versioned-query-with-a-migration-table.md) | Share links are a versioned, compact query with a migration table | Accepted |
 | [0020](0020-melges-24-is-the-second-class-blocked-on-the-ui-boat-switch.md) | Melges 24 is the second class, and it lands after the UI takes the active boat | Accepted |
 | [0021](0021-dock-and-race-merge-into-one-simulator-page.md) | Dock and Race merge into one Simulator page, with the conditions as an editable half of the instrument band | Accepted |
+| [0022](0022-heel-costs-published-drag-and-nothing-fits-the-heel-column.md) | Heel drag from the published Delft law, reef as the optimiser's second stage, and nothing fitted to the polar's heel column | Accepted |
 <!-- index:end -->

@@ -15,6 +15,61 @@ undiagnosable.
 
 ### Fixed
 
+- **Heel costs published drag, and the upwind hold-out row closes** (ADR 0022).
+  `validation/polar.test.ts` failed the held-out TWS 14 jib upwind VMG row at
+  5.8 % against a 3 % tolerance, part of a ~6 % plateau the model held from
+  TWS 14 to 20. `hydro/resistance.ts heelResistance` now uses the published
+  Delft heel law — ΔRrh(φ) = ΔRrh(20°) · 6.0 · φ^1.7, φ in radians, Keuning &
+  Sonnenberg 1998 — with the 20° datum carried by one fitted drag coefficient
+  on ½ρV²S. The old assumed `k · heel² · Rv` was anchored on viscous
+  resistance, which buried a friction coefficient of ~0.0029 inside
+  `hydro.heelDragK` and capped the whole term at about half the penalty the
+  polar needs; that is why two rounds read a fitted 0.919 against a bound of
+  4.0 as "no knob closes it". Held-out TWS 14 upwind is now 0.9 % fast and
+  every printed jib row is within 3.4 %. The held-out TWS 14 asymmetric
+  downwind row still fails, now on its VMG angle alone (boat speed 2.1 %,
+  inside tolerance; angle 3.3° against 2°), on a VMG curve flat to 0.11 % over
+  168–172°; documented in `validation/report.md`. The gate stands at 9/10.
+
+- **The calibration stopped letting an ungated column steer a gated one**
+  (ADR 0022). Stage 1's heel weight was documented as keeping heel "the weakest
+  term" and measured at 62 % of the loss, which held `hydro.heelDragK` at zero
+  however it was parameterised; it drops to 0.002. The righting stage is gone
+  and `hydro.crewArmMul` is no longer fitted at all — its only evidence was the
+  polar's tier-B heel column, and fitted freely it ran to a bound in both
+  directions, to values that put a hiking crew inboard of a sitting one. Four
+  calibration stages become three. Melges 24 refit on the same model: gate
+  7/10 → 8/10, worst gated boat-speed residual 14.3 % → 7.2 %.
+
+- **`solve/equilibrium.ts` no longer stalls Newton on the leeway clamp.** A
+  deep run needs almost no leeway, so the root sits within a fraction of a
+  degree of the clamp at 0 and on a dead run exactly on it; the residual was
+  then flat in leeway on one side of the root, the Jacobian column went
+  singular, and `optimal()` handed the stalled state back as an answer. That
+  produced a band of unconverged, 5 %-too-fast states around TWA 168–170° at
+  TWS 16 which distorted the downwind VMG optimum, broke invariant 19 and
+  pulled `aero.asymCdMul` a third off its true fit (3.14 → 2.38 once fixed).
+  Leeway may now reach -2°, which is a numerical guard and not a physical
+  claim: the side-force model is linear and odd in leeway, and no converged
+  solve settles below -0.24°.
+
+- **`pnpm calibrate` no longer writes the reference polar into the boat file.**
+  `boatFor()` attaches the polar at load, and the fit was serialising the whole
+  attached table back into `data/boats/<id>.json`, where `boat/validate.ts`
+  then demanded a provenance row for each of its several hundred numeric
+  leaves.
+
+### Added
+
+- **The VPP optimiser de-powers in ORC's order** (ADR 0022). `solve/optimal.ts`
+  now searches `reef` by golden section over [0.5, 1], but only once `flat` has
+  reached its ORC floor — ORC VPP 2023 §5.1.3's own sequence, where sail area
+  comes off only after the sails are fully flattened. The floor is ORC's RED = 1
+  point (headsail fully reduced, main whole), because a one-design sportboat
+  main has no reef points. On the J/70 polar it never engages, which is
+  recorded rather than hidden; no rig control maps to reef and none was
+  invented.
+
 - **`pnpm calibrate` no longer writes the reference polar into the boat file.**
   `boatFor()` attaches the class polar to the boat object at load, and
   `calibration/fit.ts` serialised that decorated object straight back to
