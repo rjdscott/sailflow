@@ -104,8 +104,10 @@ export function shapeToOrc(
     FLAT_MAX,
   );
 
-  // reef: Epic 1 does not model reefing. The only state that reads as a
-  // reef is everything-on: cunningham and backstay both at their stops.
+  // reef, in RACE mode: the only control state that reads as a reef is
+  // everything-on, cunningham and backstay both at their stops. VPP mode does
+  // not come through here — `solve/optimal.ts` searches reef itself as ORC's
+  // second de-powering stage and overrides this (ADR 0022).
   const maxed =
     race.cunningham >= boat.controls.cunningham.max && race.backstay >= boat.controls.backstay.max;
   const reef = maxed ? knob(boat, 'shape.reefAtMaxDepower', 0.95) : 1; // prov: assumed

@@ -97,13 +97,61 @@ export function residuaryResistance(boat: BoatDefinition, vMs: number): number {
 }
 
 /**
- * Heel drag increment, N: Rheel = k * heel^2 * Rv, heel in radians.
- * prov: assumed. Stands in for the asymmetric-waterline and extra-wetted-area
- * penalties, neither of which is separable at this level of model.
+ * Heeled residuary increment, N: the extra wave-making a hull does once it is
+ * sailing on its side.
+ *
+ * The heel law is published, and it is Delft's, not ORC's. Keuning &
+ * Sonnenberg 1998 give the increment at 20 deg of heel, non-dimensionalised on
+ * displacement weight and tabulated against Froude number, and scale it to any
+ * other heel angle by
+ *
+ *   dRrh(phi) = dRrh(20 deg) * 6.0 * phi^1.7,   phi in RADIANS
+ *
+ * which is normalised at 20 deg by construction: 6 * (20*pi/180)^1.7 = 1.0025.
+ * prov: Keuning & Sonnenberg 1998, "Approximation of the hydrodynamic forces on
+ * a sailing yacht based on the Delft Systematic Yacht Hull Series", 15th HISWA
+ * Symposium (TU Delft report 1175-P). See PROVENANCE.md for the transcription
+ * chain: the 1998 paper is not available online and the constant, the exponent
+ * and the radian convention are taken from four independent secondary sources
+ * that agree, plus the 20 deg self-normalisation, which pins all three.
+ *
+ * NOT ORC. ORC's VPP has published no closed-form heel drag since the 2013
+ * hydro model: 2023 §6.4 says only that heeled viscous and residuary drag are
+ * recomputed by re-running the hull's hydrostatics heeled. The closed-form
+ * heel multiplier in ORC VPP 2012 §6.4.2.1 eqs [73]-[77] is a different model
+ * (a hull-form-dependent exponent, not a universal 1.7) and a superseded
+ * edition, so it is not what this cites.
+ *
+ * DEVIATION, deliberate, and for the same reason the upright residuary
+ * polynomial is not used (module docstring): dRrh(20 deg) is itself a
+ * regression in Lwl/Bwl, Bwl/Tc and LCB. It needs the canoe-body draft Tc and
+ * LCB, neither of which is a measured field on the boat file, and its
+ * published *scale factor* is genuinely unresolved — transcriptions of the
+ * same table divide the coefficients by 100, by 1000, or not at all, a factor
+ * of 1000 in the answer. A number whose order of magnitude the sources
+ * contradict is not provenance. So dRrh(20 deg) is carried by one fitted drag
+ * coefficient on the hull's own dynamic pressure and wetted surface,
+ *
+ *   dRrh(20 deg) = heelDragK * 0.5 * rho * V^2 * S
+ *
+ * which makes `hydro.heelDragK` readable as exactly what it is: the drag
+ * coefficient the hull picks up at the heel angle the published law is
+ * normalised on. Only the heel law is claimed as published; its Froude
+ * dependence is assumed (ASSUMPTIONS.md, `hydro.heelDragK`).
+ *
+ * This replaced an assumed k*heel^2*Rv (ADR 0022), which was wrong twice: the
+ * exponent, and the anchor. Anchoring the increment on *viscous* drag put a
+ * factor Cf(1+k) ~ 0.0029 inside the knob, so even at its calibration bound of
+ * 4.0 the old form could reach a heeled drag coefficient of only 0.0016 —
+ * about half what the polar's upwind speed plateau needs. That is why the fit
+ * read as "no knob closes it" rather than "the knob is anchored wrong".
  */
 export function heelResistance(boat: BoatDefinition, vMs: number, heelDeg: number): number {
-  // prov: assumed. 0.5 puts ~6 % on Rv at 20 deg of heel.
-  const k = knob(boat, 'hydro.heelDragK', 0.5);
-  const heelRad = (heelDeg * Math.PI) / 180;
-  return k * heelRad * heelRad * viscousResistance(boat, vMs);
+  // prov: assumed. Fallback 0.001, i.e. the heeled hull picks up about a third
+  // of its own flat-plate friction coefficient again at 20 deg of heel.
+  const k = knob(boat, 'hydro.heelDragK', 0.001);
+  const heelRad = (Math.abs(heelDeg) * Math.PI) / 180;
+  // prov: Keuning & Sonnenberg 1998, see docstring. 6.0 and 1.7 are published.
+  const heelLaw = 6.0 * Math.pow(heelRad, 1.7);
+  return k * heelLaw * 0.5 * RHO_WATER * vMs * vMs * boat.hull.wettedM2;
 }

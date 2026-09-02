@@ -9,7 +9,7 @@
  * `residuals-<id>.json`). Nothing else is written; `validation/` only
  * ever reads.
  *
- * Four stages, each a Nelder-Mead search on log-normalised parameters with a
+ * Three stages, each a Nelder-Mead search on log-normalised parameters with a
  * FIXED starting simplex (all-zero x0, uniform step), a FIXED restart count and
  * a FIXED iteration budget, so two runs on the same inputs give bit-identical
  * output. Values are carried between stages by freezing them into
@@ -26,12 +26,14 @@
  *                     knobs, against the asymmetric VMG rows, over a
  *                     deterministic coarse grid before the simplex because the
  *                     downwind VMG optimum is bimodal (ADR 0018)
- *   3. righting       crewArmMul, refit on the high-wind heel rows only
- *   4. rig + shape    rig.EI/turnsToN/sagK, shape.bendToDraft/sagToDraft/
+ *   3. rig + shape    rig.EI/turnsToN/sagK, shape.bendToDraft/sagToDraft/
  *                     sheetToTwist, against the North guide's base settings
  *
+ * `crewArmMul` had a righting stage of its own until ADR 0022 removed it. It is
+ * now never fitted; see the note where that stage used to run.
+ *
  * Fit set (ADR 0012): every printed row at TWS 6, 10, 12, 16, 20. Every row at
- * TWS 8 and 14 is held out and never enters a loss here. Stage 4 sees only the
+ * TWS 8 and 14 is held out and never enters a loss here. Stage 3 sees only the
  * North 8-10 and 12-16 bands; the other bands and the whole Quantum guide are
  * held out.
  *
@@ -40,7 +42,7 @@
  * so the fit and the gate cannot drift apart. That import is one-way:
  * `compare.ts` reads the boat and never writes it.
  *
- * Loss (stages 1-3), summed over the fit rows:
+ * Loss (stages 1-2), summed over the fit rows:
  *
  *   ((bs - bs_p)/bs_p)^2 + w_twa*((twa - twa_p)/10)^2 + w_heel*((heel - heel_p)/10)^2
  *
@@ -50,11 +52,20 @@
  * w_twa = 0.15 makes a 2 deg angle miss (the VMG-row tolerance) worth about an
  * 8 % speed miss, which is roughly how the two tolerances rank in practice; on
  * fixed-angle rows the term is identically zero because the angle is an input.
- * w_heel = 0.02 keeps heel the weakest term in stages 1-2: the polar's heel
+ * w_heel = 0.002 keeps heel the weakest term in stages 1-2: the polar's heel
  * column is the output of a stability model we cannot reproduce (ADR 0007 notes
  * the 2011-vs-2023 gap) and letting it drive the resistance fit would trade a
- * gated quantity for an ungated one. Stage 3 exists to give heel its own pass,
- * and there w_heel = 1.0.
+ * gated quantity for an ungated one.
+ *
+ * That weight was 0.02 through the first two calibration rounds and did not do
+ * what this paragraph claims. Measured on the J/70's stage-1 rows, the heel
+ * term at 0.02 was 62 % of the loss and rising — the model heels 5-13 deg less
+ * than the 2011 polar prints at TWS 12-20, and squared, that dwarfs a 6 % speed
+ * miss. It was enough to hold `hydro.heelDragK` at zero through two fits, since
+ * every newton of heel drag slows the boat, and a slower boat heels less still,
+ * so the one mechanism the *gated* speed rows needed was the one the *ungated*
+ * heel column punished hardest. At 0.002 heel is ~30 % of the stage-1 loss:
+ * present, restraining, and no longer steering (ADR 0022).
  */
 import { writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -217,7 +228,7 @@ type GuideBandRow = TuningBand & { twsMinKt: number; twsMaxKt: number | null };
  * The first tuning guide committed for this class, in filename order, or
  * `null` when the class has none.
  *
- * Read off disk by boat id rather than importing `north-j70.json`: stage 4
+ * Read off disk by boat id rather than importing `north-j70.json`: stage 3
  * fits six rig and shape knobs against the guide's published shroud turns, and
  * pointing a second class at the J/70's guide would fit that class's rig to a
  * boat it is not. `src/lib/reference.ts` does the same enumeration for the app
@@ -256,14 +267,10 @@ export function guideBand(twsKt: number): TuningBand {
 // Fit configuration
 // ---------------------------------------------------------------------------
 
-/** Stage 3 refits righting on the rows where heel is actually large. */
-const FIT_TWS_HEEL = [16, 20];
-/** Stage 4 samples the middle of the two North bands the ADR allows us to fit. */
+/** Stage 3 samples the middle of the two North bands the ADR allows us to fit. */
 const FIT_TWS_RIG = [9, 14];
 
-const WEIGHTS: LossWeights = { twa: 0.15, heel: 0.02 };
-/** Stage 3 is the heel pass: heel dominates, speed still restrains it. */
-const WEIGHTS_HEEL: LossWeights = { twa: 0.0, heel: 1.0 };
+const WEIGHTS: LossWeights = { twa: 0.15, heel: 0.002 };
 
 /** Fixed simplex step in log space: a factor of e^0.35 ~ 1.42 per parameter. */
 const SIMPLEX_STEP = 0.35;
@@ -282,15 +289,6 @@ const JIB_ROWS: PolarRow[] = FIT_TWS.flatMap((t) => [
 ]);
 /** Asymmetric rows in the fit: the running VMG row at each fitted wind speed. */
 const ASYM_ROWS: PolarRow[] = FIT_TWS.map((t) => polarRow('asym', 'vmgDn', t));
-/**
- * Stage 3's rows: the upwind VMG row at the two windiest fitted speeds — but
- * only where the source publishes a heel. The free ORC certificate feed does
- * not (`data/polar/orc-m24.json`), and fitting `crewArmMul` against rows with
- * no heel target would be fitting it against nothing.
- */
-const HEEL_ROWS: PolarRow[] = FIT_TWS_HEEL.map((t) => polarRow('jib', 'vmgUp', t)).filter(
-  (r) => r.heelDeg !== null,
-);
 
 function residualsFor(rows: PolarRow[], w: LossWeights): PointResidual[] {
   return rows.map((r) => {
@@ -354,7 +352,7 @@ interface StageSpec {
    * downwind rows switch between the reaching and the soak VMG hump within the
    * knobs' plausible range (ADR 0018), and a simplex started at x0 collapses on
    * whichever side of a cliff it lands. Same reason `softOptimum` exists in
-   * stage 4 and the TWA search scans before it refines.
+   * stage 3 and the TWA search scans before it refines.
    */
   scan?: number[][];
   /** Loss at the current calibration block. */
@@ -650,18 +648,19 @@ export async function main(): Promise<void> {
         // starts from a token 0.05 instead.
         { name: 'hydro.planingRelief', start: 0.05, min: 0.001, max: 0.9 },
         { name: 'hydro.keelLiftSlope', start: 1, min: 0.4, max: 2 },
-        // Deliberately wider than the module's own guess.
-        // `hydro/resistance.ts` sizes this at ~6 % of Rv at 20 deg; capped
-        // there, nothing in the model can hold the boat to the polar's upwind
-        // speed plateau above 12 kt. Heel drag is the one lever in this stage
-        // that grows with heel, so the fit uses it. Read the resulting value as
-        // the model saying the heeled penalty on this hull is several times
-        // what was guessed.
-        { name: 'hydro.heelDragK', start: 0.5, min: 0.05, max: 4 },
+        // Magnitude of the published heeled-residuary law (ADR 0022), read as a
+        // drag coefficient on the wetted surface at the law's 20 deg datum. The
+        // hull's own flat-plate friction coefficient is ~0.0028 there, so the
+        // ceiling of 0.02 is "heeling costs seven times skin friction", which
+        // no hull does: a fit that reaches it is reporting a missing mechanism,
+        // not a heel penalty.
+        { name: 'hydro.heelDragK', start: 0.001, min: 0.0001, max: 0.02 },
         // Base of I above the water. Freeboard is 0.62 m and the ORC CE-height
         // tests treat 1.5 m as a high value, so this is the honest envelope for
         // the one aero heeling-arm knob.
         { name: 'aero.hbiM', start: 0.75, min: 0.5, max: 1.4 },
+        // `hydro.crewArmMul` is deliberately NOT here, and no longer has a
+        // stage of its own either (ADR 0022). See the note below the stage.
       ],
       loss: () => lossFor(JIB_ROWS, WEIGHTS),
       residuals: () => residualsFor(JIB_ROWS, WEIGHTS),
@@ -725,34 +724,30 @@ export async function main(): Promise<void> {
     }),
   );
 
-  // --- stage 3: righting ----------------------------------------------------
-  // Skipped, not faked, when the source publishes no heel column: an empty row
-  // set makes the loss identically zero, so the optimiser would wander and
-  // report a fitted value for a knob nothing constrained.
-  if (HEEL_ROWS.length === 0) {
-    console.log(
-      `\nstage 3 (righting) skipped: ${BOAT_ID}'s polar publishes no heel column, so ` +
-        `hydro.crewArmMul has nothing to fit against and keeps its code default.`,
-    );
-  } else {
-    stages.push(
-      runStage({
-        stage: 3,
-        name: 'righting',
-        target: `jib vmgUp heel at TWS ${FIT_TWS_HEEL.join('/')}`,
-        weights: WEIGHTS_HEEL,
-        maxIter: 60,
-        knobs: [{ name: 'hydro.crewArmMul', start: 1, min: 0.2, max: 1.05 }],
-        loss: () => lossFor(HEEL_ROWS, WEIGHTS_HEEL),
-        residuals: () => residualsFor(HEEL_ROWS, WEIGHTS_HEEL),
-        notes:
-          'crewArmM is capped at beam/2 by the class hiking rule, so values above ' +
-          '~1.05 have no effect; the knob can only soften the rig, never stiffen it.',
-      }),
-    );
-  }
+  // --- righting: deliberately unfitted (ADR 0022) ---------------------------
+  // `hydro.crewArmMul` had a stage of its own for two rounds and it has to go.
+  // Its only evidence is the polar's heel column, which is the output of a 2011
+  // stability model this app cannot reproduce and which nothing gates. Once
+  // heel started costing real drag, a knob fitted on that column stopped being
+  // an ungated quantity and started setting a gated one: the crew arm sets the
+  // heel angle, and the heel angle now sets a large part of the resistance.
+  // Fitted freely it ran to a bound both times — 0.20 in a pass after the hydro
+  // fit, taking the held-out beat from 6 % fast to 6 % slow, and 0.60 when
+  // folded into the hydro fit itself, still 3.9 % slow. Both are absurd as
+  // physics: `crewArmM` seats the *non*-hiking crew at 0.6 * beam/2, so those
+  // values put a hiking crew inboard of a sitting one.
+  //
+  // So it holds its code default of 1, which is what the multiplier is defined
+  // to mean — the hardest crew CG the class hiking rule allows — and which is
+  // exactly the condition `validation/compare.ts` replays the polar under.
+  // The model's heel is then an output nothing fitted, reported against the
+  // polar's column as a disagreement rather than resolved into it.
+  console.log(
+    `\nrighting unfitted by design (ADR 0022): hydro.crewArmMul holds its code ` +
+      `default of 1 (the hardest legal crew CG). Heel is reported, never fitted.`,
+  );
 
-  // --- stage 4: rig + shape against the tuning guide ------------------------
+  // --- stage 3: rig + shape against the tuning guide ------------------------
   // The whole stage *is* the guide: it fits six rig and shape knobs so the
   // model's preferred dock setup lands on the guide's published shroud turns.
   // A class with no committed guide therefore has nothing to fit, and the six
@@ -761,13 +756,13 @@ export async function main(): Promise<void> {
   // is not.
   if (!GUIDE) {
     console.log(
-      `\nstage 4 (rig-shape) skipped: no tuning guide committed for ${BOAT_ID} under ` +
+      `\nstage 3 (rig-shape) skipped: no tuning guide committed for ${BOAT_ID} under ` +
         `data/tuning/, so rig.EI, rig.turnsToN, rig.sagK and the three shape knobs keep ` +
         `their code defaults.`,
     );
   } else {
     const rigReport = runStage({
-      stage: 4,
+      stage: 3,
       name: 'rig-shape',
       target: `${GUIDE.id} base turns at TWS ${FIT_TWS_RIG.join('/')}`,
       weights: { twa: 0, heel: 0 },
@@ -809,11 +804,11 @@ export async function main(): Promise<void> {
   }
 
   // --- guard: the shape layer must still respond ---------------------------
-  // Two verdicts, because the guard means two different things. When stage 4
+  // Two verdicts, because the guard means two different things. When stage 3
   // ran, the window below is an assertion about *its bounds*: a knob it pushed
   // far enough to saturate a clamp in `shape/flying.ts` kills the trim
   // response the whole app is built on, and shrinking the bound is the fix.
-  // When stage 4 was skipped there is no bound to shrink — the shape knobs are
+  // When stage 3 was skipped there is no bound to shrink — the shape knobs are
   // code defaults fitted to another class's rig — so the honest test is the
   // weaker one the window exists to protect: does the section still *move*
   // across the backstay's travel? A margin miss on an unfitted class is a
@@ -832,7 +827,7 @@ export async function main(): Promise<void> {
     : GUIDE
       ? 'CLAMPED, shrink a stage-4 bound'
       : responds
-        ? 'inside the tuned window but still responding; stage 4 never ran on this class, so the ' +
+        ? 'inside the tuned window but still responding; stage 3 never ran on this class, so the ' +
           'shape knobs are unfitted code defaults'
         : 'CLAMPED and no longer responding on the unfitted knob defaults';
   console.log(
@@ -841,12 +836,12 @@ export async function main(): Promise<void> {
       `${headroom.minTwist.toFixed(2)}..${headroom.maxTwist.toFixed(2)} deg — ${verdict}`,
   );
   if (GUIDE && !clampOk)
-    throw new Error('stage 4 saturated a shape clamp; shrink the bound, not the clamp');
+    throw new Error('stage 3 saturated a shape clamp; shrink the bound, not the clamp');
   if (!GUIDE && !responds)
     throw new Error(
       `${BOAT_ID}: the shape layer does not respond to the backstay on the unfitted knob ` +
         `defaults, so no trim on this class would move a number. Source a tuning guide for it ` +
-        `(data/tuning/<guide>-${BOAT_ID}.json) so stage 4 can fit the shape knobs.`,
+        `(data/tuning/<guide>-${BOAT_ID}.json) so stage 3 can fit the shape knobs.`,
     );
 
   // --- report ---------------------------------------------------------------
@@ -865,14 +860,13 @@ export async function main(): Promise<void> {
         `heel ${r.heelDeg?.toFixed(1) ?? '—'} vs ${r.target.heelDeg?.toFixed(1) ?? 'unpublished'}`,
     );
 
-  // `boatFor()` attaches the reference polar to the boat object at load, but
-  // the polar is a separately committed table under `data/polar/`, not a block
-  // of the boat file (`validation/compare.ts` says why). Writing the decorated
-  // object back would inline a 10 kB copy of it into `data/boats/<id>.json` and
-  // turn `boat/validate.test.ts` red on the next `make check`, because a polar
-  // leaf has no provenance row and never should.
-  const boatFile = { ...boat };
-  delete boatFile.polar;
+  // `boat` carries the reference polar, but only because `boatFor()` attaches
+  // it at load — it is a separately committed table, not a field of the boat
+  // file (`validation/compare.ts boatHash`). Writing it back would copy the
+  // whole polar into every boat file, and `boat/validate.ts` would then demand
+  // a provenance row for each of its several hundred numeric leaves.
+  const { polar: _attached, ...boatFile } = boat;
+  void _attached;
   await writeJson(BOAT_FILE, boatFile);
   await writeJson(RESIDUALS_FILE, {
     schemaVersion: 1,

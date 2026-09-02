@@ -72,6 +72,47 @@ Sources table below: `F*`/`T*` in
 `docs/research/2026-08-25-spinnaker/README.md`, `S*` in
 `docs/research/2026-08-25-cockpit/02-j70-trim-mental-model.md`.
 
+## Keuning & Sonnenberg 1998: the heel law, and what could not be verified
+
+`src/core/hydro/resistance.ts heelResistance` cites one published relation, the
+Delft Systematic Yacht Hull Series scaling of the heeled residuary increment:
+
+> ΔRrh(φ) = ΔRrh(20°) · 6.0 · φ^1.7, with φ in **radians**
+
+from J. A. Keuning and U. B. Sonnenberg, *Approximation of the hydrodynamic
+forces on a sailing yacht based on the Delft Systematic Yacht Hull Series*,
+15th HISWA Symposium, Amsterdam, 16 November 1998 (TU Delft report 1175-P).
+
+**This is not an ORC citation and must not be relabelled as one.** ORC's VPP
+has published no closed-form heel drag since its 2013 hydro model: the 2023
+edition's §6.4 says only that heeled viscous and residuary resistance are
+recomputed by re-running the hull's hydrostatics heeled, and the closed form
+that *did* appear in ORC VPP 2012 §6.4.2.1 eqs [73]–[77] is a different model
+with a hull-form-dependent exponent, in a superseded edition.
+
+**Transcription chain, stated because the primary is not reachable.** The 1998
+paper is not available online (checked 2026-09-02; it is a symposium paper, not
+an open report). The relation above is transcribed from four independent
+secondary sources that agree digit for digit — a TU Lisboa MSc VPP thesis, the
+Bathfield report X-04/151, and two open-source VPP implementations (Python-VPP,
+SailPy) — and is independently pinned by its own arithmetic:
+6 · (20° in radians)^1.7 = 1.0025, so the law returns unity at exactly the 20°
+datum it is defined on. That single check fixes the constant, the exponent and
+the radian convention simultaneously, which is why this app is willing to ship
+it without the primary.
+
+**What is deliberately NOT taken from the same paper.** ΔRrh(20°) itself is a
+regression in Lwl/Bwl, Bwl/Tc and LCB with a coefficient table over Fn
+0.25–0.55. It is not used, for two reasons and either would be enough: it needs
+the canoe-body draft Tc and LCB, neither of which is a measured field on any
+boat file here; and its **scale factor is unresolved across the same sources** —
+one prints the coefficients "multiplied by 100", one divides them by 1000 in
+code, and three print the equation with no factor at all, a spread of three
+orders of magnitude in the answer. Resolving it needs Fossati, *Aero-
+Hydrodynamics and the Performance of Sailing Yachts* (2009) Table 2.7, which
+Python-VPP names as its own source. Until then the magnitude is fitted
+(`hydro.heelDragK`, ASSUMPTIONS.md) and labelled assumed, not published.
+
 <!-- generated: do not edit below this line -->
 
 ## Sources

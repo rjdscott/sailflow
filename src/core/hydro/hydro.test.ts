@@ -3,7 +3,7 @@ import type { BoatDefinition } from '../types';
 import type { HydroInput } from '../internal';
 import { G, KT_TO_MS } from '../internal';
 import { crewArmM, froude, frictionCoeff, hydroForces } from './index';
-import { residuaryResistance, viscousResistance } from './resistance';
+import { heelResistance, residuaryResistance, viscousResistance } from './resistance';
 import { effectiveAspectRatio, inducedDrag, sideForce } from './keel';
 import { crewRighting, hullRighting } from './righting';
 import { addedResistanceWaves, significantHeightM } from './waves';
@@ -89,17 +89,22 @@ describe('residuary multipliers', () => {
   });
 });
 
-describe('heel drag', () => {
-  it('is zero upright and grows with the square of heel', () => {
+describe('heeled residuary increment', () => {
+  it('is zero upright and follows the published phi^1.7 law', () => {
     expect(hydroForces(BOAT, input({ heelDeg: 0 })).parts.heelN).toBe(0);
     const a = hydroForces(BOAT, input({ heelDeg: 10 })).parts.heelN;
     const b = hydroForces(BOAT, input({ heelDeg: 20 })).parts.heelN;
-    expect(b / a).toBeCloseTo(4, 6);
+    expect(b / a).toBeCloseTo(2 ** 1.7, 6);
   });
 
-  it('stays a small fraction of viscous resistance at sailing heel', () => {
-    const r = hydroForces(BOAT, input({ heelDeg: 20 }));
-    expect(r.parts.heelN / r.parts.viscousN).toBeLessThan(0.1);
+  it('is heelDragK as a drag coefficient at the law’s 20 deg datum', () => {
+    // 6 * (20 deg in rad)^1.7 = 1.0025, so the published law is normalised at
+    // 20 deg: that is the whole reason DSYHS tabulates the increment there,
+    // and it is what makes the knob readable as a drag coefficient (ADR 0022).
+    const b = { ...BOAT, calibration: { ...BOAT.calibration, 'hydro.heelDragK': 0.004 } };
+    const vMs = 3.2;
+    const q = 0.5 * 1025 * vMs * vMs * BOAT.hull.wettedM2;
+    expect(heelResistance(b, vMs, 20) / q).toBeCloseTo(0.004 * 1.0025217, 6);
   });
 });
 
