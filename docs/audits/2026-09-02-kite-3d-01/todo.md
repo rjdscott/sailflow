@@ -12,7 +12,7 @@ the state named in each finding before ticking.
 ## P0 — the picture lies about trim
 
 - [ ] **C-02** (P0, M) Loft the kite edge to edge: add a per-section rise so each row runs from the luff point to the leech point at its own knot, so the drawn corner equals `kiteGeometry().clew` at every sheet setting and the foot leaves the sheer. Test: drawn corner within 1 cm of the clew, mesh minimum y never below `tack.y − FOOT_SKIRT_M`, for all sheet × tack states. [01](01-gennaker.md#c-02)
-- [ ] **C-01** (P0, S) One `setSailSet` on the race store that the conditions-band SAIL cell, the point-of-sail chips and the share link all route through; jib→asym applies `BASE_RACE_DOWN`, undoable. [03](03-3d-scene-and-cameras.md#c-01)
+- [x] **C-01** (P0, S) One `setSailSet` on the race store that the conditions-band SAIL cell, the point-of-sail chips and the share link all route through; jib→asym applies `BASE_RACE_DOWN`, undoable. [03](03-3d-scene-and-cameras.md#c-01) — #120
 
 ## P1 — before the next release
 
