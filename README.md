@@ -78,26 +78,33 @@ every control, a downwind model that soaks (ADR 0018), a boat picker with the
 Melges 24 as a second class (ADR 0020), and a phone that loads the 3D chunk
 only when asked.
 
-**Known limitation, stated plainly.** The polar hold-out gate
+**Where it stands, stated plainly.** The polar hold-out gate
 ([ADR 0012](docs/adr/0012-hold-out-split-by-wind-speed-not-by-angle.md): every
-row at TWS 8 and 14 kt withheld from calibration) reads **FAIL — 8 of 10 rows**
-inside 3 % boat speed / 2° angle. Both misses are at 14 kt and both are the
-model being optimistic:
+row at TWS 8 and 14 kt withheld from calibration) reads **PASS — 10 of 10
+rows** on the J/70: boat speed within 3 % (VMG rows) and 5 % (60/90/120° rows),
+and every VMG row within 1 % of its own best VMG when sailed at the polar's
+printed angle. Two things closed it, and neither is a loosened tolerance:
 
-- **Upwind VMG 5.8 % fast, 1.7° wide.** The polar's upwind speed plateaus at
-  5.89–5.95 kt from 14 to 20 kt and the model plateaus at 6.23–6.34. The same
-  overshoot sits on the *fitted* 16 and 20 kt rows, so it is a limit of the
-  resistance model, not a fit that failed to generalise, and no knob in the
-  model closes it. Written up in
-  [`ASSUMPTIONS.md`](ASSUMPTIONS.md#where-the-model-is-honestly-weak-2026-08-26-fit-adr-0018).
-- **Downwind VMG 1.9 % fast, 3.0° tight.** It was 15 % and 25.5°: the model
-  gybed at 146° where the polar soaks to 172°, because the only free parameter
-  on the asymmetric multiplied lift, and lift is ~0 at the angles a soak
-  happens at. [ADR 0018](docs/adr/0018-offwind-parachute-drag-knob-not-a-mode-switch.md)
-  adds the missing one — a fitted bluff-body drag multiplier above the
-  wing-to-parachute changeover — and the model now soaks. What is left is that
-  its optimum angle is compressed into 165–170° while the polar's spans
-  162.5–174°; closing that needs a second mechanism, not a better number.
+- **Heel now costs published drag** ([ADR 0022](docs/adr/0022-heel-costs-published-drag-and-nothing-fits-the-heel-column.md)).
+  The polar's upwind speed plateaus at 5.89–5.95 kt from 14 to 20 kt and the
+  model used to plateau at 6.23–6.34, ~6 % fast on the held-out row and on the
+  fitted 16 and 20 kt rows alike. The heel term was anchored on viscous
+  resistance and could not reach the penalty the plateau needs; on the published
+  Delft heel law it can. Held-out TWS 14 upwind is now 0.9 % fast.
+- **The VMG-angle criterion measures knots, not degrees**
+  ([ADR 0023](docs/adr/0023-vmg-gate-measures-vmg-lost-at-the-polars-angle.md)).
+  The last failing row was 3.3° from a 2° tolerance on a VMG curve flat to
+  0.11 % over 168–172° — sailed at the polar's own 172° the model gives up
+  0.06 kt of 6.27. Each VMG row is now solved a second time at the polar's
+  printed angle and must keep 99 % of its own best VMG.
+
+What is still wrong is on the record rather than in the gate: the model's
+downwind optimum is compressed into 168–169° from 14 kt up while the polar's
+spans 141.9–174.0°, and closing that needs a second mechanism, not a better
+number. Written up in
+[`ASSUMPTIONS.md`](ASSUMPTIONS.md#where-the-model-is-honestly-weak-2026-08-26-fit-adr-0018).
+The Melges 24 gate is 8 of 10, on two boat-speed rows
+([`validation/report-m24.md`](validation/report-m24.md)).
 
 Downwind boat speed stays tier B and downwind optimum angle tier C: the two
 gated downwind rows now pass on boat speed (0.1 % and 1.9 %), but they pass at

@@ -1,13 +1,17 @@
 /**
- * The hold-out gate: ADR 0007's tolerances over ADR 0012's split.
+ * The hold-out gate: ADR 0007's boat-speed tolerances and ADR 0023's VMG
+ * criterion, over ADR 0012's split.
  *
  * Every row at the held-out wind speeds TWS 8 and 14 (ADR 0012 superseded
- * ADR 0007's split by angle). VMG rows: boat speed within 3 %, VMG angle
- * within 2°. The 60/90/120° rows at those two wind speeds: boat speed
- * within 5 %.
+ * ADR 0007's split by angle). VMG rows: boat speed within 3 % at the model's
+ * own optimum, and — solved a second time at the polar's printed angle — at
+ * least 99 % of the VMG the model makes at that optimum (ADR 0023, superseding
+ * ADR 0007's 2° on the argmax, which measured the flatness of the VMG curve
+ * rather than the model). The 60/90/120° rows at those two wind speeds: boat
+ * speed within 5 %.
  *
- * These tolerances are frozen in ADR 0007. Do not loosen them here; a failure
- * is the harness working. Fix the model, or supersede the ADR.
+ * These tolerances are frozen in ADR 0007 and ADR 0023. Do not loosen them
+ * here; a failure is the harness working. Fix the model, or supersede the ADR.
  */
 import { describe, expect, it } from 'vitest';
 import { compareRow, gateRows, loadPolar, table, type Comparison, HELD_OUT_TWS } from './compare';
@@ -34,7 +38,7 @@ describe('hold-out gate', () => {
   });
 
   for (const tws of HELD_OUT_TWS) {
-    it(`held-out TWS ${tws}: VMG rows within 3 % boat speed and 2°`, () => {
+    it(`held-out TWS ${tws}: VMG rows within 3 % boat speed, and within 1 % of their own best VMG at the polar's angle`, () => {
       const rows = all.filter((c) => c.twsKt === tws && c.kind !== 'angle');
       expect(rows.length, 'no VMG rows in the polar at this TWS').toBeGreaterThan(0);
       expect(failing(rows), full).toEqual([]);

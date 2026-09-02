@@ -49,9 +49,12 @@
  * Weights: boat speed is what the ADR gates hardest on (3 %), so it carries
  * weight 1 as a *relative* error. The angle and heel terms are scaled by 10 deg
  * so a 10-degree miss costs the same as a 100 % speed miss before weighting.
- * w_twa = 0.15 makes a 2 deg angle miss (the VMG-row tolerance) worth about an
- * 8 % speed miss, which is roughly how the two tolerances rank in practice; on
+ * w_twa = 0.15 makes a 2 deg angle miss worth about an 8 % speed miss; on
  * fixed-angle rows the term is identically zero because the angle is an input.
+ * That 2 deg was ADR 0007's VMG-angle tolerance, which ADR 0023 replaced with a
+ * VMG-shortfall criterion on the *gate*. The weight is left where it is: it is
+ * a weight, not a tolerance, and moving it would refit every knob to make the
+ * loss agree with a gate the loss does not score.
  * w_heel = 0.002 keeps heel the weakest term in stages 1-2: the polar's heel
  * column is the output of a stability model we cannot reproduce (ADR 0007 notes
  * the 2011-vs-2023 gap) and letting it drive the resistance fit would trade a

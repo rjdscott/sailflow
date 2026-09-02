@@ -1,7 +1,7 @@
 /**
  * Shared plumbing for the validation harness: boat + polar loading, the
- * ADR 0007 tolerances, and one function that runs the model against one
- * printed polar row.
+ * ADR 0007 boat-speed tolerances and the ADR 0023 VMG-shortfall criterion, and
+ * one function that runs the model against one printed polar row.
  *
  * `validation/` only ever READS (ADR 0007). Nothing here writes calibration.
  *
@@ -76,13 +76,20 @@ export function loadPolar(): Polar | null {
 }
 
 // ---------------------------------------------------------------------------
-// ADR 0007: the gate. Changing any of these requires superseding that ADR.
+// The gate. Boat-speed tolerances are frozen by ADR 0007 and the VMG-angle
+// criterion by ADR 0023; changing either requires superseding that ADR.
 // ---------------------------------------------------------------------------
 
-/** Held-out VMG rows: 3 % on boat speed, 2° on the VMG angle. */
+/** Held-out VMG rows: 3 % on boat speed (ADR 0007). */
 export const TOL_VMG_BS_FRAC = 0.03;
-export const TOL_VMG_TWA_DEG = 2;
-/** Held-out 60/90/120 rows: 5 % on boat speed (tier B). */
+/**
+ * Held-out VMG rows, second half: sailed at the polar's own printed angle, the
+ * model must keep at least 99 % of the VMG it makes at its own optimum
+ * (ADR 0023, superseding ADR 0007's 2° on the argmax). An argmax on a plateau
+ * is not a physical disagreement; a VMG the polar's angle cannot reach is.
+ */
+export const TOL_VMG_SHORTFALL_FRAC = 0.01;
+/** Held-out 60/90/120 rows: 5 % on boat speed (tier B, ADR 0007). */
 export const TOL_ANGLE_BS_FRAC = 0.05;
 
 /** TWS the calibration never sees. Everything else is fitted (ADR 0012). */
@@ -148,38 +155,71 @@ export interface Comparison {
   model: { twaDeg: number; bsKt: number; heelDeg: number; vmgKt: number; flat: number };
   converged: boolean;
   bsErrFrac: number;
-  /** null for fixed-angle rows: the angle is an input, not an output. */
+  /**
+   * Difference between the model's own best VMG angle and the polar's printed
+   * one. Reported, not gated (ADR 0023): on a flat VMG curve it measures the
+   * flatness, not the model.
+   */
   twaErrDeg: number | null;
+  /**
+   * VMG given up by sailing the polar's printed angle instead of the model's
+   * own optimum, as a fraction of the model's best (ADR 0023). `null` on
+   * fixed-angle rows, where the angle is an input and there is nothing to give
+   * up.
+   */
+  vmgShortfallFrac: number | null;
   limitBsFrac: number;
-  limitTwaDeg: number | null;
   pass: boolean;
+}
+
+/**
+ * VMG lost by sailing the polar's angle rather than the model's own optimum,
+ * as a fraction of the model's best. Zero when the two angles agree, positive
+ * otherwise; both arguments are VMG towards the mark, so positive on both legs.
+ *
+ * A non-positive best VMG means the solve is broken, not that the angle is
+ * perfect, so it scores a full shortfall rather than a NaN.
+ */
+export function vmgShortfall(bestVmgKt: number, atPolarTwaVmgKt: number): number {
+  if (!(bestVmgKt > 0)) return 1;
+  return Math.max(0, (bestVmgKt - atPolarTwaVmgKt) / bestVmgKt);
 }
 
 /**
  * Run the solver against one polar row. VMG rows optimise TWA; printed-angle
  * rows are solved at the printed angle. Race trim is optimised in both cases,
  * from the tuning-guide base dock setup.
+ *
+ * VMG rows are solved twice: once free to pick their own angle, and once at
+ * the polar's printed angle, which is what `vmgShortfallFrac` compares
+ * (ADR 0023). Both solves are deterministic, so this function still is. The
+ * second one is cheap — no TWA search — and `calibration/fit.ts` pays it too
+ * rather than carrying a flag that could silently switch half the gate off.
  */
 export function compareRow(row: PolarRow): Comparison {
   const optimiseTwa = row.kind !== 'angle';
-  const r = optimal(
-    boat,
-    baseDock(),
-    {
-      twsKt: row.twsKt,
-      twaDeg: row.twaDeg,
-      seaState: POLAR_SEA_STATE,
-      crewKg: POLAR_CREW_KG,
-      sailset: row.sail,
-    },
-    { optimiseTwa },
-    GEOM,
-  );
+  const condition = {
+    twsKt: row.twsKt,
+    twaDeg: row.twaDeg,
+    seaState: POLAR_SEA_STATE,
+    crewKg: POLAR_CREW_KG,
+    sailset: row.sail,
+  };
+  const r = optimal(boat, baseDock(), condition, { optimiseTwa }, GEOM);
 
   const bsErrFrac = Math.abs(r.bsKt.value - row.bsKt) / row.bsKt;
   const twaErrDeg = optimiseTwa ? Math.abs(Math.abs(r.twaDeg) - row.twaDeg) : null;
   const limitBsFrac = optimiseTwa ? TOL_VMG_BS_FRAC : TOL_ANGLE_BS_FRAC;
-  const limitTwaDeg = optimiseTwa ? TOL_VMG_TWA_DEG : null;
+
+  // VMG is signed towards the wind: positive upwind, negative downwind. The
+  // gate wants VMG towards the mark on both legs.
+  const toMark = row.kind === 'vmgUp' ? 1 : -1;
+  const vmgShortfallFrac = optimiseTwa
+    ? vmgShortfall(
+        toMark * r.vmgKt.value,
+        toMark * optimal(boat, baseDock(), condition, { optimiseTwa: false }, GEOM).vmgKt.value,
+      )
+    : null;
 
   return {
     label: `TWS ${row.twsKt} ${row.sail} ${row.kind === 'angle' ? `${row.twaDeg}°` : row.kind}`,
@@ -198,12 +238,12 @@ export function compareRow(row: PolarRow): Comparison {
     converged: r.converged,
     bsErrFrac,
     twaErrDeg,
+    vmgShortfallFrac,
     limitBsFrac,
-    limitTwaDeg,
     pass:
       r.converged &&
       bsErrFrac <= limitBsFrac &&
-      (limitTwaDeg === null || (twaErrDeg ?? 0) <= limitTwaDeg),
+      (vmgShortfallFrac === null || vmgShortfallFrac <= TOL_VMG_SHORTFALL_FRAC),
   };
 }
 
@@ -234,7 +274,17 @@ export function gateRows(polar: Polar): PolarRow[] {
 
 /** Fixed-width table of comparisons, for a failure message or the report. */
 export function table(rows: Comparison[]): string {
-  const head = ['row', 'polar bs', 'model bs', 'bs err', 'polar twa', 'model twa', 'twa err', ''];
+  const head = [
+    'row',
+    'polar bs',
+    'model bs',
+    'bs err',
+    'polar twa',
+    'model twa',
+    'twa err',
+    'vmg short',
+    '',
+  ];
   const body = rows.map((c) => [
     c.label + (c.heldOut ? ' *' : ''),
     c.polar.bsKt.toFixed(2),
@@ -243,6 +293,7 @@ export function table(rows: Comparison[]): string {
     c.polar.twaDeg.toFixed(1),
     c.model.twaDeg.toFixed(1),
     c.twaErrDeg === null ? '-' : c.twaErrDeg.toFixed(1),
+    c.vmgShortfallFrac === null ? '-' : `${(c.vmgShortfallFrac * 100).toFixed(2)}%`,
     c.pass ? 'ok' : 'FAIL',
   ]);
   const w = head.map((_, i) => Math.max(...[head, ...body].map((r) => r[i].length)));

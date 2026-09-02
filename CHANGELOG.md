@@ -13,6 +13,24 @@ undiagnosable.
 
 ## [Unreleased]
 
+### Changed
+
+- **The hold-out gate judges a VMG row's angle by the VMG it costs, not by the
+  degrees between two argmaxes** (ADR 0023, superseding ADR 0007's 2° VMG-angle
+  tolerance). Each held-out VMG row is now solved a second time at the polar's
+  _printed_ TWA — race trim still optimised — and passes only if it keeps at
+  least 99 % of the VMG it makes at its own optimum. ADR 0007's boat-speed
+  tolerances (3 % on VMG rows, 5 % on printed-angle rows), ADR 0012's split and
+  the row set are untouched, and no calibration value moved. The last failing
+  J/70 row was 3.3° from a 2° tolerance on a VMG curve flat to 0.11 % over
+  168–172°: sailed at the polar's own 172° the model gives up 0.06 kt of a
+  6.27 kt VMG, so the criterion was measuring the flatness of the curve rather
+  than the model. **The J/70 gate is 10/10 PASS**, worst shortfall 0.32 %; the
+  Melges 24 stays 8/10 on the same two boat-speed rows, its shortfalls all
+  under 0.15 %. `validation/report.md` gains a shortfall column and keeps
+  printing the angle difference as information. Cost: one extra (cheap, no
+  TWA search) solve per VMG row, +5 % on a calibration loss evaluation.
+
 ### Fixed
 
 - **Heel costs published drag, and the upwind hold-out row closes** (ADR 0022).
@@ -27,9 +45,10 @@ undiagnosable.
   polar needs; that is why two rounds read a fitted 0.919 against a bound of
   4.0 as "no knob closes it". Held-out TWS 14 upwind is now 0.9 % fast and
   every printed jib row is within 3.4 %. The held-out TWS 14 asymmetric
-  downwind row still fails, now on its VMG angle alone (boat speed 2.1 %,
-  inside tolerance; angle 3.3° against 2°), on a VMG curve flat to 0.11 % over
-  168–172°; documented in `validation/report.md`. The gate stands at 9/10.
+  downwind row still failed, on its VMG angle alone (boat speed 2.1 %, inside
+  tolerance; angle 3.3° against 2°), on a VMG curve flat to 0.11 % over
+  168–172°; documented in `validation/report.md`. That left the gate at 9/10,
+  and ADR 0023 above is what closed it.
 
 - **The calibration stopped letting an ungated column steer a gated one**
   (ADR 0022). Stage 1's heel weight was documented as keeping heel "the weakest

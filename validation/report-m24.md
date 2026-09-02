@@ -1,6 +1,6 @@
 # Validation report
 
-- **Generated:** 2026-09-02 03:23:10 UTC
+- **Generated:** 2026-09-02 04:00:37 UTC
 - **Boat:** `m24` — geometry hash `dbe8e55e`
 - **Calibration:** hash `ecd22dc2` — 12 fitted parameter(s)
 - **Replay condition:** sea state 1, crew 350 kg, dock rig at the guide base, race trim optimised (prov: assumed — the Speed Guide prints neither).
@@ -15,106 +15,109 @@ VMG rows are solved with the TWA optimised; 60/90/120° rows are solved at the p
 
 ### TWS 4 kt — FIT
 
-| row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 3.30 | 2.65 | 19.7 % | 46.3 | 48.2 | 1.9° | — | 1.5 | — | fit residual |
-| vmgDn asym | 3.31 | 2.99 | 9.7 % | 139.9 | 138.3 | 1.6° | — | 0.6 | — | fit residual |
-| 60° jib | 3.86 | 3.54 | 8.3 % | 60.0 | 60.0 | — | — | 1.4 | — | fit residual |
-| 90° asym | 4.00 | 3.56 | 10.9 % | 90.0 | 90.0 | — | — | 2.8 | — | fit residual |
-| 120° asym | 3.98 | 3.63 | 8.8 % | 120.0 | 120.0 | — | — | 1.6 | — | fit residual |
+| row | polar bs | model bs | bs err | polar twa | model twa | twa err | vmg shortfall | polar heel | model heel | limit | |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| vmgUp jib | 3.30 | 2.65 | 19.7 % | 46.3 | 48.2 | 1.9° | 0.29 % | — | 1.5 | — | fit residual |
+| vmgDn asym | 3.31 | 2.99 | 9.7 % | 139.9 | 138.3 | 1.6° | 0.08 % | — | 0.6 | — | fit residual |
+| 60° jib | 3.86 | 3.54 | 8.3 % | 60.0 | 60.0 | — | — | — | 1.4 | — | fit residual |
+| 90° asym | 4.00 | 3.56 | 10.9 % | 90.0 | 90.0 | — | — | — | 2.8 | — | fit residual |
+| 120° asym | 3.98 | 3.63 | 8.8 % | 120.0 | 120.0 | — | — | — | 1.6 | — | fit residual |
 
 ### TWS 6 kt — FIT
 
-| row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 4.56 | 4.11 | 9.9 % | 44.5 | 44.5 | 0.0° | — | 3.7 | — | fit residual |
-| vmgDn asym | 4.58 | 4.39 | 4.2 % | 143.2 | 143.2 | 0.0° | — | 0.9 | — | fit residual |
-| 60° jib | 5.28 | 4.87 | 7.8 % | 60.0 | 60.0 | — | — | 2.1 | — | fit residual |
-| 90° asym | 5.58 | 5.27 | 5.6 % | 90.0 | 90.0 | — | — | 6.2 | — | fit residual |
-| 120° asym | 5.59 | 5.37 | 3.9 % | 120.0 | 120.0 | — | — | 3.6 | — | fit residual |
+| row | polar bs | model bs | bs err | polar twa | model twa | twa err | vmg shortfall | polar heel | model heel | limit | |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| vmgUp jib | 4.56 | 4.11 | 9.9 % | 44.5 | 44.5 | 0.0° | 0.00 % | — | 3.7 | — | fit residual |
+| vmgDn asym | 4.58 | 4.39 | 4.2 % | 143.2 | 143.2 | 0.0° | 0.00 % | — | 0.9 | — | fit residual |
+| 60° jib | 5.28 | 4.87 | 7.8 % | 60.0 | 60.0 | — | — | — | 2.1 | — | fit residual |
+| 90° asym | 5.58 | 5.27 | 5.6 % | 90.0 | 90.0 | — | — | — | 6.2 | — | fit residual |
+| 120° asym | 5.59 | 5.37 | 3.9 % | 120.0 | 120.0 | — | — | — | 3.6 | — | fit residual |
 
 ### TWS 8 kt — HELD-OUT
 
-| row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 5.28 | 4.99 | 5.5 % | 41.7 | 40.8 | 0.9° | — | 6.1 | 3.0 % / 2° | **FAIL** |
-| vmgDn asym | 5.48 | 5.43 | 1.0 % | 147.6 | 147.0 | 0.6° | — | 1.1 | 3.0 % / 2° | ok |
-| 60° jib | 6.09 | 5.90 | 3.2 % | 60.0 | 60.0 | — | — | 6.0 | 5.0 % | ok |
-| 90° asym | 6.44 | 6.29 | 2.3 % | 90.0 | 90.0 | — | — | 14.0 | 5.0 % | ok |
-| 120° asym | 6.57 | 6.60 | 0.5 % | 120.0 | 120.0 | — | — | 5.9 | 5.0 % | ok |
+| row | polar bs | model bs | bs err | polar twa | model twa | twa err | vmg shortfall | polar heel | model heel | limit | |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| vmgUp jib | 5.28 | 4.99 | 5.5 % | 41.7 | 40.8 | 0.9° | 0.04 % | — | 6.1 | 3.0 % / 1.0 % | **FAIL** |
+| vmgDn asym | 5.48 | 5.43 | 1.0 % | 147.6 | 147.0 | 0.6° | 0.14 % | — | 1.1 | 3.0 % / 1.0 % | ok |
+| 60° jib | 6.09 | 5.90 | 3.2 % | 60.0 | 60.0 | — | — | — | 6.0 | 5.0 % | ok |
+| 90° asym | 6.44 | 6.29 | 2.3 % | 90.0 | 90.0 | — | — | — | 14.0 | 5.0 % | ok |
+| 120° asym | 6.57 | 6.60 | 0.5 % | 120.0 | 120.0 | — | — | — | 5.9 | 5.0 % | ok |
 
 ### TWS 10 kt — FIT
 
-| row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 5.69 | 5.70 | 0.1 % | 39.4 | 40.5 | 1.1° | — | 9.4 | — | fit residual |
-| vmgDn asym | 6.12 | 6.53 | 6.7 % | 151.6 | 145.2 | 6.4° | — | 1.9 | — | fit residual |
-| 60° jib | 6.55 | 6.63 | 1.2 % | 60.0 | 60.0 | — | — | 9.8 | — | fit residual |
-| 90° asym | 6.85 | 6.80 | 0.7 % | 90.0 | 90.0 | — | — | 23.2 | — | fit residual |
-| 120° asym | 7.43 | 7.56 | 1.7 % | 120.0 | 120.0 | — | — | 9.5 | — | fit residual |
+| row | polar bs | model bs | bs err | polar twa | model twa | twa err | vmg shortfall | polar heel | model heel | limit | |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| vmgUp jib | 5.69 | 5.70 | 0.1 % | 39.4 | 40.5 | 1.1° | 0.06 % | — | 9.4 | — | fit residual |
+| vmgDn asym | 6.12 | 6.53 | 6.7 % | 151.6 | 145.2 | 6.4° | 0.91 % | — | 1.9 | — | fit residual |
+| 60° jib | 6.55 | 6.63 | 1.2 % | 60.0 | 60.0 | — | — | — | 9.8 | — | fit residual |
+| 90° asym | 6.85 | 6.80 | 0.7 % | 90.0 | 90.0 | — | — | — | 23.2 | — | fit residual |
+| 120° asym | 7.43 | 7.56 | 1.7 % | 120.0 | 120.0 | — | — | — | 9.5 | — | fit residual |
 
 ### TWS 12 kt — FIT
 
-| row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 5.88 | 5.75 | 2.2 % | 39.1 | 37.7 | 1.4° | — | 13.6 | — | fit residual |
-| vmgDn asym | 6.87 | 6.98 | 1.7 % | 150.5 | 149.9 | 0.6° | — | 1.6 | — | fit residual |
-| 60° jib | 6.84 | 6.99 | 2.1 % | 60.0 | 60.0 | — | — | 16.6 | — | fit residual |
-| 90° asym | 7.37 | 7.15 | 3.0 % | 90.0 | 90.0 | — | — | 29.2 | — | fit residual |
-| 120° asym | 8.36 | 8.26 | 1.2 % | 120.0 | 120.0 | — | — | 17.6 | — | fit residual |
+| row | polar bs | model bs | bs err | polar twa | model twa | twa err | vmg shortfall | polar heel | model heel | limit | |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| vmgUp jib | 5.88 | 5.75 | 2.2 % | 39.1 | 37.7 | 1.4° | 0.09 % | — | 13.6 | — | fit residual |
+| vmgDn asym | 6.87 | 6.98 | 1.7 % | 150.5 | 149.9 | 0.6° | 0.04 % | — | 1.6 | — | fit residual |
+| 60° jib | 6.84 | 6.99 | 2.1 % | 60.0 | 60.0 | — | — | — | 16.6 | — | fit residual |
+| 90° asym | 7.37 | 7.15 | 3.0 % | 90.0 | 90.0 | — | — | — | 29.2 | — | fit residual |
+| 120° asym | 8.36 | 8.26 | 1.2 % | 120.0 | 120.0 | — | — | — | 17.6 | — | fit residual |
 
 ### TWS 14 kt — HELD-OUT
 
-| row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 5.96 | 5.98 | 0.3 % | 39.0 | 38.7 | 0.3° | — | 16.3 | 3.0 % / 2° | ok |
-| vmgDn asym | 7.86 | 7.82 | 0.5 % | 147.2 | 149.0 | 1.8° | — | 2.2 | 3.0 % / 2° | ok |
-| 60° jib | 7.00 | 7.22 | 3.1 % | 60.0 | 60.0 | — | — | 21.8 | 5.0 % | ok |
-| 90° asym | 8.00 | 7.42 | 7.2 % | 90.0 | 90.0 | — | — | 34.2 | 5.0 % | **FAIL** |
-| 120° asym | 9.10 | 8.77 | 3.6 % | 120.0 | 120.0 | — | — | 22.4 | 5.0 % | ok |
+| row | polar bs | model bs | bs err | polar twa | model twa | twa err | vmg shortfall | polar heel | model heel | limit | |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| vmgUp jib | 5.96 | 5.98 | 0.3 % | 39.0 | 38.7 | 0.3° | 0.01 % | — | 16.3 | 3.0 % / 1.0 % | ok |
+| vmgDn asym | 7.86 | 7.82 | 0.5 % | 147.2 | 149.0 | 1.8° | 0.15 % | — | 2.2 | 3.0 % / 1.0 % | ok |
+| 60° jib | 7.00 | 7.22 | 3.1 % | 60.0 | 60.0 | — | — | — | 21.8 | 5.0 % | ok |
+| 90° asym | 8.00 | 7.42 | 7.2 % | 90.0 | 90.0 | — | — | — | 34.2 | 5.0 % | **FAIL** |
+| 120° asym | 9.10 | 8.77 | 3.6 % | 120.0 | 120.0 | — | — | — | 22.4 | 5.0 % | ok |
 
 ### TWS 16 kt — FIT
 
-| row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 6.00 | 6.15 | 2.5 % | 39.2 | 39.7 | 0.5° | — | 18.0 | — | fit residual |
-| vmgDn asym | 9.03 | 8.62 | 4.5 % | 145.4 | 147.6 | 2.2° | — | 3.1 | — | fit residual |
-| 60° jib | 7.11 | 7.38 | 3.9 % | 60.0 | 60.0 | — | — | 24.8 | — | fit residual |
-| 90° asym | 8.46 | 7.64 | 9.7 % | 90.0 | 90.0 | — | — | 39.0 | — | fit residual |
-| 120° asym | 9.70 | 9.24 | 4.7 % | 120.0 | 120.0 | — | — | 26.9 | — | fit residual |
+| row | polar bs | model bs | bs err | polar twa | model twa | twa err | vmg shortfall | polar heel | model heel | limit | |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| vmgUp jib | 6.00 | 6.15 | 2.5 % | 39.2 | 39.7 | 0.5° | 0.01 % | — | 18.0 | — | fit residual |
+| vmgDn asym | 9.03 | 8.62 | 4.5 % | 145.4 | 147.6 | 2.2° | 0.77 % | — | 3.1 | — | fit residual |
+| 60° jib | 7.11 | 7.38 | 3.9 % | 60.0 | 60.0 | — | — | — | 24.8 | — | fit residual |
+| 90° asym | 8.46 | 7.64 | 9.7 % | 90.0 | 90.0 | — | — | — | 39.0 | — | fit residual |
+| 120° asym | 9.70 | 9.24 | 4.7 % | 120.0 | 120.0 | — | — | — | 26.9 | — | fit residual |
 
 ### TWS 20 kt — FIT
 
-| row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 6.08 | 6.15 | 1.1 % | 39.7 | 39.7 | 0.0° | — | 21.2 | — | fit residual |
-| vmgDn asym | 12.66 | 11.85 | 6.4 % | 141.8 | 142.0 | 0.2° | — | 8.8 | — | fit residual |
-| 60° jib | 7.25 | 7.56 | 4.2 % | 60.0 | 60.0 | — | — | 30.2 | — | fit residual |
-| 90° asym | 9.05 | 7.97 | 12.0 % | 90.0 | 90.0 | — | — | 44.3 | — | fit residual |
-| 120° asym | 10.84 | 10.47 | 3.4 % | 120.0 | 120.0 | — | — | 34.9 | — | fit residual |
+| row | polar bs | model bs | bs err | polar twa | model twa | twa err | vmg shortfall | polar heel | model heel | limit | |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| vmgUp jib | 6.08 | 6.15 | 1.1 % | 39.7 | 39.7 | 0.0° | 0.00 % | — | 21.2 | — | fit residual |
+| vmgDn asym | 12.66 | 11.85 | 6.4 % | 141.8 | 142.0 | 0.2° | 0.02 % | — | 8.8 | — | fit residual |
+| 60° jib | 7.25 | 7.56 | 4.2 % | 60.0 | 60.0 | — | — | — | 30.2 | — | fit residual |
+| 90° asym | 9.05 | 7.97 | 12.0 % | 90.0 | 90.0 | — | — | — | 44.3 | — | fit residual |
+| 120° asym | 10.84 | 10.47 | 3.4 % | 120.0 | 120.0 | — | — | — | 34.9 | — | fit residual |
 
 ### TWS 24 kt — FIT
 
-| row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| vmgUp jib | 6.09 | 6.05 | 0.6 % | 41.4 | 41.2 | 0.2° | — | 25.8 | — | fit residual |
-| vmgDn asym | 15.57 | 14.66 | 5.9 % | 147.0 | 147.3 | 0.3° | — | 8.6 | — | fit residual |
-| 60° jib | 7.26 | 7.59 | 4.6 % | 60.0 | 60.0 | — | — | 33.6 | — | fit residual |
-| 90° asym | 9.43 | 7.99 | 15.2 % | 90.0 | 90.0 | — | — | 44.6 | — | fit residual |
-| 120° asym | 12.13 | 12.28 | 1.2 % | 120.0 | 120.0 | — | — | 41.5 | — | fit residual |
+| row | polar bs | model bs | bs err | polar twa | model twa | twa err | vmg shortfall | polar heel | model heel | limit | |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| vmgUp jib | 6.09 | 6.05 | 0.6 % | 41.4 | 41.2 | 0.2° | 0.01 % | — | 25.8 | — | fit residual |
+| vmgDn asym | 15.57 | 14.66 | 5.9 % | 147.0 | 147.3 | 0.3° | 0.02 % | — | 8.6 | — | fit residual |
+| 60° jib | 7.26 | 7.59 | 4.6 % | 60.0 | 60.0 | — | — | — | 33.6 | — | fit residual |
+| 90° asym | 9.43 | 7.99 | 15.2 % | 90.0 | 90.0 | — | — | — | 44.6 | — | fit residual |
+| 120° asym | 12.13 | 12.28 | 1.2 % | 120.0 | 120.0 | — | — | — | 41.5 | — | fit residual |
 
-## Gate (ADR 0007 tolerances, ADR 0012 split)
+## Gate (ADR 0007 + 0023 tolerances, ADR 0012 split)
 
-Row set, frozen by ADR 0012: every row at the held-out wind speeds 8 and 14 kt. Tolerances, frozen by ADR 0007: VMG rows within **3.0 %** boat speed and **2°** VMG angle; 60/90/120° rows within **5.0 %** boat speed (tier B). This is the same row set `validation/polar.test.ts` gates on.
+Row set, frozen by ADR 0012: every row at the held-out wind speeds 8 and 14 kt. Tolerances: VMG rows within **3.0 %** boat speed at the model's own best angle (ADR 0007), and, solved a second time **at the polar's printed angle**, within **1.0 %** of the VMG the model makes at that best angle (ADR 0023); 60/90/120° rows within **5.0 %** boat speed (tier B, ADR 0007). This is the same row set `validation/polar.test.ts` gates on.
+
+ADR 0023 replaced ADR 0007's **2°** on the VMG angle with that shortfall column. Where the VMG curve is flat, the distance between two argmaxes measures the flatness rather than the model, and neither side's optimiser is precise there: the J/70 polar's own printed running angle travels 162.5° → 172.0° → 174.0° across TWS 12, 14 and 16 while the VMG behind it climbs smoothly. The angle difference is still printed above, as information; what is gated is whether the polar's angle costs the model any real VMG.
 
 **FAIL** — 8/10 gated rows inside tolerance.
 
 - Worst boat-speed residual: **7.2 %** at TWS 14 asym 90° (limit 5.0 %).
-- Worst VMG-angle residual: **1.8°** at TWS 14 asym vmgDn (limit 2°).
+- Worst VMG shortfall at the polar's angle: **0.15 %** at TWS 14 asym vmgDn (limit 1.0 %).
+- Worst VMG-angle difference (not gated, ADR 0023): **1.8°** at TWS 14 asym vmgDn.
 
 Rows outside tolerance:
 
-- TWS 8 jib vmgUp: boat speed 5.5 %, angle 0.9°
+- TWS 8 jib vmgUp: boat speed 5.5 %, VMG shortfall 0.04 %
 - TWS 14 asym 90°: boat speed 7.2 %
 
 ## Model optimum vs a tuning guide
