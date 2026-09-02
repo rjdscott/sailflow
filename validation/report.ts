@@ -1,8 +1,8 @@
 /**
  * Writes `validation/report.md`: the polar comparison, the hold-out gate
- * verdict (ADR 0007 tolerances over ADR 0012's split), the model's own best
- * dock setup against the North tuning guide, and a plain list of what this
- * model is bad at.
+ * verdict (ADR 0007 boat-speed tolerances and ADR 0023's VMG criterion, over
+ * ADR 0012's split), the model's own best dock setup against the North tuning
+ * guide, and a plain list of what this model is bad at.
  *
  *   pnpm tsx validation/report.ts
  *
@@ -33,7 +33,7 @@ import {
   POLAR_SEA_STATE,
   TOL_ANGLE_BS_FRAC,
   TOL_VMG_BS_FRAC,
-  TOL_VMG_TWA_DEG,
+  TOL_VMG_SHORTFALL_FRAC,
 } from './compare';
 
 /**
@@ -87,8 +87,8 @@ const DEFAULT_BOAT_WEAKNESSES = [
   '**Heel is tier B, and since ADR 0022 nothing fits it.** The righting model is anchored on one published number (`rmMeasuredKgMPerDeg`, 18.5 kg·m/deg) and an assumed 25° knee; crew hiking is a linear ramp with an assumed 8° reference. `hydro.crewArmMul` used to be fitted against the heel column below and no longer is: once heel started costing real drag, a knob fitted on an ungated tier-B column was setting gated boat speed, and fitted freely it ran to a bound in both directions. It now holds its defined value — the hardest crew CG the class hiking rule allows, which is the condition these rows are replayed under. So the model reads 6–14° less heel than the 2011 polar prints from TWS 10 up, and that is shown as a disagreement rather than absorbed. Two published sources (ORC’s pre-2013 effective-draft chart, and the Delft effective-draft polynomial) agree that the plain `cos(heel)` on the keel span in `hydro/keel.ts` is too weak — nearer cos^1.2 to cos^2.9 — which is the next candidate mechanism and was deliberately left out of ADR 0022 so one heel mechanism at a time stays attributable.',
   '**The asymmetric is tier C for anything but speed.** The ORC offwind coefficient set is applied on centreline with no tack-line, sprit or rotation model, so asymmetric heel and leeway are direction-only. The guide’s own downwind advice (ease the tack 4–6 in before planing) has no representation in the physics.',
   '**The offwind sail’s deep-angle drag is a fitted number, not a measurement (ADR 0018).** Above AWA 115° the ORC CD0 is multiplied by `aero.asymCdMul`, ramped to full at 150°. Without it the model made 264 N of drive at TWS 14 / TWA 172° where 351 N is needed, and never soaked at any wind speed below 16 kt. The fitted 2.377 lands inside the published wind-tunnel band once the reference-area conventions are reconciled, but it is standing in for a mechanism the model does not contain — ORC gives the spinnaker no blanketing term, so the main’s shadow on the kite is absent and the sprit and tack line act on nothing.',
-  '**The one gated row still failing fails only on angle.** Held-out TWS 14 asymmetric: boat speed 2.1 %, inside the 3 % tolerance, at a VMG angle 3.3° against a 2° one. That angle is a plateau, not a peak in the wrong place — VMG there is flat to 0.11 % over 168–172°, so 3.3° is worth almost nothing and no number moves it reliably. Sailed at the polar’s own 172° the model does 6.32 kt against 6.26, 1.0 % fast: the boat is right, the argmax on a flat curve is not. The model’s optimum is compressed into 168–169° from 14 kt up against the polar’s 141.9° → 174.0° over TWS 6–16. This needs a second mechanism, not a better number.',
-  '**Downwind VMG is bimodal.** There is a reaching hump near 145° and a soak hump near 168° with a trough between them, and the two cross between TWS 10 and 12. `optimal()` scans before it refines, which usually picks the global hump — but not at the crossing itself: the fitted TWS 12 row lands on the reaching one at 151.3° against a printed 162.5° and reads 8.6 % fast, the only row in the whole polar outside 3.4 %. Near the crossing the dock-setup ranking is genuinely jumpy too — about 0.19 s/mile, a tenth of the tie band the UI refuses to resolve inside.',
+  '**The downwind optimum is compressed, and the gate no longer catches it.** The model’s best downwind angle sits at 168–169° from 14 kt up, against the polar’s 141.9° → 174.0° over TWS 6–16. Until ADR 0023 that showed up as the last failing gated row — held-out TWS 14 asymmetric, 3.3° against a 2° tolerance — and ADR 0023 stopped gating it, because at that state the model’s VMG is flat to 0.11 % over 168–172°: sailed at the polar’s own 172° it does 6.32 kt against 6.26, 1.0 % fast, so the boat is right and only the argmax on a flat curve is not. The compression is still real and still unfixed; what changed is that the gate now measures it in knots of VMG, where it is worth almost nothing, instead of in degrees, where it looked decisive. It needs a second mechanism (blanketing, tack line, sprit), not a better number.',
+  '**Downwind VMG is bimodal.** There is a reaching hump near 145° and a soak hump near 168° with a trough between them, and the two cross between TWS 10 and 12. `optimal()` scans before it refines, which usually picks the global hump — but not at the crossing itself: the fitted TWS 12 row lands on the reaching one at 151.3° against a printed 162.5° and reads 8.6 % fast, the only row in the whole polar outside 3.4 %. Note what the shortfall column says about that row: 0.24 %, because the model’s VMG at the polar’s angle really is within a quarter of a percent of its own. The ADR 0023 criterion is blind to hump-picking; boat speed is what catches this one, and it catches it only because it is fast. Near the crossing the dock-setup ranking is genuinely jumpy too — about 0.19 s/mile, a tenth of the tie band the UI refuses to resolve inside.',
   '**The upwind speed plateau is closed, and the way it closed is a warning about reading a fit.** For two rounds this bullet said the plateau was a model limit that no knob could close, citing `hydro.heelDragK` fitted to 0.919 well inside a bound of 4.0. The knob was not declining headroom, it was anchored wrong: the old assumed form scaled heel drag on *viscous* resistance, burying a friction coefficient of ~0.0029 inside the knob, so even at 4.0 it topped out at about half the penalty the plateau needs. And the stage-1 heel weight, documented as keeping heel "the weakest term", measured at 62 % of the loss — heel drag slows the boat, a slower boat heels less, so the fit was paid to keep the mechanism at zero. ADR 0022 replaced the form with the published Delft heel law normalised at 20°, dropped the heel weight to 0.002 and stopped fitting the crew arm. Every printed jib row is now within 3.4 % on boat speed, held-out and fitted alike.',
   '**The whole shape layer is invented.** `rig/state.ts`, `shape/flying.ts` and `shape/toOrc.ts` are sign-correct heuristics with calibration knobs (ADR 0006). No published J/70 data maps turnbuckle turns to shroud tension, tension to forestay sag, or sag to flying shape. Every magnitude in that chain is an assumption; only the signs are tested.',
   '**The 20 kt asymmetric row is a planing row and this is a displacement model.** The ORC polar prints 11.53 kt at TWA 137° in 20 kt, which is the hull up and planing. The residuary curve here has a `hydro.planingRelief` knob whose fallback is zero, so the model has no planing regime to fit. Treat the 20 kt downwind numbers as out of range, not as a validated answer.',
@@ -132,6 +132,8 @@ function polarRowsLackHeel(): boolean {
 }
 
 const pct = (f: number) => `${(f * 100).toFixed(1)} %`;
+/** Shortfalls live near zero; one decimal would print every passing row as 0.0 %. */
+const shortPct = (f: number) => `${(f * 100).toFixed(2)} %`;
 const progress = (msg: string) => process.stderr.write(`${msg}\n`);
 
 /**
@@ -142,19 +144,20 @@ const progress = (msg: string) => process.stderr.write(`${msg}\n`);
  */
 function comparisonRow(c: Comparison, gated: boolean): string {
   const twa = c.twaErrDeg === null ? '—' : `${c.twaErrDeg.toFixed(1)}°`;
+  const short = c.vmgShortfallFrac === null ? '—' : shortPct(c.vmgShortfallFrac);
   const label = c.kind === 'angle' ? `${c.polar.twaDeg}° ${c.sail}` : `${c.kind} ${c.sail}`;
   const limit = !gated
     ? '—'
-    : c.limitTwaDeg === null
+    : c.vmgShortfallFrac === null
       ? `${pct(c.limitBsFrac)}`
-      : `${pct(c.limitBsFrac)} / 2°`;
+      : `${pct(c.limitBsFrac)} / ${pct(TOL_VMG_SHORTFALL_FRAC)}`;
   const verdict = !gated ? 'fit residual' : c.pass ? 'ok' : '**FAIL**';
-  return `| ${label} | ${c.polar.bsKt.toFixed(2)} | ${c.model.bsKt.toFixed(2)} | ${pct(c.bsErrFrac)} | ${c.polar.twaDeg.toFixed(1)} | ${c.model.twaDeg.toFixed(1)} | ${twa} | ${c.polar.heelDeg === null ? '—' : c.polar.heelDeg.toFixed(1)} | ${c.model.heelDeg.toFixed(1)} | ${limit} | ${verdict} |`;
+  return `| ${label} | ${c.polar.bsKt.toFixed(2)} | ${c.model.bsKt.toFixed(2)} | ${pct(c.bsErrFrac)} | ${c.polar.twaDeg.toFixed(1)} | ${c.model.twaDeg.toFixed(1)} | ${twa} | ${short} | ${c.polar.heelDeg === null ? '—' : c.polar.heelDeg.toFixed(1)} | ${c.model.heelDeg.toFixed(1)} | ${limit} | ${verdict} |`;
 }
 
 const TABLE_HEAD = [
-  '| row | polar bs | model bs | bs err | polar twa | model twa | twa err | polar heel | model heel | limit | |',
-  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
+  '| row | polar bs | model bs | bs err | polar twa | model twa | twa err | vmg shortfall | polar heel | model heel | limit | |',
+  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
 ];
 
 /** North band midpoint TWS. The open-ended top band is read as min + 2 kt. */
@@ -224,10 +227,14 @@ function main(): void {
   }
 
   // --- gate ----------------------------------------------------------------
-  out.push('## Gate (ADR 0007 tolerances, ADR 0012 split)');
+  out.push('## Gate (ADR 0007 + 0023 tolerances, ADR 0012 split)');
   out.push('');
   out.push(
-    `Row set, frozen by ADR 0012: every row at the held-out wind speeds ${HELD_OUT_TWS.join(' and ')} kt. Tolerances, frozen by ADR 0007: VMG rows within **${pct(TOL_VMG_BS_FRAC)}** boat speed and **${TOL_VMG_TWA_DEG}°** VMG angle; 60/90/120° rows within **${pct(TOL_ANGLE_BS_FRAC)}** boat speed (tier B). This is the same row set \`validation/polar.test.ts\` gates on.`,
+    `Row set, frozen by ADR 0012: every row at the held-out wind speeds ${HELD_OUT_TWS.join(' and ')} kt. Tolerances: VMG rows within **${pct(TOL_VMG_BS_FRAC)}** boat speed at the model's own best angle (ADR 0007), and, solved a second time **at the polar's printed angle**, within **${pct(TOL_VMG_SHORTFALL_FRAC)}** of the VMG the model makes at that best angle (ADR 0023); 60/90/120° rows within **${pct(TOL_ANGLE_BS_FRAC)}** boat speed (tier B, ADR 0007). This is the same row set \`validation/polar.test.ts\` gates on.`,
+  );
+  out.push('');
+  out.push(
+    `ADR 0023 replaced ADR 0007's **2°** on the VMG angle with that shortfall column. Where the VMG curve is flat, the distance between two argmaxes measures the flatness rather than the model, and neither side's optimiser is precise there: the J/70 polar's own printed running angle travels 162.5° → 172.0° → 174.0° across TWS 12, 14 and 16 while the VMG behind it climbs smoothly. The angle difference is still printed above, as information; what is gated is whether the polar's angle costs the model any real VMG.`,
   );
   out.push('');
   if (gated.length === 0) {
@@ -246,9 +253,18 @@ function main(): void {
     out.push(
       `- Worst boat-speed residual: **${pct(worstBs.bsErrFrac)}** at ${worstBs.label} (limit ${pct(worstBs.limitBsFrac)}).`,
     );
+    const withShort = gated.filter((c) => c.vmgShortfallFrac !== null);
+    if (withShort.length) {
+      const worstShort = withShort.reduce((a, c) =>
+        (c.vmgShortfallFrac ?? 0) > (a.vmgShortfallFrac ?? 0) ? c : a,
+      );
+      out.push(
+        `- Worst VMG shortfall at the polar's angle: **${shortPct(worstShort.vmgShortfallFrac ?? 0)}** at ${worstShort.label} (limit ${pct(TOL_VMG_SHORTFALL_FRAC)}).`,
+      );
+    }
     if (worstTwa)
       out.push(
-        `- Worst VMG-angle residual: **${(worstTwa.twaErrDeg ?? 0).toFixed(1)}°** at ${worstTwa.label} (limit ${TOL_VMG_TWA_DEG}°).`,
+        `- Worst VMG-angle difference (not gated, ADR 0023): **${(worstTwa.twaErrDeg ?? 0).toFixed(1)}°** at ${worstTwa.label}.`,
       );
     if (failed.length) {
       out.push('');
@@ -256,7 +272,7 @@ function main(): void {
       out.push('');
       for (const c of failed)
         out.push(
-          `- ${c.label}: boat speed ${pct(c.bsErrFrac)}${c.twaErrDeg === null ? '' : `, angle ${c.twaErrDeg.toFixed(1)}°`}${c.converged ? '' : ' (did not converge)'}`,
+          `- ${c.label}: boat speed ${pct(c.bsErrFrac)}${c.vmgShortfallFrac === null ? '' : `, VMG shortfall ${shortPct(c.vmgShortfallFrac)}`}${c.converged ? '' : ' (did not converge)'}`,
         );
     }
   }

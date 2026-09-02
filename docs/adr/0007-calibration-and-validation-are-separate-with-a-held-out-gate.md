@@ -1,6 +1,6 @@
 # 0007. Calibration and validation are separate, with a held-out polar gate
 
-- **Status:** Superseded by [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) (split only; tolerances stand)
+- **Status:** Superseded by [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) (the fit/hold-out split) and by [0023](0023-vmg-gate-measures-vmg-lost-at-the-polars-angle.md) (the 2° VMG-angle tolerance); the boat-speed tolerances stand
 - **Date:** 2026-08-25
 
 ## Context

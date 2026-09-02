@@ -45,7 +45,7 @@ line. Don't hand-edit.
 | [0004](0004-typescript-solver-now-rust-engine-at-multiplayer.md) | TypeScript solver now; a Rust engine only when multiplayer or heavier aero demands it | Accepted |
 | [0005](0005-svelte-5-vite-no-router-no-state-library.md) | Svelte 5 + Vite for the UI, with hash routing and no router or state library | Accepted |
 | [0006](0006-faithful-orc-aero-layer-plus-invented-shape-layer-with-confidence-tiers.md) | A faithful ORC aero layer plus an explicitly invented shape-sensitivity layer, with confidence tiers on every output | Accepted |
-| [0007](0007-calibration-and-validation-are-separate-with-a-held-out-gate.md) | Calibration and validation are separate, with a held-out polar gate | Superseded by [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) (split only; tolerances stand) |
+| [0007](0007-calibration-and-validation-are-separate-with-a-held-out-gate.md) | Calibration and validation are separate, with a held-out polar gate | Superseded by [0012](0012-hold-out-split-by-wind-speed-not-by-angle.md) (the fit/hold-out split) and by [0023](0023-vmg-gate-measures-vmg-lost-at-the-polars-angle.md) (the 2° VMG-angle tolerance); the boat-speed tolerances stand |
 | [0008](0008-third-party-reference-data-committed-with-provenance.md) | Third-party reference data is committed to the repo with inline provenance | Accepted |
 | [0009](0009-dock-mode-score-is-expected-regret-over-a-forecast-distribution.md) | Dock-mode score is expected regret in seconds per mile over a forecast distribution | Accepted |
 | [0010](0010-persistence-behind-a-log-store-interface-localstorage-then-indexeddb.md) | Persistence behind a LogStore interface: localStorage now, IndexedDB when the schema settles | Accepted |
@@ -61,4 +61,5 @@ line. Don't hand-edit.
 | [0020](0020-melges-24-is-the-second-class-blocked-on-the-ui-boat-switch.md) | Melges 24 is the second class, and it lands after the UI takes the active boat | Accepted |
 | [0021](0021-dock-and-race-merge-into-one-simulator-page.md) | Dock and Race merge into one Simulator page, with the conditions as an editable half of the instrument band | Accepted |
 | [0022](0022-heel-costs-published-drag-and-nothing-fits-the-heel-column.md) | Heel drag from the published Delft law, reef as the optimiser's second stage, and nothing fitted to the polar's heel column | Accepted |
+| [0023](0023-vmg-gate-measures-vmg-lost-at-the-polars-angle.md) | The VMG hold-out gate measures the VMG lost at the polar's printed angle, not the distance between two argmaxes | Accepted |
 <!-- index:end -->

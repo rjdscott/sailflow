@@ -49,16 +49,17 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   162.5°: the model's downwind VMG is bimodal (below) and 12 kt is where the
   reaching and soak humps cross, so the optimiser takes the reaching one. It is
   the one row in the whole polar outside 3.4 %.
-- **One gate row still fails, and only on angle.** Held-out TWS 14 downwind:
-  boat speed 2.1 % (inside the 3 % tolerance) at a VMG angle 3.3° high against
-  a 2° tolerance. That angle is a plateau, not a peak in the wrong place — the
-  model's downwind VMG at TWS 14 is flat to **0.11 % over 168–172°**, so the
-  3.3° is worth almost nothing and no number can move it reliably. Sailed at
-  the polar's own 172° the model does 6.32 kt against 6.26, i.e. **1.0 % fast**:
-  the boat is right, the argmax on a flat curve is not. The polar's optimum
-  runs 141.9° → 174.0° over TWS 6–16; the model's is compressed into 168–169°
-  from 14 kt up. This needs a second mechanism, not a better number. (Before
-  ADR 0018 the model stayed near 147° at every wind speed and missed by 25.5°.)
+- **The downwind optimum is compressed, and it is no longer a gate failure.**
+  Held-out TWS 14 downwind sits 3.3° high of the polar's printed 172.0°, which
+  failed ADR 0007's 2° tolerance until ADR 0023 replaced that criterion with the
+  VMG the angle actually costs. It costs 0.11 %: the model's downwind VMG at
+  TWS 14 is flat to **0.11 % over 168–172°**, and sailed at the polar's own 172°
+  the model does 6.32 kt against 6.26, i.e. **1.0 % fast** — the boat is right,
+  the argmax on a flat curve is not. The compression itself is unchanged and
+  still tier C: the polar's optimum runs 141.9° → 174.0° over TWS 6–16, the
+  model's is stuck in 168–169° from 14 kt up. It needs a second mechanism, not a
+  better number. (Before ADR 0018 the model stayed near 147° at every wind speed
+  and missed by 25.5°.)
 - **Downwind VMG is bimodal.** A reaching hump near 145°, a soak hump near
   168°, a trough between, and the two cross between TWS 10 and 12. `optimal()`
   scans a 6° grid before it golden-section refines, which usually picks the
