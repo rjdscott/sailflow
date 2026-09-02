@@ -23,7 +23,7 @@
   import type { Pt } from './geometry';
   import { race } from './store.svelte';
   import { conditions } from '../stores/conditions.svelte';
-  import { SPRIT_TIP_X, type Vec3 } from '../three/conventions';
+  import type { Vec3 } from '../three/conventions';
   import { BARE_SPAR, kiteGeometry } from '../three/kite';
 
   let {
@@ -49,11 +49,12 @@
   const D = deck(L.scale);
   const ORIGIN = L.origin;
   // Under the gennaker the kite's belly swings well past the hull's own crop
-  // (PLAN_LAYOUT.asymHalfW's doc comment has the numbers); jib settings keep
-  // the tight `0 0 w h` box so nothing there moves.
+  // athwartships, and its luff bows forward past the bowsprit tip
+  // (PLAN_LAYOUT.asymHalfW's doc comment has the sweep behind both numbers);
+  // jib settings keep the tight `0 0 w h` box so nothing there moves.
   const viewBox = $derived(
     conditions.sailset === 'asym'
-      ? `${(ORIGIN.x - L.asymHalfW).toFixed(0)} 0 ${(L.asymHalfW * 2).toFixed(0)} ${L.h}`
+      ? `${ORIGIN.x - L.asymHalfW} ${L.asymTop} ${L.asymHalfW * 2} ${L.h - L.asymTop}`
       : `0 0 ${L.w} ${L.h}`,
   );
   const MAST = { x: ORIGIN.x, y: ORIGIN.y + D.mast.y };
@@ -135,15 +136,16 @@
   // no third axis, so rake and bend do not project — and reaching for the real
   // one would drag the whole 3D chunk into the first load.
   //
-  // World (`three/conventions.ts`) to viewBox: athwartships is the plan's own
-  // scale, true. Fore-and-aft is anchored at the two datums both drawings
-  // share — the mast and the bowsprit tip — because the plan's assumed mast
-  // station (0.45·LOA) is not the rig's J, and a sail tacked to the sprit has
-  // to be drawn on the sprit that is actually on screen.
-  const KITE_SCALE_X = (MAST.y - (ORIGIN.y + D.spritTip.y)) / SPRIT_TIP_X;
+  // World (`three/conventions.ts`) to viewBox: one scale on both axes, true.
+  // The fore-and-aft datum is the mast, which both drawings now step at the
+  // rig's own J (`boat.ts` `MAST_STATION`), so `L.scale` alone lands the
+  // kite's tack on the drawn sprit tip. It used to be anisotropic — a 20 %
+  // fore-and-aft stretch that existed only to bridge the plan's assumed
+  // 0.45·LOA mast station, and cost 5° of drawn sheeting angle for it (audit
+  // kite-3d-01 H-11).
   const toPlan = (p: Vec3): Pt => ({
     x: ORIGIN.x + p[2] * L.scale,
-    y: MAST.y - p[0] * KITE_SCALE_X,
+    y: MAST.y - p[0] * L.scale,
   });
 
   const asym = $derived(race.result?.shape.asym);

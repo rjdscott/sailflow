@@ -779,10 +779,22 @@
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       /* Every row takes exactly what is in it; only the hero states a height,
          because it is the one cell with no intrinsic size. */
-      /* The band is 48 % of the window, floored at 400 px: on an 864-tall
-         laptop that leaves the first sail controls on the first screen
-         (ADR 0016), and a wide-landscape hero frames the boat well. */
-      grid-template-rows: auto auto auto minmax(400px, 48vh) auto auto auto;
+      /* The band is 48 % of the window, floored at the hero card's own
+         minimum: on an 864-tall laptop that still leaves the first sail
+         controls on the first screen (ADR 0016), and a wide-landscape hero
+         frames the boat well.
+
+         The floor is `--hero-min`, not a second number. The track floored at
+         400 px against a card that floored at 480, so on any window under
+         1000 px tall the card overflowed its own row and the panels beneath
+         drew over the bottom of it: at 1440×900 the row resolved to 432 px,
+         the card drew 480, and the last 36 px of the boat — the transom and
+         the in-picture heel tag — were painted over by the Mainsail and
+         Headsail cards (audit kite-3d-01 H-01). Both now read 400: the card
+         shrinks to its row rather than the row growing to the card, because
+         at 1536×864 a 480 px row pushes the Mainsail panel below the first
+         viewport, which is the ADR 0016 promise `race.spec.ts` holds. */
+      grid-template-rows: auto auto auto minmax(var(--hero-min), 48vh) auto auto auto;
       grid-template-areas:
         'head head'
         'bar bar'
@@ -796,9 +808,14 @@
     }
 
     /* prov: assumed 480 px — ADR 0016's floor; a 3D sail below it is a
-       thumbnail rather than an instrument. */
+       thumbnail rather than an instrument. The hero's grid row reads the same
+       property, so the card and the track it lives in cannot disagree. */
+    .cockpit {
+      --hero-min: 400px;
+    }
+
     .hero-boat {
-      min-height: 480px;
+      min-height: var(--hero-min);
     }
 
     /* The section-stack prose ("live shape in accent…") is a phone caption;
@@ -972,9 +989,16 @@
       align-self: stretch;
     }
 
-    /* The caption repeats the chip titles; in the cockpit the hero's height
-       is the scarce thing. The text stays in the DOM for assistive tech. */
-    .hero-boat :global(.caption) {
+    /* In the 3D hero the stage is the whole slot, so a caption under it is
+       height the picture pays for; the text stays in the DOM for assistive
+       tech. The plan view is exempt: its caption sits in the flank column
+       beside the boat, which is ~950 px of empty card, and it carries the `?`
+       that opens the explainer — the only place the app says the gennaker is
+       drawn rather than solved (ADR 0017), that sheeting angles come off the
+       controls, and that the heel lean is capped. Clipping it left an
+       invisible, still-focusable button in the desktop tab order and put the
+       honesty disclosure out of reach (audit kite-3d-01 H-05). */
+    .hero-boat :global(.caption:not(.plan .caption)) {
       position: absolute;
       width: 1px;
       height: 1px;

@@ -119,7 +119,17 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   floor is there so the ends never vanish, not so they carry 5 % of the
   weight.
 - **Plan-view drawing** (`src/ui/race/boat.ts`, presentation only, not in the
-  solver): mast step at 0.45·LOA; boom angle = clamp(6° + 0.0085·(100 − mainsheet)²
+  solver). The mast step is *not* assumed any more: it is `rig.jM / hull.loaM`
+  = 0.339·LOA, the boat file's own foretriangle base, which is the same datum
+  `src/ui/three/conventions.ts` `STEM_X` gives the 3D hero. It was an assumed
+  0.45·LOA until 2026-09-02, 0.77 m aft of the boat's, and audit
+  `kite-3d-01` H-11 found every deck feature and the whole gennaker
+  projection hanging off the error. Still assumed around it: the trunk and
+  cockpit outlines (hand-drawn, rescaled about the end that does not touch the
+  spar so the trunk still ends at the mast and the well still ends at the
+  transom), and the chainplate station, `(jM + chainplateYM·tan sweepDeg)/LOA`
+  = 0.391·LOA — derived from the boat file, but the swept-shroud reduction
+  behind it is the assumption. Also assumed: boom angle = clamp(6° + 0.0085·(100 − mainsheet)²
   − traveller·0.08°, 2°, 90°) — quadratic so 70 % sheet is ~12° and 0 % reaches
   90°, and the traveller *subtracts* (up to windward closes the boom); jib
   sheeting angle = clamp(4° + jibLead·0.35° + 0.0045·(100 − jibSheet)², 2°, 90°).
@@ -324,11 +334,15 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
     distance would be 9.92 m, 0.64 m more than drawn. Either a class-maximum
     kite really is that much rounder-luffed on a short rig, or the drawn head
     or tack is misplaced. Resolvable by measuring a photograph (doc 04 §2.3).
-  - **Plan-view projection** (`src/ui/race/PlanView.svelte`): athwartships at
-    the plan's own scale, fore-and-aft anchored at the mast and the bowsprit
-    tip, because the plan's assumed mast station (0.45·LOA) is not the rig's J.
-    The kite hangs off a straight, unraked spar there: a plan view has no third
-    axis. Presentation only.
+  - **Plan-view projection** (`src/ui/race/PlanView.svelte`): the plan's own
+    scale on both axes, athwartships and fore-and-aft, about the mast. Nothing
+    assumed in the mapping — with the mast stepped at the rig's own J it is
+    the identity the two heroes share, and the kite's tack lands on the drawn
+    bowsprit tip (asserted in `boat.test.ts`). It used to be anisotropic, a
+    1.2× fore-and-aft stretch bridging the old assumed 0.45·LOA mast station,
+    which drew every sheeting angle about 5° tighter than the model's (audit
+    `kite-3d-01` H-11). What is still assumed: the kite hangs off a straight,
+    unraked spar, because a plan view has no third axis. Presentation only.
   - **Downwind playbook bands** (`src/ui/race/downwind.ts`, copy only): the
     Gennaker panel's mode line keys off four wind-speed boundaries — wing-on-wing
     from 10 kt, tack-up soaking above 9 kt, lazy planing from 13 kt, and the

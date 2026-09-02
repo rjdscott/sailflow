@@ -18,11 +18,11 @@ the state named in each finding before ticking.
 
 - [x] **H-10** (P1, S) Clamp the fitted camera above `WATER_Y` in `presetPose` and the resize refit; re-pose `luff`; spec asserting every preset's eye is above the water on both tacks. [03](03-3d-scene-and-cameras.md#h-10) — #123
 - [x] **H-06** (P1, S) Drop the `helm` fit exemptions and re-pose it so hull and boom are in frame. [03](03-3d-scene-and-cameras.md#h-06) — #123
-- [ ] **H-11** (P1, M) `MAST_STATION = rig.jM / hull.loaM`; move cabin and cockpit forward with it; delete `KITE_SCALE_X`; re-baseline the plan tests and rewrite the two ASSUMPTIONS rows. [02](02-plan-view.md#h-11)
-- [ ] **H-02** (P1, S) Give `PLAN_LAYOUT` an `asymTop` and widen `asymHalfW`; extend the fit test to both axes across the four downwind controls and the solved AWAs. [02](02-plan-view.md#h-02)
+- [x] **H-11** (P1, M) `MAST_STATION = rig.jM / hull.loaM`; move cabin and cockpit forward with it; delete `KITE_SCALE_X`; re-baseline the plan tests and rewrite the two ASSUMPTIONS rows. [02](02-plan-view.md#h-11) — #124
+- [x] **H-02** (P1, S) Give `PLAN_LAYOUT` an `asymTop` and widen `asymHalfW`; extend the fit test to both axes across the four downwind controls and the solved AWAs. [02](02-plan-view.md#h-02) — #124
 - [ ] **H-03** (P1, M) Draw the plan kite from the lofted sections (luff ends down, leech ends back), not from three projected edges. [02](02-plan-view.md#h-03)
-- [ ] **H-01** (P1, S) Let the plan svg fit its slot (`max-height`) and give the layout bottom slack so the transom and heel tag render on desktop. [02](02-plan-view.md#h-01)
-- [ ] **H-05** (P1, S) Restore the caption and the `?` explainer on the desktop plan flank. [02](02-plan-view.md#h-05)
+- [x] **H-01** (P1, S) Let the plan svg fit its slot (`max-height`) and give the layout bottom slack so the transom and heel tag render on desktop. [02](02-plan-view.md#h-01) — #124
+- [x] **H-05** (P1, S) Restore the caption and the `?` explainer on the desktop plan flank. [02](02-plan-view.md#h-05) — #124
 - [ ] **H-04** (P1, S) Plan jib telltales: fan them just aft of the luff, or draw one per sail and leave heights to the 3D hero. [02](02-plan-view.md#h-04)
 - [ ] **H-12** (P1, L) Design pass on the kite's twist: drive the leech's per-height azimuth from a published twist profile, assert emergent twist positive and monotone at AWA 69/93/118/159. Depends on C-02. [01](01-gennaker.md#h-12)
 - [x] **H-07** (P1, S) Style `button.chip[aria-pressed='true']` like the Segmented control. [04](04-phone-and-chrome.md#h-07) — #122

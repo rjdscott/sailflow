@@ -11,6 +11,7 @@ import {
   MAX_DRAWN_HEEL,
   jibSheetAngle,
   openBy,
+  MAST_STATION,
   PLAN_LAYOUT,
   roseArrow,
   sailPath,
@@ -25,6 +26,28 @@ import { cropBox, rotate, type Pt } from './geometry';
 import { BASE_RACE, BASE_RACE_DOWN } from '../stores/conditions.svelte';
 import type { DownControls } from '../../core/types';
 import { BARE_SPAR, kiteGeometry } from '../three/kite';
+import type { Vec3 } from '../three/conventions';
+
+/**
+ * The drawn starboard sheerline, sampled: the hull's half-width at a given y.
+ * `hullPath` is `M` plus two cubics down the starboard half before the mirror,
+ * so the first seven coordinate pairs are that half.
+ */
+function sheerHalfWidthAt(y: number): number {
+  const p = coords(hullPath(PLAN_LAYOUT.scale));
+  const pts: Pt[] = [];
+  for (let seg = 0; seg < 2; seg++) {
+    const [p0, c1, c2, p3] = p.slice(seg * 3, seg * 3 + 4);
+    for (let i = 0; i <= 400; i++) {
+      const t = i / 400;
+      const u = 1 - t;
+      const at = (a: number, b: number, c: number, d: number) =>
+        u * u * u * a + 3 * u * u * t * b + 3 * u * t * t * c + t * t * t * d;
+      pts.push({ x: at(p0.x, c1.x, c2.x, p3.x), y: at(p0.y, c1.y, c2.y, p3.y) });
+    }
+  }
+  return pts.reduce((best, q) => (Math.abs(q.y - y) < Math.abs(best.y - y) ? q : best)).x;
+}
 
 const section = (over: Partial<SectionShape> = {}): SectionShape => ({
   draft: 0.13,
@@ -97,6 +120,27 @@ describe('deck', () => {
         expect(p.y).toBeGreaterThan(0);
         expect(p.y).toBeLessThan(d.sternY);
       }
+    }
+  });
+
+  /**
+   * audit kite-3d-01 H-11: the station was an assumed 0.45·LOA, 0.77 m aft of
+   * the boat's own J, and every deck feature and the whole kite projection
+   * hung off it. `data/boats/j70.json` carries `rig.jM` 2.34 and
+   * `hull.loaM` 6.91.
+   */
+  it("steps the mast at the boat file's own J", () => {
+    expect(MAST_STATION * DIMS.loaM).toBeCloseTo(2.34, 6);
+    expect(d.mast.y).toBeCloseTo(2.34 * SCALE, 6);
+  });
+
+  it('sweeps the chainplates aft of the spar and keeps them inboard of the sheer', () => {
+    expect(d.chainplates).toHaveLength(2);
+    for (const c of d.chainplates) {
+      // On the mast station itself a 1.0 m chainplate lands outside the drawn
+      // sheerline; swept by `sweepDeg`, it is on deck.
+      expect(c.y).toBeGreaterThan(d.mast.y);
+      expect(Math.abs(c.x)).toBeLessThan(sheerHalfWidthAt(c.y));
     }
   });
 
@@ -416,29 +460,72 @@ describe('PLAN_LAYOUT', () => {
   });
 
   describe('under the gennaker', () => {
-    // The class's own downwind default (data/boats/j70.json baseRaceDown):
-    // halyard two-blocked, tack line and sheet mid-range, sprit fully out.
-    // Not a sweep of every kite control — PlanView.svelte's `viewBox` doc
-    // comment has the numbers behind `asymHalfW`.
-    const KITE_DOWN: DownControls = { kiteHalyard: 100, tackLine: 50, kiteSheet: 50, sprit: 100 };
-    const AWA_RUN = 150; // kite.test.ts's own stand-in for a run
+    /**
+     * Both bounds of the asym crop, from one sweep rather than from the
+     * shipping default: every downwind control at 0/50/100, the four solved
+     * apparent wind angles the app reaches under the kite, both tacks, with
+     * the boat group's own heel rotation applied. The old version of this test
+     * bounded x only, at kiteSheet 50 and AWA 150 only, and passed green while
+     * six states were clipped — the luff's forward bow at every kite state and
+     * the clew at full ease (audit kite-3d-01 H-02).
+     */
+    const CONTROL_STEPS = [0, 50, 100];
+    const KITE_AWAS = [69, 93, 118, 159];
 
-    /** Same world-z → viewBox-x map as `PlanView.svelte`'s `toPlan`. */
-    const toPlanX = (worldZ: number): number => ORIGIN.x + worldZ * L.scale;
+    /** Same world → viewBox map as `PlanView.svelte`'s `toPlan`: one scale, both axes. */
+    const toPlan = (p: Vec3): Pt => ({ x: ORIGIN.x + p[2] * L.scale, y: MAST.y - p[0] * L.scale });
 
-    it('keeps the kite luff and leech inside the widened viewBox, both tacks', () => {
-      const asymMinX = ORIGIN.x - L.asymHalfW;
-      const asymMaxX = ORIGIN.x + L.asymHalfW;
+    /** The polygon `PlanView` strokes: luff tack-to-head, then leech head-to-clew. */
+    function kitePlan(down: DownControls, side: Side, awaDeg: number, n = 32): Pt[] {
+      const g = kiteGeometry(down, BARE_SPAR, side, awaDeg);
+      const [headY, clewY] = [g.head[1], g.clew[1]];
+      return [
+        ...Array.from({ length: n + 1 }, (_, i) => g.spine(i / n)),
+        ...Array.from({ length: n + 1 }, (_, i) => g.leechAt(headY + ((clewY - headY) * i) / n)),
+      ].map(toPlan);
+    }
+
+    it('tacks the kite on the drawn bowsprit tip', () => {
+      // The projection is isotropic again (H-11): with the mast stepped at the
+      // rig's own J, `L.scale` on both axes lands the kite's tack exactly on
+      // the sprit tip the deck plan draws, with no fore-and-aft stretch to
+      // bridge a wrong mast station.
+      const down: DownControls = { kiteHalyard: 100, tackLine: 50, kiteSheet: 50, sprit: 100 };
       for (const side of [1, -1] as Side[]) {
-        const g = kiteGeometry(KITE_DOWN, BARE_SPAR, side, AWA_RUN);
-        const [headY, clewY] = [g.head[1], g.clew[1]];
-        const pts = [
-          ...Array.from({ length: 9 }, (_, i) => g.spine(i / 8)),
-          ...Array.from({ length: 9 }, (_, i) => g.leechAt(headY + ((clewY - headY) * i) / 8)),
-        ];
-        const xs = pts.map((p) => toPlanX(p[2]));
-        expect(Math.min(...xs), `side ${side} minX`).toBeGreaterThanOrEqual(asymMinX);
-        expect(Math.max(...xs), `side ${side} maxX`).toBeLessThanOrEqual(asymMaxX);
+        const tack = toPlan(kiteGeometry(down, BARE_SPAR, side, 150).tack);
+        expect(tack.x, `side ${side}`).toBeCloseTo(ORIGIN.x, 6);
+        expect(tack.y, `side ${side}`).toBeCloseTo(ORIGIN.y + D.spritTip.y, 6);
+      }
+    });
+
+    it('keeps the kite luff and leech inside the widened viewBox', () => {
+      const box = {
+        minX: ORIGIN.x - L.asymHalfW,
+        maxX: ORIGIN.x + L.asymHalfW,
+        minY: L.asymTop,
+        maxY: L.h,
+      };
+      for (const kiteSheet of CONTROL_STEPS) {
+        for (const tackLine of CONTROL_STEPS) {
+          for (const kiteHalyard of CONTROL_STEPS) {
+            for (const sprit of CONTROL_STEPS) {
+              const down: DownControls = { kiteHalyard, tackLine, kiteSheet, sprit };
+              for (const awaDeg of KITE_AWAS) {
+                for (const side of [1, -1] as Side[]) {
+                  const pts = kitePlan(down, side, awaDeg);
+                  for (let heel = 0; heel <= 40; heel += 10) {
+                    const b = cropBox(pts.map((p) => rotate(p, drawnHeel(heel, side), HUB)));
+                    const at = `sheet ${kiteSheet} tack ${tackLine} halyard ${kiteHalyard} sprit ${sprit} awa ${awaDeg} side ${side} heel ${heel}`;
+                    expect(b.minX, `minX ${at}`).toBeGreaterThanOrEqual(box.minX);
+                    expect(b.maxX, `maxX ${at}`).toBeLessThanOrEqual(box.maxX);
+                    expect(b.minY, `minY ${at}`).toBeGreaterThanOrEqual(box.minY);
+                    expect(b.maxY, `maxY ${at}`).toBeLessThanOrEqual(box.maxY);
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     });
 
