@@ -237,6 +237,7 @@ Python-VPP names as its own source. Until then the magnitude is fitted
 | `hull.dispKg` | 811 | published | `orc-cert` | ORC cert HULL AND APPENDAGES: Displacement 811 kg (VPP sailing displacement, differs by 1 kg from the class rule minimum dry weight of 812 kg -- see hull.minDryWeightKg) |
 | `hull.draftM` | 1.383 | published | `orc-cert` | ORC cert HULL AND APPENDAGES: Draft 1.383 |
 | `hull.gmM` | 0.676 | assumed | `orc-cert` | estimated as 0.30 x beamM, a rule-of-thumb GM/beam ratio for high-initial-stability bulb-keel sportboats; not backed out from the ORC cert's RM Measured (18.5 kg.m) because the certificate's reference heel angle for that figure could not be confirmed |
+| `hull.hbiM` | 0.715 | derived | `orc-cert` | ORC HBI, the height of the sheer at the base of I above the water plane, interpolated from the certificate's own flotation measurements: FF 0.792 at SFFP 0.155 and FA 0.571 at SAFP 6.903, read at the mast station SFBI = SFJ + J = 0.160 + 2.340 = 2.500 m, which gives 0.715 m. HBI is the datum ORC measures every sail-plan height from (VPP 2023 eq 5.57, heeling arm = HBI + ZCE x REEF); it is a freeboard, not a rig dimension |
 | `hull.keelAreaM2` | 0.529 | assumed | `orc-cert` | estimated as keelSpanM x assumed average chord 0.45 m (typical thin high-aspect fin/bulb chord for a sportboat); no published keel area or chord found |
 | `hull.keelSpanM` | 1.176 | assumed | `orc-cert` | estimated as draftM x 0.85, allowing ~15% of draft for hull depth above the keel root; no published keel span found |
 | `hull.kgM` | 0.484 | assumed | `orc-cert` | estimated as 0.35 x draftM, a rule-of-thumb VCG fraction for a ballast-(bulb)-dominated fin-keel sportboat; ORC cert's VCGD/VCGM (0.034/0.024) and RM figures use a different reference baseline and were not used, since the conversion could not be verified against the ORC VPP Documentation in this pass |
@@ -245,6 +246,7 @@ Python-VPP names as its own source. Until then the magnitude is fitted
 | `hull.minDryWeightKg` | 812 | published | `class-rules-2026` | Class Rules C.6.1: minimum dry boat weight 812 kg |
 | `hull.rmMeasuredKgMPerDeg` | 18.5 | published | `orc-cert` | ORC RM Measured, kg·m per degree of heel at small angles (inclining test); prefer over assumed gmM in righting model |
 | `hull.wettedM2` | 9.13 | published | `orc-cert` | ORC cert HULL AND APPENDAGES: Wetted area 9.13 |
+| `rig.basM` | 0.992 | published | `orc-cert` | ORC cert RIG: BAS 0.992, the boom above the sheer. With hull.hbiM it puts the boom 1.707 m above the water plane, which is the mainsail tack height core/geometry/sailplan.ts measures the mainsail centre of effort from |
 | `rig.boomOuterMm` | 2876 | published | `class-rules-2026` | Class Rules C.9.3(a): boom outer point distance maximum 2876mm |
 | `rig.bowspritOuterMm` | 1495 | published | `class-rules-2026` | Class Rules C.9.4(a): hull to bowsprit outer point maximum 1495mm |
 | `rig.chainplateYM` | 1 | assumed | `class-rules-2026` | assumed 1.00 m athwartship offset, approximating a rail-mounted chainplate typical of shroud-base sportboats; not published |

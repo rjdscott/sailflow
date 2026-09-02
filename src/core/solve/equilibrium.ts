@@ -67,10 +67,17 @@ const LEEWAY_MIN_DEG = -2;
  * Crew hike in proportion to need: at 0° heel they sit inboard, at
  * `hydro.hikeRampDeg` and beyond they are fully (legally) hiked. Without this
  * the crew's righting moment exceeds the heeling moment in light air and no
- * equilibrium exists. prov: assumed ramp; the limit itself is rule-bound.
+ * equilibrium exists.
+ *
+ * The ramp's *shape* is assumed — ORC does not publish one — but its endpoint
+ * is not: "Sailing with the upwind sails the crew righting moment is only
+ * applied in full once the heel angle exceeds 6 degrees" (ORC VPP
+ * Documentation 2012 §4.4.3.3, the edition family behind the Speed Guide this
+ * model is validated against). prov: ORC VPP 2012 §4.4.3.3 for the 6°;
+ * linear below it is this app's assumption.
  */
 export function hikeFraction(boat: BoatDefinition, heelDeg: number): number {
-  const ramp = knob(boat, 'hydro.hikeRampDeg', 8);
+  const ramp = knob(boat, 'hydro.hikeRampDeg', 6);
   return Math.min(1, Math.max(0, heelDeg / ramp));
 }
 

@@ -70,6 +70,11 @@ export interface HullDef {
   gmM: number;
   /** ORC certificate "RM measured", kg·m per degree of heel at small angles. */
   rmMeasuredKgMPerDeg?: number;
+  /**
+   * ORC HBI, m: height of the sheer at the base of I above the water plane.
+   * A freeboard, and the datum every ORC sail-plan height is measured from.
+   */
+  hbiM?: number;
 }
 
 export interface RigDef {
@@ -84,6 +89,8 @@ export interface RigDef {
   chainplateYM: number;
   boomOuterMm: number;
   bowspritOuterMm: number;
+  /** ORC BAS, m: boom (gooseneck) above the sheer. */
+  basM?: number;
   wire: string;
   backstay: string;
 }

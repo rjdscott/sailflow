@@ -33,6 +33,48 @@ undiagnosable.
 
 ### Fixed
 
+- **The heeling arm is published geometry, not a fitted knob** (ADR 0024). The
+  model heeled 6–14° less than the 2011 ORC polar prints from TWS 10 up, and
+  three published things were wrong at once, all of them transcription. The
+  sail plan sat 0.81 m too low: `geometry/sailplan.ts` measured the mainsail
+  centre of effort from an assumed "boom ~0.9 m above the waterline" where the
+  ORC certificate publishes `BAS 0.992` above the sheer, and the sheer at the
+  base of I follows from the certificate's own freeboards (`FF 0.792` at
+  `SFFP 0.155`, `FA 0.571` at `SAFP 6.903`, read at `SFBI = SFJ + J = 2.500`)
+  at `HBI = 0.715` — so the boom is 1.707 m above the water and the jib's foot
+  is on the sheer, not 0.55 m up. ORC eq (3.5),
+  `HM_total = HM_A + RM4 · FHA` with `RM4 = 0.43 · Tmax` the vertical centre of
+  lateral resistance below the water plane (eq 4.29), was missing entirely.
+  And the moment carried a `cos(heel)` that neither eq (5.57) nor eq (3.5)
+  has; ORC puts the one the balance needs on the crew term of the righting
+  moment (eq 4.30), where `hydro/righting.ts` already had it. The heeling arm
+  goes 3.66 → 4.86 m plus 0.59 m of CLR. Upwind VMG heel against the polar:
+  TWS 10 6.3 → 7.8 (polar 11.8), 12 8.0 → 12.9 (19.7), 14 10.5 → 15.1 (20.8),
+  16 12.5 → 16.4 (21.5), 20 14.5 → 18.4 (24.2); at 90° in 20 kt, 12.4 → 20.5
+  against 24.1. `rig.basM` and `hull.hbiM` are boat-file fields with
+  provenance; `aero.hbiM` leaves the fit for any class that carries
+  `hull.hbiM` (the Melges 24's ORC rating summary publishes no BAS, no
+  freeboards and no HBI, so it keeps the knob — removing it unconditionally
+  took that class's gate from 8/10 to 5/10 on nothing published); and
+  `hydro.hikeRampDeg`'s fallback moves 8° → 6° on ORC VPP 2012 §4.4.3.3.
+
+- **What `aero.hbiM` at its bound was actually asking for.** For three rounds
+  it pinned at 1.4 m and `ASSUMPTIONS.md` read that as the fit wanting more
+  heeling arm. HBI cancels out of eq (5.57)'s arm at full power — the module's
+  own test asserts it. It was buying _effective rig height_ through eq (5.45),
+  `heff = cheff · (b + HBI)`: 1.4 m put the masthead 10.17 m above the water
+  against a true 9.68 m, worth about 10 % off the induced drag. Removing it
+  costs boat speed. The gate holds at 9/10 with the same single failing row
+  (held-out TWS 14 asymmetric), but that row is now 5.0 % fast where it was
+  2.1 % (its angle improved, 3.3° → 2.5°), the widest printed jib residual is
+  4.6 % where it was 3.4 %, and the TWS 20 asymmetric planing row reads 15.6 %.
+  `validation/invariants.test.ts` test 18's tracking band widens ±12 → ±18 to
+  follow it, and stage 1's simplex budget goes 320×3 → 500×5 because the new
+  surface stopped the old budget in a basin that left a fitted row 13.6 % out.
+  The next mechanism is named and published: ORC's downwind crew law
+  (VPP 2012 §4.4.3.3), which is also why the polar's downwind heel column sits
+  flat at 11.5–12.0° where this model reads 1°.
+
 - **Heel costs published drag, and the upwind hold-out row closes** (ADR 0022).
   `validation/polar.test.ts` failed the held-out TWS 14 jib upwind VMG row at
   5.8 % against a 3 % tolerance, part of a ~6 % plateau the model held from

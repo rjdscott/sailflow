@@ -256,18 +256,18 @@
     "sprit": 100
   },
   "calibration": {
-    "hydro.formFactor": 0.06686741486250107,
-    "hydro.rrMul.fn20": 0.5708732739093981,
-    "hydro.rrMul.fn30": 0.7038856947412606,
-    "hydro.rrMul.fn40": 0.8919314801763789,
-    "hydro.rrMul.fn50": 1.1133180363614013,
-    "hydro.rrMul.fn60": 1.7411111647521094,
-    "hydro.planingRelief": 0.09825900827535432,
-    "hydro.keelLiftSlope": 1.9596116054643764,
-    "hydro.heelDragK": 0.0006032916558522813,
+    "hydro.formFactor": 0.13291024504416415,
+    "hydro.rrMul.fn20": 0.5991162521379252,
+    "hydro.rrMul.fn30": 0.41779555496398757,
+    "hydro.rrMul.fn40": 0.5510352518932877,
+    "hydro.rrMul.fn50": 0.4213210963722687,
+    "hydro.rrMul.fn60": 1.013872855195919,
+    "hydro.planingRelief": 0.11642458581343623,
+    "hydro.keelLiftSlope": 1.9617774437271913,
+    "hydro.heelDragK": 0.0002828268872369152,
     "aero.hbiM": 1.4,
-    "aero.asymClMul": 1.1,
-    "aero.asymCdMul": 2.552838297185777
+    "aero.asymClMul": 1,
+    "aero.asymCdMul": 0.5
   },
   "provenance": {
     "baseRace.backstay": {

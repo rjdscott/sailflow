@@ -17,7 +17,7 @@
  * frozen stage is simply part of the model for every later stage.
  *
  *   1. hydro, jib     formFactor, rrMul.fn20..fn60, planingRelief,
- *                     keelLiftSlope, heelDragK, aero.hbiM — against the jib
+ *                     keelLiftSlope, heelDragK — against the jib
  *                     VMG row AND the 60/90/120 rows, which is what puts the
  *                     Fn 0.5-0.7 reaching regime in front of fn50/fn60
  *                     (ADR 0012; the first fit left them to the asym alone and
@@ -51,7 +51,7 @@
  * so a 10-degree miss costs the same as a 100 % speed miss before weighting.
  * w_twa = 0.15 makes a 2 deg angle miss worth about an 8 % speed miss; on
  * fixed-angle rows the term is identically zero because the angle is an input.
- * That 2 deg was ADR 0007's VMG-angle tolerance, which ADR 0023 replaced with a
+ * That 2 deg was ADR 0007's VMG-angle tolerance, which ADR 0024 replaced with a
  * VMG-shortfall criterion on the *gate*. The weight is left where it is: it is
  * a weight, not a tolerance, and moving it would refit every knob to make the
  * loss agree with a gate the loss does not score.
@@ -630,16 +630,20 @@ export async function main(): Promise<void> {
   // The jib rows span Fn 0.26 (6 kt beating) to Fn 0.70 (20 kt at 90 deg), so
   // all five residuary bins plus the planing relief are constrained here, and
   // the form factor gives the light-air end something to move. keelLiftSlope
-  // trades leeway against induced drag, heelDragK pays for heel, and aero.hbiM
-  // is the single aero heeling-arm knob.
+  // trades leeway against induced drag and heelDragK pays for heel. No aero
+  // knob survives in this stage: the heeling arm is published geometry now.
   stages.push(
     runStage({
       stage: 1,
       name: 'hydro-jib',
       target: `jib vmgUp + 60/90/120 rows at TWS ${FIT_TWS.join('/')} (${JIB_ROWS.length} rows)`,
       weights: WEIGHTS,
-      maxIter: 320,
-      restarts: 3,
+      // Budget raised from 320x3 in 2026-09 with the published heeling arm
+      // (ADR 0024): the boat now heels 15-26 deg where it heeled 6-14, the
+      // heel-drag and residuary terms interact much more strongly, and the
+      // old budget stopped in a basin that left one fitted row 13.6 % out.
+      maxIter: 500,
+      restarts: 5,
       knobs: [
         { name: 'hydro.formFactor', start: 0.1, min: 0.02, max: 0.6 },
         { name: 'hydro.rrMul.fn20', start: 1, min: 0.3, max: 3 },
@@ -658,10 +662,16 @@ export async function main(): Promise<void> {
         // no hull does: a fit that reaches it is reporting a missing mechanism,
         // not a heel penalty.
         { name: 'hydro.heelDragK', start: 0.001, min: 0.0001, max: 0.02 },
-        // Base of I above the water. Freeboard is 0.62 m and the ORC CE-height
-        // tests treat 1.5 m as a high value, so this is the honest envelope for
-        // the one aero heeling-arm knob.
-        { name: 'aero.hbiM', start: 0.75, min: 0.5, max: 1.4 },
+        // `aero.hbiM` is here only for a class with no published HBI. For the
+        // J/70 it is a certificate quantity now — the sheer height at the base
+        // of I, derived from the cert's own freeboards and carried as
+        // `hull.hbiM` — and fitting it was what let it sit pinned at its 1.4 m
+        // bound for three rounds while the sail plan sat 0.8 m too low. It was
+        // never buying heeling arm (HBI cancels out of eq 5.57 at full power);
+        // it was buying effective rig height through eq (5.45). ADR 0024.
+        ...(boat.hull.hbiM === undefined
+          ? [{ name: 'aero.hbiM', start: 0.75, min: 0.5, max: 1.4 }]
+          : []),
         // `hydro.crewArmMul` is deliberately NOT here, and no longer has a
         // stage of its own either (ADR 0022). See the note below the stage.
       ],

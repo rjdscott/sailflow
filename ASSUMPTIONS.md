@@ -114,18 +114,41 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
   (0.95, assumed) still supplies reef in *race* mode at the everything-on
   control stops; the VPP path overrides it. No rig control maps to reef and
   none was invented (ADR 0022).
-- `aero.hbiM` is still pinned at its 1.4 m upper bound: the fit wants more
-  aero heeling arm than the honest envelope allows. That is the fit
-  compensating for missing physics, not a measurement, and it is the same
-  direction as the heel deficit below.
-- **Heel is now an output nothing fits.** The model reads 10.5° where the 2011
-  polar prints 20.8° at TWS 14, and 6–14° low across TWS 10–20. That is
-  reported as a disagreement rather than absorbed into a knob. Two published
-  sources — ORC's pre-2013 effective-draft chart and the DSYHS effective-draft
-  polynomial — agree that `hydro/keel.ts`'s plain `cos(heel)` on the keel span
-  is too weak, nearer cos^1.2 to cos^2.9 and steepening with beam/draft ratio.
-  Adopting that is the next candidate mechanism; it was left out of ADR 0022
-  so that one heel mechanism at a time stays attributable.
+- **`aero.hbiM` is gone from the fit, and what it was really doing is the
+  lesson (ADR 0024).** For three rounds it pinned at its 1.4 m bound and this
+  file said "the fit wants more aero heeling arm than the honest envelope
+  allows". It wanted no such thing: HBI cancels out of ORC eq (5.57)'s arm at
+  `flat = reef = 1`, and `forces.test.ts` asserts that. It was buying
+  *effective rig height* through eq (5.45), `heff = cheff · (b + HBI)` — a
+  1.4 m HBI puts the J/70's masthead 10.17 m above the water against a true
+  9.68 m, worth about 10 % off the induced drag. The certificate publishes
+  what it should be: `BAS 0.992` and, from the flotation measurements,
+  `HBI = 0.715`. Both are boat-file fields now (`rig.basM`, `hull.hbiM`) and
+  the knob is out of `calibration/fit.ts`. A knob at a bound is not always
+  asking for more room; check whether it is routing around an error two
+  modules away.
+- **Heel is an output nothing fits, and it is now short by a fifth, not two
+  fifths.** ADR 0024 put the heeling arm on published geometry — the sail plan
+  had been sitting 0.81 m too low, and ORC eq (3.5)'s below-waterplane CLR
+  term (`RM4 = 0.43 · Tmax`) was missing entirely. Upwind VMG heel against the
+  polar went 6.3 → 7.8 at TWS 10 (polar 11.8), 8.0 → 12.9 at 12 (19.7),
+  10.5 → 15.1 at 14 (20.8), 14.5 → 18.4 at 20 (24.2). The arm itself is
+  4.86 m plus 0.59 m of CLR where it was 3.66 m. What is left is still shown
+  as a disagreement, not absorbed. Two candidate mechanisms are identified and
+  both are published: ORC's downwind crew law (VPP 2012 §4.4.3.3 — crew to
+  leeward below 10° of heel, which is why the polar prints a flat 11.5–12.0°
+  downwind column that this model reads as 1°), and the DSYHS/ORC
+  effective-draft law that says `hydro/keel.ts`'s plain `cos(heel)` on the
+  keel span is too weak (nearer cos^1.2 to cos^2.9). Neither is in yet: one
+  heel mechanism at a time stays attributable (ADR 0022).
+- **ORC's crew arm and the J/70 class rule disagree, and the app follows the
+  class rule.** The certificate carries `Crew Arm Extension 0.50 m`, ORC's
+  sportboat CEXT (VPP 2023 §4.4.3: hiking crew get a righting arm 0.5 m
+  outside the rail), which would put the rail crew at ~1.60 m and raise the
+  crew righting moment ~25 %. Class rule C.3.3 caps the torso at the lifeline,
+  i.e. beam/2 = 1.127 m, and `hydro/righting.ts` caps at that by construction.
+  Adopting CEXT would also make the heel shortfall worse, not better. Shown,
+  not resolved.
 - **Target draft depth versus wind speed.** `shape/toOrc.ts` scores a section's
   CLmax and CD0 penalty against the depth the breeze wants, not against the
   base setup: `shape.draftTargetPerKt` 0.025 of the base draft per knot away
@@ -634,24 +657,23 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
 
 | Knob | Value | Stage | Fit loss |
 |---|---|---|---|
-| `hydro.formFactor` | 0.0551343 | 1 hydro-jib | 0.03206 |
-| `hydro.rrMul.fn20` | 0.339165 | 1 hydro-jib | 0.03206 |
-| `hydro.rrMul.fn30` | 0.577778 | 1 hydro-jib | 0.03206 |
-| `hydro.rrMul.fn40` | 0.90711 | 1 hydro-jib | 0.03206 |
-| `hydro.rrMul.fn50` | 1.47954 | 1 hydro-jib | 0.03206 |
-| `hydro.rrMul.fn60` | 1.57943 | 1 hydro-jib | 0.03206 |
-| `hydro.planingRelief` | 0.0710006 | 1 hydro-jib | 0.03206 |
-| `hydro.keelLiftSlope` | 0.868973 | 1 hydro-jib | 0.03206 |
-| `hydro.heelDragK` | 0.00280636 | 1 hydro-jib | 0.03206 |
-| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.03206 |
-| `aero.asymClMul` | 1 | 2 asym | 0.07119 |
-| `aero.asymCdMul` | 2.37713 | 2 asym | 0.07119 |
-| `rig.EI` | 685000 | 3 rig-shape | 9.595 |
-| `rig.turnsToN` | 600 | 3 rig-shape | 9.595 |
-| `rig.sagK` | 25.7145 | 3 rig-shape | 9.595 |
-| `shape.bendToDraft` | 0.36 | 3 rig-shape | 9.595 |
-| `shape.sagToDraft` | 0.0003 | 3 rig-shape | 9.595 |
-| `shape.sheetToTwist` | 0.15 | 3 rig-shape | 9.595 |
+| `hydro.formFactor` | 0.0682938 | 1 hydro-jib | 0.02622 |
+| `hydro.rrMul.fn20` | 0.402089 | 1 hydro-jib | 0.02622 |
+| `hydro.rrMul.fn30` | 0.669776 | 1 hydro-jib | 0.02622 |
+| `hydro.rrMul.fn40` | 0.837533 | 1 hydro-jib | 0.02622 |
+| `hydro.rrMul.fn50` | 1.55414 | 1 hydro-jib | 0.02622 |
+| `hydro.rrMul.fn60` | 1.16377 | 1 hydro-jib | 0.02622 |
+| `hydro.planingRelief` | 0.173327 | 1 hydro-jib | 0.02622 |
+| `hydro.keelLiftSlope` | 1.41727 | 1 hydro-jib | 0.02622 |
+| `hydro.heelDragK` | 0.00117284 | 1 hydro-jib | 0.02622 |
+| `aero.asymClMul` | 1 | 2 asym | 0.1528 |
+| `aero.asymCdMul` | 2.98081 | 2 asym | 0.1528 |
+| `rig.EI` | 685000 | 3 rig-shape | 9.343 |
+| `rig.turnsToN` | 600 | 3 rig-shape | 9.343 |
+| `rig.sagK` | 25 | 3 rig-shape | 9.343 |
+| `shape.bendToDraft` | 0.36 | 3 rig-shape | 9.343 |
+| `shape.sagToDraft` | 0.0003 | 3 rig-shape | 9.343 |
+| `shape.sheetToTwist` | 0.0825459 | 3 rig-shape | 9.343 |
 
 Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out split), 0007 (tolerances)). Per-point residuals: `calibration/residuals.json`.
 
@@ -659,18 +681,18 @@ Fit set: TWS 6/10/12/16/20 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out spl
 
 | Knob | Value | Stage | Fit loss |
 |---|---|---|---|
-| `hydro.formFactor` | 0.0668674 | 1 hydro-jib | 0.1618 |
-| `hydro.rrMul.fn20` | 0.570873 | 1 hydro-jib | 0.1618 |
-| `hydro.rrMul.fn30` | 0.703886 | 1 hydro-jib | 0.1618 |
-| `hydro.rrMul.fn40` | 0.891931 | 1 hydro-jib | 0.1618 |
-| `hydro.rrMul.fn50` | 1.11332 | 1 hydro-jib | 0.1618 |
-| `hydro.rrMul.fn60` | 1.74111 | 1 hydro-jib | 0.1618 |
-| `hydro.planingRelief` | 0.098259 | 1 hydro-jib | 0.1618 |
-| `hydro.keelLiftSlope` | 1.95961 | 1 hydro-jib | 0.1618 |
-| `hydro.heelDragK` | 0.000603292 | 1 hydro-jib | 0.1618 |
-| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.1618 |
-| `aero.asymClMul` | 1.1 | 2 asym | 0.09846 |
-| `aero.asymCdMul` | 2.55284 | 2 asym | 0.09846 |
+| `hydro.formFactor` | 0.13291 | 1 hydro-jib | 0.1896 |
+| `hydro.rrMul.fn20` | 0.599116 | 1 hydro-jib | 0.1896 |
+| `hydro.rrMul.fn30` | 0.417796 | 1 hydro-jib | 0.1896 |
+| `hydro.rrMul.fn40` | 0.551035 | 1 hydro-jib | 0.1896 |
+| `hydro.rrMul.fn50` | 0.421321 | 1 hydro-jib | 0.1896 |
+| `hydro.rrMul.fn60` | 1.01387 | 1 hydro-jib | 0.1896 |
+| `hydro.planingRelief` | 0.116425 | 1 hydro-jib | 0.1896 |
+| `hydro.keelLiftSlope` | 1.96178 | 1 hydro-jib | 0.1896 |
+| `hydro.heelDragK` | 0.000282827 | 1 hydro-jib | 0.1896 |
+| `aero.hbiM` | 1.4 | 1 hydro-jib | 0.1896 |
+| `aero.asymClMul` | 1 | 2 asym | 0.2387 |
+| `aero.asymCdMul` | 0.5 | 2 asym | 0.2387 |
 
 Fit set: TWS 4/6/10/12/16/20/24 kt; held out: TWS 8/14 kt (ADR 0012 (fit/hold-out split), 0007 (tolerances)). Per-point residuals: `calibration/residuals-m24.json`.
 
