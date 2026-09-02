@@ -15,6 +15,16 @@ undiagnosable.
 
 ### Fixed
 
+- **`pnpm calibrate` no longer writes the reference polar into the boat file.**
+  `boatFor()` attaches the class polar to the boat object at load, and
+  `calibration/fit.ts` serialised that decorated object straight back to
+  `data/boats/<id>.json` — inlining a ~10 kB copy of a table that lives in
+  `data/polar/` on purpose. The Melges file has been carrying one since its
+  fit; the next `pnpm calibrate --boat j70` would have added one to the J/70
+  and turned `make check` red, because `boat/validate.test.ts` requires a
+  provenance row for every numeric leaf and a polar leaf has none. Both boat
+  files are refitted (calibration values bit-identical) with the block gone.
+
 - fix(plan): the mast sits at the class J, the kite and the transom stay in
   frame, the caption returns on desktop (audit kite-3d-01 H-01, H-02, H-05,
   H-11)

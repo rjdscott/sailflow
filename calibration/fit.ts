@@ -865,7 +865,15 @@ export async function main(): Promise<void> {
         `heel ${r.heelDeg?.toFixed(1) ?? '—'} vs ${r.target.heelDeg?.toFixed(1) ?? 'unpublished'}`,
     );
 
-  await writeJson(BOAT_FILE, boat);
+  // `boatFor()` attaches the reference polar to the boat object at load, but
+  // the polar is a separately committed table under `data/polar/`, not a block
+  // of the boat file (`validation/compare.ts` says why). Writing the decorated
+  // object back would inline a 10 kB copy of it into `data/boats/<id>.json` and
+  // turn `boat/validate.test.ts` red on the next `make check`, because a polar
+  // leaf has no provenance row and never should.
+  const boatFile = { ...boat };
+  delete boatFile.polar;
+  await writeJson(BOAT_FILE, boatFile);
   await writeJson(RESIDUALS_FILE, {
     schemaVersion: 1,
     adr: '0012 (fit/hold-out split), 0007 (tolerances)',
