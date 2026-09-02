@@ -15,6 +15,18 @@ undiagnosable.
 
 ### Fixed
 
+- **Phone chip rows show all five points of sail and one line of camera
+  presets; the active chip is filled** (audit kite-3d-01 H-07, H-08, H-09): the
+  point-of-sail row was a hidden sideways scroller that reached three of five
+  chips on a 390 px screen, cutting both gennaker angles, and nothing anywhere
+  in the app painted `aria-pressed`, so the row never said which point of sail
+  you were on. Short phone labels (Beat, Close, Beam, Broad, Run) put all five
+  on one wrap-free row and the scroller is deleted; selected chips are filled
+  with the accent, matching the 3D/Plan toggle. The hero's five camera chips
+  get the same treatment (Luff, Top) and stay on one 44 px line instead of
+  wrapping to 96 px of chrome above a 218 px picture. Desktop keeps the full
+  labels and its existing layout.
+
 - **The gennaker's drawn clew is the constructed clew** (audit kite-3d-01
   C-02, M-08, M-09): the sheet lifted the clew 0.66 m → 2.15 m above the sheer
   and the drawn corner never moved, because the loft ended every section in

@@ -38,7 +38,14 @@
   import { race, type Pinned } from '../race/store.svelte';
   import { conditions } from '../stores/conditions.svelte';
   import { router } from '../router.svelte';
-  import { isPreset, PRESET_HINT, PRESET_LABEL, PRESET_ORDER, type PresetId } from './presets';
+  import {
+    isPreset,
+    PRESET_HINT,
+    PRESET_LABEL,
+    PRESET_ORDER,
+    PRESET_SHORT,
+    type PresetId,
+  } from './presets';
 
   let { result, twaDeg }: { result: SolveResult; twaDeg: number } = $props();
 
@@ -214,6 +221,21 @@
     };
   });
 
+  /* Short chip labels under 720 px, so the five camera views are one 44 px
+     row instead of two (audit kite-3d-01 H-09). Reactive rather than
+     `phoneFirst()`'s one-shot read, because rotating the phone crosses the
+     same breakpoint the CSS below does. */
+  let narrow = $state(false);
+  $effect(() => {
+    const mq = window.matchMedia('(max-width: 719px)');
+    const sync = (): void => {
+      narrow = mq.matches;
+    };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  });
+
   function onready(ms: number): void {
     // Readable from the console on a live deploy, like `__sailViewReady`.
     (window as unknown as { __sailFirstFrameMs?: number }).__sailFirstFrameMs = ms;
@@ -243,7 +265,7 @@
           title={PRESET_HINT[id]}
           onclick={() => (preset = id)}
         >
-          {PRESET_LABEL[id]}
+          {narrow ? PRESET_SHORT[id] : PRESET_LABEL[id]}
         </button>
       {/each}
     </div>
@@ -328,6 +350,21 @@
   @media (max-width: 719px) {
     .slot {
       --hero-h: min(56vw, 300px);
+    }
+
+    /* One row, never two. The short labels above already fit a 390 px screen;
+       `nowrap` is the guarantee, because a wrapped second row costs 44 px off
+       a 218 px picture and moves the whole page down the moment `3D` is
+       tapped (audit kite-3d-01 H-09). Scrolls rather than clips if a future
+       label or a large text size overflows it. */
+    .chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .chips::-webkit-scrollbar {
+      display: none;
     }
   }
 

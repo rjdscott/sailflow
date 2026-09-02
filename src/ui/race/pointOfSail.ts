@@ -11,6 +11,15 @@ import type { SailSet } from '../../core/types';
 export interface PointOfSail {
   id: string;
   label: string;
+  /**
+   * The phone label, under 720 px. Five full labels do not fit one row on a
+   * 390 px screen, and the scroller that hid the last two hid them for good:
+   * a phone sailor on a broad reach saw three upwind chips and no sign the
+   * two describing where they were existed (audit kite-3d-01 H-08). Every
+   * short form is the name sailors actually use out loud, so it stands alone
+   * as the button's accessible name; the full label rides along as `title`.
+   */
+  short: string;
   sailset: SailSet;
   /** prov: assumed, conventional named angles. Nominal for the two optimal ones. */
   twaDeg: number;
@@ -19,11 +28,18 @@ export interface PointOfSail {
 }
 
 export const POINTS_OF_SAIL: PointOfSail[] = [
-  { id: 'close-hauled', label: 'Close-hauled', sailset: 'jib', twaDeg: 40, optimal: 'upwind' },
-  { id: 'close-reach', label: 'Close reach', sailset: 'jib', twaDeg: 60 },
-  { id: 'beam-reach', label: 'Beam reach', sailset: 'jib', twaDeg: 90 },
-  { id: 'broad-reach', label: 'Broad reach', sailset: 'asym', twaDeg: 135 },
-  { id: 'run', label: 'Run', sailset: 'asym', twaDeg: 165, optimal: 'downwind' },
+  {
+    id: 'close-hauled',
+    label: 'Close-hauled',
+    short: 'Beat',
+    sailset: 'jib',
+    twaDeg: 40,
+    optimal: 'upwind',
+  },
+  { id: 'close-reach', label: 'Close reach', short: 'Close', sailset: 'jib', twaDeg: 60 },
+  { id: 'beam-reach', label: 'Beam reach', short: 'Beam', sailset: 'jib', twaDeg: 90 },
+  { id: 'broad-reach', label: 'Broad reach', short: 'Broad', sailset: 'asym', twaDeg: 135 },
+  { id: 'run', label: 'Run', short: 'Run', sailset: 'asym', twaDeg: 165, optimal: 'downwind' },
 ];
 
 /**
