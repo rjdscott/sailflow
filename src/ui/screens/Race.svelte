@@ -784,13 +784,16 @@
          controls on the first screen (ADR 0016), and a wide-landscape hero
          frames the boat well.
 
-         The floor is `--hero-min`, not a second number. It used to be 400 px
-         against a card that floors at 480, so on any window under 1000 px
-         tall the card overflowed its own row and the panels beneath drew over
-         the bottom of it: at 1440×900 the row resolved to 432 px, the card
-         drew 480, and the last 36 px of the boat — the transom and the in-
-         picture heel tag — were painted over by the Mainsail and Headsail
-         cards (audit kite-3d-01 H-01). */
+         The floor is `--hero-min`, not a second number. The track floored at
+         400 px against a card that floored at 480, so on any window under
+         1000 px tall the card overflowed its own row and the panels beneath
+         drew over the bottom of it: at 1440×900 the row resolved to 432 px,
+         the card drew 480, and the last 36 px of the boat — the transom and
+         the in-picture heel tag — were painted over by the Mainsail and
+         Headsail cards (audit kite-3d-01 H-01). Both now read 400: the card
+         shrinks to its row rather than the row growing to the card, because
+         at 1536×864 a 480 px row pushes the Mainsail panel below the first
+         viewport, which is the ADR 0016 promise `race.spec.ts` holds. */
       grid-template-rows: auto auto auto minmax(var(--hero-min), 48vh) auto auto auto;
       grid-template-areas:
         'head head'
@@ -808,7 +811,7 @@
        thumbnail rather than an instrument. The hero's grid row reads the same
        property, so the card and the track it lives in cannot disagree. */
     .cockpit {
-      --hero-min: 480px;
+      --hero-min: 400px;
     }
 
     .hero-boat {
