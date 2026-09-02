@@ -113,6 +113,29 @@ Hydrodynamics and the Performance of Sailing Yachts* (2009) Table 2.7, which
 Python-VPP names as its own source. Until then the magnitude is fitted
 (`hydro.heelDragK`, ASSUMPTIONS.md) and labelled assumed, not published.
 
+**The effective-draft band, and why it is a band (ADR 0025).** The same paper
+also gives an effective-draft relation — Teff/T as a function of heel and
+Froude number with hull-form terms — and ORC's pre-2013 (IMS-era) VPP
+tabulated the same knockdown. What this repo takes from the pair is only the
+*range* they bracket: the keel's effective span falls off between cos^1.2 and
+cos^2.9 of the heel angle, steepening with beam/draft, rather than the plain
+geometric cos(heel) `hydro/keel.ts` used until now. That range is carried
+forward from ADR 0022's option D and has **not** been re-verified against
+either primary in this round; the DSYHS form is blocked by the same
+unresolved scale factor as ΔRrh(20°) above, and the ORC chart is from an
+edition ORC superseded in 2013. So the band is what is cited, and **nothing
+published places a given hull inside it** — which is why
+`hydro.effDraftHeelExp` holds the band's shallow end, 1.2, as an unfitted
+constant rather than being fitted between the bounds (ADR 0025 records what
+happened when it was: the two classes here went to opposite bounds at
+essentially the same beam/draft). What is claimed as published is the
+interval; the position inside it is assumed, at its weakest end. The law is
+also held constant past 30° of heel, the last station the DSYHS heeled tests
+run at, on the same out-of-range-regression rule `hydro/resistance.ts` states
+for the residuary polynomial. The J/70's canoe-body draft, which the full
+DSYHS form would need, is derivable — `draftM − keelSpanM` = 0.207 m — and is
+recorded in ASSUMPTIONS.md as derived; the reduced form does not read it.
+
 <!-- generated: do not edit below this line -->
 
 ## Sources

@@ -64,6 +64,32 @@ const LEEWAY_MAX_DEG = 15; // prov: assumed
 const LEEWAY_MIN_DEG = -2;
 
 /**
+ * The heel box is symmetric, for exactly the reason the leeway one is not
+ * clamped at zero either: it bounds Newton's *iterate*, not its answer.
+ *
+ * De-powered in light air the crew righting moment briefly exceeds the heeling
+ * moment — `hikeFraction` below exists because of that — and the iterate swings
+ * to windward on its way to the root. Clamped at 0 it stops there, the moment
+ * residual goes flat in heel on one whole side, the Jacobian column goes
+ * singular and Newton stalls with `converged: false`. Every root it was trying
+ * to reach is positive: at TWS 8, TWA 70-80°, jib, the solve lands at 3.5-4.0°
+ * of heel once the iterate is allowed to overshoot.
+ *
+ * What that cost, before this: `optimal()` scores a non-converged state at
+ * -1e3, so a whole band of flat values scored identically and the golden
+ * section over flat had no gradient to climb out on. It settled on the ORC
+ * flat floor of 0.42 — a de-powered beat reach in 8 kt — and reported 4.7 kt
+ * against a printed 5.88, heel exactly 0.00. Those rows have read 17-20 % slow
+ * since the first fit; they now read within 0.7 %.
+ *
+ * A *converged* answer at negative heel would be a bug, not a result, and the
+ * mirror-symmetry and sign invariants are what would catch it.
+ * prov: assumed (numerical guard, not physics); see LEEWAY_MIN_DEG, which is
+ * the same guard on the other unknown.
+ */
+const HEEL_MIN_DEG = -HEEL_MAX_DEG;
+
+/**
  * Crew hike in proportion to need: at 0° heel they sit inboard, at
  * `hydro.hikeRampDeg` and beyond they are fully (legally) hiked. Without this
  * the crew's righting moment exceeds the heeling moment in light air and no
@@ -129,7 +155,7 @@ export function solveEquilibrium(
 
   const evalState = (x: readonly number[]) => {
     const bs = Math.max(V_MIN_KT, x[0]);
-    const heel = clamp(x[1], 0, HEEL_MAX_DEG);
+    const heel = clamp(x[1], HEEL_MIN_DEG, HEEL_MAX_DEG);
     const leeway = clamp(x[2], LEEWAY_MIN_DEG, LEEWAY_MAX_DEG);
     const aero = aeroForces(
       boat,

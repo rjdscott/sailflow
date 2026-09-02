@@ -265,23 +265,21 @@
     "sprit": 100
   },
   "calibration": {
-    "hydro.formFactor": 0.06829377138959256,
-    "hydro.rrMul.fn20": 0.40208913255483525,
-    "hydro.rrMul.fn30": 0.6697762264490879,
-    "hydro.rrMul.fn40": 0.837533049837031,
-    "hydro.rrMul.fn50": 1.5541355598092692,
-    "hydro.rrMul.fn60": 1.1637671742574072,
-    "hydro.planingRelief": 0.17332729496044838,
-    "hydro.keelLiftSlope": 1.4172718350436297,
-    "hydro.heelDragK": 0.0011728398331709287,
+    "hydro.formFactor": 0.12528404491902678,
+    "hydro.rrMul.fn20": 0.3079232837068776,
+    "hydro.rrMul.fn30": 0.5910016801624214,
+    "hydro.rrMul.fn40": 0.8221739619338313,
+    "hydro.rrMul.fn50": 1.4396294060818007,
+    "hydro.keelLiftSlope": 2,
+    "hydro.heelDragK": 0.0010238871697855578,
     "aero.asymClMul": 1,
-    "aero.asymCdMul": 2.9808050796613976,
+    "aero.asymCdMul": 2.8381281124398887,
     "rig.EI": 685000,
     "rig.turnsToN": 600,
     "rig.sagK": 25,
     "shape.bendToDraft": 0.36,
     "shape.sagToDraft": 0.0003,
-    "shape.sheetToTwist": 0.08254586814028095
+    "shape.sheetToTwist": 0.11953573155432023
   },
   "provenance": {
     "baseRace.backstay": {

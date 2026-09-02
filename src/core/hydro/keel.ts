@@ -3,7 +3,7 @@
  *
  * Lifting-line, one panel: the hull acts as a reflection plane, so the keel is
  * the half of a wing of span 2*s and area 2*A. Heel tips the fin over, and the
- * athwartships span that does the work goes as cos(heel).
+ * athwartships span that does the work falls off as a power of cos(heel).
  */
 import type { BoatDefinition } from '../types';
 import { RHO_WATER, knob } from '../internal';
@@ -11,12 +11,51 @@ import { RHO_WATER, knob } from '../internal';
 const DEG = Math.PI / 180;
 
 /**
- * Effective aspect ratio of the mirrored keel: AR = (2*s*cos(heel))^2 / (2*A).
- * The hull mirror doubles both span and area, so this reduces to 2*s^2/A
- * upright. prov: lifting line (image method).
+ * Effective aspect ratio of the mirrored keel:
+ * AR = (2*s*cos(heel)^n)^2 / (2*A). The hull mirror doubles both span and
+ * area, so this reduces to 2*s^2/A upright. prov: lifting line (image method).
+ *
+ * The exponent is `hydro.effDraftHeelExp` and nothing fits it. Plain
+ * geometric projection (n = 1) is what this function used to do and it is the
+ * one value both published effective-draft treatments reject: the DSYHS
+ * polynomial (Keuning & Sonnenberg 1998, Teff/T as a function of heel and Fn
+ * with hull-form terms) and ORC's pre-2013 effective-draft treatment both
+ * fall off faster than the projection, between cos^1.2 and cos^2.9,
+ * steepening with beam/draft (ADR 0022 option D, ADR 0025). Neither closed
+ * form can be used: the DSYHS one needs a scale factor whose order of
+ * magnitude the transcriptions contradict (see `resistance.ts`), and the ORC
+ * chart is from an edition ORC superseded in 2013. So the published thing is
+ * the *band*, and nothing published places a given hull inside it — fitted
+ * there, the two classes in this repo went to opposite bounds at essentially
+ * the same beam/draft (J/70 Bwl/Tc 9.26 -> 2.9, Melges 24 9.16 -> 1.2), which
+ * is not a hull-form law, it is a knob. It therefore holds the band's shallow
+ * end as a constant: stronger than the projection both sources reject, weaker
+ * than anything the evidence cannot carry.
+ *
+ * For the record, since the DSYHS form would need it: the J/70's canoe-body
+ * draft is Tc = T - keel span = 1.383 - 1.176 = 0.207 m (prov: derived from
+ * `hull.draftM` and `hull.keelSpanM`), giving Bwl/Tc = 9.3 against the DSYHS
+ * B/Tc range of 2.46-19.4 quoted in `resistance.ts`. The reduced form here
+ * does not read it.
+ *
+ * Past 30 deg of heel the law is held constant rather than extrapolated, the
+ * same convention `resistance.ts` uses at the ends of every other table here:
+ * the DSYHS heeled tests run at 0, 10, 20 and 30 deg and 30 is the last
+ * station, and an out-of-range regression is a confident wrong answer. No row
+ * of either class's polar heels past 30 deg at a VPP trim, so this changes no
+ * fitted or gated number; it matters in race mode, where the controls are the
+ * sailor's and the boat can sit at full power in 20 kt heeled to 35.
  */
+const EFF_DRAFT_HEEL_MAX_DEG = 30; // prov: DSYHS heeled test stations 0/10/20/30 deg, the last one
+
 export function effectiveAspectRatio(boat: BoatDefinition, heelDeg: number): number {
-  const span = boat.hull.keelSpanM * Math.cos(heelDeg * DEG);
+  // prov: derived, see the docstring. 1.2 is the shallow end of the published
+  // cos^1.2-cos^2.9 band, the weakest knockdown either source supports. Read
+  // through `knob()` so a class can override it from its boat file; no
+  // calibration stage fits it (ADR 0025).
+  const exp = knob(boat, 'hydro.effDraftHeelExp', 1.2);
+  const phi = Math.min(Math.abs(heelDeg), EFF_DRAFT_HEEL_MAX_DEG);
+  const span = boat.hull.keelSpanM * Math.cos(phi * DEG) ** exp;
   return (2 * span * span) / boat.hull.keelAreaM2;
 }
 
