@@ -277,20 +277,47 @@ magnitude unknown. Outputs that depend on it carry tier B or C (ADR 0006).
       the height a spinnaker carries its shoulders), and the whole sail
       measured 39.9–42.4 m² on ORC's formula against 45.64. It read as a big
       headsail because at those dimensions it was one.
-  - **Foot skirt** (`FOOT_SKIRT_M` = 0.55 m over `FOOT_SKIRT_SPAN` = 0.3 of
-    the height, drawn by `loft.ts`'s `Section.dropM`): the middle of the foot
-    hangs below the straight tack→clew line, blended away by three-tenths
-    height with zero slope at both ends. **Assumed.** Nothing published gives
-    a J/70 foot round — the class rules cap the *straight* foot at 5 700 mm
-    and say nothing about the cloth in it, and the research corpus measures
-    luff and leech but never the foot. 0.55 m is ~10 % of the foot, the round
-    a photograph shows and the same order as the 8.9 % measured luff excess
-    (`F1`) on an edge with no forestay to hold it. Only the sign is claimed:
-    below the tack–clew line, never above, with both corners still pinned —
-    so no published dimension moves. A main's foot is on a boom and a jib's
-    on the deck; a gennaker's is a free edge with nothing under it, and drawn
-    as a straight line to the sprit it is the clearest single tell that the
-    picture is of a headsail.
+  - **Foot skirt** (`FOOT_SKIRT_M` = 0.35 m over `FOOT_SKIRT_SPAN` = 0.15 of
+    the height, drawn by `loft.ts`'s `Section.dropM`): the foot hangs below
+    the straight tack→clew line, blended away by 15 % of the height with zero
+    slope at both ends. **Derived** — photo survey 2026-09-02 (audit
+    `kite-3d-01`, `05-photo-survey.md`), n = 13: the foot sags 0.25–0.40 m
+    below the tack–clew chord in 10 of the 13, the deepest 0.7 m, and never
+    lifts above it; 0.35 m is the mid-band. Was 0.55 m over 0.3 of the height,
+    **assumed** at ~10 % of the foot because nothing published gives a J/70
+    foot round — the class rules cap the *straight* foot at 5 700 mm and say
+    nothing about the cloth in it. The survey replaces that assumption with a
+    measured band; 0.55 m sat above its 90th percentile. Only the sign is
+    claimed as a hard invariant: below the tack–clew line, never above, with
+    both corners still pinned — so no published dimension moves. (That last
+    clause was false until the C-02 fix below, and is true again now: the
+    drawn foot row ends on the clew itself.) A main's foot is on a boom and a
+    jib's on the deck; a gennaker's is a free edge with nothing under it, and
+    drawn as a straight line to the sprit it is the clearest single tell that
+    the picture is of a headsail.
+  - **Skirt low point** (`loft.ts:SKIRT_LOW_POINT_EXPONENT` = 0.63): the sag
+    runs as `sin(π·x^k)` along the chord, which peaks at x = ½^(1/k) — a
+    third of the chord aft of the tack rather than at mid-foot. **Derived** —
+    the same photo survey (n = 13): the foot is lowest about a third of the
+    way aft from the tack. Zero at both ends either way, so it moves no
+    corner. Only sails that set `dropM` are shaped by it; the main and the jib
+    are untouched.
+  - **Loft rise term** (`loft.ts:Section.riseM`, set by `kite.ts:sections`):
+    each section is lofted from its luff knot to its *leech* knot and carries
+    the height difference between them, so the drawn surface reaches the clew
+    the published leech and foot already pin (`clewOnCircle`). **Derived**, no
+    new number — it is bookkeeping, not a fit. Until 2026-09-02 the loft kept
+    only the horizontal part of each section's chord vector and ended every
+    row in its luff point's horizontal plane, so the constructed clew rose
+    0.66 → 2.15 m above the sheer across the sheet band while the drawn corner
+    stayed at tack height and moved 0.000 m, and the mesh hung 0.35–0.50 m
+    below the sheer (audit `kite-3d-01` C-02). The main and the jib set no
+    `riseM` and are drawn exactly as before. What it cost, recorded rather
+    than papered over: the drawn foot-to-head twist at ¾ height narrowed from
+    2.3°→8.0° to 1.7°→4.4° across the sheet band (against `F1`'s measured
+    4°→26°, already an open item), the drawn ORC area moved from 0.903–1.001
+    of rated to 0.898–1.003, and the half-height centroid from 1.24 m to
+    1.17 m to leeward (against the main's 1.04).
   - **Open question, not papered over**: the app's tack and head give the J/70
     a **16.4 % luff excess** over the tack-to-head distance against the
     **8.9 % measured** on the J/80. At the J/80's ratio the tack-to-head

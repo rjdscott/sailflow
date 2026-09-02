@@ -11,7 +11,7 @@ the state named in each finding before ticking.
 
 ## P0 — the picture lies about trim
 
-- [ ] **C-02** (P0, M) Loft the kite edge to edge: add a per-section rise so each row runs from the luff point to the leech point at its own knot, so the drawn corner equals `kiteGeometry().clew` at every sheet setting and the foot leaves the sheer. Test: drawn corner within 1 cm of the clew, mesh minimum y never below `tack.y − FOOT_SKIRT_M`, for all sheet × tack states. [01](01-gennaker.md#c-02)
+- [x] **C-02** (P0, M) Loft the kite edge to edge: add a per-section rise so each row runs from the luff point to the leech point at its own knot, so the drawn corner equals `kiteGeometry().clew` at every sheet setting and the foot leaves the sheer. Test: drawn corner within 1 cm of the clew, mesh minimum y never below `tack.y − FOOT_SKIRT_M`, for all sheet × tack states. [01](01-gennaker.md#c-02) — #121
 - [x] **C-01** (P0, S) One `setSailSet` on the race store that the conditions-band SAIL cell, the point-of-sail chips and the share link all route through; jib→asym applies `BASE_RACE_DOWN`, undoable. [03](03-3d-scene-and-cameras.md#c-01) — #120
 
 ## P1 — before the next release
@@ -31,8 +31,8 @@ the state named in each finding before ticking.
 
 ## P2 — soon
 
-- [ ] **M-08** (P2, S) After C-02: `FOOT_SKIRT_M` 0.55 → ~0.35, `FOOT_SKIRT_SPAN` 0.3 → 0.15, low point a third aft of the tack; prov from the photo survey. [01](01-gennaker.md#m-08)
-- [ ] **M-09** (P2, S) Rewrite the three clew passages in `kite.ts` and ASSUMPTIONS.md to say what the construction does once C-02 lands. [01](01-gennaker.md#m-09)
+- [x] **M-08** (P2, S) After C-02: `FOOT_SKIRT_M` 0.55 → ~0.35, `FOOT_SKIRT_SPAN` 0.3 → 0.15, low point a third aft of the tack; prov from the photo survey. [01](01-gennaker.md#m-08) — #121
+- [x] **M-09** (P2, S) Rewrite the three clew passages in `kite.ts` and ASSUMPTIONS.md to say what the construction does once C-02 lands. [01](01-gennaker.md#m-09) — #121
 - [ ] **M-10** (P2, S) Delete `FLYING_CHORD_FRACTION`, `KITE_CHORDS`, `KiteGeometry.chords` and their tautological tests, or make the girth parabola load-bearing. [01](01-gennaker.md#m-10)
 - [ ] **M-11** (P2, S) `bareSpar(rakeM)` for the plan view, or document the 0.41 m head offset in ASSUMPTIONS; test plan head x against 3D head x. [01](01-gennaker.md#m-11)
 - [ ] **M-12** (P2, S) ASSUMPTIONS rows for the sheeting band, the twist pair, the luff AWA endpoints and the curl threshold; fix the stale 0.45 in `kite.test.ts`. [01](01-gennaker.md#m-12)

@@ -51,7 +51,14 @@
  *   (`LUFF_FORWARD_FRACTION`), which is what puts the sail's body to leeward
  *   of the main instead of on the centreline behind it;
  * - the foot hangs, because a gennaker's foot is a free edge with nothing
- *   under it (`FOOT_SKIRT_M`, drawn by `loft.ts`'s `Section.dropM`).
+ *   under it (`FOOT_SKIRT_M`, drawn by `loft.ts`'s `Section.dropM`);
+ * - sections are lofted **edge to edge** — luff knot to leech knot, carrying
+ *   the leech end's height in `Section.riseM` — so the drawn corner *is* the
+ *   constructed clew. Until 2026-09-02 the loft kept only the horizontal part
+ *   of each section's chord vector and ended every row at its luff point's
+ *   height, so the clew the published leech and foot pin rose 0.67 → 2.08 m
+ *   across the sheet band while the drawn corner stayed at tack height and
+ *   moved 0.000 m (audit `kite-3d-01` C-02).
  *
  * Camber and draft position are untouched: they come off `shape.asym`, which
  * research `2026-08-25-spinnaker` already re-based on the measured flying
@@ -307,7 +314,11 @@ export const SAG_MAX_FRACTION = 0.3;
  * shortens the straight head→clew chord (`chordForArc`) and so lifts the clew,
  * which is the other thing the travel is fitted to: 1.1 m of travel lifts it
  * 1.42 m across the sheet band, against Deparday's measured 1.4 m of clew rise
- * (`F1`). No measured leech profile exists for any asymmetric (research
+ * (`F1`). Since 2026-09-02 that rise reaches the *drawn* surface: the loft
+ * carries each section's leech-end height (`Section.riseM`), where before it
+ * kept only the horizontal chord and drew the corner at tack height whatever
+ * the constructed clew did. No measured leech profile exists for any
+ * asymmetric (research
  * `2026-08-25-spinnaker` doc 02 §6 constrains the leech's *length* and nothing
  * else). The leech's cloth length stays the published 8.8 m: the straight
  * head→clew distance is shortened by the arc surplus (`chordForArc`).
@@ -356,25 +367,28 @@ export const LEECH_BULGE_PEAK_EXPONENT = 1.6;
  * a straight line it is the single clearest tell that the picture is of a
  * headsail — the sail meets the water in a hard diagonal instead of a belly.
  *
- * prov: assumed 0.55 m over the bottom 30 % of the height. Nothing published
- * gives a J/70 foot round: the class rules cap the *straight* foot at
- * 5 700 mm (`sails.asym.footMm`) and say nothing about the cloth in it, and
- * the research corpus measures luff and leech but never the foot
- * (`2026-08-25-spinnaker` doc 02 §6 is a leech constraint). 0.55 m is ~10 %
- * of the foot, which is the round a photograph shows and is the same order as
- * the 8.9 % measured luff excess (`F1`) on an edge with no forestay to hold
- * it. Only the sign is claimed: the foot hangs *below* the tack–clew line,
+ * prov: derived — photo survey 2026-09-02 (audit `kite-3d-01`,
+ * `05-photo-survey.md`), n = 13: the foot sags 0.25–0.40 m below the tack–clew
+ * chord in 10 of the 13 photographs, the deepest 0.7 m, and never lifts above
+ * it. 0.35 m is the mid-band, and the sag is gone by 15 % of the height — the
+ * survey's skirts are a foot feature, not a lower-sail one. Only the sign is
+ * claimed as a hard invariant: the foot hangs *below* the tack–clew line,
  * never above it.
+ *
+ * Was 0.55 m over 30 % of the height, assumed at ~10 % of the foot length
+ * because no measurement existed. The survey replaces the assumption with a
+ * measured band, and 0.55 m sits above its 90th percentile.
+ * The chordwise shape of the sag is `loft.ts:SKIRT_LOW_POINT_EXPONENT`.
  */
-export const FOOT_SKIRT_M = 0.55;
-export const FOOT_SKIRT_SPAN = 0.3;
+export const FOOT_SKIRT_M = 0.35;
+export const FOOT_SKIRT_SPAN = 0.15;
 
 /**
  * The skirt's amplitude at height fraction `h`: full at the foot, gone by
  * `FOOT_SKIRT_SPAN`, with zero slope at both ends so the blend leaves no
- * crease across the lower sail. The sag itself is a half-sine along the
- * chord (`loft.ts:buildSail`), so both corners stay exactly where the tack
- * and the leech line put them.
+ * crease across the lower sail. The sag itself runs along the chord
+ * (`loft.ts:buildSail`, skewed by `SKIRT_LOW_POINT_EXPONENT`) and is zero at
+ * both ends, so both corners stay exactly where the tack and the clew put them.
  */
 export function footSkirtM(h: number): number {
   if (h >= FOOT_SKIRT_SPAN) return 0;
@@ -500,15 +514,19 @@ export interface KiteGeometry {
   /** Eased past `CURL_EASE_THRESHOLD`: the luff is unloaded and curling. */
   curl: boolean;
   /**
-   * The loft's sections: chord and twist per height taken from the bowed luff
-   * to `leechAt`, the bulged leech. Both edges bow, and they bow
-   * independently — the luff on its own parabola, the leech on
+   * The loft's sections: chord, twist and rise per height, taken edge to edge
+   * from the bowed luff to the bulged leech at the same knot. Both edges bow,
+   * and they bow independently — the luff on its own parabola, the leech on
    * `leechBulgeProfile` — which is the point: carrying one edge's bow into
    * the other is what made the sail read as a banana from astern. Camber and
    * draft position are `shape.asym`'s.
    */
   sections: (shape: SailShape) => Section[];
-  /** The leech point at height `y` (clamped to the clew→head span). */
+  /**
+   * The leech point at height `y`, for callers that have a height and no
+   * section parameter (the plan view). Clamped to the clew→head span: below
+   * the clew it returns the corner, because below the clew there is no leech.
+   */
   leechAt: (y: number) => Vec3;
 }
 
@@ -586,15 +604,21 @@ export function kiteGeometry(
   // from astern. Each section here spans from the bowed luff to `leechAt` at
   // the same height, so the loft's chord and twist follow the real leech.
   //
-  // Now that the clew is on the leech/foot circle it no longer sits at exactly
-  // the tack's height: trimmed it hangs a little below, eased it climbs above.
-  // The clamp is what handles the second case — the sections between the two
-  // heights all end at the clew — and it is why the foot row's outboard end is
-  // on the leech line rather than on the clew itself.
-  const leechAt = (y: number): Vec3 => {
-    const t = Math.min(1, Math.max(0, (y - clew[1]) / (head[1] - clew[1] || 1)));
-    return add(lerp3(clew, head, t), scaled(bulgeDir, bulge * leechBulgeProfile(t)));
-  };
+  // Now that the clew is on the leech/foot circle it sits *above* the tack at
+  // every sheet and tack-line setting at full hoist — 0.3–1.8 m of it — and
+  // climbs further as the sheet is eased. It drops below the tack only with
+  // the halyard right down.
+  //
+  // `leechPoint` is the leech by its own parameter: 0 at the clew, 1 at the
+  // head, standing off the straight head→clew line by its bulge. That is what
+  // `sections` lofts to, so the drawn foot row ends on the clew itself.
+  const leechPoint = (t: number): Vec3 =>
+    add(lerp3(clew, head, t), scaled(bulgeDir, bulge * leechBulgeProfile(t)));
+  // The same curve read by height instead, for the plan view, which has a `y`
+  // and no section parameter. Below the clew there is no leech — the clamp
+  // returns the corner — so callers must not read it as an edge down there.
+  const leechAt = (y: number): Vec3 =>
+    leechPoint(Math.min(1, Math.max(0, (y - clew[1]) / (head[1] - clew[1] || 1))));
   // Thirty-three knots, not the stack's five: the loft interpolates chord and
   // twist between knots, and five cannot follow a parabolic luff closely
   // enough to keep the leech on its line (measured 0.57 m off; 17 keeps it
@@ -619,8 +643,14 @@ export function kiteGeometry(
     const KNOTS = 33;
     return Array.from({ length: KNOTS }, (_, i) => {
       const h = i / (KNOTS - 1);
+      // Both edges on the same knot: the luff at height fraction `h` and the
+      // leech at the same fraction of clew→head. Reading the leech by the
+      // luff point's *height* instead clamped every row below the clew to the
+      // corner and then threw the corner's own height away, which drew a wall
+      // of cloth from the clew down to tack height (audit `kite-3d-01` C-02).
       const luff = spine(h);
-      const v = sub(leechAt(luff[1]), luff);
+      const le = leechPoint(h);
+      const v = sub(le, luff);
       const chord = Math.hypot(v[0], v[2]);
       // `chordDir(theta)` = (−cos θ, 0, lee·sin θ); invert it for this chord.
       const theta = chord > 1e-6 ? Math.atan2(lee(side) * v[2], -v[0]) : sheetRad;
@@ -636,6 +666,9 @@ export function kiteGeometry(
         // off to — see `TWIST_TRIM_DEG`.
         twistRad: theta - sheetRad,
         dropM: footSkirtM(h),
+        // The leech end is higher than the luff end, and by how much is the
+        // whole of what the sheet does to the clew. `loft.ts` carries it.
+        riseM: v[1],
       };
     });
   };

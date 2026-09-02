@@ -18,6 +18,7 @@ import {
   HEAD_CAMBER_FACTOR,
   pchip,
   profileY,
+  SKIRT_LOW_POINT_EXPONENT,
   sectionStack,
   solveSectionBezier,
   type Profile,
@@ -298,6 +299,69 @@ describe('buildSail', () => {
       const p: Vec3 = [m.positions[v * 3], m.positions[v * 3 + 1], m.positions[v * 3 + 2]];
       expect(dot(p, off)).toBeCloseTo(0, 6);
     }
+  });
+
+  // -------------------------------------------------------------------------
+  // The rise term: a section whose two ends are at different heights (audit
+  // `kite-3d-01` C-02). Only the kite sets `riseM`; the main and the jib have
+  // to be drawn exactly as they were.
+  // -------------------------------------------------------------------------
+
+  it('lands a section with `riseM` on its leech-end height and leaves the luff end alone', () => {
+    const risen: Section[] = stack.map((s, i) => ({ ...s, riseM: 0.4 + 0.3 * i }));
+    const m = buildSail(risen, STRAIGHT, BOOM, 1);
+    for (const [row, rise] of [
+      [0, 0.4],
+      [m.N - 1, 1.6],
+    ] as const) {
+      const h = row / (m.N - 1);
+      const pts = gridRow(m, row);
+      // The luff end is pinned on the spine: x = 0 carries none of the rise.
+      expect(pts[0][1]).toBeCloseTo(STRAIGHT(h)[1], 6);
+      // The leech end carries all of it.
+      expect(pts[pts.length - 1][1]).toBeCloseTo(STRAIGHT(h)[1] + rise, 6);
+    }
+    // Proportional to chord fraction in between, so the row is a straight ramp
+    // in height and not a curve of its own.
+    const foot = gridRow(m, 0);
+    for (let j = 0; j < m.M; j++)
+      expect(foot[j][1]).toBeCloseTo(STRAIGHT(0)[1] + 0.4 * chordFraction(j, m.M), 6);
+  });
+
+  it("leaves a section without `riseM` in its luff point's own horizontal plane", () => {
+    // The main and the jib regression: `sectionStack` sets no `riseM`, so
+    // every row of this mesh stays flat, at the spine height it roots on.
+    for (let i = 0; i < mesh.N; i++) {
+      const want = STRAIGHT(i / (mesh.N - 1))[1];
+      for (const p of gridRow(mesh, i)) expect(p[1]).toBeCloseTo(want, 6);
+    }
+  });
+
+  it('hangs `dropM` below the end-to-end line, lowest a third of the chord aft', () => {
+    // The skirt is measured off the *line between the two ends*, not off the
+    // luff point's plane, so it composes with `riseM` without moving a corner.
+    const skirted: Section[] = stack.map((s) => ({ ...s, riseM: 0.9, dropM: 0.35 }));
+    const m = buildSail(skirted, STRAIGHT, BOOM, 1);
+    const row = gridRow(m, 0);
+    const base = STRAIGHT(0)[1];
+    expect(row[0][1]).toBeCloseTo(base, 6);
+    expect(row[m.M - 1][1]).toBeCloseTo(base + 0.9, 6);
+    let deepest = 0;
+    let atX = 0;
+    for (let j = 0; j < m.M; j++) {
+      const x = chordFraction(j, m.M);
+      const sag = base + 0.9 * x - row[j][1];
+      if (sag > deepest) {
+        deepest = sag;
+        atX = x;
+      }
+    }
+    expect(deepest).toBeCloseTo(0.35, 2);
+    // `sin(π·x^k)` peaks at x = ½^(1/k) — about a third of the chord aft. The
+    // grid resolves it to its nearest cosine-clustered column, ~0.01 wide here.
+    expect(Math.abs(atX - Math.pow(0.5, 1 / SKIRT_LOW_POINT_EXPONENT))).toBeLessThan(0.02);
+    expect(atX).toBeGreaterThan(0.25);
+    expect(atX).toBeLessThan(0.42);
   });
 
   /**
