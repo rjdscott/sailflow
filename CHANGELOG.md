@@ -15,6 +15,16 @@ undiagnosable.
 
 ### Fixed
 
+- **"Up the luff" stays above the water and "Helm" frames the whole boat**
+  (audit kite-3d-01 H-10, H-06). The preset fit backs the eye off along
+  the authored sight line, so `luff`'s downward aim put the camera about 10 m
+  under the keel at every state — and the sea is a single-sided plane, so from
+  below there was no water and no horizon. `Helm` had the opposite problem: it
+  was exempt from the fit and from the resize refit, so the hull and boom fell
+  off the bottom edge over half a canvas of sky. The framing maths moved to
+  `src/ui/three/camera.ts`, where the eye is now clamped above the surface for
+  every preset, and both poses were re-cut with shallow upward sight lines.
+
 - **Phone chip rows show all five points of sail and one line of camera
   presets; the active chip is filled** (audit kite-3d-01 H-07, H-08, H-09): the
   point-of-sail row was a hidden sideways scroller that reached three of five

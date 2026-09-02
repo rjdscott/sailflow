@@ -16,8 +16,8 @@ the state named in each finding before ticking.
 
 ## P1 — before the next release
 
-- [ ] **H-10** (P1, S) Clamp the fitted camera above `WATER_Y` in `presetPose` and the resize refit; re-pose `luff`; spec asserting every preset's eye is above the water on both tacks. [03](03-3d-scene-and-cameras.md#h-10)
-- [ ] **H-06** (P1, S) Drop the `helm` fit exemptions and re-pose it so hull and boom are in frame. [03](03-3d-scene-and-cameras.md#h-06)
+- [x] **H-10** (P1, S) Clamp the fitted camera above `WATER_Y` in `presetPose` and the resize refit; re-pose `luff`; spec asserting every preset's eye is above the water on both tacks. [03](03-3d-scene-and-cameras.md#h-10) — #123
+- [x] **H-06** (P1, S) Drop the `helm` fit exemptions and re-pose it so hull and boom are in frame. [03](03-3d-scene-and-cameras.md#h-06) — #123
 - [ ] **H-11** (P1, M) `MAST_STATION = rig.jM / hull.loaM`; move cabin and cockpit forward with it; delete `KITE_SCALE_X`; re-baseline the plan tests and rewrite the two ASSUMPTIONS rows. [02](02-plan-view.md#h-11)
 - [ ] **H-02** (P1, S) Give `PLAN_LAYOUT` an `asymTop` and widen `asymHalfW`; extend the fit test to both axes across the four downwind controls and the solved AWAs. [02](02-plan-view.md#h-02)
 - [ ] **H-03** (P1, M) Draw the plan kite from the lofted sections (luff ends down, leech ends back), not from three projected edges. [02](02-plan-view.md#h-03)
