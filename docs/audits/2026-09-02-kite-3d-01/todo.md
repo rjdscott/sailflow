@@ -25,9 +25,9 @@ the state named in each finding before ticking.
 - [ ] **H-05** (P1, S) Restore the caption and the `?` explainer on the desktop plan flank. [02](02-plan-view.md#h-05)
 - [ ] **H-04** (P1, S) Plan jib telltales: fan them just aft of the luff, or draw one per sail and leave heights to the 3D hero. [02](02-plan-view.md#h-04)
 - [ ] **H-12** (P1, L) Design pass on the kite's twist: drive the leech's per-height azimuth from a published twist profile, assert emergent twist positive and monotone at AWA 69/93/118/159. Depends on C-02. [01](01-gennaker.md#h-12)
-- [ ] **H-07** (P1, S) Style `button.chip[aria-pressed='true']` like the Segmented control. [04](04-phone-and-chrome.md#h-07)
-- [ ] **H-08** (P1, S) Scroll the active point-of-sail chip into view and shorten labels under 720 px so all five fit. [04](04-phone-and-chrome.md#h-08)
-- [ ] **H-09** (P1, S) Phone camera chips on one scrolling row; shorten two labels. [04](04-phone-and-chrome.md#h-09)
+- [x] **H-07** (P1, S) Style `button.chip[aria-pressed='true']` like the Segmented control. [04](04-phone-and-chrome.md#h-07) — #122
+- [x] **H-08** (P1, S) Scroll the active point-of-sail chip into view and shorten labels under 720 px so all five fit. [04](04-phone-and-chrome.md#h-08) — #122
+- [x] **H-09** (P1, S) Phone camera chips on one scrolling row; shorten two labels. [04](04-phone-and-chrome.md#h-09) — #122
 
 ## P2 — soon
 

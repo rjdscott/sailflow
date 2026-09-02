@@ -207,6 +207,16 @@ button.chip {
   cursor: pointer;
 }
 
+/* Selected is *filled*, the same treatment `Segmented` gives its active
+   option — every chip row that sets `aria-pressed` painted nothing for it, so
+   the point-of-sail row never said which point of sail you were on (audit
+   kite-3d-01 H-07). Filled rather than an accent outline, because the outline
+   is already spoken for: it is what the hero's camera chips wear. */
+button.chip[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
 /* Present to a screen reader, absent to the eye: prose that a control is
    described by but that only clutters the screen until it is asked for. */
 .sr-only {

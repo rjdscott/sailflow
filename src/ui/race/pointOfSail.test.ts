@@ -71,3 +71,26 @@ describe('bandOf', () => {
     expect(bandOf(-20)).toBeNull();
   });
 });
+
+/**
+ * H-08. Five full labels are ~470 px of chip and a 390 px phone has ~340 px of
+ * card, which is how the row came to be a hidden sideways scroller showing
+ * three of five. The short forms are what makes one wrap-free row possible, so
+ * their length is the invariant, not a cosmetic detail.
+ */
+describe('the phone labels', () => {
+  it('gives every chip a short form that is a real point of sail', () => {
+    expect(POINTS_OF_SAIL.map((p) => p.short)).toEqual(['Beat', 'Close', 'Beam', 'Broad', 'Run']);
+  });
+
+  it('keeps each short form inside the one-row budget', () => {
+    for (const p of POINTS_OF_SAIL) {
+      expect(p.short.length, p.id).toBeLessThanOrEqual(5);
+      expect(p.short.length, p.id).toBeLessThanOrEqual(p.label.length);
+    }
+  });
+
+  it('stays distinguishable: no two chips share a short form', () => {
+    expect(new Set(POINTS_OF_SAIL.map((p) => p.short)).size).toBe(POINTS_OF_SAIL.length);
+  });
+});

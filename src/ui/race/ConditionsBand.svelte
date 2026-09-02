@@ -101,6 +101,22 @@
   function onWindowKeydown(e: KeyboardEvent): void {
     if (seaOpen) closeSeaOnEscape(e);
   }
+
+  /* Which label the chips wear. Five full labels are ~470 px and a 390 px
+     phone has ~340 px of card, so the row either wrapped, scrolled or lost
+     two chips; the short forms fit one line (audit kite-3d-01 H-08). A media
+     query and not CSS, because no CSS shortens a word — same pattern as
+     `DrillView`'s score placement. */
+  let narrow = $state(false);
+  $effect(() => {
+    const mq = window.matchMedia('(max-width: 719px)');
+    const sync = (): void => {
+      narrow = mq.matches;
+    };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  });
 </script>
 
 {#snippet stepper(
@@ -246,16 +262,18 @@
   {#if editable}
     <!-- Presets for the angle, under the cell they set. Nothing is pressed once
          the rose has been dragged out of the chip's band (M-02). -->
-    <div class="chip-row points" role="group" aria-label="Point of sail">
+    <div class="chip-row" role="group" aria-label="Point of sail">
       {#each POINTS_OF_SAIL as p (p.id)}
         <button
           type="button"
           class="chip hit-44"
           aria-pressed={active === p.id}
           aria-busy={race.pointOfSailBusy === p.id}
+          title={p.label}
           onclick={() => race.setPointOfSail(p.id)}
         >
-          {p.label}{#if race.pointOfSailBusy === p.id}<span class="busy">…</span>{/if}
+          {narrow ? p.short : p.label}{#if race.pointOfSailBusy === p.id}<span class="busy">…</span
+            >{/if}
         </button>
       {/each}
     </div>
@@ -375,26 +393,11 @@
     margin-left: var(--space-1);
   }
 
-  /* The chips scroll sideways rather than wrapping to a second row on a phone,
-     where every 44 px row is one the band cannot spare. Snap so a flick lands
-     on a chip, and fade the trailing edge so the two chips over the horizon —
-     Broad reach and Run — read as "there is more", not as "there are three". */
-  .points {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    scroll-snap-type: x proximity;
-    -webkit-mask-image: linear-gradient(to right, #000 85%, transparent);
-    mask-image: linear-gradient(to right, #000 85%, transparent);
-  }
-
-  .points::-webkit-scrollbar {
-    display: none;
-  }
-
-  .points > :global(*) {
-    scroll-snap-align: start;
-  }
+  /* The chip row is a plain wrapping `.chip-row`: it used to be a hidden
+     sideways scroller with a fade, which on a phone showed three of five
+     chips and no affordance for the other two (audit kite-3d-01 H-08). Short
+     labels put all five on one line instead, so there is nothing left to
+     scroll and nothing left to hide. */
 
   .locked {
     display: flex;
@@ -418,14 +421,6 @@
       min-height: 28px;
       padding: 0 var(--space-2);
       font-size: var(--text-xs);
-    }
-
-    /* All five chips fit, so nothing scrolls and nothing is faded out. */
-    .points {
-      flex-wrap: wrap;
-      overflow-x: visible;
-      -webkit-mask-image: none;
-      mask-image: none;
     }
   }
 </style>

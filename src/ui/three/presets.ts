@@ -24,6 +24,21 @@ export const PRESET_LABEL: Record<PresetId, string> = {
   top: 'Top-down',
 };
 
+/**
+ * The phone labels, under 720 px. Five chips on one 44 px row is the budget
+ * the hero can afford — the full labels wrapped to two rows, 96 px of chrome
+ * above a 218 px picture (audit kite-3d-01 H-09) — and only two of the five
+ * need shortening to get there. `PRESET_HINT` still carries the long form as
+ * the chip's title.
+ */
+export const PRESET_SHORT: Record<PresetId, string> = {
+  helm: 'Helm',
+  astern: 'Astern',
+  leeward: 'Leeward',
+  luff: 'Luff',
+  top: 'Top',
+};
+
 /** What each view is for, one line, for the chip's title attribute. */
 export const PRESET_HINT: Record<PresetId, string> = {
   helm: 'From the helm, looking up the main: the trimmer’s own view of leech and draft.',
