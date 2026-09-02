@@ -15,6 +15,14 @@ undiagnosable.
 
 ### Fixed
 
+- **The gennaker's drawn clew is the constructed clew** (audit kite-3d-01
+  C-02, M-08, M-09): the sheet lifted the clew 0.66 m → 2.15 m above the sheer
+  and the drawn corner never moved, because the loft ended every section in
+  its luff point's horizontal plane. Sections are now lofted edge to edge and
+  carry the leech end's height, so the sheet moves the picture; the foot skirt
+  is re-fit to the J/70 photo survey (0.35 m over the bottom 15 %, lowest a
+  third of the chord aft) and the mesh no longer hangs below the sheer.
+
 - **Hoisting the kite from the conditions band eases the mainsheet like the
   point-of-sail chips do** (audit kite-3d-01 C-01): the SAIL cell flipped the
   sail plan and nothing else, so the 3D hero and the plan view drew a gennaker

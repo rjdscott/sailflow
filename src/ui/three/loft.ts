@@ -176,10 +176,11 @@ export interface Section {
   /** Radians open from the sheeting angle, positive = leech falls to leeward. */
   twistRad: number;
   /**
-   * How far the middle of this section hangs *below* its own horizontal plane,
+   * How far this section hangs *below* the straight line between its two ends,
    * metres — the skirt. Both ends stay pinned (the luff on the spine, the
-   * leech on the leech line) and the sag is a half-sine between them, so an
-   * edge length and a corner position are unaffected by it.
+   * leech on the leech line) and the sag is a sine skewed toward the luff by
+   * `SKIRT_LOW_POINT_EXPONENT`, so an edge length and a corner position are
+   * unaffected by it.
    *
    * Sections are horizontal by construction (`conventions.ts`), which is right
    * for a sail whose foot is on a boom or a deck sweep, and wrong for a
@@ -188,7 +189,36 @@ export interface Section {
    * jib are drawn exactly as before.
    */
   dropM?: number;
+  /**
+   * How much higher this section's *leech* end is than its luff end, metres —
+   * signed, negative if the leech end is lower.
+   *
+   * Sections are horizontal by construction (`conventions.ts`), which is right
+   * for a sail whose foot runs along a boom and wrong for one whose two lower
+   * corners are at different heights. A gennaker's are: the clew sits on the
+   * circle the published leech and foot pin it to, 0.3–1.8 m above the tack at
+   * full hoist, and rising as the sheet is eased. Without this term the drawn
+   * surface ends every row in its luff point's horizontal plane and the drawn
+   * corner is not the constructed clew (audit `kite-3d-01` C-02). The luff end
+   * stays pinned — the rise is applied in proportion to chord fraction, so it
+   * contributes nothing at x = 0 and its whole value at x = 1.
+   *
+   * Only the kite sets it; `sectionStack` leaves it undefined and the main and
+   * the jib are drawn exactly as before.
+   */
+  riseM?: number;
 }
+
+/**
+ * Where along the chord the foot skirt hangs lowest: `sin(π·x^k)` peaks at
+ * x = ½^(1/k), so k = 0.63 puts the low point about a third of the chord aft
+ * of the tack instead of at mid-chord.
+ * prov: derived — photo survey 2026-09-02 (audit `kite-3d-01`,
+ * `05-photo-survey.md`), n = 13: the foot is lowest about a third of the way
+ * aft from the tack, not at mid-foot. Only sails that set `dropM` are shaped
+ * by it.
+ */
+export const SKIRT_LOW_POINT_EXPONENT = 0.63;
 
 /** Chords at the five stack heights, metres. */
 export interface SailChords {
@@ -336,12 +366,18 @@ export function buildSail(
     hs,
     sections.map((s) => s.twistRad),
   );
-  // Only the kite skirts, so the main and the jib do not pay for the pchip or
-  // the per-vertex sine.
+  // Only the kite skirts or rises, so the main and the jib do not pay for the
+  // extra pchips or the per-vertex sine.
   const dropAt = sections.some((s) => s.dropM)
     ? pchip(
         hs,
         sections.map((s) => s.dropM ?? 0),
+      )
+    : null;
+  const riseAt = sections.some((s) => s.riseM)
+    ? pchip(
+        hs,
+        sections.map((s) => s.riseM ?? 0),
       )
     : null;
 
@@ -361,12 +397,18 @@ export function buildSail(
     const luff = spine(h);
     const prof = solveSectionBezier(camberAt(h), draftPosAt(h), entryAt(h));
     const drop = dropAt ? dropAt(h) : 0;
+    const rise = riseAt ? riseAt(h) : 0;
     for (let j = 0; j < M; j++) {
       const x = xs[j];
       const p = add(add(luff, scaled(cd, x * chord)), scaled(md, profileY(prof, x) * chord));
       const k = (i * M + j) * 3;
       positions[k] = p[0];
-      positions[k + 1] = p[1] - drop * Math.sin(Math.PI * x);
+      // `chordDir`/`camberDir` are horizontal, so `p[1]` is the luff point's
+      // height: the row climbs to its leech end by `rise` and sags off that
+      // line by the skirt. Both ends stay pinned — x = 0 adds nothing, and the
+      // skirt's sine is zero at x = 1.
+      positions[k + 1] =
+        p[1] + rise * x - drop * Math.sin(Math.PI * Math.pow(x, SKIRT_LOW_POINT_EXPONENT));
       positions[k + 2] = p[2];
     }
   }
