@@ -162,3 +162,52 @@ export function knob(boat: BoatDefinition, name: string, fallback: number): numb
   const v = boat.calibration[name];
   return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
 }
+
+// ---------------------------------------------------------------------------
+// The two ORC vertical datums. Both are certificate quantities, and every
+// sail-plan height in the model is measured from them, so they live here
+// rather than in whichever module happened to need one first.
+// ---------------------------------------------------------------------------
+
+/**
+ * ORC HBI, m: the height of the sheer at the base of I, above the water plane
+ * (ORC VPP 2023, Appendix A, .DAT line 4: "SFBI ... is used to locate the mast
+ * to get HBI (Height of sheer at the Base of I)"). It is a freeboard, not a
+ * rig dimension, and it is the datum ORC measures the sail plan from —
+ * eq (5.57)'s heeling arm is HBI + ZCE·REEF.
+ */
+export function hbiM(boat: BoatDefinition): number {
+  // The certificate wins where there is one. Only a class whose freeboards
+  // have not been transcribed falls through to the knob, and for that class
+  // `calibration/fit.ts` still fits it — removing the knob everywhere would
+  // have taken a degree of freedom away from a boat that has nothing
+  // published to replace it (ADR 0024).
+  return boat.hull.hbiM ?? knob(boat, 'aero.hbiM', HBI_DEFAULT_M);
+}
+
+/**
+ * The same datum, but never the fitted knob: what `geometry/sailplan.ts`
+ * measures the tacks from.
+ *
+ * The knob's real job is ORC eq (5.45)'s effective rig height, `cheff·(b+HBI)`
+ * — that is what it was buying when it pinned at its bound for three rounds
+ * (ADR 0024). Letting a *rig-height* fit also set the boat's freeboard put the
+ * Melges 24's boom 2.2 m above the water, which no Melges 24 has. So the sail
+ * plan reads the published or default freeboard and the fit cannot move it.
+ */
+export function hbiDatumM(boat: BoatDefinition): number {
+  return boat.hull.hbiM ?? HBI_DEFAULT_M;
+}
+
+/** prov: assumed. Starting freeboard at the mast for a sportboat this size. */
+const HBI_DEFAULT_M = 0.75;
+
+/**
+ * ORC BAS, m: the boom above the sheer, i.e. the gooseneck height on which the
+ * whole mainsail sits. ORC prints it on the certificate (RIG: BAS).
+ */
+export function basM(boat: BoatDefinition): number {
+  // prov: assumed. Same rule as `hbiM`: the certificate wins where there is
+  // one, and 0.8 m is a typical sportboat gooseneck height above the sheer.
+  return boat.rig.basM ?? knob(boat, 'aero.basM', 0.8);
+}

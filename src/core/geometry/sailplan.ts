@@ -13,7 +13,7 @@
  */
 import type { BoatDefinition, SailId } from '../types';
 import type { SailGeometry } from '../internal';
-import { knob } from '../internal';
+import { basM, hbiDatumM, knob } from '../internal';
 
 export interface SailPlanGeometry extends SailGeometry {
   /** Class rated area, m². Exposed so callers can show the model-vs-rated delta. */
@@ -131,9 +131,16 @@ export function sailGeometry(boat: BoatDefinition, sail: SailId): SailPlanGeomet
   const st = girthStations(boat, sail);
   const spanM = sail === 'main' ? boat.rig.pM : mm(boat, sail, 'luffMm');
   const { area, moment } = integrate(st);
-  // prov: assumed. Boom ~0.9 m above the waterline; jib tack a little lower.
+  // Both tacks sit on ORC's own datum, so neither is a guess any more. The
+  // sheer at the base of I is HBI above the water plane; the jib's foot is on
+  // that sheer (its luff IG is measured from it), and the boom is BAS above
+  // it. prov: ORC VPP 2023 §5.4.5 eq (5.57) (arm = HBI + ZCE) and the .DAT
+  // glossary for HBI; BAS and the freeboards behind HBI are certificate
+  // fields, carried in the boat file with their provenance.
   const tackHeightM =
-    sail === 'main' ? knob(boat, 'geom.boomHeightM', 0.9) : knob(boat, 'geom.jibTackHeightM', 0.55);
+    sail === 'main'
+      ? knob(boat, 'geom.boomHeightM', hbiDatumM(boat) + basM(boat))
+      : knob(boat, 'geom.jibTackHeightM', hbiDatumM(boat));
 
   return {
     areaM2: area * spanM,

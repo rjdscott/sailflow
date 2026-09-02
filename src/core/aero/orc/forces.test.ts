@@ -128,6 +128,20 @@ describe('aeroForces upwind reference point', () => {
     expect(s.mxNm).toBeGreaterThan(0);
   });
 
+  it('the heeling moment reaches below the water plane to the CLR (eq 3.5)', () => {
+    // HM_total = HM_A + RM4 * FHA with RM4 = 0.43 * Tmax (eqs 3.5 and 4.29).
+    // Nothing else in this module reads the draft, so deepening the keel by
+    // exactly 1 m must add exactly 0.43 N.m per newton of heeling force and
+    // leave every force untouched.
+    const deep = { ...boat, hull: { ...boat.hull, draftM: boat.hull.draftM + 1 } };
+    const d = run({}, deep);
+    expect(d.fyN).toBeCloseTo(s.fyN, 9);
+    expect(d.fxN).toBeCloseTo(s.fxN, 9);
+    expect(d.mxNm - s.mxNm).toBeCloseTo(0.43 * s.fyN, 6);
+    // And the whole term is there, not just its derivative.
+    expect(s.mxNm / s.fyN).toBeGreaterThan(0.43 * boat.hull.draftM);
+  });
+
   it('side force is of the documented order for a J/70 at TWA 45 / TWS 10 / BS 6', () => {
     // ~1.09 kN. Cross-check: 26 m2 of sail at CH ~1.32 in 13.7 kt of apparent
     // wind gives q*Aref*CH ~ 30.5 Pa * 26.0 m2 * 1.32. Against the J/70's
@@ -213,15 +227,21 @@ describe('heel', () => {
     }
   });
 
-  it('reduces the heeling moment substantially by 30 deg', () => {
+  it('reduces the heeling moment only through the side force', () => {
     // Side force is not monotonic in the first few degrees: heel drops the AWA
     // as well as the AWS, and CH = CL*cos(beta) + CD*sin(beta) briefly gains
     // more from the smaller beta than it loses from the smaller dynamic head.
-    // The moment, which also carries cos(heel), is not affected by that.
+    // By 30 deg both are down. The arm, though, is a boat-frame length and
+    // does not shrink with heel — ORC eqs (5.57) and (3.5) carry no cos(heel),
+    // and the cos(heel) in the balance sits on the crew term of the righting
+    // moment instead (eq 4.30) — so the moment falls in step with the force
+    // and no faster. A cos(heel) on the moment would break the second
+    // assertion by ~13 % at this angle.
     const up = run({ heelDeg: 0 });
     const over = run({ heelDeg: 30 });
-    expect(over.mxNm).toBeLessThan(up.mxNm * 0.85);
     expect(over.fyN).toBeLessThan(up.fyN);
+    expect(over.mxNm).toBeLessThan(up.mxNm);
+    expect(over.mxNm / over.fyN).toBeCloseTo(up.mxNm / up.fyN, 1);
   });
 
   it('is even in the sign of heel', () => {
@@ -425,19 +445,37 @@ describe('coefficient set knob', () => {
 });
 
 describe('other knobs move the answer in the right direction', () => {
+  // The `aero.hbiM` / `aero.basM` knobs only reach a class whose certificate
+  // does not publish HBI and BAS (ADR 0024); the J/70's does, and its boat
+  // file wins. So these two exercise the same boat with the fields stripped.
+  const noCert: BoatDefinition = {
+    ...boat,
+    hull: { ...boat.hull, hbiM: undefined },
+    rig: { ...boat.rig, basM: undefined },
+  };
+  const noCertWith = (cal: Record<string, number>): BoatDefinition => ({
+    ...noCert,
+    calibration: { ...noCert.calibration, ...cal },
+  });
+
+  it('the boat file wins over the knobs where the certificate published them', () => {
+    expect(run({}, withCalibration({ 'aero.hbiM': 1.5, 'aero.basM': 1.6 }))).toEqual(run());
+    expect(run({}, noCert)).not.toEqual(run());
+  });
+
   it('the base of I sets how much of the CE the twist function can lower', () => {
     // At flat = 1 and reef = 1 the arm is HBI + (CE - HBI), so HBI cancels
     // exactly -- which is the correct behaviour, not a missing dependency.
     const full = { tune: { ...BASE.tune, flat: 1 } };
-    expect(run(full, withCalibration({ 'aero.hbiM': 1.5 })).ceHeightM).toBeCloseTo(
-      run(full).ceHeightM,
+    expect(run(full, noCertWith({ 'aero.hbiM': 1.5 })).ceHeightM).toBeCloseTo(
+      run(full, noCert).ceHeightM,
       9,
     );
     // De-powered, the twist function only acts on the part above HBI, so a
     // higher base of I leaves the centre of effort higher.
     const soft = { tune: { ...BASE.tune, flat: 0.5 } };
-    expect(run(soft, withCalibration({ 'aero.hbiM': 1.5 })).ceHeightM).toBeGreaterThan(
-      run(soft).ceHeightM,
+    expect(run(soft, noCertWith({ 'aero.hbiM': 1.5 })).ceHeightM).toBeGreaterThan(
+      run(soft, noCert).ceHeightM,
     );
   });
 
@@ -445,8 +483,8 @@ describe('other knobs move the answer in the right direction', () => {
     // frac = I / (P*rfm + BAS): a bigger BAS lowers fractionality, and eq
     // (5.49) says fractional rigs lower their CE more for a given flat.
     const soft = { tune: { ...BASE.tune, flat: 0.5 } };
-    expect(run(soft, withCalibration({ 'aero.basM': 1.6 })).ceHeightM).toBeLessThan(
-      run(soft).ceHeightM,
+    expect(run(soft, noCertWith({ 'aero.basM': 1.6 })).ceHeightM).toBeLessThan(
+      run(soft, noCert).ceHeightM,
     );
   });
 

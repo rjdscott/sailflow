@@ -149,6 +149,44 @@ describe('induced drag', () => {
   it('is zero at rest rather than infinite', () => {
     expect(inducedDrag(BOAT, 0, 0, 0)).toBe(0);
   });
+
+  it('rises with heel faster than the plain cos^2 aspect ratio would give', () => {
+    // Plain geometric projection is `hydro.effDraftHeelExp` = 1, which puts
+    // AR ∝ cos²(heel) and Ri ∝ 1/cos²(heel). Every exponent inside the
+    // published cos^1.2–cos^2.9 band has to cost more than that at 20°.
+    const projected = withKnobs({ 'hydro.effDraftHeelExp': 1 });
+    const upright = inducedDrag(projected, 3, 0, 800);
+    const cos2 = upright / Math.cos(20 * (Math.PI / 180)) ** 2;
+    expect(inducedDrag(projected, 3, 20, 800)).toBeCloseTo(cos2, 6);
+    for (const exp of [1.2, 2.0, 2.9]) {
+      expect(inducedDrag(withKnobs({ 'hydro.effDraftHeelExp': exp }), 3, 20, 800)).toBeGreaterThan(
+        cos2,
+      );
+    }
+  });
+
+  it('is monotonic in the effective-draft exponent across the published band', () => {
+    const at = (exp: number) =>
+      inducedDrag(withKnobs({ 'hydro.effDraftHeelExp': exp }), 3, 20, 800);
+    expect(at(1.2)).toBeLessThan(at(2.0));
+    expect(at(2.0)).toBeLessThan(at(2.9));
+    // Upright the exponent has no authority at all: cos(0) = 1 for every n.
+    const up = (exp: number) => inducedDrag(withKnobs({ 'hydro.effDraftHeelExp': exp }), 3, 0, 800);
+    expect(up(1.2)).toBeCloseTo(up(2.9), 9);
+  });
+
+  it('holds the effective-draft law constant past the series’ last heel station', () => {
+    // DSYHS heeled tests stop at 30°; beyond it the law is held, not
+    // extrapolated. Without the hold, cos^2.9 of 40° takes the effective span
+    // below what any leeway the solver allows can balance in 20 kt.
+    const at30 = inducedDrag(BOAT, 3, 30, 800);
+    for (const heel of [30.001, 35, 40, 45, -40]) {
+      expect(inducedDrag(BOAT, 3, heel, 800)).toBeCloseTo(at30, 9);
+      expect(effectiveAspectRatio(BOAT, heel)).toBeCloseTo(effectiveAspectRatio(BOAT, 30), 12);
+    }
+    // Inside the range it still responds.
+    expect(inducedDrag(BOAT, 3, 25, 800)).toBeLessThan(at30);
+  });
 });
 
 describe('righting moment', () => {

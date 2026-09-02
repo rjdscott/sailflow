@@ -75,10 +75,17 @@ describe('sailGeometry', () => {
     expect(g.chordAt(1)).toBeCloseTo(0, 6);
   });
 
-  it('honours the tack-height knobs', () => {
+  it('sits the tacks on the ORC datums, and the knobs still override', () => {
+    // Jib foot on the sheer at the base of I, boom BAS above it. Both come
+    // off the certificate for this class (hull.hbiM, rig.basM).
+    const hbi = boat.hull.hbiM as number;
+    const bas = boat.rig.basM as number;
+    expect(sailGeometry(boat, 'jib').tackHeightM).toBeCloseTo(hbi, 12);
+    expect(sailGeometry(boat, 'main').tackHeightM).toBeCloseTo(hbi + bas, 12);
+
     const tall = { ...boat, calibration: { ...boat.calibration, 'geom.boomHeightM': 1.9 } };
     expect(sailGeometry(tall, 'main').ceHeightM).toBeCloseTo(
-      sailGeometry(boat, 'main').ceHeightM + 1,
+      sailGeometry(boat, 'main').ceHeightM + (1.9 - hbi - bas),
       6,
     );
   });

@@ -16,12 +16,12 @@
  * `boat.calibration` in memory, which is the same object `knob()` reads, so a
  * frozen stage is simply part of the model for every later stage.
  *
- *   1. hydro, jib     formFactor, rrMul.fn20..fn60, planingRelief,
- *                     keelLiftSlope, heelDragK, aero.hbiM — against the jib
- *                     VMG row AND the 60/90/120 rows, which is what puts the
- *                     Fn 0.5-0.7 reaching regime in front of fn50/fn60
- *                     (ADR 0012; the first fit left them to the asym alone and
- *                     the reaching rows came out 7-15 % wrong)
+ *   1. hydro, jib     formFactor, rrMul.fn20..fn60, keelLiftSlope,
+ *                     heelDragK (+ planingRelief only where the rows reach
+ *                     Fn 0.6) — against the jib VMG row AND the 60/90/120
+ *                     rows, which is what puts the reaching regime in front of
+ *                     fn40/fn50 (ADR 0012; the first fit left them to the asym
+ *                     alone and the reaching rows came out 7-15 % wrong)
  *   2. asym           aero.asymClMul + aero.asymCdMul — the two non-ORC aero
  *                     knobs, against the asymmetric VMG rows, over a
  *                     deterministic coarse grid before the simplex because the
@@ -51,7 +51,7 @@
  * so a 10-degree miss costs the same as a 100 % speed miss before weighting.
  * w_twa = 0.15 makes a 2 deg angle miss worth about an 8 % speed miss; on
  * fixed-angle rows the term is identically zero because the angle is an input.
- * That 2 deg was ADR 0007's VMG-angle tolerance, which ADR 0023 replaced with a
+ * That 2 deg was ADR 0007's VMG-angle tolerance, which ADR 0024 replaced with a
  * VMG-shortfall criterion on the *gate*. The weight is left where it is: it is
  * a weight, not a tolerance, and moving it would refit every knob to make the
  * loss agree with a gate the loss does not score.
@@ -99,10 +99,12 @@ const RESIDUALS_FILE =
     ? 'calibration/residuals.json'
     : `calibration/residuals-${BOAT_ID}.json`;
 import type { Condition, DockControls } from '../src/core/types';
+import { KT_TO_MS } from '../src/core/internal';
 import { nelderMead } from '../src/core/math/nelderMead';
 import { baseRace } from '../src/core/shape/base';
 import { rigState } from '../src/core/rig/state';
 import { flyingShape } from '../src/core/shape/flying';
+import { froude } from '../src/core/hydro/resistance';
 import { geometryFor } from '../src/core/solve/equilibrium';
 import { optimal } from '../src/core/solve/optimal';
 
@@ -292,6 +294,24 @@ const JIB_ROWS: PolarRow[] = FIT_TWS.flatMap((t) => [
 ]);
 /** Asymmetric rows in the fit: the running VMG row at each fitted wind speed. */
 const ASYM_ROWS: PolarRow[] = FIT_TWS.map((t) => polarRow('asym', 'vmgDn', t));
+
+/**
+ * The highest Froude number the stage-1 rows actually reach, read off the
+ * *printed* boat speeds so it is a property of the source table and not of
+ * whatever the model happens to be doing mid-fit.
+ *
+ * `hydro.planingRelief` only has authority above Fn 0.5, ramped linearly to
+ * Fn 1.0, and the residuary base curve's last tabulated node is Fn 0.6. A row
+ * set that stops below 0.6 does not constrain it: on the J/70 the stage-1 rows
+ * top out at Fn 0.55 and exactly one of them feels the ramp, at 11 % of it.
+ * Measured, the whole calibration range moves the stage-1 loss by 0.5 % while
+ * it moves the printed asymmetric reaches at Fn 0.63-0.73 by 12-17 % — so the
+ * fit cannot see the parameter and the polar can (ADR 0026). `hydro.rrMul.fn60`
+ * is gated on the same test for a different reason; the knob list says which.
+ */
+const FIT_FN_MAX = Math.max(...JIB_ROWS.map((r) => froude(boat, r.bsKt * KT_TO_MS)));
+/** Last node of the residuary base curve, and so the edge of the fitted range. */
+const RR_FN_LAST = 0.6;
 
 function residualsFor(rows: PolarRow[], w: LossWeights): PointResidual[] {
   return rows.map((r) => {
@@ -627,30 +647,63 @@ export async function main(): Promise<void> {
   );
 
   // --- stage 1: hydro against every jib row --------------------------------
-  // The jib rows span Fn 0.26 (6 kt beating) to Fn 0.70 (20 kt at 90 deg), so
-  // all five residuary bins plus the planing relief are constrained here, and
-  // the form factor gives the light-air end something to move. keelLiftSlope
-  // trades leeway against induced drag, heelDragK pays for heel, and aero.hbiM
-  // is the single aero heeling-arm knob.
+  // The jib rows span Fn 0.24 to Fn 0.55 on the J/70's printed speeds, so the
+  // lower four residuary bins are well covered and the form factor gives the
+  // light-air end something to move. keelLiftSlope trades leeway against
+  // induced drag and heelDragK pays for heel. No aero knob survives in this
+  // stage: the heeling arm is published geometry now. The planing relief
+  // survives only where the rows reach it (see FIT_FN_MAX).
   stages.push(
     runStage({
       stage: 1,
       name: 'hydro-jib',
       target: `jib vmgUp + 60/90/120 rows at TWS ${FIT_TWS.join('/')} (${JIB_ROWS.length} rows)`,
       weights: WEIGHTS,
-      maxIter: 320,
-      restarts: 3,
+      // Budget raised from 320x3 in 2026-09 with the published heeling arm
+      // (ADR 0024): the boat now heels 15-26 deg where it heeled 6-14, the
+      // heel-drag and residuary terms interact much more strongly, and the
+      // old budget stopped in a basin that left one fitted row 13.6 % out.
+      maxIter: 500,
+      restarts: 5,
       knobs: [
         { name: 'hydro.formFactor', start: 0.1, min: 0.02, max: 0.6 },
         { name: 'hydro.rrMul.fn20', start: 1, min: 0.3, max: 3 },
         { name: 'hydro.rrMul.fn30', start: 1, min: 0.3, max: 3 },
         { name: 'hydro.rrMul.fn40', start: 1, min: 0.3, max: 3 },
         { name: 'hydro.rrMul.fn50', start: 1, min: 0.3, max: 3 },
-        { name: 'hydro.rrMul.fn60', start: 1, min: 0.3, max: 3 },
+        // `fn60` is the multiplier at the base curve's last node, Fn 0.6, and
+        // it is fitted on the same condition as the planing relief below: only
+        // where a row reaches it. The stage-1 loss *is* shaped by it — the
+        // TWS 20 / 90 deg row sits at Fn 0.553 and carries 53 % of the bin's
+        // interpolation weight — so this is not the "loss cannot see it"
+        // argument the relief rests on. It is the coverage one, and the
+        // evidence is invariant 19: fitted, `fn60` came out low enough that
+        // the model's TWS 16 downwind optimum jumped onto a planing reach at
+        // 133.9 deg (9.98 kt against a printed 8.75), which broke the
+        // monotone-deepening invariant. Held at `fn50` it does not. Above the
+        // last row the fit sees, the curve is held (ADR 0026).
+        ...(FIT_FN_MAX >= RR_FN_LAST
+          ? [{ name: 'hydro.rrMul.fn60', start: 1, min: 0.3, max: 3 }]
+          : []),
         // The code fallback is 0 (no relief), which has no logarithm; the fit
-        // starts from a token 0.05 instead.
-        { name: 'hydro.planingRelief', start: 0.05, min: 0.001, max: 0.9 },
+        // starts from a token 0.05 instead. Fitted only where the row set
+        // reaches the regime it models: below Fn 0.6 the ramp gives it almost
+        // no authority on any fitted row and full authority on the printed
+        // reaches nothing here sees, which is extrapolation, not a fit
+        // (ADR 0026). The J/70 stops at Fn 0.55 and holds the code default of
+        // 0; the Melges 24 has four rows above 0.6 and keeps the knob.
+        ...(FIT_FN_MAX >= RR_FN_LAST
+          ? [{ name: 'hydro.planingRelief', start: 0.05, min: 0.001, max: 0.9 }]
+          : []),
         { name: 'hydro.keelLiftSlope', start: 1, min: 0.4, max: 2 },
+        // `hydro.effDraftHeelExp` is deliberately NOT here (ADR 0025). It is
+        // the exponent on the keel's effective draft with heel, it replaced a
+        // plain cos(heel) that both published effective-draft treatments call
+        // too weak, and it holds the shallow end of their band as a constant
+        // rather than being fitted inside it. Fitted, it went to opposite
+        // bounds on the two classes at the same Bwl/Tc, and the J/70's 2.9
+        // left the 20 kt fixed-trim beat with no equilibrium at all. See the
+        // note below the stage.
         // Magnitude of the published heeled-residuary law (ADR 0022), read as a
         // drag coefficient on the wetted surface at the law's 20 deg datum. The
         // hull's own flat-plate friction coefficient is ~0.0028 there, so the
@@ -658,10 +711,16 @@ export async function main(): Promise<void> {
         // no hull does: a fit that reaches it is reporting a missing mechanism,
         // not a heel penalty.
         { name: 'hydro.heelDragK', start: 0.001, min: 0.0001, max: 0.02 },
-        // Base of I above the water. Freeboard is 0.62 m and the ORC CE-height
-        // tests treat 1.5 m as a high value, so this is the honest envelope for
-        // the one aero heeling-arm knob.
-        { name: 'aero.hbiM', start: 0.75, min: 0.5, max: 1.4 },
+        // `aero.hbiM` is here only for a class with no published HBI. For the
+        // J/70 it is a certificate quantity now — the sheer height at the base
+        // of I, derived from the cert's own freeboards and carried as
+        // `hull.hbiM` — and fitting it was what let it sit pinned at its 1.4 m
+        // bound for three rounds while the sail plan sat 0.8 m too low. It was
+        // never buying heeling arm (HBI cancels out of eq 5.57 at full power);
+        // it was buying effective rig height through eq (5.45). ADR 0024.
+        ...(boat.hull.hbiM === undefined
+          ? [{ name: 'aero.hbiM', start: 0.75, min: 0.5, max: 1.4 }]
+          : []),
         // `hydro.crewArmMul` is deliberately NOT here, and no longer has a
         // stage of its own either (ADR 0022). See the note below the stage.
       ],
@@ -725,6 +784,27 @@ export async function main(): Promise<void> {
         'against a displacement model and still pulls against the rest; the ' +
         'residuals show the split.',
     }),
+  );
+
+  // --- effective draft with heel: deliberately unfitted (ADR 0025) ----------
+  // `hydro/keel.ts` scales the keel's span by cos(heel)^n. Plain projection
+  // (n = 1) is what the code had and is the one value both published
+  // effective-draft treatments say is wrong; they bracket the knockdown
+  // between cos^1.2 and cos^2.9 without agreeing on where inside that a given
+  // hull sits, and neither closed form can be transcribed (see `keel.ts`).
+  // Fitted inside the band it landed on 2.9 for the J/70 and on 1.2 for the
+  // Melges 24 at Bwl/Tc of 9.26 and 9.16 — a 1 % difference in the parameter
+  // the sources say sets the exponent, and a whole band's spread in the
+  // answer, so it was not measuring hull form. And at 2.9 the J/70's 20 kt
+  // fixed-trim beat has no equilibrium at all: heeled 34 deg the effective
+  // span falls to 0.78 m and the 3-DOF solve does not converge, so
+  // `trimmed()` returned `converged: false` on a state race mode can reach
+  // and invariant 3 went red. So n holds the band's shallow end, 1.2, as a
+  // constant: stronger than the projection both sources reject, weaker than
+  // anything the fit cannot justify.
+  console.log(
+    `\neffective-draft exponent unfitted by design (ADR 0025): ` +
+      `hydro.effDraftHeelExp holds the published band's shallow end of 1.2.`,
   );
 
   // --- righting: deliberately unfitted (ADR 0022) ---------------------------

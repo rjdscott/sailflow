@@ -82,6 +82,15 @@ function lerpTable(xs: number[], ys: number[], x: number): number {
 export function residuaryMultiplier(boat: BoatDefinition, fn: number): number {
   // prov: assumed. Fallback 1 = "use the base curve unmodified".
   const ys = MUL_KNOBS.map((name) => knob(boat, name, 1));
+  // The top bin falls back to the one below it, not to 1. A class whose fit
+  // rows stop below Fn 0.6 leaves `fn60` unfitted (calibration/fit.ts,
+  // ADR 0026); the honest extrapolation there is "no information, so no
+  // change" — hold the multiplier and let the base curve carry the shape.
+  // Falling back to 1 would instead put a step at the top of the curve on
+  // exactly the rows nothing constrains. A class that reaches Fn 0.6 fits the
+  // knob and this never applies.
+  const last = MUL_KNOBS.length - 1;
+  ys[last] = knob(boat, MUL_KNOBS[last], ys[last - 1]);
   return lerpTable(MUL_FN, ys, fn);
 }
 

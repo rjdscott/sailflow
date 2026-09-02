@@ -15,7 +15,8 @@
     "keelSpanM": 1.176,
     "kgM": 0.484,
     "gmM": 0.676,
-    "rmMeasuredKgMPerDeg": 18.5
+    "rmMeasuredKgMPerDeg": 18.5,
+    "hbiM": 0.715
   },
   "rig": {
     "iM": 8,
@@ -29,6 +30,7 @@
     "chainplateYM": 1,
     "boomOuterMm": 2876,
     "bowspritOuterMm": 1495,
+    "basM": 0.992,
     "wire": "5 mm 1x19",
     "backstay": "composite rope, min 5 mm"
   },
@@ -263,35 +265,512 @@
     "sprit": 100
   },
   "calibration": {
-    "hydro.formFactor": 0.05513427494348031,
-    "hydro.rrMul.fn20": 0.33916457770747754,
-    "hydro.rrMul.fn30": 0.5777775701027001,
-    "hydro.rrMul.fn40": 0.9071103264734012,
-    "hydro.rrMul.fn50": 1.479542707170233,
-    "hydro.rrMul.fn60": 1.5794296530750767,
-    "hydro.planingRelief": 0.07100055967700596,
-    "hydro.keelLiftSlope": 0.8689733402338049,
-    "hydro.heelDragK": 0.0028063631432227363,
-    "aero.hbiM": 1.4,
+    "hydro.formFactor": 0.12528404491902678,
+    "hydro.rrMul.fn20": 0.3079232837068776,
+    "hydro.rrMul.fn30": 0.5910016801624214,
+    "hydro.rrMul.fn40": 0.8221739619338313,
+    "hydro.rrMul.fn50": 1.4396294060818007,
+    "hydro.keelLiftSlope": 2,
+    "hydro.heelDragK": 0.0010238871697855578,
     "aero.asymClMul": 1,
-    "aero.asymCdMul": 2.3771254930583554,
+    "aero.asymCdMul": 2.8381281124398887,
     "rig.EI": 685000,
     "rig.turnsToN": 600,
-    "rig.sagK": 25.71447084733381,
+    "rig.sagK": 25,
     "shape.bendToDraft": 0.36,
     "shape.sagToDraft": 0.0003,
-    "shape.sheetToTwist": 0.15
+    "shape.sheetToTwist": 0.11953573155432023
   },
   "provenance": {
-    "hull.loaM": {
+    "baseRace.backstay": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "the app's own reading of the North guide's base wind band onto the 0-100 control scales; the guide publishes qualitative settings (\"Firm\", \"Snug\", \"5-6 holes showing\"), not percentages. This is the datum every shape delta in core/shape/toOrc.ts is measured against and the trim the cockpit's leech-stall and spreader-stripe meters are calibrated on, so the solver and Race mode's default trim read the one block instead of keeping two"
+    },
+    "baseRace.cunningham": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.inhauler": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.jibHalyard": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.jibLead": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.jibSheet": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.mainHalyard": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.mainsheet": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.outhaul": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.traveller": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRace.vang": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see baseRace.backstay"
+    },
+    "baseRaceDown.kiteHalyard": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "the four gennaker controls the race screen starts from, on the same 0-100 scale as baseRace, moved here from a literal in src/ui/race/store.svelte.ts so they carry provenance like every other datum. Halyard two-blocked at the masthead before the sheet is touched: North and Westaway both say the hoist should always be full (research 2026-08-25-spinnaker doc 04 section 2.5), so 100 is the honest default"
+    },
+    "baseRaceDown.kiteSheet": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "kite sheet mid-range, to be trimmed to the curl. Tier C cue, not a solve: core/solve/optimalTrim does not solve the downwind sheet. See baseRaceDown.kiteHalyard"
+    },
+    "baseRaceDown.mainsheet": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, inside the 60-87 degree band the solver's own downwind descent reaches between 135 and 165 degrees TWA (plan 2026-08-25-desktop-kite phase 04 log, app-convention); research 2026-08-25-spinnaker doc 03 section 2.1 (T3) supplies only the qualitative cue, out past the corner of the boat. Tier C cue, not a solve: see core/solve/optimalTrim notSolved. Also the downwind shape datum: core/shape/base.ts baseRaceDown() measures the toOrc deltas from this mainsheet under the kite, so the correct ease is zero deviation instead of enough shapeInfluence to demote the downwind default to tier C (ASSUMPTIONS.md)"
+    },
+    "baseRaceDown.sprit": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "sprit fully out. On a J/70 the pole is either all the way out or the kite is not up, so 100 is class practice rather than a chosen midpoint. See baseRaceDown.kiteHalyard"
+    },
+    "baseRaceDown.tackLine": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "tack line mid-range, a trim control the sailor is expected to move rather than a setting: the J/70 sources disagree between two-block-it and ease 4-12 in (research 2026-08-25-spinnaker doc 03 section 4, doc 04 section 2.4), so the app starts in the middle of the band instead of picking a side. See baseRaceDown.kiteHalyard"
+    },
+    "controls.backstay.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.backstay.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.backstay.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Backstay Control purchase maximum 4:1"
+    },
+    "controls.backstay.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Backstay Control purchase minimum 2:1"
+    },
+    "controls.backstay.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.cunningham.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.cunningham.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.cunningham.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Cunningham purchase maximum 8:1"
+    },
+    "controls.cunningham.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Cunningham purchase minimum 1:1"
+    },
+    "controls.cunningham.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.forestayMm.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see controls.forestayMm.min"
+    },
+    "controls.forestayMm.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "range not published in Class Rules; app convention for a workable forestay length adjustment sweep"
+    },
+    "controls.forestayMm.step": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see controls.forestayMm.min"
+    },
+    "controls.inhauler.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see controls.inhauler.min"
+    },
+    "controls.inhauler.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "discrepancy: brief lists inhauler as a race-mode control, but Class Rules F.4.2 purchase table has no 'Inhauler' entry; range and purchase are unregulated app assumptions"
+    },
+    "controls.inhauler.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.jibHalyard.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.jibHalyard.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.jibHalyard.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Headsail Halyard Fine Tune purchase maximum 8:1"
+    },
+    "controls.jibHalyard.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Headsail Halyard Fine Tune purchase minimum 4:1"
+    },
+    "controls.jibHalyard.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.jibLead.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see controls.jibLead.min"
+    },
+    "controls.jibLead.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "jib lead car hole count not specified in Class Rules; app convention, typical 10-hole car track"
+    },
+    "controls.jibLead.step": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see controls.jibLead.min"
+    },
+    "controls.jibSheet.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.jibSheet.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.jibSheet.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Headsail Sheet purchase maximum 2:1 (fixed, no min/max range)"
+    },
+    "controls.jibSheet.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Headsail Sheet purchase minimum 2:1 (fixed, no min/max range)"
+    },
+    "controls.jibSheet.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.kiteHalyard.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see controls.kiteHalyard.min"
+    },
+    "controls.kiteHalyard.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "discrepancy: Class Rules F.4.1 lists a Gennaker Halyard minimum line diameter (6mm) but F.4.2 purchase table has no Gennaker Halyard purchase entry; range and purchase are unregulated app assumptions"
+    },
+    "controls.kiteHalyard.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.kiteSheet.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.kiteSheet.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.kiteSheet.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Gennaker Sheets purchase maximum 1:1 (fixed, no min/max range)"
+    },
+    "controls.kiteSheet.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Gennaker Sheets purchase minimum 1:1 (fixed, no min/max range)"
+    },
+    "controls.kiteSheet.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.lowerTurns.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see controls.lowerTurns.min"
+    },
+    "controls.lowerTurns.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "range not published in Class Rules; app convention, mirrors upperTurns"
+    },
+    "controls.lowerTurns.step": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see controls.lowerTurns.min"
+    },
+    "controls.mainHalyard.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.mainHalyard.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.mainHalyard.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Main Halyard Fine Tune purchase maximum 2:1"
+    },
+    "controls.mainHalyard.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Main Halyard Fine Tune purchase minimum 1:1"
+    },
+    "controls.mainHalyard.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.mainsheet.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.mainsheet.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.mainsheet.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Main Sheet purchase maximum 6:1"
+    },
+    "controls.mainsheet.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Main Sheet purchase minimum 4:1"
+    },
+    "controls.mainsheet.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.outhaul.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.outhaul.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.outhaul.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Outhaul purchase maximum 8:1"
+    },
+    "controls.outhaul.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Outhaul purchase minimum 4:1"
+    },
+    "controls.outhaul.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.sprit.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.sprit.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.sprit.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Sprit Control purchase maximum 1:1 (fixed, no min/max range)"
+    },
+    "controls.sprit.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Sprit Control purchase minimum 1:1 (fixed, no min/max range)"
+    },
+    "controls.sprit.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.tackLine.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.tackLine.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.tackLine.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Tack Line purchase maximum 1:1 (fixed, no min/max range)"
+    },
+    "controls.tackLine.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Tack Line purchase minimum 1:1 (fixed, no min/max range)"
+    },
+    "controls.tackLine.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "controls.traveller.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; -100 to +100% car travel"
+    },
+    "controls.traveller.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; -100 to +100% car travel"
+    },
+    "controls.traveller.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Traveler purchase maximum 3:1"
+    },
+    "controls.traveller.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Traveler purchase minimum 2:1"
+    },
+    "controls.traveller.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; -100 to +100% car travel in 5% steps"
+    },
+    "controls.upperTurns.max": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see controls.upperTurns.min"
+    },
+    "controls.upperTurns.min": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "range not published in Class Rules; app convention for a workable turns sweep either side of a dock-tuning base setting"
+    },
+    "controls.upperTurns.step": {
+      "source": "app-convention",
+      "kind": "assumed",
+      "note": "see controls.upperTurns.min"
+    },
+    "controls.vang.max": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.vang.min": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel"
+    },
+    "controls.vang.purchaseMax": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Boom Vang purchase maximum 8:1 (fixed, no min/max range)"
+    },
+    "controls.vang.purchaseMin": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules F.4.2: Boom Vang purchase minimum 8:1 (fixed, no min/max range)"
+    },
+    "controls.vang.step": {
+      "source": "app-convention",
+      "kind": "derived",
+      "note": "app control range; 0-100% travel in 5% steps"
+    },
+    "crew.maxKg": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert HULL AND APPENDAGES: LOA 6.910"
+      "note": "ORC cert CREW: Maximum weight 340 kg"
     },
-    "hull.lwlM": {
+    "crew.maxLegsOut": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules C.3.3(c): not more than two crew may have their legs outboard of the sheerline"
+    },
+    "crew.minCount": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules C.3.1(a): crew shall consist of 3 or more persons"
+    },
+    "crew.minKg": {
       "source": "orc-cert",
-      "kind": "assumed",
-      "note": "ORC cert reports IMS measurement length 'L' = 6.691 m; not an explicit LWL definition but the closest published proxy for a plumb-bow hull, so used directly rather than a fresh estimate"
+      "kind": "published",
+      "note": "ORC cert CREW: Minimum weight 255 kg"
     },
     "hull.beamM": {
       "source": "orc-cert",
@@ -303,25 +782,25 @@
       "kind": "assumed",
       "note": "estimated as 0.85 x max beam (typical waterline/max-beam ratio for a flared-topside sportboat hull); no published bwl found"
     },
-    "hull.draftM": {
-      "source": "orc-cert",
-      "kind": "published",
-      "note": "ORC cert HULL AND APPENDAGES: Draft 1.383"
-    },
     "hull.dispKg": {
       "source": "orc-cert",
       "kind": "published",
       "note": "ORC cert HULL AND APPENDAGES: Displacement 811 kg (VPP sailing displacement, differs by 1 kg from the class rule minimum dry weight of 812 kg -- see hull.minDryWeightKg)"
     },
-    "hull.minDryWeightKg": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules C.6.1: minimum dry boat weight 812 kg"
-    },
-    "hull.wettedM2": {
+    "hull.draftM": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert HULL AND APPENDAGES: Wetted area 9.13"
+      "note": "ORC cert HULL AND APPENDAGES: Draft 1.383"
+    },
+    "hull.gmM": {
+      "source": "orc-cert",
+      "kind": "assumed",
+      "note": "estimated as 0.30 x beamM, a rule-of-thumb GM/beam ratio for high-initial-stability bulb-keel sportboats; not backed out from the ORC cert's RM Measured (18.5 kg.m) because the certificate's reference heel angle for that figure could not be confirmed"
+    },
+    "hull.hbiM": {
+      "source": "orc-cert",
+      "kind": "derived",
+      "note": "ORC HBI, the height of the sheer at the base of I above the water plane, interpolated from the certificate's own flotation measurements: FF 0.792 at SFFP 0.155 and FA 0.571 at SAFP 6.903, read at the mast station SFBI = SFJ + J = 0.160 + 2.340 = 2.500 m, which gives 0.715 m. HBI is the datum ORC measures every sail-plan height from (VPP 2023 eq 5.57, heeling arm = HBI + ZCE x REEF); it is a freeboard, not a rig dimension"
     },
     "hull.keelAreaM2": {
       "source": "orc-cert",
@@ -338,55 +817,35 @@
       "kind": "assumed",
       "note": "estimated as 0.35 x draftM, a rule-of-thumb VCG fraction for a ballast-(bulb)-dominated fin-keel sportboat; ORC cert's VCGD/VCGM (0.034/0.024) and RM figures use a different reference baseline and were not used, since the conversion could not be verified against the ORC VPP Documentation in this pass"
     },
-    "hull.gmM": {
-      "source": "orc-cert",
-      "kind": "assumed",
-      "note": "estimated as 0.30 x beamM, a rule-of-thumb GM/beam ratio for high-initial-stability bulb-keel sportboats; not backed out from the ORC cert's RM Measured (18.5 kg.m) because the certificate's reference heel angle for that figure could not be confirmed"
-    },
-    "rig.iM": {
+    "hull.loaM": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert RIG: IG 8.000; equal to headsail luff maximum in Class Rules G.4.3"
+      "note": "ORC cert HULL AND APPENDAGES: LOA 6.910"
     },
-    "rig.jM": {
+    "hull.lwlM": {
+      "source": "orc-cert",
+      "kind": "assumed",
+      "note": "ORC cert reports IMS measurement length 'L' = 6.691 m; not an explicit LWL definition but the closest published proxy for a plumb-bow hull, so used directly rather than a fresh estimate"
+    },
+    "hull.minDryWeightKg": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules C.6.1: minimum dry boat weight 812 kg"
+    },
+    "hull.rmMeasuredKgMPerDeg": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert RIG: J 2.340 (foretriangle base)"
+      "note": "ORC RM Measured, kg·m per degree of heel at small angles (inclining test); prefer over assumed gmM in righting model"
     },
-    "rig.pM": {
+    "hull.wettedM2": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert RIG: P 7.974; equal to mainsail luff maximum in Class Rules G.3"
+      "note": "ORC cert HULL AND APPENDAGES: Wetted area 9.13"
     },
-    "rig.eM": {
+    "rig.basM": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert RIG: E 2.876; equal to mainsail foot maximum in Class Rules G.3 and to boom outer point in C.9.3"
-    },
-    "rig.mastLenM": {
-      "source": "class-rules-2026",
-      "kind": "assumed",
-      "note": "estimated as rig.iM + 0.5 m for typical gooseneck-to-deck and masthead-fitting allowance; not published"
-    },
-    "rig.spreaderZM": {
-      "source": "class-rules-2026",
-      "kind": "assumed",
-      "note": "estimated as 0.55 x rig.iM, a typical single-spreader height fraction; not published"
-    },
-    "rig.spreaderLenM": {
-      "source": "class-rules-2026",
-      "kind": "assumed",
-      "note": "assumed 0.55 m, typical swept-spreader length for this boat size; not published"
-    },
-    "rig.sweepDeg": {
-      "source": "class-rules-2026",
-      "kind": "assumed",
-      "note": "assumed 20 degrees, typical swept-spreader angle for a rig with no runners/checkstays (ORC cert confirms Runners/Checkstays: 0); not published"
-    },
-    "rig.chainplateYM": {
-      "source": "class-rules-2026",
-      "kind": "assumed",
-      "note": "assumed 1.00 m athwartship offset, approximating a rail-mounted chainplate typical of shroud-base sportboats; not published"
+      "note": "ORC cert RIG: BAS 0.992, the boom above the sheer. With hull.hbiM it puts the boom 1.707 m above the water plane, which is the mainsail tack height core/geometry/sailplan.ts measures the mainsail centre of effort from"
     },
     "rig.boomOuterMm": {
       "source": "class-rules-2026",
@@ -398,105 +857,50 @@
       "kind": "published",
       "note": "Class Rules C.9.4(a): hull to bowsprit outer point maximum 1495mm"
     },
-    "sails.main.ratedAreaM2": {
+    "rig.chainplateYM": {
+      "source": "class-rules-2026",
+      "kind": "assumed",
+      "note": "assumed 1.00 m athwartship offset, approximating a rail-mounted chainplate typical of shroud-base sportboats; not published"
+    },
+    "rig.eM": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert SAIL AREAS: Mainsail Rated 16.00 m2"
+      "note": "ORC cert RIG: E 2.876; equal to mainsail foot maximum in Class Rules G.3 and to boom outer point in C.9.3"
     },
-    "sails.main.leechMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.3: mainsail leech length maximum 8335mm"
-    },
-    "sails.main.luffMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.3: mainsail luff length maximum 7974mm"
-    },
-    "sails.main.footMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.3: mainsail foot length maximum 2876mm"
-    },
-    "sails.main.topMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.3: mainsail top width maximum 364mm"
-    },
-    "sails.main.upperMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.3: mainsail upper width maximum 880mm"
-    },
-    "sails.main.threeQuarterMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.3: mainsail three-quarter width maximum 1425mm"
-    },
-    "sails.main.halfMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.3: mainsail half width maximum 2134mm"
-    },
-    "sails.main.quarterMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.3: mainsail quarter width maximum 2570mm"
-    },
-    "sails.main.battens": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.3.2(c): mainsail shall have five batten pockets in the leech, top three full length"
-    },
-    "sails.jib.ratedAreaM2": {
+    "rig.iM": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert SAIL AREAS: Headsail Luffed Rated 10.01 m2"
+      "note": "ORC cert RIG: IG 8.000; equal to headsail luff maximum in Class Rules G.4.3"
     },
-    "sails.jib.luffMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.4.3: headsail luff length maximum 8000mm"
-    },
-    "sails.jib.lpMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.4.3: headsail luff perpendicular maximum 2450mm"
-    },
-    "sails.jib.topMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.4.3: headsail top width maximum 64mm"
-    },
-    "sails.jib.threeQuarterMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.4.3: headsail three-quarter width maximum 650mm"
-    },
-    "sails.jib.halfMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.4.3: headsail half width maximum 1250mm"
-    },
-    "sails.jib.quarterMm": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.4.3: headsail quarter width maximum 1860mm"
-    },
-    "sails.asym.ratedAreaM2": {
+    "rig.jM": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert SAIL AREAS: Asymmetric Rated 45.64 m2"
+      "note": "ORC cert RIG: J 2.340 (foretriangle base)"
     },
-    "sails.asym.luffMm": {
+    "rig.mastLenM": {
       "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules G.5.3: gennaker luff length maximum 10800mm"
+      "kind": "assumed",
+      "note": "estimated as rig.iM + 0.5 m for typical gooseneck-to-deck and masthead-fitting allowance; not published"
     },
-    "sails.asym.leechMm": {
-      "source": "class-rules-2026",
+    "rig.pM": {
+      "source": "orc-cert",
       "kind": "published",
-      "note": "Class Rules G.5.3: gennaker leech length maximum 8800mm"
+      "note": "ORC cert RIG: P 7.974; equal to mainsail luff maximum in Class Rules G.3"
+    },
+    "rig.spreaderLenM": {
+      "source": "class-rules-2026",
+      "kind": "assumed",
+      "note": "assumed 0.55 m, typical swept-spreader length for this boat size; not published"
+    },
+    "rig.spreaderZM": {
+      "source": "class-rules-2026",
+      "kind": "assumed",
+      "note": "estimated as 0.55 x rig.iM, a typical single-spreader height fraction; not published"
+    },
+    "rig.sweepDeg": {
+      "source": "class-rules-2026",
+      "kind": "assumed",
+      "note": "assumed 20 degrees, typical swept-spreader angle for a rig with no runners/checkstays (ORC cert confirms Runners/Checkstays: 0); not published"
     },
     "sails.asym.footMm": {
       "source": "class-rules-2026",
@@ -508,505 +912,110 @@
       "kind": "published",
       "note": "Class Rules G.5.3: gennaker half width maximum 5560mm"
     },
+    "sails.asym.leechMm": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules G.5.3: gennaker leech length maximum 8800mm"
+    },
+    "sails.asym.luffMm": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules G.5.3: gennaker luff length maximum 10800mm"
+    },
     "sails.asym.orcTable": {
       "source": "orc-vpp-2023",
       "kind": "published",
       "note": "Table 5.7, asymmetric spinnaker tacked on centreline (kpasc 0.02648) - the J/70's gennaker is tacked to a bowsprit on the centreline. Was labelled 5.6, which is the SYMMETRIC spinnaker table; a metadata error only, since src/core/aero/orc/tables.ts hardcodes ASYM_TABLE from 5.7 and nothing dispatches on this string. 2023-edition numbering: the same table is 5.9 in the 2026 edition, whose coefficients also differ (see PROVENANCE.md)"
     },
-    "crew.minKg": {
+    "sails.asym.ratedAreaM2": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert CREW: Minimum weight 255 kg"
+      "note": "ORC cert SAIL AREAS: Asymmetric Rated 45.64 m2"
     },
-    "crew.maxKg": {
+    "sails.jib.halfMm": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules G.4.3: headsail half width maximum 1250mm"
+    },
+    "sails.jib.lpMm": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules G.4.3: headsail luff perpendicular maximum 2450mm"
+    },
+    "sails.jib.luffMm": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules G.4.3: headsail luff length maximum 8000mm"
+    },
+    "sails.jib.quarterMm": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules G.4.3: headsail quarter width maximum 1860mm"
+    },
+    "sails.jib.ratedAreaM2": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC cert CREW: Maximum weight 340 kg"
+      "note": "ORC cert SAIL AREAS: Headsail Luffed Rated 10.01 m2"
     },
-    "crew.minCount": {
+    "sails.jib.threeQuarterMm": {
       "source": "class-rules-2026",
       "kind": "published",
-      "note": "Class Rules C.3.1(a): crew shall consist of 3 or more persons"
+      "note": "Class Rules G.4.3: headsail three-quarter width maximum 650mm"
     },
-    "crew.maxLegsOut": {
+    "sails.jib.topMm": {
       "source": "class-rules-2026",
       "kind": "published",
-      "note": "Class Rules C.3.3(c): not more than two crew may have their legs outboard of the sheerline"
+      "note": "Class Rules G.4.3: headsail top width maximum 64mm"
     },
-    "controls.upperTurns.min": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "range not published in Class Rules; app convention for a workable turns sweep either side of a dock-tuning base setting"
-    },
-    "controls.upperTurns.max": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see controls.upperTurns.min"
-    },
-    "controls.upperTurns.step": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see controls.upperTurns.min"
-    },
-    "controls.lowerTurns.min": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "range not published in Class Rules; app convention, mirrors upperTurns"
-    },
-    "controls.lowerTurns.max": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see controls.lowerTurns.min"
-    },
-    "controls.lowerTurns.step": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see controls.lowerTurns.min"
-    },
-    "controls.forestayMm.min": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "range not published in Class Rules; app convention for a workable forestay length adjustment sweep"
-    },
-    "controls.forestayMm.max": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see controls.forestayMm.min"
-    },
-    "controls.forestayMm.step": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see controls.forestayMm.min"
-    },
-    "controls.backstay.purchaseMin": {
+    "sails.main.battens": {
       "source": "class-rules-2026",
       "kind": "published",
-      "note": "Class Rules F.4.2: Backstay Control purchase minimum 2:1"
+      "note": "Class Rules G.3.2(c): mainsail shall have five batten pockets in the leech, top three full length"
     },
-    "controls.backstay.purchaseMax": {
+    "sails.main.footMm": {
       "source": "class-rules-2026",
       "kind": "published",
-      "note": "Class Rules F.4.2: Backstay Control purchase maximum 4:1"
+      "note": "Class Rules G.3: mainsail foot length maximum 2876mm"
     },
-    "controls.backstay.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.backstay.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.backstay.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.mainsheet.purchaseMin": {
+    "sails.main.halfMm": {
       "source": "class-rules-2026",
       "kind": "published",
-      "note": "Class Rules F.4.2: Main Sheet purchase minimum 4:1"
+      "note": "Class Rules G.3: mainsail half width maximum 2134mm"
     },
-    "controls.mainsheet.purchaseMax": {
+    "sails.main.leechMm": {
       "source": "class-rules-2026",
       "kind": "published",
-      "note": "Class Rules F.4.2: Main Sheet purchase maximum 6:1"
+      "note": "Class Rules G.3: mainsail leech length maximum 8335mm"
     },
-    "controls.mainsheet.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.mainsheet.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.mainsheet.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.traveller.purchaseMin": {
+    "sails.main.luffMm": {
       "source": "class-rules-2026",
       "kind": "published",
-      "note": "Class Rules F.4.2: Traveler purchase minimum 2:1"
+      "note": "Class Rules G.3: mainsail luff length maximum 7974mm"
     },
-    "controls.traveller.purchaseMax": {
+    "sails.main.quarterMm": {
       "source": "class-rules-2026",
       "kind": "published",
-      "note": "Class Rules F.4.2: Traveler purchase maximum 3:1"
+      "note": "Class Rules G.3: mainsail quarter width maximum 2570mm"
     },
-    "controls.traveller.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; -100 to +100% car travel"
-    },
-    "controls.traveller.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; -100 to +100% car travel"
-    },
-    "controls.traveller.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; -100 to +100% car travel in 5% steps"
-    },
-    "controls.cunningham.purchaseMin": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Cunningham purchase minimum 1:1"
-    },
-    "controls.cunningham.purchaseMax": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Cunningham purchase maximum 8:1"
-    },
-    "controls.cunningham.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.outhaul.purchaseMin": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Outhaul purchase minimum 4:1"
-    },
-    "controls.outhaul.purchaseMax": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Outhaul purchase maximum 8:1"
-    },
-    "controls.outhaul.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.vang.purchaseMin": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Boom Vang purchase minimum 8:1 (fixed, no min/max range)"
-    },
-    "controls.vang.purchaseMax": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Boom Vang purchase maximum 8:1 (fixed, no min/max range)"
-    },
-    "controls.vang.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.jibSheet.purchaseMin": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Headsail Sheet purchase minimum 2:1 (fixed, no min/max range)"
-    },
-    "controls.jibSheet.purchaseMax": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Headsail Sheet purchase maximum 2:1 (fixed, no min/max range)"
-    },
-    "controls.jibSheet.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.jibLead.min": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "jib lead car hole count not specified in Class Rules; app convention, typical 10-hole car track"
-    },
-    "controls.jibLead.max": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see controls.jibLead.min"
-    },
-    "controls.jibLead.step": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see controls.jibLead.min"
-    },
-    "controls.inhauler.min": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "discrepancy: brief lists inhauler as a race-mode control, but Class Rules F.4.2 purchase table has no 'Inhauler' entry; range and purchase are unregulated app assumptions"
-    },
-    "controls.inhauler.max": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see controls.inhauler.min"
-    },
-    "controls.inhauler.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.mainHalyard.purchaseMin": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Main Halyard Fine Tune purchase minimum 1:1"
-    },
-    "controls.mainHalyard.purchaseMax": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Main Halyard Fine Tune purchase maximum 2:1"
-    },
-    "controls.mainHalyard.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.jibHalyard.purchaseMin": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Headsail Halyard Fine Tune purchase minimum 4:1"
-    },
-    "controls.jibHalyard.purchaseMax": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Headsail Halyard Fine Tune purchase maximum 8:1"
-    },
-    "controls.jibHalyard.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.kiteHalyard.min": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "discrepancy: Class Rules F.4.1 lists a Gennaker Halyard minimum line diameter (6mm) but F.4.2 purchase table has no Gennaker Halyard purchase entry; range and purchase are unregulated app assumptions"
-    },
-    "controls.kiteHalyard.max": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see controls.kiteHalyard.min"
-    },
-    "controls.kiteHalyard.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.tackLine.purchaseMin": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Tack Line purchase minimum 1:1 (fixed, no min/max range)"
-    },
-    "controls.tackLine.purchaseMax": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Tack Line purchase maximum 1:1 (fixed, no min/max range)"
-    },
-    "controls.tackLine.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.kiteSheet.purchaseMin": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Gennaker Sheets purchase minimum 1:1 (fixed, no min/max range)"
-    },
-    "controls.kiteSheet.purchaseMax": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Gennaker Sheets purchase maximum 1:1 (fixed, no min/max range)"
-    },
-    "controls.kiteSheet.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.sprit.purchaseMin": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Sprit Control purchase minimum 1:1 (fixed, no min/max range)"
-    },
-    "controls.sprit.purchaseMax": {
-      "source": "class-rules-2026",
-      "kind": "published",
-      "note": "Class Rules F.4.2: Sprit Control purchase maximum 1:1 (fixed, no min/max range)"
-    },
-    "controls.sprit.step": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel in 5% steps"
-    },
-    "controls.cunningham.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.cunningham.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.outhaul.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.outhaul.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.vang.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.vang.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.jibSheet.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.jibSheet.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.mainHalyard.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.mainHalyard.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.jibHalyard.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.jibHalyard.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.tackLine.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.tackLine.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.kiteSheet.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.kiteSheet.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.sprit.min": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "controls.sprit.max": {
-      "source": "app-convention",
-      "kind": "derived",
-      "note": "app control range; 0-100% travel"
-    },
-    "hull.rmMeasuredKgMPerDeg": {
+    "sails.main.ratedAreaM2": {
       "source": "orc-cert",
       "kind": "published",
-      "note": "ORC RM Measured, kg·m per degree of heel at small angles (inclining test); prefer over assumed gmM in righting model"
+      "note": "ORC cert SAIL AREAS: Mainsail Rated 16.00 m2"
     },
-    "baseRace.backstay": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "the app's own reading of the North guide's base wind band onto the 0-100 control scales; the guide publishes qualitative settings (\"Firm\", \"Snug\", \"5-6 holes showing\"), not percentages. This is the datum every shape delta in core/shape/toOrc.ts is measured against and the trim the cockpit's leech-stall and spreader-stripe meters are calibrated on, so the solver and Race mode's default trim read the one block instead of keeping two"
+    "sails.main.threeQuarterMm": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules G.3: mainsail three-quarter width maximum 1425mm"
     },
-    "baseRace.mainsheet": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
+    "sails.main.topMm": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules G.3: mainsail top width maximum 364mm"
     },
-    "baseRaceDown.mainsheet": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "the mainsheet under the kite, same 0-100 scale as baseRace: eased until the boom is out past the corner of the boat, leech on the leeward shroud. 15 % is about 67 degrees of boom through shape/sheeting.ts boomAngle, inside the 60-87 degree band the solver's own downwind descent reaches between 135 and 165 degrees TWA (plan 2026-08-25-desktop-kite phase 04 log, app-convention); research 2026-08-25-spinnaker doc 03 section 2.1 (T3) supplies only the qualitative cue, out past the corner of the boat. Tier C cue, not a solve: see core/solve/optimalTrim notSolved. Also the downwind shape datum: core/shape/base.ts baseRaceDown() measures the toOrc deltas from this mainsheet under the kite, so the correct ease is zero deviation instead of enough shapeInfluence to demote the downwind default to tier C (ASSUMPTIONS.md)"
-    },
-    "baseRaceDown.kiteHalyard": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "the four gennaker controls the race screen starts from, on the same 0-100 scale as baseRace, moved here from a literal in src/ui/race/store.svelte.ts so they carry provenance like every other datum. Halyard two-blocked at the masthead before the sheet is touched: North and Westaway both say the hoist should always be full (research 2026-08-25-spinnaker doc 04 section 2.5), so 100 is the honest default"
-    },
-    "baseRaceDown.tackLine": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "tack line mid-range, a trim control the sailor is expected to move rather than a setting: the J/70 sources disagree between two-block-it and ease 4-12 in (research 2026-08-25-spinnaker doc 03 section 4, doc 04 section 2.4), so the app starts in the middle of the band instead of picking a side. See baseRaceDown.kiteHalyard"
-    },
-    "baseRaceDown.kiteSheet": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "kite sheet mid-range, to be trimmed to the curl. Tier C cue, not a solve: core/solve/optimalTrim does not solve the downwind sheet. See baseRaceDown.kiteHalyard"
-    },
-    "baseRaceDown.sprit": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "sprit fully out. On a J/70 the pole is either all the way out or the kite is not up, so 100 is class practice rather than a chosen midpoint. See baseRaceDown.kiteHalyard"
-    },
-    "baseRace.traveller": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.cunningham": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.outhaul": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.vang": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.jibSheet": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.jibLead": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.inhauler": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.mainHalyard": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
-    },
-    "baseRace.jibHalyard": {
-      "source": "app-convention",
-      "kind": "assumed",
-      "note": "see baseRace.backstay"
+    "sails.main.upperMm": {
+      "source": "class-rules-2026",
+      "kind": "published",
+      "note": "Class Rules G.3: mainsail upper width maximum 880mm"
     }
   },
   "sources": {

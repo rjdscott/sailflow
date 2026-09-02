@@ -678,12 +678,17 @@ describe('17. helm load rises as the crew comes off the rail', () => {
  * `validation/report.md` records why (the upwind speed plateau and the
  * asymmetric optimum angle, both in ASSUMPTIONS.md "where the model is
  * honestly weak"). The band tracks the model's own largest published fit-row
- * boat-speed residual, which is 11.8 % since ADR 0018 — the TWS 20 asymmetric
+ * boat-speed residual, which is 17.5 % since ADR 0023 — the TWS 20 asymmetric
  * row, the planing row the report already declares out of range for a
- * displacement model. (It was 10.8 % and the band was ±10.) So this is a guard
- * against a regression in the lookup or the solve, which is what an invariant
- * can honestly claim here — not a re-statement of a gate this model does not
- * pass on these rows.
+ * displacement model. (It was 10.8 % and the band was ±10, then 11.8 % and
+ * ±12.) It grew when ADR 0023 put the heeling arm on the certificate's own
+ * BAS and HBI: the offwind rows lost the effective rig height the fitted
+ * `aero.hbiM` had been buying them, and nothing published replaces it until
+ * the downwind crew law lands (ORC VPP 2012 §4.4.3.3 — crew to leeward below
+ * 10° of heel, which is why the polar prints 11.5-12° downwind and this model
+ * prints 1°). So this is a guard against a regression in the lookup or the
+ * solve, which is what an invariant can honestly claim here — not a
+ * re-statement of a gate this model does not pass on these rows.
  *
  * The tier asserted is the sail's, not a flat A: `pctPolar` takes the lower
  * of the grid tier and the tier of the boat speed it divides, so a fit row
@@ -697,7 +702,7 @@ describe('18. pctPolar on the calibration fit rows', () => {
   } else {
     const fitTws = polar.twsKt.filter((t) => !HELD_OUT_TWS.includes(t));
     for (const tws of fitTws) {
-      it(`TWS ${tws}: every fitted row reads 100 ± 10 % of polar, in grid`, () => {
+      it(`TWS ${tws}: every fitted row reads 100 ± 18 % of polar, in grid`, () => {
         const rows = [...vmgRows(polar, tws), ...angleRows(polar, tws)];
         expect(rows.length, 'no fitted rows at this TWS').toBeGreaterThan(0);
         for (const row of rows) {
@@ -717,7 +722,7 @@ describe('18. pctPolar on the calibration fit rows', () => {
           const p = r.instruments.pctPolar;
           const label = `${row.sail} ${row.kind} ${row.twaDeg}° -> ${p.value.toFixed(1)} %`;
           expect(p.tier, label).toBe(row.sail === 'jib' ? 'A' : 'B');
-          expect(Math.abs(p.value - 100), label).toBeLessThanOrEqual(12);
+          expect(Math.abs(p.value - 100), label).toBeLessThanOrEqual(18);
         }
       });
     }

@@ -3,6 +3,7 @@
  *
  * Source: ORC VPP Documentation 2023,
  * https://orc.org/uploads/files/ORC-VPP-Documentation-2023.pdf
+ * §3.3.2 (the moment the righting moment balances), §4.4.2 (vertical CLR),
  * §5.4 (aggregation, CE height, induced drag), §5.5 (resolution of forces),
  * §5.6 (blanketing), §7.1 (apparent wind with heel and gradient).
  *
@@ -12,12 +13,14 @@
  *
  * Frames. Returned `fxN` is along the course (positive = drive), `fyN` is
  * athwartships (positive = to leeward on the current tack, so it flips sign
- * with the sign of TWA), `mxNm` is the heeling moment about the water plane.
+ * with the sign of TWA), `mxNm` is the total heeling moment the righting
+ * moment balances (ORC eq 3.5): the water-plane moment plus RM4 * FHA, the
+ * part of the aero/hydro couple that lives below the water plane.
  */
 import type { AeroState, BoatDefinition, SailDef, SailId, SailSet } from '../../types';
 import type { AeroInput, ShapeDeltas } from '../../internal';
 import { sheetingEffect } from '../../shape/sheeting';
-import { KT_TO_MS, RHO_AIR, knob } from '../../internal';
+import { KT_TO_MS, RHO_AIR, basM, hbiM, knob } from '../../internal';
 import { fcoefOf, lerpTable, sailCoeffs, type CoeffSet, type OrcSail } from './coeffs';
 import { efficiencyCoeff, reduction, sailsetCd, sailsetCl, clampFlat } from './depower';
 import { jibTwistCeDropM, twistCeFactor } from './twist';
@@ -254,11 +257,16 @@ export function aeroForces(
   const { rig } = boat;
   const ids = SAILS_OF[input.sailset];
 
+  // ---- geometry datums ---------------------------------------------------
+  // ORC's two vertical datums. Both are certificate quantities for a class
+  // that has a certificate, so they come off the boat file, not the fit
+  // (`core/internal.ts`).
+  const bas = basM(boat); // BAS, boom above sheer, m
+  const hbi = hbiM(boat); // HBI, sheer at the base of I above the water plane, m
+
   // ---- knobs -------------------------------------------------------------
   // prov: assumed. Not published for the J/70; every one is a calibration
   // knob so a measurement can replace it without touching this code.
-  const basM = knob(boat, 'aero.basM', 0.8); // boom above sheer, m
-  const hbiM = knob(boat, 'aero.hbiM', 0.75); // base of I above water, m
   const fbavM = knob(boat, 'aero.fbavM', 0.62); // average freeboard, m
   const mastFrontM = knob(boat, 'aero.mastFrontM', 0.075); // mast transverse dia, m
   const mastSideM = knob(boat, 'aero.mastSideM', 0.115); // mast longitudinal dia, m
@@ -307,7 +315,7 @@ export function aeroForces(
   // Reduced rig geometry. prov: ORC VPP 2023 Figure 5.4 (P_r = P*rfm,
   // frac_r = IG_r/(P_r + BAS), over_r = LPG_r/J).
   const pRed = rig.pM * red.rfm;
-  const fractionality = rig.iM / Math.max(1e-6, pRed + basM);
+  const fractionality = rig.iM / Math.max(1e-6, pRed + bas);
   const lpgM = dim(boat.sails.jib, 'lpMm', 0) / 1000;
   const overlap = (lpgM * (input.sailset === 'jib' ? red.ftj : 1)) / rig.jM;
   const fcoef = fcoefOf(fractionality);
@@ -333,7 +341,7 @@ export function aeroForces(
     areaW += geo[id].ceHeightM * a;
     areaSum += a;
   }
-  let zRef = areaSum > 0 ? areaW / areaSum : hbiM;
+  let zRef = areaSum > 0 ? areaW / areaSum : hbi;
   let aw = apparentWind(windAt(vtRefMs, zRef), input.twaDeg, vsMs, input.heelDeg);
   let agg = aggregate(ids, geo, areaScale, aw.awaDeg, sets, fcoef, fj, clMul, asymCdMul);
   zRef = agg.zceWaterM > 0 ? agg.zceWaterM : zRef;
@@ -380,10 +388,10 @@ export function aeroForces(
   // b = highest point of the sailplan above the deck: mainsail head
   // (P_r + BAS) or jib head (IG); if the jib head is higher, the average.
   // prov: ORC VPP 2023 §5.4.3, eq (5.45)
-  const mainHead = pRed + basM;
+  const mainHead = pRed + bas;
   const jibHead = rig.iM;
   const bM = jibHead > mainHead ? (mainHead + jibHead) / 2 : mainHead;
-  const bMaxM = bM + hbiM;
+  const bMaxM = bM + hbi;
 
   let cheff: number;
   if (input.sailset === 'jib') {
@@ -392,9 +400,9 @@ export function aeroForces(
   } else {
     // eq (5.44): with a spinnaker the effective height is independent of AWA.
     // tf = 0.16 * Zm/P + 0.94 with Zm the mainsail centroid above the boom.
-    const zmM = Math.max(0, geo.main.ceHeightM - MAIN_CEH_CONST * rig.pM - basM - hbiM);
+    const zmM = Math.max(0, geo.main.ceHeightM - MAIN_CEH_CONST * rig.pM - bas - hbi);
     const tf = TF_GAIN * (zmM / rig.pM) + TF_BASE;
-    const heffMaxSpi = rig.pM * tf + basM + hbiM;
+    const heffMaxSpi = rig.pM * tf + bas + hbi;
     cheff = (heffMaxSpi / bMaxM) * reef;
   }
   const heffM = Math.max(0.5, cheff * bMaxM); // eq (5.45)
@@ -407,13 +415,13 @@ export function aeroForces(
   // ---- centre of effort --------------------------------------------------
   // Work in ORC's frame (above the base of I) so eqs (5.49) and (5.57) apply
   // to the same reference the doc uses, then convert back to the water plane.
-  let zceOrc = Math.max(0, shaped.ceH - hbiM);
+  let zceOrc = Math.max(0, shaped.ceH - hbi);
   zceOrc *= twistCeFactor(flat, fractionality); // eq (5.49)
   zceOrc *= twistCeFactorInvented(twistEff, twistCeGain); // INVENTED
   if (input.sailset === 'jib') zceOrc -= jibTwistCeDropM(red.ftj, rig.iM); // eq (5.40)
   zceOrc = Math.max(0, zceOrc);
   // eq (5.57) moment arm: HBI + ZCE * REEF.
-  const armM = hbiM + zceOrc * reef;
+  const armM = hbi + zceOrc * reef;
 
   // ---- resolution of forces ---------------------------------------------
   const beta = (awaAbs * Math.PI) / 180;
@@ -426,11 +434,11 @@ export function aeroForces(
 
   // ---- windage -----------------------------------------------------------
   // ehm = max(P*tf + BAS, I, ISP); ISP is not carried in the boat definition.
-  const tfStatic = TF_GAIN * (Math.max(0, geo.main.ceHeightM - basM - hbiM) / rig.pM) + TF_BASE;
-  const ehmM = Math.max(rig.pM * tfStatic + basM, rig.iM);
+  const tfStatic = TF_GAIN * (Math.max(0, geo.main.ceHeightM - bas - hbi) / rig.pM) + TF_BASE;
+  const ehmM = Math.max(rig.pM * tfStatic + bas, rig.iM);
   const wind = windageForces(
     windageElements({
-      hbiM,
+      hbiM: hbi,
       fbavM,
       beamM: boat.hull.beamM,
       loaM: boat.hull.loaM,
@@ -451,11 +459,24 @@ export function aeroForces(
   );
 
   // ---- totals ------------------------------------------------------------
-  // eqs (5.54)-(5.56). The cos(heel) projects the mast-plane heeling moment
-  // onto the upright water-plane axis that `HydroState.rightingNm` is measured
-  // about; ORC eq (5.57) omits it because it never leaves the mast plane.
+  // eqs (5.54)-(5.56), then eq (3.5) for the moment the righting moment sees.
+  //
+  // What heels the boat is the *couple* between the aerodynamic heeling force
+  // and the hydrodynamic side force that opposes it, so the arm does not stop
+  // at the water plane: it runs on down to the vertical centre of lateral
+  // resistance. ORC writes that as HM_total = HM_A + RM4 * FHA, with HM_A the
+  // moment about the water plane (eq 5.57) and RM4 the vertical CLR below it.
+  // Both terms take the *total* heeling force, windage included (eq 3.7).
+  //
+  // There is no cos(heel) on either: FH is perpendicular to the mast plane and
+  // the arm is measured in that plane, so the product is already a moment
+  // about the roll axis — the same axis `HydroState.rightingNm` is measured
+  // about, whose own cos(heel) sits on the crew term in `hydro/righting.ts`
+  // exactly as ORC eq (4.30) puts it there.
   const sgn = input.twaDeg < 0 ? -1 : 1;
-  const cosHeel = Math.cos((Math.abs(input.heelDeg) * Math.PI) / 180);
+  const fhTotalN = fhSails + wind.fhN;
+  // prov: ORC VPP 2023 §4.4.2, eq (4.29): RM4 = 0.43 * Tmax.
+  const rm4M = 0.43 * boat.hull.draftM;
 
   return {
     flat,
@@ -464,8 +485,8 @@ export function aeroForces(
     awaDeg: sgn * awaAbs,
     awsKt: aw.awsMs / KT_TO_MS,
     fxN: frSails + wind.frN,
-    fyN: sgn * (fhSails + wind.fhN),
-    mxNm: sgn * (mhSails + wind.mhNm) * cosHeel,
+    fyN: sgn * fhTotalN,
+    mxNm: sgn * (mhSails + wind.mhNm + rm4M * fhTotalN), // eq (3.5)
     ceHeightM: armM,
   };
 }

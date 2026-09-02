@@ -33,6 +33,106 @@ undiagnosable.
 
 ### Fixed
 
+- **The equilibrium solver stalled at zero heel, and four printed rows have
+  been reading 17–20 % slow because of it.** `solve/equilibrium.ts` clamped
+  Newton's heel iterate at 0°. De-powered in light air the crew righting
+  moment briefly exceeds the heeling moment, so the iterate swings to windward
+  on its way to the root; stopped at the clamp, the moment residual goes flat
+  in heel on one side, the Jacobian column goes singular and the solve returns
+  `converged: false`. `optimal()` scores a non-converged state at −1e3, so a
+  whole band of `flat` values scored identically and the golden section had no
+  gradient to climb out on: at TWS 8 and TWA 70–80° with the jib it settled on
+  the ORC flat floor of 0.42 — a de-powered beat reach in 8 kt — and reported
+  4.6–4.7 kt against a printed 5.88–5.91, heel exactly 0.00. The heel box is
+  now symmetric, which is what it always was for leeway (ADR 0022's fifth
+  change, the same guard on the other unknown). Every root those states were
+  reaching is at **positive** heel, 3.5–4.0°, and the rows now read within
+  0.7 %. A converged answer at negative heel would be a bug, and the
+  mirror-symmetry invariant is what would catch it.
+
+- **Two hydro knobs no fit row can see were setting the offwind polar, and the
+  held-out asymmetric row with it** (ADR 0025, ADR 0026). Three changes, one
+  refit. `hydro.planingRelief` and `hydro.rrMul.fn60` both govern Fn 0.6–0.73,
+  where half the printed J/70 polar lives; the stage-1 rows stop at Fn 0.55.
+  The relief is not identifiable at all — its whole calibration range moves the
+  stage-1 loss by 0.5 % while it moves the printed reaches above Fn 0.6 by
+  12–17 % — and `fn60` only through one edge row. Fitted, they made every
+  printed reach above Fn 0.6 read 12–17 % fast, which inflated the reaching
+  hump of the bimodal downwind curve and left `aero.asymCdMul` no room to slow
+  the deep rows: every reduction that helped the gated row flipped a _fitted_
+  row onto that hump at 48–51 % out. Both are now fitted only where a stage-1
+  row reaches Fn 0.6 (the Melges 24 keeps them; the J/70 holds `planingRelief`
+  at 0 and `fn60` at `fn50`). The TWS 20 running row — a planing row this
+  model has no regime for — goes **15.6 % → 4.0 %**, TWS 10's 6.2 % → 4.5 %,
+  and the downwind optimum deepens monotonically across TWS 6–16 again.
+  Separately, the keel's effective span now falls off as `cos(heel)^1.2`
+  instead of the plain geometric projection both published effective-draft
+  treatments reject, held constant past 30° of heel (the last station the
+  DSYHS heeled tests run at). It is an unfitted constant at the shallow end of
+  the published cos^1.2–cos^2.9 band because fitting a position inside the
+  band failed on its own terms: the J/70 went to 2.9 and the Melges 24 to 1.2
+  at Bwl/Tc of 9.26 and 9.16, and at 2.9 the J/70's 20 kt fixed-trim beat has
+  no equilibrium at all.
+
+  **The gate does not close.** It is 9/10: the held-out TWS 14 asymmetric
+  running row is **4.7 % fast against a 3 % tolerance**, improved from 5.0 %
+  and still outside, with a VMG shortfall at the polar's own angle of 0.11 %
+  — so its angle is right and its speed is not. Every other gated row passes,
+  the next worst being TWS 14 at 120° on 4.5 % against a 5 % limit. A variant
+  that gates only the relief and leaves `fn60` fitted does close it, at 2.9 %,
+  and breaks the monotone-deepening invariant; it is recorded in ADR 0026 and
+  not shipped, because choosing between two calibrations on their hold-out
+  score is what ADR 0007 forbids. Upwind VMG heel is level with or a few
+  tenths better than ADR 0024 left it — 15.4° at TWS 14 against the polar's
+  20.8°. The Melges 24 keeps its calibration from #128: the hydro changes are
+  near-neutral for it (the same 6/10, the same four failing rows), and the
+  refit that was run is rejected on its own terms — it lands in a basin where
+  a _fitted_ row has no equilibrium, TWS 24 at 90° pinned on the 45° heel
+  ceiling at 2.83 kt against a printed 9.43. That class needs a round of its
+  own.
+
+- **The heeling arm is published geometry, not a fitted knob** (ADR 0024). The
+  model heeled 6–14° less than the 2011 ORC polar prints from TWS 10 up, and
+  three published things were wrong at once, all of them transcription. The
+  sail plan sat 0.81 m too low: `geometry/sailplan.ts` measured the mainsail
+  centre of effort from an assumed "boom ~0.9 m above the waterline" where the
+  ORC certificate publishes `BAS 0.992` above the sheer, and the sheer at the
+  base of I follows from the certificate's own freeboards (`FF 0.792` at
+  `SFFP 0.155`, `FA 0.571` at `SAFP 6.903`, read at `SFBI = SFJ + J = 2.500`)
+  at `HBI = 0.715` — so the boom is 1.707 m above the water and the jib's foot
+  is on the sheer, not 0.55 m up. ORC eq (3.5),
+  `HM_total = HM_A + RM4 · FHA` with `RM4 = 0.43 · Tmax` the vertical centre of
+  lateral resistance below the water plane (eq 4.29), was missing entirely.
+  And the moment carried a `cos(heel)` that neither eq (5.57) nor eq (3.5)
+  has; ORC puts the one the balance needs on the crew term of the righting
+  moment (eq 4.30), where `hydro/righting.ts` already had it. The heeling arm
+  goes 3.66 → 4.86 m plus 0.59 m of CLR. Upwind VMG heel against the polar:
+  TWS 10 6.3 → 7.8 (polar 11.8), 12 8.0 → 12.9 (19.7), 14 10.5 → 15.1 (20.8),
+  16 12.5 → 16.4 (21.5), 20 14.5 → 18.4 (24.2); at 90° in 20 kt, 12.4 → 20.5
+  against 24.1. `rig.basM` and `hull.hbiM` are boat-file fields with
+  provenance; `aero.hbiM` leaves the fit for any class that carries
+  `hull.hbiM` (the Melges 24's ORC rating summary publishes no BAS, no
+  freeboards and no HBI, so it keeps the knob — removing it unconditionally
+  took that class's gate from 8/10 to 5/10 on nothing published); and
+  `hydro.hikeRampDeg`'s fallback moves 8° → 6° on ORC VPP 2012 §4.4.3.3.
+
+- **What `aero.hbiM` at its bound was actually asking for.** For three rounds
+  it pinned at 1.4 m and `ASSUMPTIONS.md` read that as the fit wanting more
+  heeling arm. HBI cancels out of eq (5.57)'s arm at full power — the module's
+  own test asserts it. It was buying _effective rig height_ through eq (5.45),
+  `heff = cheff · (b + HBI)`: 1.4 m put the masthead 10.17 m above the water
+  against a true 9.68 m, worth about 10 % off the induced drag. Removing it
+  costs boat speed. The gate holds at 9/10 with the same single failing row
+  (held-out TWS 14 asymmetric), but that row is now 5.0 % fast where it was
+  2.1 % (its angle improved, 3.3° → 2.5°), the widest printed jib residual is
+  4.6 % where it was 3.4 %, and the TWS 20 asymmetric planing row reads 15.6 %.
+  `validation/invariants.test.ts` test 18's tracking band widens ±12 → ±18 to
+  follow it, and stage 1's simplex budget goes 320×3 → 500×5 because the new
+  surface stopped the old budget in a basin that left a fitted row 13.6 % out.
+  The next mechanism is named and published: ORC's downwind crew law
+  (VPP 2012 §4.4.3.3), which is also why the polar's downwind heel column sits
+  flat at 11.5–12.0° where this model reads 1°.
+
 - **Heel costs published drag, and the upwind hold-out row closes** (ADR 0022).
   `validation/polar.test.ts` failed the held-out TWS 14 jib upwind VMG row at
   5.8 % against a 3 % tolerance, part of a ~6 % plateau the model held from

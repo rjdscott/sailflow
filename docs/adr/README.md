@@ -62,4 +62,7 @@ line. Don't hand-edit.
 | [0021](0021-dock-and-race-merge-into-one-simulator-page.md) | Dock and Race merge into one Simulator page, with the conditions as an editable half of the instrument band | Accepted |
 | [0022](0022-heel-costs-published-drag-and-nothing-fits-the-heel-column.md) | Heel drag from the published Delft law, reef as the optimiser's second stage, and nothing fitted to the polar's heel column | Accepted |
 | [0023](0023-vmg-gate-measures-vmg-lost-at-the-polars-angle.md) | The VMG hold-out gate measures the VMG lost at the polar's printed angle, not the distance between two argmaxes | Accepted |
+| [0024](0024-the-heeling-arm-is-published-geometry-not-a-fitted-knob.md) | The heeling arm is published geometry — certificate BAS and HBI, plus ORC's below-waterplane CLR term | Accepted |
+| [0025](0025-effective-draft-with-heel-takes-the-published-bands-floor-unfitted.md) | The keel's effective draft falls off faster than cos(heel), at the shallow end of the published band, and nothing fits it | Accepted |
+| [0026](0026-residuary-curve-is-held-above-the-last-froude-bin-the-fit-rows-reach.md) | The residuary curve is held above the last Froude bin the fit rows reach, not fitted through it | Accepted |
 <!-- index:end -->
