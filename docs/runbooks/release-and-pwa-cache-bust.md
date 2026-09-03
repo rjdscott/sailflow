@@ -77,8 +77,13 @@ within one Workbox update check (on load, and periodically thereafter).
 
 ## Last verified
 
-- **Last verified:** 2026-08-28 cutting 0.5.0 on `feat/simulator-polish-0-5-0`.
-- Steps 1 and 2 were run for real: `pnpm version --no-git-tag-version minor` →
+- **Last verified:** 2026-09-03 cutting 0.5.2 on `chore/release-0-5-2`.
+  Steps 1 and 2 run for real: `pnpm version --no-git-tag-version patch` →
+  0.5.2, `GITHUB_PAGES=1 pnpm build` → `assets/index-CLGimdGE.js` in the
+  precache manifest, `self.skipWaiting(),s.clientsClaim()` in `dist/sw.js`.
+  Steps 3 and 4 not exercised: the merge deploys.
+- Earlier: 2026-08-28 cutting 0.5.0 on `feat/simulator-polish-0-5-0`.
+  Steps 1 and 2 were run for real: `pnpm version --no-git-tag-version minor` →
   0.5.0 in `package.json` and on More, and `GITHUB_PAGES=1 pnpm build` → a
   fresh `assets/index-*.js` in the precache manifest with
   `self.skipWaiting(),s.clientsClaim()` in `dist/sw.js`. Step 3's deploy and
