@@ -13,6 +13,16 @@ undiagnosable.
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-09-03
+
+The gennaker's clew was on the deck at every sheet setting, and the polar
+hold-out gate had been red since the Melges landed. Audit `kite-3d-01`
+(#119) found the clew was a loft bug rather than a constant, and three
+calibration rounds (ADR 0022, 0023) took the J/70 gate from 8/10 to 10/10
+without loosening a tolerance. A fourth round on the heeling arm (ADR
+0024–0026) is parked as draft #128: it halves the heel shortfall but does
+not hold the gate.
+
 ### Changed
 
 - **The hold-out gate judges a VMG row's angle by the VMG it costs, not by the
@@ -32,6 +42,52 @@ undiagnosable.
   TWA search) solve per VMG row, +5 % on a calibration loss evaluation.
 
 ### Fixed
+
+- **Hoisting the kite from the conditions band eases the mainsheet like the
+  point-of-sail chips do** (audit kite-3d-01 C-01): the SAIL cell flipped the
+  sail plan and nothing else, so the 3D hero and the plan view drew a gennaker
+  over a beat's ~20° boom. All three entry points — the SAIL cell, the chips
+  and the share link — now route through one `RaceStore.setSailSet`, undoable.
+  The asym→jib leg still moves nothing: the kite down with the boom out is a
+  real trim.
+
+- **The gennaker's drawn clew is the constructed clew** (audit kite-3d-01
+  C-02, M-08, M-09): the sheet lifted the clew 0.66 m → 2.15 m above the sheer
+  and the drawn corner never moved, because the loft ended every section in
+  its luff point's horizontal plane. Sections are now lofted edge to edge and
+  carry the leech end's height, so the sheet moves the picture; the foot skirt
+  is re-fit to the J/70 photo survey (0.35 m over the bottom 15 %, lowest a
+  third of the chord aft) and the mesh no longer hangs below the sheer.
+
+- **Phone chip rows show all five points of sail and one line of camera
+  presets; the active chip is filled** (audit kite-3d-01 H-07, H-08, H-09): the
+  point-of-sail row was a hidden sideways scroller that reached three of five
+  chips on a 390 px screen, cutting both gennaker angles, and nothing anywhere
+  in the app painted `aria-pressed`, so the row never said which point of sail
+  you were on. Short phone labels (Beat, Close, Beam, Broad, Run) put all five
+  on one wrap-free row and the scroller is deleted; selected chips are filled
+  with the accent, matching the 3D/Plan toggle. The hero's five camera chips
+  get the same treatment (Luff, Top) and stay on one 44 px line instead of
+  wrapping to 96 px of chrome above a 218 px picture. Desktop keeps the full
+  labels and its existing layout.
+
+- **"Up the luff" stays above the water and "Helm" frames the whole boat**
+  (audit kite-3d-01 H-10, H-06). The preset fit backs the eye off along
+  the authored sight line, so `luff`'s downward aim put the camera about 10 m
+  under the keel at every state — and the sea is a single-sided plane, so from
+  below there was no water and no horizon. `Helm` had the opposite problem: it
+  was exempt from the fit and from the resize refit, so the hull and boom fell
+  off the bottom edge over half a canvas of sky. The framing maths moved to
+  `src/ui/three/camera.ts`, where the eye is now clamped above the surface for
+  every preset, and both poses were re-cut with shallow upward sight lines.
+
+- **The plan view draws the mast at the class J, keeps the kite and the
+  transom in frame, and brings the caption back on desktop** (audit kite-3d-01
+  H-01, H-02, H-05, H-11): the mast station is now `rig.jM / hull.loaM` from
+  the boat file instead of a drawn constant 0.77 m too far aft, the gennaker
+  outline is no longer scaled sideways off its own construction, and the card
+  grows with its content (`--hero-min`) so the transom, heel tag, caption and
+  explainer stop being clipped at desktop widths.
 
 - **Heel costs published drag, and the upwind hold-out row closes** (ADR 0022).
   `validation/polar.test.ts` failed the held-out TWS 14 jib upwind VMG row at
@@ -73,10 +129,14 @@ undiagnosable.
   solve settles below -0.24°.
 
 - **`pnpm calibrate` no longer writes the reference polar into the boat file.**
-  `boatFor()` attaches the polar at load, and the fit was serialising the whole
-  attached table back into `data/boats/<id>.json`, where `boat/validate.ts`
-  then demanded a provenance row for each of its several hundred numeric
-  leaves.
+  `boatFor()` attaches the class polar to the boat object at load, and
+  `calibration/fit.ts` serialised that decorated object straight back to
+  `data/boats/<id>.json` — inlining a ~10 kB copy of a table that lives in
+  `data/polar/` on purpose. The Melges file has been carrying one since its
+  fit; the next `pnpm calibrate --boat j70` would have added one to the J/70
+  and turned `make check` red, because `boat/validate.test.ts` requires a
+  provenance row for every numeric leaf and a polar leaf has none. Both boat
+  files are refitted (calibration values bit-identical) with the block gone.
 
 ### Added
 
@@ -88,58 +148,6 @@ undiagnosable.
   main has no reef points. On the J/70 polar it never engages, which is
   recorded rather than hidden; no rig control maps to reef and none was
   invented.
-
-- **`pnpm calibrate` no longer writes the reference polar into the boat file.**
-  `boatFor()` attaches the class polar to the boat object at load, and
-  `calibration/fit.ts` serialised that decorated object straight back to
-  `data/boats/<id>.json` — inlining a ~10 kB copy of a table that lives in
-  `data/polar/` on purpose. The Melges file has been carrying one since its
-  fit; the next `pnpm calibrate --boat j70` would have added one to the J/70
-  and turned `make check` red, because `boat/validate.test.ts` requires a
-  provenance row for every numeric leaf and a polar leaf has none. Both boat
-  files are refitted (calibration values bit-identical) with the block gone.
-
-- fix(plan): the mast sits at the class J, the kite and the transom stay in
-  frame, the caption returns on desktop (audit kite-3d-01 H-01, H-02, H-05,
-  H-11)
-
-- **"Up the luff" stays above the water and "Helm" frames the whole boat**
-  (audit kite-3d-01 H-10, H-06). The preset fit backs the eye off along
-  the authored sight line, so `luff`'s downward aim put the camera about 10 m
-  under the keel at every state — and the sea is a single-sided plane, so from
-  below there was no water and no horizon. `Helm` had the opposite problem: it
-  was exempt from the fit and from the resize refit, so the hull and boom fell
-  off the bottom edge over half a canvas of sky. The framing maths moved to
-  `src/ui/three/camera.ts`, where the eye is now clamped above the surface for
-  every preset, and both poses were re-cut with shallow upward sight lines.
-
-- **Phone chip rows show all five points of sail and one line of camera
-  presets; the active chip is filled** (audit kite-3d-01 H-07, H-08, H-09): the
-  point-of-sail row was a hidden sideways scroller that reached three of five
-  chips on a 390 px screen, cutting both gennaker angles, and nothing anywhere
-  in the app painted `aria-pressed`, so the row never said which point of sail
-  you were on. Short phone labels (Beat, Close, Beam, Broad, Run) put all five
-  on one wrap-free row and the scroller is deleted; selected chips are filled
-  with the accent, matching the 3D/Plan toggle. The hero's five camera chips
-  get the same treatment (Luff, Top) and stay on one 44 px line instead of
-  wrapping to 96 px of chrome above a 218 px picture. Desktop keeps the full
-  labels and its existing layout.
-
-- **The gennaker's drawn clew is the constructed clew** (audit kite-3d-01
-  C-02, M-08, M-09): the sheet lifted the clew 0.66 m → 2.15 m above the sheer
-  and the drawn corner never moved, because the loft ended every section in
-  its luff point's horizontal plane. Sections are now lofted edge to edge and
-  carry the leech end's height, so the sheet moves the picture; the foot skirt
-  is re-fit to the J/70 photo survey (0.35 m over the bottom 15 %, lowest a
-  third of the chord aft) and the mesh no longer hangs below the sheer.
-
-- **Hoisting the kite from the conditions band eases the mainsheet like the
-  point-of-sail chips do** (audit kite-3d-01 C-01): the SAIL cell flipped the
-  sail plan and nothing else, so the 3D hero and the plan view drew a gennaker
-  over a beat's ~20° boom. All three entry points — the SAIL cell, the chips
-  and the share link — now route through one `RaceStore.setSailSet`, undoable.
-  The asym→jib leg still moves nothing: the kite down with the boom out is a
-  real trim.
 
 ## [0.5.1] — 2026-08-28
 

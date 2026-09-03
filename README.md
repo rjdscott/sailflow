@@ -63,7 +63,7 @@ Most trim advice is a table in a PDF. Sailflow is a model you can argue with:
   no framework in `src/core`. A golden corpus of solved cases per boat catches any
   drift.
 
-## Current state (v0.5.1, 2026-08-28)
+## Current state (v0.5.2, 2026-09-03)
 
 Complete and live: one **Simulator** page with the 3D hero (three.js,
 lazy-loaded, first-frame budget) — the conditions are the editable right half
